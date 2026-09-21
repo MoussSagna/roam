@@ -22,11 +22,11 @@
       [
         "expo-splash-screen",
         {
-          "image": "./assets/images/splash-icon.png",
-          "imageWidth": 160,
+          "image": "./assets/images/logo/logo-light.png",
+          "imageWidth": 200,
           "backgroundColor": "#F7F4ED",
           "dark": {
-            "image": "./assets/images/splash-icon-dark.png",
+            "image": "./assets/images/logo/logo-dark.png",
             "backgroundColor": "#0F1411"
           }
         }

@@ -10,6 +10,8 @@ export const fontFamily = {
   body: 'Inter_400Regular',
   bodyMedium: 'Inter_500Medium',
   bodySemibold: 'Inter_600SemiBold',
+  /** Editorial serif, used by the splash screen headline (from the design mockup). */
+  editorial: 'Newsreader_400Regular',
 } as const;
 
 type FontSizeEntry = [size: string, config: { lineHeight: string }];
