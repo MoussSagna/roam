@@ -17,7 +17,7 @@ Status for **mobile** (2026-09-21). Web and API foundations are not started.
 
 ## Phase B — Static UX prototype
 
-- [ ] Splash
+- [x] Splash (implemented from the mockup; native app icon still to migrate — see `DECISIONS.md` D-18)
 - [ ] Welcome
 - [ ] Onboarding
 - [ ] Home

@@ -3,10 +3,15 @@
     "name": "ROAM",
     "logoAlt": "ROAM logo"
   },
-  "foundation": {
-    "typographySample": "A preview of ROAM typography",
-    "bodySample": "Body text stays calm and very readable, so you can focus on your next outing.",
-    "motiBadge": "Moti animation"
+  "splash": {
+    "tagline": "Outings that feel like you.",
+    "verbs": {
+      "explore": "Explore.",
+      "feel": "Feel.",
+      "goOut": "Go out."
+    },
+    "categories": "Culture · Food · Nature · Evenings",
+    "more": "and much more."
   },
   "common": {
     "continue": "Continue",

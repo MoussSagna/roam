@@ -48,14 +48,14 @@ apps/mobile/
 ├── metro.config.js          # withNativeWind → src/global.css
 ├── tailwind.config.ts       # NativeWind preset; colors/fonts/radius come from src/theme
 ├── jest.config.js / jest.setup.ts
-├── assets/images/           # icons, splash, logo/ (placeholders — see logo/README.md)
+├── assets/images/           # splash-background.png, icons, logo/ (roles in logo/README.md)
 └── src/
     ├── app/                 # Expo Router routes ONLY, kept thin (/ and /welcome)
     ├── components/
     │   ├── ui/              # Text, Button, Chip, Screen, FadeInUp (design-system primitives)
     │   └── brand/           # Logo (light / dark / icon variants)
     ├── features/            # One folder per feature (empty until its sprint)
-    │   ├── foundation/      # TEMPORARY validation screen, replaced by Splash
+    │   ├── splash/          # In-app splash screen (route /) + its measured layout
     │   ├── onboarding/      # WelcomeScreen (placeholder)
     │   └── home, recommendations, experiences, itinerary, map,
     │       outing, feedback, profile, favorites, auth
@@ -141,8 +141,9 @@ Screen → hook / service → Repository (interface) → mock implementation  (t
 
 ### Assets
 
-Logo and icons are **placeholders** until the official logo is provided — see
-`apps/mobile/assets/images/logo/README.md`. Fonts are loaded from `@expo-google-fonts/*`; import each
+The logo files, the wordmark and the splash photo are official; the app icon and the Android
+adaptive icon are still placeholders. Which file is used for what is documented in
+`apps/mobile/assets/images/logo/README.md`. Fonts are loaded from `@expo-google-fonts/*` (Plus Jakarta Sans, Inter, and Newsreader for the splash only); import each
 weight from its own entry point (e.g. `@expo-google-fonts/inter/400Regular`) to keep the bundle small.
 
 ## Troubleshooting

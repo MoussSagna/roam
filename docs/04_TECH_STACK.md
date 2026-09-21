@@ -189,7 +189,7 @@ into `packages/` when the web app needs them.
 | Animation          | Moti on Reanimated + Worklets                              | 0.30 on 4.5.1 / 0.10.1  |
 | i18n               | i18next + react-i18next                                    | 26.4 / 17.0             |
 | Persistence        | `@react-native-async-storage/async-storage` (theme, language) | 2.2.0                |
-| Fonts              | Plus Jakarta Sans + Inter via `@expo-google-fonts/*`       | 0.4.2                   |
+| Fonts              | Plus Jakarta Sans + Inter (+ Newsreader for the splash) via `@expo-google-fonts/*` | 0.4.x |
 | Images             | `expo-image`                                               | 57.0                    |
 | Tests              | Jest 29 (`jest-expo`) + React Native Testing Library       | 57.0 / 14.0             |
 | Lint / format      | ESLint 9 (`eslint-config-expo`) + Prettier                 | 9.39 / 3.9              |
@@ -199,7 +199,7 @@ into `packages/` when the web app needs them.
 
 Jest was chosen over Vitest (the document left it open). The foundation tests cover theme tokens and
 contrast, theme provider (light/dark/system, persistence), i18n (FR/EN parity, switching), the mock
-repositories, NativeWind UI components and the two initial screens.
+repositories, NativeWind UI components, the splash layout and screen, and the Welcome placeholder.
 
 ### Data access
 

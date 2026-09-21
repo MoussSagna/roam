@@ -4,8 +4,8 @@ import { useTranslation } from 'react-i18next';
 import { useTheme } from '@/theme';
 
 /**
- * Logo files live in `assets/images/logo/`. They are PLACEHOLDERS until the official
- * logo is added: replace the PNGs, keep the file names (see assets/images/logo/README.md).
+ * Official logo files live in `assets/images/logo/` (see assets/images/logo/README.md).
+ * Keep the file names when replacing them.
  */
 const sources = {
   light: require('../../../assets/images/logo/logo-light.png'),

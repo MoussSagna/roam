@@ -79,7 +79,8 @@ Remove both once Moti drops the reference.
 - Keys are type-checked against `fr.json`; a test checks FR/EN key parity.
 - French is the default; the device language is deliberately **not** auto-detected (the docs say the
   default is French). Adding detection later is a one-line change plus `expo-localization`.
-- Keys added during initialisation: `brand.*` and `foundation.*` (temporary, with the foundation screen).
+- Keys added: `brand.*` and `splash.*`. (The temporary `foundation.*` keys were removed with the
+  foundation screen — see D-18.)
 
 ### D-09 — Repository pattern with a mock implementation
 
@@ -119,7 +120,7 @@ The handoff documents (`00`–`08`, README) moved from the repository root into 
 target layout in `04_TECH_STACK.md`. `docs/0*.md` are excluded from Prettier so the hand-written
 documents are not reformatted.
 
-### D-15 — Logo and icons are placeholders
+### D-15 — Logo and icons (superseded in part by D-17)
 
 No official logo asset existed. A neutral ring-and-dot mark was generated for the app icon, splash and
 in-app logo (light / dark / icon variants), with fixed file names so the official files can be dropped
@@ -131,3 +132,48 @@ adaptive-icon colors as hex because it cannot read theme tokens.
 Environment variables, CI, bundle identifiers (`ios.bundleIdentifier` / `android.package`), EAS
 configuration, map provider choice, bottom-tab navigation. They belong to later sprints or need
 product decisions.
+
+## Splash screen (2026-09-21)
+
+### D-17 — Logo assets and native splash
+
+The official logo (`logo-light`, `logo-dark`, `logo-icon`, 1254×1254, real alpha) replaced the
+placeholders; the wordmark (`roam-wordmark-light.png`, white on transparency, tinted at runtime) and
+`splash-background.png` were added. Roles are listed in `apps/mobile/assets/images/logo/README.md`.
+
+- **Native splash** (`app.json`): `logo-light.png` on Cream / `logo-dark.png` on `#0F1411`, width 200.
+  It is deliberately separate from the in-app splash screen: the OS shows it while the JS loads.
+- **App icon and Android adaptive icon were NOT migrated.** No provided file has the required format
+  (opaque 1024×1024 square; transparent 1024×1024 foreground with a safe zone). The `app-icon-*` and
+  `android-*` files of the supplied zip are blurry, geometrically distorted extractions of a mockup
+  screenshot, and `splash-logo-*` from the same zip is distorted too — none of them is used.
+  The old ring-and-dot `icon.png` / `android-icon-*.png` remain until proper exports exist.
+- The old `splash-icon*.png` placeholders were deleted (no longer referenced).
+
+### D-18 — In-app splash screen reproduces the design mockup
+
+`src/features/splash/` (route `/`). Layout numbers were measured on the mockup (941 × 1672) and live in
+`splashLayout.ts`; sizes follow the screen width, the two content groups are anchored on the height.
+Choices that go beyond the mockup or differ from it:
+
+- **Serif headline:** "Explorer. Ressentir. Sortir." is set in Newsreader 400 (`@expo-google-fonts/newsreader`,
+  one weight). It matched the mockup's letter widths best among the serif candidates compared
+  (Newsreader, Source Serif 4, Lora, Crimson Pro, Literata, Fraunces, Instrument Serif, DM Serif).
+  This third family is an exception to D-06, justified by the mockup.
+- **Logo colorway differs from the mockup.** The mockup shows a cream "R"; the only crisp asset that
+  reads on the photo is `logo-dark.png` (mint). No cream variant exists yet. The mark's proportions also
+  differ slightly (the mockup's R is narrower and taller), so it is scaled to the same area without
+  distortion (216 × 238 px vs 199 × 252 px at mockup size).
+- **Wordmark** is the supplied raster asset (its "A" has a small crossbar stub the mockup's does not).
+- **Photo veil:** flat overlay of the dark theme background at 34 % opacity — the best flat fit (mean
+  error ≈ 10/255 against the mockup). The mockup's veil is not uniform (more contrast); reproducing it
+  needs a gradient/shader.
+- **Small texts have a 10 pt floor.** Scaled proportionally, the tagline and the bottom lines would be
+  6–8 pt on a 390 pt phone. No effect at mockup scale. Constant: `MIN_SMALL_TEXT` in `splashLayout.ts`.
+- **Text colors are fixed** (Cream / Sage from the palette) because the photo is dark in both themes.
+- **Behavior not shown in the mockup:** staggered fade-in with a small translate (Moti, `FadeInUp`,
+  ~1.6 s in total), then `router.replace('/welcome')` after 2.6 s (documented flow: unauthenticated →
+  Welcome; there is no session yet). The photo fades in over the theme background, so the native →
+  in-app transition is continuous in dark mode.
+- **The temporary foundation screen was removed** (documented as "replaced by Splash"): `/` is now the
+  splash. Theme and language switching are covered by unit tests until the Settings screen exists.

@@ -1,5 +1,5 @@
-import { FoundationScreen } from '@/features/foundation/FoundationScreen';
+import { SplashScreen } from '@/features/splash/SplashScreen';
 
 export default function IndexRoute() {
-  return <FoundationScreen />;
+  return <SplashScreen />;
 }

@@ -219,8 +219,9 @@ Do not mix French and English in a single UI state.
   text `#F1EDE4`, textSecondary `#A7B4AA`, primary `#86B096`, accent Peach `#E9CDB9`.
 - Light `textSecondary` is `#666A65` (a darker Stone) because raw Stone is below AA on Cream — see
   `DECISIONS.md` D-04. A test asserts WCAG AA contrast in both themes.
-- There is no settings screen yet. The temporary foundation screen (`/`) exposes the Light / Dark /
-  System and Français / English switches to validate the behavior.
+- There is no settings screen yet, so no UI exposes the Light / Dark / System and Français / English
+  switches: the behavior is covered by unit tests (`ThemeProvider.test.tsx`, `i18n.test.ts`) until the
+  Profile / Settings screen is built.
 
 ### i18n
 
@@ -229,6 +230,7 @@ Do not mix French and English in a single UI state.
 - Keys are type-checked against `fr.json`; a test enforces that FR and EN have identical keys.
 - Interpolation uses single braces (`{count}`) to match these files.
 - Switching language updates the UI immediately, without restart.
-- Keys added at initialisation (beyond this document's namespace list): `brand` and `foundation`
-  (temporary, used by the foundation screen). The `welcome` namespace already present in the files
-  is used by the Welcome placeholder.
+- Keys added beyond this document's namespace list: `brand` and `splash` (splash tagline, the
+  "Explorer. Ressentir. Sortir." headline and the category line; English wording is a natural
+  translation, to be validated). The `welcome` namespace already present in the files is used by the
+  Welcome placeholder.

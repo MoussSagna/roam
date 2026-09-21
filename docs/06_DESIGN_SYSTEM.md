@@ -145,7 +145,8 @@ Implemented in `apps/mobile/src/theme/` and exposed through `tailwind.config.ts`
 - **Colors:** the seven palette colors are in `palette.ts`; components use semantic tokens only
   (`05_THEME_AND_I18N.md`). Values derived for accessibility and for the dark theme live next to them.
 - **Typography:** Plus Jakarta Sans (headings, 600/700) and Inter (body, 400/500/600), loaded with
-  `@expo-google-fonts/*`. Use `<Text variant="…">`. Mobile scale: Display 40/44, H1 32/38, H2 28/34,
+  `@expo-google-fonts/*`. A third family, **Newsreader** (serif, 400), is used only for the splash
+  headline because the splash mockup requires it (`DECISIONS.md` D-18). Use `<Text variant="…">`. Mobile scale: Display 40/44, H1 32/38, H2 28/34,
   H3 24/30, H4 20/26, Body Large 18/28, Body 16/24, Small 14/20, Caption 12/16, plus `label`
   (Body semibold, buttons/chips).
 - **Spacing:** Tailwind's default 4px scale, a superset of the documented values (4…96).
@@ -155,6 +156,9 @@ Implemented in `apps/mobile/src/theme/` and exposed through `tailwind.config.ts`
   `Chip` exist yet (selectors, cards, navigation, sheet, map marker…).
 - **Motion:** Moti. `FadeInUp` = fade + 12 px translateY over 500 ms. Selection scale and staggered
   entries are not implemented yet.
-- **Logo/icons:** placeholders (light, dark, icon variants) until the official logo is provided; see
+- **Logo:** official logo files (light, dark, icon) and the wordmark are in use; the app icon and the
+  Android adaptive icon are still temporary placeholders. Details and file roles:
   `apps/mobile/assets/images/logo/README.md`.
+- **Splash screen:** implemented from the design mockup (`apps/mobile/src/features/splash/`); see
+  `DECISIONS.md` D-18 for the known differences with the mockup.
 - **Responsive:** only the mobile layout exists. Tablet and desktop are not addressed yet.
