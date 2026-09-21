@@ -1,0 +1,9 @@
+node_modules
+pnpm-lock.yaml
+.expo
+dist
+coverage
+apps/mobile/ios
+apps/mobile/android
+# Handoff docs are maintained by hand
+docs/0*.md

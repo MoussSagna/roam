@@ -1,0 +1,25 @@
+{
+  "name": "roam",
+  "private": true,
+  "version": "0.0.0",
+  "description": "ROAM — recommends a realistic outing adapted to your context.",
+  "packageManager": "pnpm@12.4.2",
+  "engines": {
+    "node": ">=22.13"
+  },
+  "scripts": {
+    "mobile": "pnpm --filter @roam/mobile",
+    "mobile:start": "pnpm --filter @roam/mobile start",
+    "mobile:ios": "pnpm --filter @roam/mobile ios",
+    "mobile:android": "pnpm --filter @roam/mobile android",
+    "lint": "pnpm -r --if-present lint",
+    "typecheck": "pnpm -r --if-present typecheck",
+    "test": "pnpm -r --if-present test",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "check": "pnpm format:check && pnpm typecheck && pnpm lint && pnpm test"
+  },
+  "devDependencies": {
+    "prettier": "^3.9.8"
+  }
+}

@@ -1,0 +1,243 @@
+{
+  "brand": {
+    "name": "ROAM",
+    "logoAlt": "ROAM logo"
+  },
+  "foundation": {
+    "typographySample": "A preview of ROAM typography",
+    "bodySample": "Body text stays calm and very readable, so you can focus on your next outing.",
+    "motiBadge": "Moti animation"
+  },
+  "common": {
+    "continue": "Continue",
+    "back": "Back",
+    "skip": "Skip",
+    "cancel": "Cancel",
+    "save": "Save",
+    "edit": "Edit",
+    "close": "Close",
+    "search": "Search",
+    "retry": "Try again",
+    "seeMore": "See more",
+    "done": "Done",
+    "loading": "Loading…"
+  },
+  "navigation": {
+    "home": "Home",
+    "discover": "Discover",
+    "favorites": "Favorites",
+    "profile": "Profile",
+    "itinerary": "Itinerary"
+  },
+  "welcome": {
+    "title": "Find something to do, without spending your time searching.",
+    "subtitle": "ROAM suggests outings tailored to your mood, time and budget.",
+    "start": "Get started",
+    "signIn": "Sign in"
+  },
+  "onboarding": {
+    "interests": {
+      "eyebrow": "Your interests",
+      "title": "What are you into?",
+      "subtitle": "Select at least 3 interests for more relevant recommendations.",
+      "selected": "{count} selected",
+      "addInterest": "Add an interest",
+      "addInterestPlaceholder": "E.g. dance, movies…"
+    },
+    "activities": {
+      "title": "What do you like doing?",
+      "subtitle": "Choose the activities that feel like you."
+    },
+    "budget": {
+      "title": "What's your usual budget?",
+      "subtitle": "We'll adapt outings to what you want to spend."
+    },
+    "distance": {
+      "title": "How far do you want to go?",
+      "subtitle": "We'll prioritize outings that are easy to reach."
+    },
+    "company": {
+      "title": "Who do you usually go out with?",
+      "subtitle": "This helps us tailor experiences to you."
+    }
+  },
+  "home": {
+    "greeting": "Hello",
+    "title": "What do you feel like doing today?",
+    "currentOutings": "What's happening now",
+    "createOuting": "Plan my outing",
+    "inspiration": "Need some inspiration?"
+  },
+  "context": {
+    "mood": {
+      "title": "How are you feeling today?",
+      "calm": "Calm",
+      "discover": "Explore",
+      "energetic": "Energetic",
+      "creative": "Creative",
+      "food": "Food",
+      "shopping": "Shopping",
+      "culture": "Culture"
+    },
+    "time": {
+      "title": "How much time do you have today?",
+      "subtitle": "We'll suggest outings that fit your schedule.",
+      "30min": "30 min",
+      "1h": "1 hr",
+      "2h": "2 hrs",
+      "3hPlus": "3+ hrs"
+    },
+    "budget": {
+      "title": "What's your budget for this outing?",
+      "subtitle": "We'll suggest outings that fit your plans and budget.",
+      "free": "Free",
+      "under10": "< €10",
+      "10to25": "€10–25",
+      "25to50": "€25–50",
+      "50plus": "€50+"
+    },
+    "company": {
+      "title": "Who are you with?",
+      "alone": "Alone",
+      "couple": "As a couple",
+      "friends": "Friends",
+      "family": "Family"
+    },
+    "location": {
+      "title": "Where do you want to go?",
+      "useCurrent": "Use my location",
+      "searchArea": "Choose an area",
+      "permissionDenied": "We couldn't use your location.",
+      "chooseArea": "Choose an area"
+    }
+  },
+  "recommendations": {
+    "title": "Outings picked for you",
+    "subtitle": "Based on your preferences",
+    "filters": {
+      "all": "All",
+      "nearby": "Nearby",
+      "free": "Free",
+      "tonight": "Tonight",
+      "weekend": "Weekend"
+    },
+    "why": "Why this outing?",
+    "discover": "Discover",
+    "save": "Save",
+    "saved": "Saved",
+    "loading": "ROAM is finding something for you…",
+    "noResults": "We couldn't find a perfect outing.",
+    "almostPerfect": "One experience is almost a perfect match.",
+    "adjustBudget": "Increase the budget",
+    "adjustDistance": "Expand the distance",
+    "adjustTime": "Be more flexible with time",
+    "changeMood": "Change your mood"
+  },
+  "experience": {
+    "createItinerary": "Create my itinerary",
+    "whyRoam": "Why ROAM recommends this",
+    "photos": "Photos",
+    "practicalInfo": "Practical information",
+    "reviews": "Visitor reviews",
+    "similar": "You might also like",
+    "seeOnMap": "View on map"
+  },
+  "itinerary": {
+    "title": "Your outing is ready",
+    "duration": "Duration",
+    "budget": "Budget",
+    "distance": "Distance",
+    "edit": "Edit itinerary",
+    "addStep": "Add a stop",
+    "replaceStep": "Replace stop",
+    "removeStep": "Remove stop",
+    "start": "Start my outing",
+    "building": "ROAM is building your outing…",
+    "checkingTime": "Checking time",
+    "checkingBudget": "Checking budget",
+    "checkingDistance": "Checking travel time",
+    "checkingHours": "Checking opening hours",
+    "impossible": "We couldn't build a coherent itinerary with these constraints."
+  },
+  "map": {
+    "title": "Your itinerary",
+    "currentLocation": "My location",
+    "openNavigation": "Open directions",
+    "viewPlace": "View place"
+  },
+  "outing": {
+    "step": "Step",
+    "nextStep": "Next step",
+    "openNavigation": "Open directions",
+    "finishStep": "Complete step"
+  },
+  "feedback": {
+    "title": "So, how was it?",
+    "love": "Loved it",
+    "like": "Liked it",
+    "meh": "Meh",
+    "notForMe": "Not for me",
+    "why": "What explains your choice?",
+    "tooExpensive": "Too expensive",
+    "tooFar": "Too far",
+    "tooCrowded": "Too crowded",
+    "notMyStyle": "Not my style",
+    "atmosphere": "Atmosphere",
+    "activity": "Activity",
+    "other": "Other",
+    "submit": "Send",
+    "thanks": "Thanks!",
+    "thanksSubtitle": "ROAM will use your feedback to personalize your next outings."
+  },
+  "favorites": {
+    "title": "My favorites",
+    "empty": "You haven't saved anything yet.",
+    "discover": "Discover"
+  },
+  "history": {
+    "title": "My experiences",
+    "empty": "No experiences yet.",
+    "findOuting": "Find an outing",
+    "redo": "Do it again"
+  },
+  "profile": {
+    "title": "Profile",
+    "preferences": "My preferences",
+    "history": "My history",
+    "favorites": "My favorites",
+    "statistics": "My statistics",
+    "placesDiscovered": "Places discovered",
+    "areasExplored": "Areas explored",
+    "experiencesCompleted": "Experiences completed",
+    "favoriteCategory": "Favorite category"
+  },
+  "settings": {
+    "title": "Settings",
+    "appearance": "Appearance",
+    "language": "Language",
+    "theme": {
+      "light": "Light",
+      "dark": "Dark",
+      "system": "System"
+    },
+    "languages": {
+      "fr": "Français",
+      "en": "English"
+    }
+  },
+  "auth": {
+    "signIn": "Sign in",
+    "signUp": "Create an account",
+    "email": "Email address",
+    "password": "Password",
+    "forgotPassword": "Forgot password?",
+    "logout": "Sign out"
+  },
+  "errors": {
+    "generic": "Something went wrong.",
+    "network": "Check your connection and try again.",
+    "location": "We couldn't get your location.",
+    "recommendations": "We couldn't load recommendations.",
+    "feedback": "We couldn't send your feedback."
+  }
+}

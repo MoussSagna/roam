@@ -1,0 +1,8 @@
+packages:
+  - 'apps/*'
+  - 'packages/*'
+
+# Build scripts are opt-in with pnpm >= 10. unrs-resolver ships prebuilt binaries
+# (used by eslint-import-resolver-typescript), so its install script is not needed.
+allowBuilds:
+  unrs-resolver: false
