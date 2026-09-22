@@ -1051,3 +1051,96 @@ through bare) and 1 (scrolled, kept for legibility against whatever section is b
 it reappears) — animated, not an instant cut. The bell's own circular backdrop (`bg-black/25`) is
 unrelated and unchanged: it keeps the icon legible against the Hero photo regardless of scroll
 position, only the header's full-width background layer responds to `atTop`.
+
+## Experience detail & gallery (2026-09-22)
+
+### D-48 — Real experience detail + gallery screens; `Experience` extended again, no shared-element library
+
+Sprint 5 brief: replace `ExperienceDetailPlaceholder` (D-45) with the real detail screen from a
+supplied mockup, plus a dedicated full-screen gallery reached by tapping the hero image, with a
+hero -> gallery transition and a synced double-`FlatList` gallery (main pager + thumbnail strip).
+
+- **`Experience` gained detail fields instead of a second type**, same precedent as D-45:
+  `images` (gallery, falls back to `[coverImage]` when absent), `address`, `openingHoursLabel`,
+  `transport` (`{ line, walkLabel }`), `highlights`, `reviews` (new `ExperienceReview` type) and
+  `similarExperienceIds`. All optional, all plain already-formatted mock strings (D-09/D-10).
+- **Mock data**: every experience in `services/mock/data.ts` (11 existing + 3 new: `exp-hasard-ludique`,
+  `exp-mama-shelter`, `exp-bellevilloise` — referenced only from `exp-rooftop-sunset`'s "Suggestions
+  similaires", matching the supplied mockup's example almost verbatim) now carries the full detail set.
+  `images` is built by `buildGallery()`: the experience's own cover first, then a deterministic rotating
+  slice of the same 8-photo pool `coverImage` already draws from (D-45) — no new photos. A small shared
+  `reviews` pool (5 objects) is reused across experiences the same way photos are. **Not** given a
+  `distanceLabel` on `exp-slow-afternoon` despite adding its other detail fields: `pickForYou.test.ts`'s
+  fixture is independent, but `HomeScreen.test.tsx`'s "Des idées pour toi" assertions depend on
+  `exp-panoramic-walk` (800 m) staying the nearest experience — giving `exp-slow-afternoon` a shorter
+  distance would have won that rule and silently changed Home's own test expectations.
+- **Reasons ("Pourquoi ROAM te le propose ?") are derived, not stored per item**
+  (`features/experiences/lib/whyRecommended.ts`, unit-tested): interests (has a mood), budget (free/
+  under10/10to25), nearby (≤ 5 km, parsed from `distanceLabel`), open now (has `openingHoursLabel`) —
+  `07_DATA_AND_RECOMMENDATION.md`'s "reasons must be based on actual matched constraints" applied
+  literally, same spirit as `pickForYou`'s own rule set (D-45) rather than a fixed list in the mock data.
+- **Gallery route is flat (`app/gallery/[id].tsx`), not nested under `experience/[id]/`.** A nested
+  `experience/[id]/index.tsx` + `experience/[id]/gallery.tsx` pair was considered (URL-wise the more
+  "correct" shape) but every dynamic route in this app so far is a single flat segment
+  (`experience/[id]`, `auth/*`, `onboarding/*`); nesting a second dynamic layer under one `Stack` with no
+  scoped `_layout.tsx` was an unverified pattern for this Expo Router version, and the brief only asks
+  for "an equivalent route", not a specific URL shape. `heroX/heroY/heroW/heroH` (the tapped hero's
+  measured on-screen rect) and `index` travel as string search params. Same flat precedent for the CTA
+  placeholder: `app/itinerary/create.tsx`, not nested under `experience/`.
+- **Hero -> gallery transition: a measured-rect Reanimated morph, not a shared-element library.**
+  `react-native-shared-element` (the usual React Navigation answer) is unmaintained and not installed;
+  nothing in the current stack (`04_TECH_STACK.md`) provides real cross-screen shared elements. Per the
+  brief's own fallback instruction, `ExperienceHero` measures its pager's window rect
+  (`View.measureInWindow`) on press and passes it through the route params above; `ExperienceGalleryScreen`
+  drives one `useSharedValue` (`progress`, 0 = collapsed to that rect, 1 = fullscreen) with `withTiming`,
+  interpolating an absolutely-positioned `Animated.Image` overlay's top/left/width/height between the two,
+  while the real gallery content underneath fades in behind it (`opacity: progress`) — by the time the
+  overlay reaches fullscreen it exactly covers the same photo the content is already showing, so the
+  overlay is hidden and the content takes over seamlessly. Closing reverses the same interpolation before
+  calling `router.back()`. Skipped entirely (instant show/hide) when `useReduceMotion()` is true, or when
+  the route is reached without a rect (e.g. a future deep link) — `canMorph` gates the whole thing.
+  `gestureEnabled: false` + `animation: 'fade'` on the route (`AppRoutes.tsx`) so the native swipe-back
+  gesture can't bypass the closing animation; a `BackHandler` listener routes the Android hardware back
+  button through the same `handleClose`.
+  **Lint note:** mutating `progress.value` had to be done from plain functions declared _before_ any
+  `useEffect` that also touches `progress` (not `useCallback`, and not after those effects in source
+  order) to satisfy `eslint-plugin-react-hooks`'s immutability check — the same "plain function, not
+  memoized" shape as `HomeScreen`'s pull-to-stretch `onScroll` (D-46), just also order-sensitive here.
+  Keeping the latest `handleClose` reachable from a stable `BackHandler` subscription uses a ref updated
+  from its own effect (`useEffect(() => { ref.current = handleClose; })`), not a direct assignment during
+  render, which this lint config also rejects.
+- **Double `FlatList` sync (gallery)**: one shared `activeIndex` state — the main pager's
+  `onMomentumScrollEnd` computes it from `contentOffset.x`, a thumbnail press sets it directly and calls
+  `scrollToIndex` on the main list; either path also re-centers the thumbnail strip via its own
+  `scrollToIndex({ viewPosition: 0.5 })` in a `useEffect` keyed on `activeIndex`. Both lists use a fixed
+  `getItemLayout` (screen width / thumbnail size + gap) so `scrollToIndex`/`initialScrollIndex` work
+  without waiting for layout. **Bug caught by its own test**: the gallery's initial `activeIndex` must be
+  `useState(initialIndex)` as-is, not clamped against `images.length` at declaration time — `experience`
+  (and so `images`) is still `[]` on the very first render (it loads asynchronously via `useExperience`),
+  so a clamp evaluated in the `useState` initializer permanently pinned the index to 0.
+- **"Pourquoi ROAM te le propose ?", "Voir sur la carte" and the reviews/highlights sections all reuse
+  existing pieces**: `MapPreviewRow` reuses onboarding's `MapPreview` illustration (still not a real map
+  — `04_TECH_STACK.md` — and not yet navigable, there is no map screen); `SimilarExperiencesSection`
+  reuses Home's `ExperienceCard` and its own `useFavoriteExperienceIds` instance (separate from the
+  hero's own, same "no shared favorites state" scope as D-45); `SectionHeader` gained an optional
+  `seeAllLabel` prop (additive, same pattern as `Chip`'s `icon` slot, D-45) so "Voir tous les avis" isn't
+  a near-duplicate component. New, feature-scoped-only pieces: `Badge` (a non-`Pressable` display pill —
+  `Chip` is always a button, and a badge that does nothing must not claim `accessibilityRole="button"`),
+  `InfoGrid`, `ReviewCard`, `HighlightsSection` (icons cycle through a fixed decorative set, same
+  "decorative only, label carries the meaning" precedent as `moodAccents`), `WantMoreCta`.
+- **Category chip and the two other hero badges use a small, explicit i18n map**
+  (`experience.categories.*`, `lib/categoryLabel.ts`), not a dynamic `t(\`experience.categories.${slug}\`)`template — this project's typed i18n keys (checked against`fr.json`) reject a dynamic template
+literal at compile time. "À proximité" reuses the same ≤ 5 km rule as the "nearby" reason above; "Coup
+de cœur" is shown for `isPopular` experiences (mockup's "Coup de ❤️" example, reworded — no emoji in
+  the translated string, consistent with the rest of the app's copy).
+- **Fixed white icons/text on the hero and a fixed black gallery background**, not theme tokens — same
+  exception as the Home hero and splash/auth screens (D-18, D-26, D-45): both sit on a photo dark enough
+  in both themes for the overlay content to stay legible regardless of light/dark mode.
+- **Share uses React Native's real `Share.share()`**, not a mocked no-op — unlike `SearchBar`'s search
+  field (no query engine exists to call), a native share sheet is a genuine, already-available platform
+  API, so there was no reason to fake it.
+- **Not done on purpose** (frontend-only prototype): a real map screen to land on from "Voir sur la
+  carte" (still a static preview, exactly like the onboarding location screen's own `MapPreview`), and
+  the itinerary/journey screen itself — `CreateJourneyPlaceholder`
+  (`features/itinerary/`) + `app/itinerary/create.tsx` is the same not-yet-built-screen pattern as
+  `ExperienceDetailPlaceholder` was (D-45), deleted the same way once its route's real screen exists.

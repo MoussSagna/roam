@@ -29,9 +29,9 @@ Status for **mobile** (2026-09-22). Web and API foundations are not started.
 - [ ] Context flow
 - [~] Recommendation cards — `ExperienceCard` (reusable, `features/home/components/`) built and used
       on Home; the dedicated Recommendations screen (`03_UX_SCREENS_AND_FLOWS.md` §09) is not built
-- [ ] Experience detail — `experience/[id]` exists as a placeholder route (`DECISIONS.md` D-45), not
-      the real screen
-- [ ] Itinerary
+- [x] Experience detail — real screen (`experience/[id]`) plus a dedicated full-screen gallery
+      (`gallery/[id]`) with a hero -> gallery Reanimated transition, sprint 5 — `DECISIONS.md` D-48
+- [ ] Itinerary — CTA reached via `itinerary/create`, still a placeholder (`DECISIONS.md` D-48)
 - [ ] Map placeholder
 - [ ] Feedback
 

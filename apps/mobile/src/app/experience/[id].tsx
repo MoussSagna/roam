@@ -1,8 +1,8 @@
 import { useLocalSearchParams } from 'expo-router';
 
-import { ExperienceDetailPlaceholder } from '@/features/experiences/ExperienceDetailPlaceholder';
+import { ExperienceDetailScreen } from '@/features/experiences/ExperienceDetailScreen';
 
 export default function ExperienceDetailRoute() {
   const { id } = useLocalSearchParams<{ id: string }>();
-  return <ExperienceDetailPlaceholder experienceId={id} />;
+  return <ExperienceDetailScreen experienceId={id} />;
 }

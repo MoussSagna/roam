@@ -253,8 +253,44 @@
     "photos": "Photos",
     "practicalInfo": "Practical information",
     "reviews": "Visitor reviews",
+    "seeAllReviews": "See all reviews",
     "similar": "You might also like",
-    "seeOnMap": "View on map"
+    "seeOnMap": "View on map",
+    "share": "Share",
+    "highlights": "Don't miss",
+    "gallery": {
+      "counter": "{current} / {total}"
+    },
+    "info": {
+      "address": "Address",
+      "today": "Today",
+      "price": "Price",
+      "transport": "Transport"
+    },
+    "why": {
+      "interests": "Matches your interests",
+      "budget": "Within your budget",
+      "nearby": "Close to you",
+      "openNow": "Open tonight"
+    },
+    "badges": {
+      "nearby": "Nearby",
+      "loved": "Visitor favorite"
+    },
+    "categories": {
+      "cafe": "Café",
+      "park": "Park",
+      "restaurant": "Restaurant",
+      "bar": "Bars & Nightlife",
+      "culture": "Culture",
+      "nature": "Nature",
+      "experience": "Experience"
+    },
+    "wantMore": {
+      "title": "Want to do more?",
+      "body": "ROAM can put together a full itinerary around this experience.",
+      "cta": "Create a personalized itinerary"
+    }
   },
   "itinerary": {
     "title": "Your outing is ready",

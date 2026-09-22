@@ -1,4 +1,4 @@
-import type { Category, Experience, Place } from '@/types';
+import type { Category, Experience, ExperienceReview, Place } from '@/types';
 
 /** Tiny fixture set: just enough to exercise the repository layer. Real mock content comes with the features. */
 
@@ -49,6 +49,74 @@ const heroCafe = require('../../../assets/images/onboarding/welcome-cafe.png') a
 const heroLandscape = require('../../../assets/images/onboarding/profile-landscape.jpg') as number;
 const heroCityscape = require('../../../assets/images/splash-background.png') as number;
 
+/** Same 8-photo pool as the covers above, reused again for the detail gallery (sprint 5, D-48). */
+const IMAGE_POOL = [
+  heroTerrace,
+  heroStreet,
+  heroNightParis,
+  heroLake,
+  heroDuskCity,
+  heroCafe,
+  heroLandscape,
+  heroCityscape,
+];
+
+/**
+ * Builds a small, varied gallery for one experience: its own cover first, then a rotating slice of
+ * the shared pool so consecutive experiences don't get an identical ordering. Deterministic (no
+ * randomness) so tests and snapshots stay stable.
+ */
+let galleryRotation = 0;
+function buildGallery(cover: number, count = 5): number[] {
+  const others = IMAGE_POOL.filter((image) => image !== cover);
+  const offset = galleryRotation % others.length;
+  const rotated = [...others.slice(offset), ...others.slice(0, offset)];
+  galleryRotation += 1;
+  return [cover, ...rotated].slice(0, count);
+}
+
+/**
+ * Shared review pool (sprint 5): a handful of reviews reused across experiences, same "reuse rather
+ * than invent per item" convention as the photos above. `reviewCount` on each experience stays the
+ * larger, realistic total; `reviews` only holds the few shown on the detail screen.
+ */
+const reviewRooftop: ExperienceReview = {
+  id: 'review-julie',
+  author: 'Julie M.',
+  rating: 5,
+  date: 'Il y a 2 semaines',
+  comment:
+    'Un lieu incroyable ! La vue est magnifique, l’ambiance au top et les cocktails excellents. Parfait pour une soirée entre amis.',
+};
+const reviewService: ExperienceReview = {
+  id: 'review-karim',
+  author: 'Karim B.',
+  rating: 4,
+  date: 'Il y a 1 mois',
+  comment: 'Très bon moment, service impeccable, je recommande.',
+};
+const reviewCalm: ExperienceReview = {
+  id: 'review-sophie',
+  author: 'Sophie L.',
+  rating: 5,
+  date: 'Il y a 3 jours',
+  comment: 'Une vraie bulle de calme, parfait pour déconnecter.',
+};
+const reviewFood: ExperienceReview = {
+  id: 'review-thomas',
+  author: 'Thomas D.',
+  rating: 4,
+  date: 'Il y a 1 semaine',
+  comment: 'Très bonne adresse, un peu cher mais ça vaut le coup.',
+};
+const reviewCulture: ExperienceReview = {
+  id: 'review-lea',
+  author: 'Léa P.',
+  rating: 5,
+  date: 'Il y a 2 mois',
+  comment: 'Superbe découverte, on a adoré l’ambiance et les œuvres.',
+};
+
 export const experiences: Experience[] = [
   {
     id: 'exp-slow-afternoon',
@@ -59,6 +127,23 @@ export const experiences: Experience[] = [
     placeIds: ['place-cafe', 'place-park'],
     estimatedDurationMin: 120,
     estimatedBudget: 'under10',
+    coverImage: heroCafe,
+    images: buildGallery(heroCafe),
+    location: 'Paris',
+    durationLabel: '2 h',
+    priceLabel: 'Moins de 10 €',
+    rating: 4.5,
+    reviewCount: 64,
+    address: '12 place de la République, 75011 Paris',
+    openingHoursLabel: '08:00 – 19:00',
+    transport: { line: 'Métro · République', walkLabel: '3 min à pied' },
+    highlights: [
+      'Cadre calme et verdoyant',
+      'Café de quartier authentique',
+      'Idéal pour lire ou discuter',
+    ],
+    reviews: [reviewCalm, reviewService],
+    similarExperienceIds: ['exp-picnic-park', 'exp-lake-hike'],
   },
   // Hero carousel (Home, top of screen) — 5 featured experiences.
   {
@@ -71,6 +156,7 @@ export const experiences: Experience[] = [
     estimatedDurationMin: 120,
     estimatedBudget: '25to50',
     coverImage: heroTerrace,
+    images: buildGallery(heroTerrace),
     location: 'Paris',
     distanceLabel: '1,2 km',
     durationLabel: '2 h',
@@ -79,6 +165,17 @@ export const experiences: Experience[] = [
     reviewCount: 412,
     isHero: true,
     tags: ['food', 'romantic'],
+    address: '8 quai de Bourbon, 75004 Paris',
+    openingHoursLabel: '19:00 – 23:30',
+    transport: { line: 'Métro · Pont Marie', walkLabel: '4 min à pied' },
+    highlights: [
+      'Vue imprenable au coucher du soleil',
+      'Carte de saison',
+      'Service attentionné',
+      'Ambiance romantique',
+    ],
+    reviews: [reviewFood, reviewService],
+    similarExperienceIds: ['exp-rooftop-sunset', 'exp-jazz-night'],
   },
   {
     id: 'exp-panoramic-walk',
@@ -90,6 +187,7 @@ export const experiences: Experience[] = [
     estimatedDurationMin: 90,
     estimatedBudget: 'free',
     coverImage: heroStreet,
+    images: buildGallery(heroStreet),
     location: 'Montmartre, Paris',
     distanceLabel: '800 m',
     durationLabel: '1 h 30',
@@ -98,6 +196,16 @@ export const experiences: Experience[] = [
     reviewCount: 265,
     isHero: true,
     tags: ['discover', 'nature'],
+    address: 'Parvis du Sacré-Cœur, 75018 Paris',
+    openingHoursLabel: 'Accès libre',
+    transport: { line: 'Métro · Anvers', walkLabel: '8 min à pied' },
+    highlights: [
+      'Point de vue sur toute la ville',
+      'Coucher de soleil spectaculaire',
+      'Parcours accessible à tous',
+    ],
+    reviews: [reviewCalm, reviewCulture],
+    similarExperienceIds: ['exp-nature-getaway', 'exp-lake-hike'],
   },
   {
     id: 'exp-jazz-night',
@@ -109,6 +217,7 @@ export const experiences: Experience[] = [
     estimatedDurationMin: 120,
     estimatedBudget: '10to25',
     coverImage: heroNightParis,
+    images: buildGallery(heroNightParis),
     location: 'Saint-Germain, Paris',
     distanceLabel: '2,4 km',
     durationLabel: '2 h',
@@ -117,6 +226,16 @@ export const experiences: Experience[] = [
     reviewCount: 198,
     isHero: true,
     tags: ['festive', 'culture'],
+    address: '5 rue Saint-Benoît, 75006 Paris',
+    openingHoursLabel: '20:00 – 01:00',
+    transport: { line: 'Métro · Saint-Germain-des-Prés', walkLabel: '3 min à pied' },
+    highlights: [
+      'Concerts live tous les soirs',
+      'Ambiance feutrée',
+      'Sélection de cocktails maison',
+    ],
+    reviews: [reviewRooftop, reviewCulture],
+    similarExperienceIds: ['exp-live-concert', 'exp-rooftop-sunset'],
   },
   {
     id: 'exp-nature-getaway',
@@ -128,6 +247,7 @@ export const experiences: Experience[] = [
     estimatedDurationMin: 240,
     estimatedBudget: 'free',
     coverImage: heroLake,
+    images: buildGallery(heroLake),
     location: 'Île-de-France',
     distanceLabel: '18 km',
     durationLabel: '4 h',
@@ -136,6 +256,12 @@ export const experiences: Experience[] = [
     reviewCount: 234,
     isHero: true,
     tags: ['calm', 'nature'],
+    address: 'Base de loisirs, Île-de-France',
+    openingHoursLabel: '09:00 – 20:00',
+    transport: { line: 'RER · Cergy-Préfecture', walkLabel: '12 min à pied' },
+    highlights: ['Grand espace vert préservé', 'Idéal en famille', 'Location de vélos sur place'],
+    reviews: [reviewCalm, reviewService],
+    similarExperienceIds: ['exp-lake-hike', 'exp-picnic-park'],
   },
   {
     id: 'exp-night-museum',
@@ -147,6 +273,7 @@ export const experiences: Experience[] = [
     estimatedDurationMin: 90,
     estimatedBudget: 'under10',
     coverImage: heroDuskCity,
+    images: buildGallery(heroDuskCity),
     location: 'Paris',
     distanceLabel: '3,1 km',
     durationLabel: '1 h 30',
@@ -155,6 +282,12 @@ export const experiences: Experience[] = [
     reviewCount: 143,
     isHero: true,
     tags: ['culture', 'discover'],
+    address: '1 place du Palais-Royal, 75001 Paris',
+    openingHoursLabel: '18:00 – 22:00',
+    transport: { line: 'Métro · Palais Royal', walkLabel: '2 min à pied' },
+    highlights: ['Œuvres emblématiques', 'Nocturne moins fréquentée', 'Audioguide inclus'],
+    reviews: [reviewCulture, reviewService],
+    similarExperienceIds: ['exp-modern-art-museum', 'exp-bellevilloise'],
   },
   // Most popular experiences (Home).
   {
@@ -167,6 +300,7 @@ export const experiences: Experience[] = [
     estimatedDurationMin: 120,
     estimatedBudget: '25to50',
     coverImage: heroCafe,
+    images: buildGallery(heroCafe),
     location: 'Paris',
     distanceLabel: '1,5 km',
     durationLabel: '2 h',
@@ -175,6 +309,17 @@ export const experiences: Experience[] = [
     reviewCount: 320,
     isPopular: true,
     tags: ['food', 'festive'],
+    address: '14 rue Crespin du Gast, 75011 Paris',
+    openingHoursLabel: '18:00 – 02:00',
+    transport: { line: 'Métro · Oberkampf', walkLabel: '5 min à pied' },
+    highlights: [
+      'Vue panoramique sur Paris',
+      'Cocktails signature',
+      'Ambiance musicale',
+      'Terrasse couverte et chauffée',
+    ],
+    reviews: [reviewRooftop, reviewService],
+    similarExperienceIds: ['exp-hasard-ludique', 'exp-mama-shelter', 'exp-bellevilloise'],
   },
   {
     id: 'exp-lake-hike',
@@ -186,6 +331,7 @@ export const experiences: Experience[] = [
     estimatedDurationMin: 240,
     estimatedBudget: 'free',
     coverImage: heroLandscape,
+    images: buildGallery(heroLandscape),
     location: 'Île-de-France',
     distanceLabel: '22 km',
     durationLabel: '4 h',
@@ -194,6 +340,12 @@ export const experiences: Experience[] = [
     reviewCount: 278,
     isPopular: true,
     tags: ['nature', 'discover'],
+    address: 'Lac bleu, Île-de-France',
+    openingHoursLabel: '07:00 – 21:00',
+    transport: { line: 'RER · Torcy', walkLabel: '20 min à pied' },
+    highlights: ['Sentier balisé', 'Baignade possible en été', 'Aire de pique-nique'],
+    reviews: [reviewCalm, reviewFood],
+    similarExperienceIds: ['exp-nature-getaway', 'exp-picnic-park'],
   },
   {
     id: 'exp-modern-art-museum',
@@ -205,6 +357,7 @@ export const experiences: Experience[] = [
     estimatedDurationMin: 90,
     estimatedBudget: 'under10',
     coverImage: heroCityscape,
+    images: buildGallery(heroCityscape),
     location: 'Paris',
     distanceLabel: '2,7 km',
     durationLabel: '1 h 30',
@@ -213,6 +366,16 @@ export const experiences: Experience[] = [
     reviewCount: 192,
     isPopular: true,
     tags: ['culture'],
+    address: '11 avenue du Président Wilson, 75116 Paris',
+    openingHoursLabel: '10:00 – 18:00',
+    transport: { line: 'Métro · Iéna', walkLabel: '4 min à pied' },
+    highlights: [
+      'Expositions temporaires',
+      'Boutique et café sur place',
+      'Accessible en transport',
+    ],
+    reviews: [reviewCulture, reviewFood],
+    similarExperienceIds: ['exp-night-museum', 'exp-bellevilloise'],
   },
   // Extra pool for "Des idées pour toi" (deterministic recommendations, see `pickForYou`).
   {
@@ -225,6 +388,7 @@ export const experiences: Experience[] = [
     estimatedDurationMin: 90,
     estimatedBudget: 'free',
     coverImage: heroLake,
+    images: buildGallery(heroLake),
     location: 'Paris',
     distanceLabel: '900 m',
     durationLabel: '1 h 30',
@@ -232,6 +396,16 @@ export const experiences: Experience[] = [
     rating: 4.5,
     reviewCount: 87,
     tags: ['calm', 'food'],
+    address: 'Parc des Buttes-Chaumont, 75019 Paris',
+    openingHoursLabel: '07:00 – 20:00',
+    transport: { line: 'Métro · Botzaris', walkLabel: '3 min à pied' },
+    highlights: [
+      'Grandes pelouses ombragées',
+      'Épicerie fine à proximité',
+      'Aire de jeux pour enfants',
+    ],
+    reviews: [reviewCalm, reviewFood],
+    similarExperienceIds: ['exp-slow-afternoon', 'exp-lake-hike'],
   },
   {
     id: 'exp-live-concert',
@@ -243,6 +417,7 @@ export const experiences: Experience[] = [
     estimatedDurationMin: 120,
     estimatedBudget: '10to25',
     coverImage: heroNightParis,
+    images: buildGallery(heroNightParis),
     location: 'Paris',
     distanceLabel: '3,4 km',
     durationLabel: '2 h',
@@ -250,5 +425,91 @@ export const experiences: Experience[] = [
     rating: 4.4,
     reviewCount: 56,
     tags: ['festive', 'energetic'],
+    address: '19 rue Victor Massé, 75009 Paris',
+    openingHoursLabel: '19:30 – 00:00',
+    transport: { line: 'Métro · Pigalle', walkLabel: '4 min à pied' },
+    highlights: ['Salle à taille humaine', 'Programmation éclectique', 'Bar sur place'],
+    reviews: [reviewRooftop, reviewCulture],
+    similarExperienceIds: ['exp-jazz-night', 'exp-bellevilloise'],
+  },
+  // Referenced only from "Suggestions similaires" (sprint 5, D-48) — light entries, no hero/popular slot.
+  {
+    id: 'exp-hasard-ludique',
+    title: 'Le Hasard Ludique',
+    description: 'Bar à jeux et concerts dans une ancienne gare rénovée.',
+    moods: ['festive', 'discover'],
+    categoryIds: ['cat-bar'],
+    placeIds: [],
+    estimatedDurationMin: 120,
+    estimatedBudget: '10to25',
+    coverImage: heroStreet,
+    images: buildGallery(heroStreet),
+    location: 'Paris',
+    distanceLabel: '2,8 km',
+    durationLabel: '2 h',
+    priceLabel: '15 €',
+    rating: 4.5,
+    reviewCount: 210,
+    tags: ['festive'],
+    address: '128 avenue de Saint-Ouen, 75018 Paris',
+    openingHoursLabel: '18:00 – 02:00',
+    transport: { line: 'Métro · Porte de Saint-Ouen', walkLabel: '3 min à pied' },
+    highlights: [
+      'Terrasse sur les voies',
+      'Jeux de société en libre accès',
+      'Programmation concerts',
+    ],
+    reviews: [reviewRooftop, reviewService],
+    similarExperienceIds: ['exp-rooftop-sunset', 'exp-jazz-night'],
+  },
+  {
+    id: 'exp-mama-shelter',
+    title: 'Mama Shelter',
+    description: 'Restaurant et rooftop dans un hôtel design.',
+    moods: ['food', 'festive'],
+    categoryIds: ['cat-restaurant'],
+    placeIds: [],
+    estimatedDurationMin: 120,
+    estimatedBudget: '25to50',
+    coverImage: heroLandscape,
+    images: buildGallery(heroLandscape),
+    location: 'Paris',
+    distanceLabel: '3,1 km',
+    durationLabel: '2 h',
+    priceLabel: '22 €',
+    rating: 4.4,
+    reviewCount: 380,
+    tags: ['food'],
+    address: '109 rue de Bagnolet, 75020 Paris',
+    openingHoursLabel: '19:00 – 01:00',
+    transport: { line: 'Métro · Alexandre Dumas', walkLabel: '5 min à pied' },
+    highlights: ['Décor signé Starck', 'Rooftop avec vue', 'Cuisine italo-française'],
+    reviews: [reviewFood, reviewRooftop],
+    similarExperienceIds: ['exp-rooftop-sunset', 'exp-dinner-view'],
+  },
+  {
+    id: 'exp-bellevilloise',
+    title: 'La Bellevilloise',
+    description: 'Lieu culturel indépendant : concerts, expos et brunchs.',
+    moods: ['culture', 'festive'],
+    categoryIds: ['cat-culture'],
+    placeIds: [],
+    estimatedDurationMin: 150,
+    estimatedBudget: '10to25',
+    coverImage: heroDuskCity,
+    images: buildGallery(heroDuskCity),
+    location: 'Paris',
+    distanceLabel: '2,1 km',
+    durationLabel: '2 h 30',
+    priceLabel: '16 €',
+    rating: 4.6,
+    reviewCount: 265,
+    tags: ['culture'],
+    address: '19-21 rue Boyer, 75020 Paris',
+    openingHoursLabel: '19:00 – 23:00',
+    transport: { line: 'Métro · Gambetta', walkLabel: '6 min à pied' },
+    highlights: ['Concerts et expositions', 'Ancienne coopérative rénovée', 'Brunch le dimanche'],
+    reviews: [reviewCulture, reviewRooftop],
+    similarExperienceIds: ['exp-night-museum', 'exp-live-concert'],
   },
 ];

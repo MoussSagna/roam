@@ -8,12 +8,15 @@ import { useTheme } from '@/theme';
 type SectionHeaderProps = {
   title: string;
   onSeeAll?: () => void;
+  /** Overrides the link's default "Voir tout" text (e.g. experience detail's "Voir tous les avis"). */
+  seeAllLabel?: string;
 };
 
 /** Title + "Voir tout" link, shared by every Home section (moods, popular, nearby, for you). */
-export function SectionHeader({ title, onSeeAll }: SectionHeaderProps) {
+export function SectionHeader({ title, onSeeAll, seeAllLabel }: SectionHeaderProps) {
   const { t } = useTranslation();
   const { colors } = useTheme();
+  const label = seeAllLabel ?? t('common.seeAll');
 
   return (
     <View className="flex-row items-center justify-between">
@@ -22,13 +25,13 @@ export function SectionHeader({ title, onSeeAll }: SectionHeaderProps) {
       {onSeeAll ? (
         <Pressable
           accessibilityRole="button"
-          accessibilityLabel={t('common.seeAll')}
+          accessibilityLabel={label}
           onPress={onSeeAll}
           hitSlop={8}
           className="flex-row items-center gap-1 active:opacity-70"
         >
           <Text variant="small" tone="primary" className="font-bodyMedium">
-            {t('common.seeAll')}
+            {label}
           </Text>
           <ArrowRight size={14} strokeWidth={2} color={colors.primary} />
         </Pressable>

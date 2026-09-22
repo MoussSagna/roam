@@ -10,7 +10,8 @@ mockup's post-authentication screens (a welcome-back moment, location permission
 sprint's scope and are still not built (`DECISIONS.md` D-29). **Main navigation** (four tabs behind a floating pill/bubble
 tab bar) is built — see `DECISIONS.md` D-38 to D-43. **Home is now the real discovery screen** (hero carousel, mood
 chips, popular/nearby/for-you sections, sprint 5, `DECISIONS.md` D-45); Discover/Favorites/Profile are still the sprint 3
-placeholder content. There is **no backend, no database and no API**: nothing is sent or stored, and every
+placeholder content. **Experience detail and its full-screen gallery are also built** (sprint 5, `DECISIONS.md` D-48);
+the itinerary/journey screen it leads to is still a placeholder. There is **no backend, no database and no API**: nothing is sent or stored, and every
 answer/interaction is local state, mock repository content, or a simulated delay used for the prototype only
 (`DECISIONS.md` D-28, D-29, D-31 to D-36, D-45).
 
@@ -73,9 +74,10 @@ apps/mobile/
     │   ├── navigation/      # Main navigation: RoamTabBar (floating pill/bubble), TabBarCollapseContext, tabBarConfig
     │   ├── home/            # Home (sprint 5): hero carousel, sections, mock data/lib — see the table below
     │   ├── discover/, favorites/, profile/  # The other three tabs (still sprint 3 placeholder content)
-    │   ├── experiences/     # ExperienceDetailPlaceholder (route experience/[id]) — not the real screen yet
+    │   ├── experiences/     # Experience detail (route experience/[id]) + gallery/ (route gallery/[id]) — sprint 5
     │   ├── auth/            # Authentication: all 7 screens built (Entry, Login, Register, ForgotPassword, ResetCode, NewPassword, ResetSuccess)
-    │   └── recommendations, itinerary, map, outing, feedback
+    │   ├── itinerary/       # CreateJourneyPlaceholder (route itinerary/create) — not the real screen yet
+    │   └── recommendations, map, outing, feedback
     ├── hooks/               # Cross-feature hooks (useBootstrap, useReduceMotion)
     ├── i18n/                # i18next setup + locales/fr.json, locales/en.json
     ├── lib/                 # Small framework-agnostic helpers (storage, cx)
@@ -153,8 +155,8 @@ existing `ExperienceRepository`/`CategoryRepository` (`useHomeExperiences`), not
 
 `ExperienceCard` is shared by "Les expériences les plus populaires" and "Des idées pour toi" (same card
 shape) rather than duplicated per section. Favorites are local state (`useFavoriteExperienceIds`), no
-persistence. "Voir l'expérience" pushes to `experience/[id]` (`ExperienceDetailPlaceholder`,
-`features/experiences/`) — not the real detail screen yet. Home reuses `useTabBarScrollHandler()` /
+persistence. "Voir l'expérience" pushes to `experience/[id]` (`ExperienceDetailScreen`,
+`features/experiences/`, sprint 5). Home reuses `useTabBarScrollHandler()` /
 `TabBarCollapseContext` like every other tab screen; `RoamTabBar` itself was not touched this sprint.
 
 **Polish (sprint 4, `DECISIONS.md` D-46):** the Hero's CTA switches to the `primary` `Button` variant
@@ -164,6 +166,24 @@ in dark mode (was unreadable white-on-white); pulling down past the top stretche
 the notification bell moved out of `HeroCarousel` into a new floating `HomeHeader`
 (`features/home/components/`) that shows/hides with scroll direction via a new, generic
 `useScrollDirection` hook (`src/hooks/`), fully independent of `TabBarCollapseContext`.
+
+## Experience detail & gallery (current state)
+
+Real detail screen and full-screen gallery (sprint 5, `DECISIONS.md` D-48), replacing
+`ExperienceDetailPlaceholder`; built on `Experience`'s extended fields through the same
+`ExperienceRepository` (`useExperienceDetail`/`useExperience`), no second data model.
+
+| Piece                 | Route / component                                                           | Notes                                                                                                           |
+| --------------------- | --------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------- |
+| Detail screen         | `experience/[id]` → `features/experiences/ExperienceDetailScreen.tsx`       | Hero, info grid, map preview, why-ROAM, CTA, reviews, highlights, similar, final CTA                            |
+| Hero                  | `features/experiences/components/ExperienceHero.tsx`                        | Paging pager + back/share/favorite + counter; tap measures its rect and opens the gallery                       |
+| Gallery screen        | `gallery/[id]` → `features/experiences/gallery/ExperienceGalleryScreen.tsx` | Full-screen; a flat route (not nested under `experience/[id]/`), see D-48                                       |
+| Gallery sync          | Two `FlatList`s (main pager + thumbnail strip) sharing one `activeIndex`    | `getItemLayout` on both; thumbnail press scrolls the main list, main-list scroll re-centers the thumbnail strip |
+| Hero → gallery motion | `progress` shared value (`useSharedValue`/`withTiming`/`interpolate`)       | Reanimated rect-morph, not a shared-element library (none in the stack) — see D-48 for the full rationale       |
+| Why ROAM              | `features/experiences/lib/whyRecommended.ts` (unit-tested)                  | Reasons derived from the experience's own data, not stored per item                                             |
+| Map preview           | `features/experiences/components/MapPreviewRow.tsx`                         | Reuses onboarding's `MapPreview` illustration; not yet navigable (no map screen)                                |
+| Similar experiences   | `features/experiences/components/SimilarExperiencesSection.tsx`             | Reuses Home's `ExperienceCard`                                                                                  |
+| Create-journey CTA    | `itinerary/create` → `features/itinerary/CreateJourneyPlaceholder.tsx`      | Same not-yet-built-screen pattern as the old `ExperienceDetailPlaceholder`                                      |
 
 ## Authentication (current state)
 
