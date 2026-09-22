@@ -82,10 +82,25 @@ describe('ResetCodeScreen (authentication 5 — reset code)', () => {
     expect(mockPush).not.toHaveBeenCalled();
   });
 
-  it('simulates a request then moves on to the new-password screen on a complete code', async () => {
+  it('rejects a well-formed but wrong code', async () => {
     jest.useFakeTimers();
     await renderWithProviders(<ResetCodeScreen />);
     await fillCode('247193');
+
+    await fireEvent.press(screen.getByRole('button', { name: 'Continuer' }));
+    await act(() => jest.advanceTimersByTime(1000));
+
+    expect(
+      screen.getByText('Ce code est incorrect. Vérifie-le ou clique sur « Renvoyer le code ».'),
+    ).toBeOnTheScreen();
+    expect(mockPush).not.toHaveBeenCalled();
+    jest.useRealTimers();
+  });
+
+  it('simulates a request then moves on to the new-password screen on the mock valid code', async () => {
+    jest.useFakeTimers();
+    await renderWithProviders(<ResetCodeScreen />);
+    await fillCode('123456');
 
     await fireEvent.press(screen.getByRole('button', { name: 'Continuer' }));
     expect(screen.getByRole('button', { name: 'Continuer' })).toBeDisabled();

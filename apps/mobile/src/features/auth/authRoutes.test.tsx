@@ -102,16 +102,30 @@ describe('authentication routes', () => {
     expect(screen.getByText('moussa@email.com')).toBeOnTheScreen();
   });
 
-  it('entering a complete code moves on to the (placeholder) new-password screen', async () => {
+  it('entering the mock valid code moves on to the (placeholder) new-password screen', async () => {
     const utils = await renderApp();
     await act(() => router.navigate('/auth/reset-code'));
 
-    await fireEvent.changeText(screen.getByLabelText('Chiffre 1 sur 6'), '247193');
+    await fireEvent.changeText(screen.getByLabelText('Chiffre 1 sur 6'), '123456');
     await fireEvent.press(screen.getByRole('button', { name: 'Continuer' }));
     await act(() => jest.advanceTimersByTimeAsync(1000));
 
     expect(utils.getPathname()).toBe('/auth/new-password');
     expect(screen.queryByText(/Unmatched Route/i)).toBeNull();
+  });
+
+  it('entering a wrong code stays on the reset-code screen with an error', async () => {
+    const utils = await renderApp();
+    await act(() => router.navigate('/auth/reset-code'));
+
+    await fireEvent.changeText(screen.getByLabelText('Chiffre 1 sur 6'), '000000');
+    await fireEvent.press(screen.getByRole('button', { name: 'Continuer' }));
+    await act(() => jest.advanceTimersByTimeAsync(1000));
+
+    expect(utils.getPathname()).toBe('/auth/reset-code');
+    expect(
+      screen.getByText('Ce code est incorrect. Vérifie-le ou clique sur « Renvoyer le code ».'),
+    ).toBeOnTheScreen();
   });
 
   it('"Créer un compte" on the entry screen opens the register screen', async () => {

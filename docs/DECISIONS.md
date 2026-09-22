@@ -610,9 +610,13 @@ tile 5 of the design mockup board — a 6-digit OTP entry, one box per digit, on
   simplest way to carry one small piece of state one screen forward. It's optional: the screen degrades
   to just the prefix line if it's missing (e.g. the screen is opened directly, as the route-tree test
   for tile 5 alone does).
-- **Any complete 6-digit code "succeeds"** (no backend to check it against, same simulation pattern as
-  D-31–D-33): `handleContinue` simulates a request then `router.push('/auth/new-password')` — a new
-  placeholder stub for tile 6. An incomplete code shows `validation.codeIncomplete` instead of submitting.
+- **A fixed mock code (`123456`), not "any complete code succeeds"** (changed after the initial build, on
+  request): there's still no backend to check a real code against, but the screen now simulates an actual
+  check instead of accepting anything well-formed — a complete code that isn't `MOCK_VALID_CODE` is
+  rejected with `validation.codeIncorrect` and stays on the screen, only `123456` proceeds. An incomplete
+  code shows `validation.codeIncomplete` instead, without simulating a request at all. On success,
+  `handleContinue` simulates a request then `router.push('/auth/new-password')` — a new placeholder stub
+  for tile 6.
 - **"Renvoyer le code" only clears the input**, front-end only — there is no email to actually resend, and
   no cooldown/rate-limit state invented for it (nothing in the mockup implies one).
 - **The help card's background is `bg-primary/5`**, not a new palette color: sampled on the mockup it's a

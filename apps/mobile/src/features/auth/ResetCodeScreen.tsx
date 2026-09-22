@@ -14,13 +14,22 @@ import { OtpInput } from './components/OtpInput';
 
 const CODE_LENGTH = 6;
 
+/**
+ * There is no backend to send or check a real code against, so this fixed value stands in for
+ * "the code that was emailed" — anything else is rejected as wrong, not silently accepted
+ * (`DECISIONS.md` D-34).
+ */
+const MOCK_VALID_CODE = '123456';
+
 /** How long "Continuer" simulates a request before moving to the new-password screen (no backend). */
 const VERIFY_SIMULATION_MS = 900;
 
+type CodeError = 'incomplete' | 'incorrect' | null;
+
 /**
  * Reset-code screen (design mockup "Authentification", tile 5 "Code de réinitialisation") —
- * front-end only. There is no backend to check the code against, so any complete 6-digit code
- * "succeeds": the screen simulates a request and moves on (`DECISIONS.md` D-34).
+ * front-end only. Simulates a request then checks the code against `MOCK_VALID_CODE`: any other
+ * complete code is rejected with a visible error instead of silently succeeding.
  */
 export function ResetCodeScreen() {
   const { t } = useTranslation();
@@ -28,7 +37,7 @@ export function ResetCodeScreen() {
   const { scheme, colors } = useTheme();
   const { email } = useLocalSearchParams<{ email?: string }>();
   const [code, setCode] = useState('');
-  const [error, setError] = useState(false);
+  const [error, setError] = useState<CodeError>(null);
   const [loading, setLoading] = useState(false);
 
   // Measured on the mockup (light theme only, D-31); on a dark background it would be unreadable.
@@ -37,20 +46,24 @@ export function ResetCodeScreen() {
   const handleContinue = () => {
     if (loading) return;
     if (code.length < CODE_LENGTH) {
-      setError(true);
+      setError('incomplete');
       return;
     }
-    setError(false);
+    setError(null);
     setLoading(true);
     setTimeout(() => {
       setLoading(false);
+      if (code !== MOCK_VALID_CODE) {
+        setError('incorrect');
+        return;
+      }
       router.push('/auth/new-password');
     }, VERIFY_SIMULATION_MS);
   };
 
   const handleResend = () => {
     setCode('');
-    setError(false);
+    setError(null);
   };
 
   return (
@@ -89,13 +102,15 @@ export function ResetCodeScreen() {
             value={code}
             onChangeValue={(value) => {
               setCode(value);
-              if (error) setError(false);
+              if (error) setError(null);
             }}
-            error={error}
+            error={error !== null}
           />
           {error ? (
             <Text variant="small" tone="error" style={{ marginTop: 8, textAlign: 'center' }}>
-              {t('validation.codeIncomplete')}
+              {error === 'incomplete'
+                ? t('validation.codeIncomplete')
+                : t('validation.codeIncorrect')}
             </Text>
           ) : (
             <Text variant="small" tone="secondary" style={{ marginTop: 12, textAlign: 'center' }}>
