@@ -1,5 +1,5 @@
 import { act, fireEvent, screen } from '@testing-library/react-native';
-import { View } from 'react-native';
+import { Dimensions, View } from 'react-native';
 
 import { renderWithProviders } from '@/test/renderWithProviders';
 
@@ -17,25 +17,17 @@ function mockMeasure(rect: { x: number; y: number; width: number; height: number
 
 async function renderHero(overrides: Partial<Parameters<typeof ExperienceHero>[0]> = {}) {
   const onOpenGallery = jest.fn();
-  const onToggleFavorite = jest.fn();
-  const onShare = jest.fn();
-  const onBack = jest.fn();
 
   await renderWithProviders(
     <ExperienceHero
       images={[1, 2, 3]}
       title="Rooftop Sunset"
-      isFavorite={false}
-      onToggleFavorite={onToggleFavorite}
-      onShare={onShare}
-      onBack={onBack}
       onOpenGallery={onOpenGallery}
-      topInset={47}
       {...overrides}
     />,
   );
 
-  return { onOpenGallery, onToggleFavorite, onShare, onBack };
+  return { onOpenGallery };
 }
 
 describe('ExperienceHero', () => {
@@ -48,7 +40,22 @@ describe('ExperienceHero', () => {
     expect(screen.getByText('1 / 3')).toBeOnTheScreen();
   });
 
-  it('opens the gallery on the current index with the measured rect when the image is pressed', async () => {
+  it('keeps the counter in sync as the pager scrolls', async () => {
+    await renderHero();
+    const carousel = screen.getByTestId('experience-hero-scroll');
+    const { width: screenWidth } = Dimensions.get('window');
+
+    await fireEvent.scroll(carousel, {
+      nativeEvent: {
+        contentOffset: { x: screenWidth * 2 },
+        layoutMeasurement: { width: screenWidth },
+      },
+    });
+
+    expect(screen.getByText('3 / 3')).toBeOnTheScreen();
+  });
+
+  it('opens the gallery on the current index with the measured rect when a slide is pressed', async () => {
     mockMeasure({ x: 10, y: 20, width: 300, height: 400 });
     const { onOpenGallery } = await renderHero();
 
@@ -57,23 +64,5 @@ describe('ExperienceHero', () => {
     });
 
     expect(onOpenGallery).toHaveBeenCalledWith(0, { x: 10, y: 20, width: 300, height: 400 });
-  });
-
-  it('calls back/share/favorite handlers', async () => {
-    const { onBack, onShare, onToggleFavorite } = await renderHero();
-
-    await fireEvent.press(screen.getByRole('button', { name: 'Retour' }));
-    expect(onBack).toHaveBeenCalledTimes(1);
-
-    await fireEvent.press(screen.getByRole('button', { name: 'Partager' }));
-    expect(onShare).toHaveBeenCalledTimes(1);
-
-    await fireEvent.press(screen.getByRole('button', { name: 'Ajouter aux favoris' }));
-    expect(onToggleFavorite).toHaveBeenCalledTimes(1);
-  });
-
-  it('reflects the favorite state', async () => {
-    await renderHero({ isFavorite: true });
-    expect(screen.getByRole('button', { name: 'Retirer des favoris' })).toBeSelected();
   });
 });

@@ -1,4 +1,4 @@
-import { act, fireEvent, screen } from '@testing-library/react-native';
+import { act, fireEvent, screen, within } from '@testing-library/react-native';
 import { View } from 'react-native';
 
 import i18n from '@/i18n';
@@ -88,17 +88,27 @@ describe('ExperienceDetailScreen (sprint 5)', () => {
     expect(screen.getByText('La Bellevilloise')).toBeOnTheScreen();
   });
 
-  it('toggles the hero favorite button', async () => {
+  it('toggles the sticky header favorite button', async () => {
     await renderDetail();
 
-    // The hero's own favorite button renders first; the similar-experience cards have their own.
-    const [heroFavoriteButton] = screen.getAllByRole('button', { name: 'Ajouter aux favoris' });
-    await fireEvent.press(heroFavoriteButton);
+    // Scoped to the header: the similar-experience cards have their own "Ajouter aux favoris" buttons.
+    const header = within(screen.getByTestId('experience-detail-header'));
+    await fireEvent.press(header.getByRole('button', { name: 'Ajouter aux favoris' }));
 
-    expect(screen.getAllByRole('button', { name: 'Retirer des favoris' })).toHaveLength(1);
+    expect(header.getByRole('button', { name: 'Retirer des favoris' })).toBeOnTheScreen();
   });
 
-  it('navigates to the create-journey placeholder from the primary CTA', async () => {
+  it('does not show the removed "Envie d\'en faire plus" section', async () => {
+    await renderDetail();
+
+    expect(screen.queryByText('Envie d’en faire plus ?')).toBeNull();
+    expect(
+      screen.queryByText('ROAM peut te proposer un parcours complet autour de cette expérience.'),
+    ).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Créer un parcours personnalisé' })).toBeNull();
+  });
+
+  it('navigates to the create-journey placeholder from the sticky CTA', async () => {
     await renderDetail();
 
     await fireEvent.press(screen.getByRole('button', { name: 'Créer mon parcours' }));
@@ -109,15 +119,30 @@ describe('ExperienceDetailScreen (sprint 5)', () => {
     });
   });
 
-  it('navigates to the create-journey placeholder from the final CTA', async () => {
+  it('hides the sticky CTA on a sustained downward scroll and brings it back once the scroll ends', async () => {
     await renderDetail();
+    const scrollView = screen.getByTestId('experience-detail-scroll');
 
-    await fireEvent.press(screen.getByRole('button', { name: 'Créer un parcours personnalisé' }));
+    expect(screen.getByRole('button', { name: 'Créer mon parcours' })).toBeOnTheScreen();
 
-    expect(mockPush).toHaveBeenCalledWith({
-      pathname: '/itinerary/create',
-      params: { experienceId: 'exp-rooftop-sunset' },
+    await fireEvent.scroll(scrollView, { nativeEvent: { contentOffset: { y: 200 } } });
+    expect(screen.queryByRole('button', { name: 'Créer mon parcours' })).toBeNull();
+
+    await fireEvent(scrollView, 'momentumScrollEnd', {
+      nativeEvent: { contentOffset: { y: 200 } },
     });
+    expect(screen.getByRole('button', { name: 'Créer mon parcours' })).toBeOnTheScreen();
+  });
+
+  it('brings the sticky CTA back on an upward scroll, without waiting for the scroll to end', async () => {
+    await renderDetail();
+    const scrollView = screen.getByTestId('experience-detail-scroll');
+
+    await fireEvent.scroll(scrollView, { nativeEvent: { contentOffset: { y: 200 } } });
+    expect(screen.queryByRole('button', { name: 'Créer mon parcours' })).toBeNull();
+
+    await fireEvent.scroll(scrollView, { nativeEvent: { contentOffset: { y: 170 } } });
+    expect(screen.getByRole('button', { name: 'Créer mon parcours' })).toBeOnTheScreen();
   });
 
   it('navigates to the gallery, with the measured hero rect, when the hero image is pressed', async () => {

@@ -285,11 +285,6 @@
       "culture": "Culture",
       "nature": "Nature",
       "experience": "Expérience"
-    },
-    "wantMore": {
-      "title": "Envie d’en faire plus ?",
-      "body": "ROAM peut te proposer un parcours complet autour de cette expérience.",
-      "cta": "Créer un parcours personnalisé"
     }
   },
   "itinerary": {

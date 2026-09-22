@@ -3,31 +3,35 @@ import { StatusBar } from 'expo-status-bar';
 import Clock from 'lucide-react-native/icons/clock';
 import Euro from 'lucide-react-native/icons/euro';
 import MapPin from 'lucide-react-native/icons/map-pin';
-import Sparkles from 'lucide-react-native/icons/sparkles';
 import Star from 'lucide-react-native/icons/star';
 import TrainFront from 'lucide-react-native/icons/train-front';
 import { useCallback, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { ScrollView, Share, View } from 'react-native';
+import type { NativeScrollEvent, NativeSyntheticEvent } from 'react-native';
+import { ScrollView, Share, useWindowDimensions, View } from 'react-native';
+import { useSharedValue } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Button, Text } from '@/components/ui';
 import { useFavoriteExperienceIds } from '@/features/home/useFavoriteExperienceIds';
 import { useCategories } from '@/hooks/useCategories';
-import { useTheme } from '@/theme';
 import type { Experience, GalleryOpenRect } from '@/types';
+import { useTheme } from '@/theme';
 
 import { Badge } from './components/Badge';
+import { ExperienceDetailFooter, FOOTER_CLEARANCE } from './components/ExperienceDetailFooter';
+import { ExperienceDetailHeader, HEADER_HEIGHT } from './components/ExperienceDetailHeader';
 import { ExperienceHero } from './components/ExperienceHero';
 import { HighlightsSection } from './components/HighlightsSection';
 import { InfoGrid, type InfoItemData } from './components/InfoGrid';
 import { MapPreviewRow } from './components/MapPreviewRow';
 import { ReviewsSection } from './components/ReviewsSection';
 import { SimilarExperiencesSection } from './components/SimilarExperiencesSection';
-import { WantMoreCta } from './components/WantMoreCta';
 import { WhyRoamSection } from './components/WhyRoamSection';
 import { getCategoryLabel } from './lib/categoryLabel';
+import { getHeroHeight } from './lib/heroHeight';
 import { getWhyRecommended } from './lib/whyRecommended';
+import { useCtaVisibility } from './useCtaVisibility';
 import { useExperienceDetail } from './useExperienceDetail';
 
 type ExperienceDetailScreenProps = {
@@ -42,12 +46,35 @@ export function ExperienceDetailScreen({ experienceId }: ExperienceDetailScreenP
   const { colors } = useTheme();
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const { height: windowHeight } = useWindowDimensions();
   const categories = useCategories();
 
   const { experience, similarExperiences, isLoading } = useExperienceDetail(experienceId);
   const { favoriteIds, toggleFavorite } = useFavoriteExperienceIds(experience ? [experience] : []);
   const { favoriteIds: similarFavoriteIds, toggleFavorite: toggleSimilarFavorite } =
     useFavoriteExperienceIds(similarExperiences);
+
+  // UI-thread value driving the header's title/background crossfade (below); mutated directly from a
+  // plain `onScroll` handler, the same "shared value read by `useAnimatedStyle`, not `useCallback`"
+  // shape as `HomeScreen`'s hero stretch (D-46) — avoids an `eslint-plugin-react-hooks` immutability
+  // error and a re-render of this whole screen on every scroll tick.
+  const scrollY = useSharedValue(0);
+  const {
+    visible: ctaVisible,
+    handleScrollOffset: ctaOnScroll,
+    handleScrollEnd: ctaOnScrollEnd,
+  } = useCtaVisibility();
+
+  // Not `useCallback`, same reason as above.
+  function handleScroll(event: NativeSyntheticEvent<NativeScrollEvent>) {
+    scrollY.value = event.nativeEvent.contentOffset.y;
+    ctaOnScroll(event.nativeEvent.contentOffset.y);
+  }
+
+  const heroHeight = getHeroHeight(windowHeight);
+  // Roughly where the hero ends and the title sits in the content below it (D-49): a pragmatic proxy
+  // for "the main title has scrolled out of view" rather than measuring the title's exact position.
+  const revealOffset = Math.max(0, heroHeight - HEADER_HEIGHT - insets.top);
 
   const goToExperience = useCallback(
     (target: Experience) => {
@@ -158,18 +185,18 @@ export function ExperienceDetailScreen({ experienceId }: ExperienceDetailScreenP
     <View className="flex-1 bg-background">
       <StatusBar style="light" />
       <ScrollView
+        testID="experience-detail-scroll"
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ paddingBottom: insets.bottom + 32 }}
+        onScroll={handleScroll}
+        onScrollEndDrag={ctaOnScrollEnd}
+        onMomentumScrollEnd={ctaOnScrollEnd}
+        scrollEventThrottle={16}
+        contentContainerStyle={{ paddingBottom: insets.bottom + FOOTER_CLEARANCE }}
       >
         <ExperienceHero
           images={images}
           title={experience.title}
-          isFavorite={favoriteIds.has(experience.id)}
-          onToggleFavorite={() => toggleFavorite(experience.id)}
-          onShare={handleShare}
-          onBack={() => router.back()}
           onOpenGallery={handleOpenGallery}
-          topInset={insets.top}
         />
 
         <View className="-mt-6 gap-6 rounded-t-hero bg-background px-6 pt-6">
@@ -224,12 +251,6 @@ export function ExperienceDetailScreen({ experienceId }: ExperienceDetailScreenP
 
           <WhyRoamSection experience={experience} />
 
-          <Button
-            label={t('experience.createItinerary')}
-            trailingIcon={Sparkles}
-            onPress={goToCreateJourney}
-          />
-
           <ReviewsSection
             rating={experience.rating}
             reviewCount={experience.reviewCount}
@@ -244,10 +265,26 @@ export function ExperienceDetailScreen({ experienceId }: ExperienceDetailScreenP
             onToggleFavorite={toggleSimilarFavorite}
             onPress={goToExperience}
           />
-
-          <WantMoreCta onPress={goToCreateJourney} />
         </View>
       </ScrollView>
+
+      <ExperienceDetailHeader
+        title={experience.title}
+        isFavorite={favoriteIds.has(experience.id)}
+        onToggleFavorite={() => toggleFavorite(experience.id)}
+        onShare={handleShare}
+        onBack={() => router.back()}
+        topInset={insets.top}
+        scrollY={scrollY}
+        revealOffset={revealOffset}
+      />
+
+      <ExperienceDetailFooter
+        visible={ctaVisible}
+        label={t('experience.createItinerary')}
+        onPress={goToCreateJourney}
+        bottomInset={insets.bottom}
+      />
     </View>
   );
 }

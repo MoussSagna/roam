@@ -285,11 +285,6 @@
       "culture": "Culture",
       "nature": "Nature",
       "experience": "Experience"
-    },
-    "wantMore": {
-      "title": "Want to do more?",
-      "body": "ROAM can put together a full itinerary around this experience.",
-      "cta": "Create a personalized itinerary"
     }
   },
   "itinerary": {

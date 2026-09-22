@@ -1129,9 +1129,10 @@ hero -> gallery transition and a synced double-`FlatList` gallery (main pager + 
   `InfoGrid`, `ReviewCard`, `HighlightsSection` (icons cycle through a fixed decorative set, same
   "decorative only, label carries the meaning" precedent as `moodAccents`), `WantMoreCta`.
 - **Category chip and the two other hero badges use a small, explicit i18n map**
-  (`experience.categories.*`, `lib/categoryLabel.ts`), not a dynamic `t(\`experience.categories.${slug}\`)`template — this project's typed i18n keys (checked against`fr.json`) reject a dynamic template
-literal at compile time. "À proximité" reuses the same ≤ 5 km rule as the "nearby" reason above; "Coup
-de cœur" is shown for `isPopular` experiences (mockup's "Coup de ❤️" example, reworded — no emoji in
+  (`experience.categories.*`, `lib/categoryLabel.ts`), not a dynamic template literal key — this
+  project's typed i18n keys (checked against `fr.json`) reject a dynamic key built from a template
+  string at compile time. "À proximité" reuses the same ≤ 5 km rule as the "nearby" reason above; "Coup
+  de cœur" is shown for `isPopular` experiences (mockup's "Coup de ❤️" example, reworded — no emoji in
   the translated string, consistent with the rest of the app's copy).
 - **Fixed white icons/text on the hero and a fixed black gallery background**, not theme tokens — same
   exception as the Home hero and splash/auth screens (D-18, D-26, D-45): both sit on a photo dark enough
@@ -1144,3 +1145,71 @@ de cœur" is shown for `isPopular` experiences (mockup's "Coup de ❤️" exampl
   the itinerary/journey screen itself — `CreateJourneyPlaceholder`
   (`features/itinerary/`) + `app/itinerary/create.tsx` is the same not-yet-built-screen pattern as
   `ExperienceDetailPlaceholder` was (D-45), deleted the same way once its route's real screen exists.
+
+## Experience detail polish (2026-09-22)
+
+### D-49 — Sticky header/footer, one fixed CTA, and a swipe bug fixed in `ExperienceHero`
+
+Same-day follow-up, explicitly scoped to interaction/scroll behavior only — no design, palette or
+content changes beyond removing one named section.
+
+- **The hero's swipe was silently broken: a `Pressable` wrapped the whole pager `ScrollView`.** A
+  `Pressable` ancestor negotiates the touch responder before its scrollable child gets a chance to claim
+  a horizontal drag, so the pager could still be tapped but not reliably swiped. Fixed by moving to one
+  `Pressable` **per slide**, `ScrollView` outermost — the same shape every other pressable-inside-a-
+  horizontal-`ScrollView` in this app already uses (`ExperienceCard` on Home) and the one place D-48
+  should have followed to begin with. Not caught by `ExperienceHero.test.tsx` before this fix, and still
+  isn't a regression guard after it: RNTL's `fireEvent.scroll` calls `onScroll` directly, bypassing the
+  native touch/responder negotiation the bug lived in — that layer isn't something this test setup can
+  exercise either way. The fix is verified by matching a known-working pattern already shipped elsewhere,
+  not by a new test.
+- **Back/share/favorite moved out of `ExperienceHero` into a new `ExperienceDetailHeader`, rendered as a
+  sibling overlay above the `ScrollView`, not inside the Hero.** They had to: `ExperienceHero` is the
+  `ScrollView`'s first child, so anything positioned inside it scrolls away with the photo — incompatible
+  with "the header stays visible" (brief item 9). Same extraction precedent as `HomeHeader` (D-46: the
+  bell moved out of `HeroCarousel` for the identical reason). `ExperienceHero`'s own prop surface shrank
+  to `{ images, title, onOpenGallery }`.
+- **Header title reveal uses "scrolled roughly past the hero" as its trigger, not the title's exact
+  measured position.** `getHeroHeight()` (extracted from `ExperienceHero` into `lib/heroHeight.ts` so
+  both the hero and the screen agree on one number) minus the header's own height gives `revealOffset`;
+  a `useAnimatedStyle` interpolates opacity over the `FADE_RANGE` (60px) leading up to it, driven by a
+  `scrollY` shared value mutated from the screen's `onScroll` — cheap (no per-pixel `setState`) and
+  visually "the title arrives as the hero disappears behind the header", which is what the brief actually
+  asks for. A pixel-exact alternative (measuring the title `View`'s real position, e.g. via
+  `measureLayout` against the `ScrollView`) was considered and rejected: it would need a native
+  measurement that isn't stable in this test renderer, whereas the hero-height proxy is a plain formula
+  both screens already share and is exercised by existing tests (`getHeroHeight` reused, not duplicated).
+  **Icon color doesn't track the crossfade**: every header button keeps its fixed white icon on its own
+  permanent `bg-black/25` circular backdrop (the exact treatment `HomeHeader`'s bell and the pre-D-49
+  hero buttons already used) — legible over the raw photo and over the wash alike, so there was no need
+  to interpolate icon color (SVG icons take a plain `color` string, not an animatable style prop; doing
+  this properly would need `useAnimatedProps` per icon for a purely cosmetic gain).
+- **The sticky CTA gets its own hook, `useCtaVisibility`, instead of reusing `useScrollDirection`.** The
+  brief's rule is different from Home's header: hidden while actively scrolling down, but shown again
+  the instant the scroll _ends_ (`onScrollEndDrag`/`onMomentumScrollEnd`) as well as on any upward
+  scroll — `useScrollDirection` has no "scroll ended" signal at all (it only reacts to sustained
+  direction changes) and deliberately shouldn't gain one just for this screen (item 15: three independent
+  systems — header, CTA, `RoamTabBar` — must not share state). Same threshold shape (12px accumulator)
+  and unit-test style as `useScrollDirection.test.ts`.
+- **The CTA footer is a `MotiView` slide+fade (translateY/opacity), same idiom as `HomeHeader`**, wrapping
+  a plain `bg-surface` bar with a top border and `bottomInset + 12` of extra bottom padding so it never
+  touches the Home Indicator edge (item 1). `ExperienceDetailFooter` exports `FOOTER_CLEARANCE` (108px)
+  for the screen's `ScrollView` `contentContainerStyle.paddingBottom`, replacing the old flat `+ 32`, so
+  the last section (now "Suggestions similaires") is never hidden behind the floating bar.
+- **"Envie d'en faire plus ?" is deleted, not hidden**: the component (`WantMoreCta.tsx`) and its
+  `experience.wantMore.*` i18n keys are removed outright — the brief calls this CTA "désormais
+  représentée uniquement par le CTA sticky", i.e. superseded, not a duplicate to keep around unused. The
+  inline (non-sticky) "Créer mon parcours" button that used to sit between `WhyRoamSection` and
+  `ReviewsSection` is also gone — it is the same action, now permanently reachable via the footer, so
+  showing it twice would be redundant rather than a second, distinct feature.
+- **Header/footer crossfade and slide are not unit-tested for their animated values**, only for what
+  they gate (`ExperienceDetailHeader.test.tsx` checks the title renders and the buttons work regardless
+  of scroll position; `ExperienceDetailScreen.test.tsx` checks the CTA button's presence/absence via
+  `getByRole`/`queryByRole`, the same pattern `HomeHeader`'s own tests already use for its visibility).
+  Reason: this project's Reanimated Jest mock stubs `interpolate` as a no-op (confirmed by inspecting the
+  mock directly), the same category of gap D-39 already documents for `useAnimatedScrollHandler` — there
+  is nothing meaningful to assert about an interpolated opacity value under it.
+- **Reduced motion**: the footer's slide/fade already goes through `useReduceMotion()` (drops the
+  `translateY`, shortens the duration — identical to `HomeHeader`'s handling). The header's crossfade is
+  a direct function of scroll position, not a timed animation independent of user input, so there is no
+  separate motion to suppress; it inherently has no bounce, spring or autoplay to turn off.

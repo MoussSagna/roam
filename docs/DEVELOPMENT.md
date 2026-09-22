@@ -169,21 +169,23 @@ the notification bell moved out of `HeroCarousel` into a new floating `HomeHeade
 
 ## Experience detail & gallery (current state)
 
-Real detail screen and full-screen gallery (sprint 5, `DECISIONS.md` D-48), replacing
-`ExperienceDetailPlaceholder`; built on `Experience`'s extended fields through the same
-`ExperienceRepository` (`useExperienceDetail`/`useExperience`), no second data model.
+Real detail screen and full-screen gallery (sprint 5, `DECISIONS.md` D-48; scroll/header/CTA/carousel
+polish D-49), built on `Experience`'s extended fields through the same `ExperienceRepository`
+(`useExperienceDetail`/`useExperience`), no second data model.
 
-| Piece                 | Route / component                                                           | Notes                                                                                                           |
-| --------------------- | --------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------- |
-| Detail screen         | `experience/[id]` → `features/experiences/ExperienceDetailScreen.tsx`       | Hero, info grid, map preview, why-ROAM, CTA, reviews, highlights, similar, final CTA                            |
-| Hero                  | `features/experiences/components/ExperienceHero.tsx`                        | Paging pager + back/share/favorite + counter; tap measures its rect and opens the gallery                       |
-| Gallery screen        | `gallery/[id]` → `features/experiences/gallery/ExperienceGalleryScreen.tsx` | Full-screen; a flat route (not nested under `experience/[id]/`), see D-48                                       |
-| Gallery sync          | Two `FlatList`s (main pager + thumbnail strip) sharing one `activeIndex`    | `getItemLayout` on both; thumbnail press scrolls the main list, main-list scroll re-centers the thumbnail strip |
-| Hero → gallery motion | `progress` shared value (`useSharedValue`/`withTiming`/`interpolate`)       | Reanimated rect-morph, not a shared-element library (none in the stack) — see D-48 for the full rationale       |
-| Why ROAM              | `features/experiences/lib/whyRecommended.ts` (unit-tested)                  | Reasons derived from the experience's own data, not stored per item                                             |
-| Map preview           | `features/experiences/components/MapPreviewRow.tsx`                         | Reuses onboarding's `MapPreview` illustration; not yet navigable (no map screen)                                |
-| Similar experiences   | `features/experiences/components/SimilarExperiencesSection.tsx`             | Reuses Home's `ExperienceCard`                                                                                  |
-| Create-journey CTA    | `itinerary/create` → `features/itinerary/CreateJourneyPlaceholder.tsx`      | Same not-yet-built-screen pattern as the old `ExperienceDetailPlaceholder`                                      |
+| Piece                 | Route / component                                                           | Notes                                                                                                             |
+| --------------------- | --------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------- |
+| Detail screen         | `experience/[id]` → `features/experiences/ExperienceDetailScreen.tsx`       | Hero, info grid, map preview, why-ROAM, reviews, highlights, similar                                              |
+| Hero                  | `features/experiences/components/ExperienceHero.tsx`                        | Paging pager + counter; one `Pressable` per slide (not wrapping the `ScrollView`, D-49); tap opens the gallery    |
+| Sticky header         | `features/experiences/components/ExperienceDetailHeader.tsx`                | Back/share/favorite (moved out of the hero, D-49); title/blur crossfade in past the hero — always visible         |
+| Sticky CTA footer     | `features/experiences/components/ExperienceDetailFooter.tsx`                | "Créer mon parcours"; hides on scroll down, returns on scroll end/up (`useCtaVisibility`, D-49)                   |
+| Gallery screen        | `gallery/[id]` → `features/experiences/gallery/ExperienceGalleryScreen.tsx` | Full-screen; a flat route (not nested under `experience/[id]/`), see D-48                                         |
+| Gallery sync          | Two `FlatList`s (main pager + thumbnail strip) sharing one `activeIndex`    | `getItemLayout` on both; thumbnail press scrolls the main list, main-list scroll re-centers the thumbnail strip   |
+| Hero → gallery motion | `progress` shared value (`useSharedValue`/`withTiming`/`interpolate`)       | Reanimated rect-morph, not a shared-element library (none in the stack) — see D-48 for the full rationale         |
+| Why ROAM              | `features/experiences/lib/whyRecommended.ts` (unit-tested)                  | Reasons derived from the experience's own data, not stored per item                                               |
+| Map preview           | `features/experiences/components/MapPreviewRow.tsx`                         | Reuses onboarding's `MapPreview` illustration; not yet navigable (no map screen)                                  |
+| Similar experiences   | `features/experiences/components/SimilarExperiencesSection.tsx`             | Reuses Home's `ExperienceCard`                                                                                    |
+| Create-journey CTA    | `itinerary/create` → `features/itinerary/CreateJourneyPlaceholder.tsx`      | Reached only from the sticky footer CTA now — the old inline button and "Envie d'en faire plus ?" are gone (D-49) |
 
 ## Authentication (current state)
 

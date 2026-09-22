@@ -1,7 +1,4 @@
 import { Image } from 'expo-image';
-import ChevronLeft from 'lucide-react-native/icons/chevron-left';
-import Heart from 'lucide-react-native/icons/heart';
-import Share2 from 'lucide-react-native/icons/share-2';
 import { useCallback, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { ImageSourcePropType, NativeScrollEvent, NativeSyntheticEvent } from 'react-native';
@@ -10,38 +7,30 @@ import { Pressable, ScrollView, useWindowDimensions, View } from 'react-native';
 import { Text } from '@/components/ui';
 import type { GalleryOpenRect } from '@/types';
 
+import { getHeroHeight } from '../lib/heroHeight';
+
 type ExperienceHeroProps = {
   images: readonly ImageSourcePropType[];
   title: string;
-  isFavorite: boolean;
-  onToggleFavorite: () => void;
-  onShare: () => void;
-  onBack: () => void;
   onOpenGallery: (index: number, rect: GalleryOpenRect) => void;
-  topInset: number;
 };
 
-const HERO_HEIGHT_RATIO = 0.46;
-const HERO_MIN_HEIGHT = 340;
-
 /**
- * Experience detail's hero (sprint 5 §6-§9): the same full-bleed, swipeable, paginated-pager idea as
- * Home's `HeroCarousel`, but tappable — pressing the image opens the full-screen gallery (`onOpenGallery`),
- * measured so the caller can drive the hero -> gallery morph (see `ExperienceGalleryScreen`).
+ * Experience detail's hero: a full-bleed, swipeable, paginated pager — tapping a slide opens the
+ * full-screen gallery (`onOpenGallery`), measured so the caller can drive the hero -> gallery morph
+ * (see `ExperienceGalleryScreen`). Back/share/favorite moved out to `ExperienceDetailHeader` (polish
+ * pass, `docs/DECISIONS.md` D-49): the hero itself no longer owns any chrome, only the photo pager.
+ *
+ * **Each slide is its own `Pressable`, not one `Pressable` wrapping the whole `ScrollView`.** The
+ * earlier version did the latter and it silently broke swiping: a `Pressable` ancestor negotiates the
+ * touch responder before its scrollable child gets a chance to claim horizontal drags. Every other
+ * pressable-inside-a-horizontal-`ScrollView` in this app (e.g. `ExperienceCard` on Home) already uses
+ * the working shape — `ScrollView` outermost, `Pressable` per item — so this just matches it (D-49).
  */
-export function ExperienceHero({
-  images,
-  title,
-  isFavorite,
-  onToggleFavorite,
-  onShare,
-  onBack,
-  onOpenGallery,
-  topInset,
-}: ExperienceHeroProps) {
+export function ExperienceHero({ images, title, onOpenGallery }: ExperienceHeroProps) {
   const { t } = useTranslation();
   const { width, height } = useWindowDimensions();
-  const heroHeight = Math.max(HERO_MIN_HEIGHT, Math.round(height * HERO_HEIGHT_RATIO));
+  const heroHeight = getHeroHeight(height);
   const [activeIndex, setActiveIndex] = useState(0);
   const containerRef = useRef<View>(null);
 
@@ -65,92 +54,38 @@ export function ExperienceHero({
 
   return (
     <View ref={containerRef} style={{ height: heroHeight }}>
-      <Pressable
-        accessibilityRole="imagebutton"
-        accessibilityLabel={t('experience.gallery.counter', {
-          current: activeIndex + 1,
-          total: images.length,
-        })}
-        onPress={handlePress}
-        style={{ flex: 1 }}
+      <ScrollView
+        horizontal
+        pagingEnabled
+        showsHorizontalScrollIndicator={false}
+        onScroll={handleScroll}
+        scrollEventThrottle={16}
+        testID="experience-hero-scroll"
       >
-        <ScrollView
-          horizontal
-          pagingEnabled
-          showsHorizontalScrollIndicator={false}
-          onScroll={handleScroll}
-          scrollEventThrottle={16}
-          testID="experience-hero-scroll"
-        >
-          {images.map((image, index) => (
-            <View
-              key={index}
-              style={{ width, height: heroHeight }}
-              accessibilityElementsHidden={index !== activeIndex}
-              importantForAccessibility={index !== activeIndex ? 'no-hide-descendants' : 'auto'}
-            >
-              <Image
-                source={image}
-                style={{ flex: 1 }}
-                contentFit="cover"
-                accessibilityIgnoresInvertColors
-                accessible
-                accessibilityLabel={title}
-              />
-            </View>
-          ))}
-        </ScrollView>
-      </Pressable>
-
-      <View
-        pointerEvents="box-none"
-        style={{
-          position: 'absolute',
-          top: topInset + 12,
-          left: 16,
-          right: 16,
-          flexDirection: 'row',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-        }}
-      >
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel={t('common.back')}
-          onPress={onBack}
-          hitSlop={8}
-          className="h-11 w-11 items-center justify-center rounded-pill bg-black/25 active:opacity-80"
-        >
-          <ChevronLeft size={22} strokeWidth={2} color="#FFFFFF" />
-        </Pressable>
-
-        <View style={{ flexDirection: 'row', gap: 8 }}>
+        {images.map((image, index) => (
           <Pressable
-            accessibilityRole="button"
-            accessibilityLabel={t('experience.share')}
-            onPress={onShare}
-            hitSlop={8}
-            className="h-11 w-11 items-center justify-center rounded-pill bg-black/25 active:opacity-80"
+            key={index}
+            accessibilityRole="imagebutton"
+            accessibilityLabel={t('experience.gallery.counter', {
+              current: activeIndex + 1,
+              total: images.length,
+            })}
+            onPress={handlePress}
+            style={{ width, height: heroHeight }}
+            accessibilityElementsHidden={index !== activeIndex}
+            importantForAccessibility={index !== activeIndex ? 'no-hide-descendants' : 'auto'}
           >
-            <Share2 size={19} strokeWidth={2} color="#FFFFFF" />
-          </Pressable>
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel={isFavorite ? t('home.favoriteRemove') : t('home.favoriteAdd')}
-            accessibilityState={{ selected: isFavorite }}
-            onPress={onToggleFavorite}
-            hitSlop={8}
-            className="h-11 w-11 items-center justify-center rounded-pill bg-black/25 active:opacity-80"
-          >
-            <Heart
-              size={19}
-              strokeWidth={2}
-              color="#FFFFFF"
-              fill={isFavorite ? '#FFFFFF' : 'transparent'}
+            <Image
+              source={image}
+              style={{ flex: 1 }}
+              contentFit="cover"
+              accessibilityIgnoresInvertColors
+              accessible
+              accessibilityLabel={title}
             />
           </Pressable>
-        </View>
-      </View>
+        ))}
+      </ScrollView>
 
       <View
         pointerEvents="none"
