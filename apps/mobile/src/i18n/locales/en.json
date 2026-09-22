@@ -370,6 +370,40 @@
     },
     "logout": "Log out"
   },
+  "preferences": {
+    "title": "My preferences",
+    "reset": "Reset",
+    "intro": "These preferences help us suggest outings that suit you.",
+    "save": "Save my preferences",
+    "experienceTypes": {
+      "title": "Types of experiences",
+      "subtitle": "Select what you enjoy (multiple choices possible)"
+    },
+    "ambiance": {
+      "title": "Vibe",
+      "subtitle": "Which vibe suits you?",
+      "calm": "Calm",
+      "festive": "Festive",
+      "romantic": "Romantic",
+      "friends": "With friends",
+      "family": "With family",
+      "solo": "Solo"
+    },
+    "budget": {
+      "title": "Budget",
+      "subtitle": "Average budget per person",
+      "value": "€{amount}",
+      "min": "€0",
+      "max": "€100+"
+    },
+    "distance": {
+      "title": "Maximum distance",
+      "subtitle": "How far are you willing to travel?",
+      "value": "{distance} km",
+      "min": "1 km",
+      "max": "50 km+"
+    }
+  },
   "settings": {
     "title": "Settings",
     "appearance": "Appearance",

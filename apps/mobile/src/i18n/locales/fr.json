@@ -370,6 +370,40 @@
     },
     "logout": "Se déconnecter"
   },
+  "preferences": {
+    "title": "Mes préférences",
+    "reset": "Réinitialiser",
+    "intro": "Ces préférences nous aident à te proposer des sorties qui te correspondent.",
+    "save": "Enregistrer mes préférences",
+    "experienceTypes": {
+      "title": "Types d'expériences",
+      "subtitle": "Sélectionne ce que tu aimes (plusieurs choix possibles)"
+    },
+    "ambiance": {
+      "title": "Ambiance",
+      "subtitle": "Quelle ambiance te correspond ?",
+      "calm": "Calme",
+      "festive": "Festive",
+      "romantic": "Romantique",
+      "friends": "Entre amis",
+      "family": "En famille",
+      "solo": "Solo"
+    },
+    "budget": {
+      "title": "Budget",
+      "subtitle": "Budget moyen par personne",
+      "value": "{amount} €",
+      "min": "0 €",
+      "max": "100 €+"
+    },
+    "distance": {
+      "title": "Distance maximale",
+      "subtitle": "Jusqu'où es-tu prêt à te déplacer ?",
+      "value": "{distance} km",
+      "min": "1 km",
+      "max": "50 km+"
+    }
+  },
   "settings": {
     "title": "Paramètres",
     "appearance": "Apparence",

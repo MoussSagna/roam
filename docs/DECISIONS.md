@@ -1272,3 +1272,62 @@ language,theme,help,privacy,settings}`. Replace each route's body, not its path,
 - **Not done on purpose**: the ten linked screens themselves, and the logout confirmation popup (each a
   later session); a "Card" design-system primitive (not needed yet); persisting the mocked profile (no
   backend, `08_AGENT_TODO.md` Phase F still open).
+
+### D-51 — Profile 3 "Mes préférences" (route `/profile/preferences`); new `Slider` primitive, no new dependency
+
+Sprint 5, skipping écran 2 ("Modifier mon profil") on explicit request — the brief named this screen
+next. `PreferencesScreen` replaces the `ProfilePlaceholder` that `/profile/preferences` rendered since
+D-50, from the mockup's tile 02: types d'expériences and ambiance (multi-select tile grids), budget and
+distance (sliders), "Réinitialiser" and "Enregistrer mes préférences".
+
+- **No slider existed and none of `react-native`'s installed dependencies provide one** (no
+  `@react-native-community/slider`, no gesture-handler). Built `Slider` (`components/ui/`, the
+  `06_DESIGN_SYSTEM.md` "Core" component this sprint needed for the first time) on `PanResponder`
+  (React Native core) instead of adding a dependency for something a touch handler already core to the
+  platform can do — same reasoning as every other "build it on what's installed" choice in this project
+  (D-41's `expo-blur` was added only because a flat view genuinely couldn't fake a blur; a drag gesture
+  needs no such thing). `accessibilityRole="adjustable"` + `accessibilityValue` + increment/decrement
+  `accessibilityActions` make it usable without a drag gesture (VoiceOver/TalkBack).
+- **`react-hooks/refs` (this project's stricter-than-usual lint config, seen before in D-48's
+  `BackHandler` note) rejected the obvious `useRef(PanResponder.create(...)).current` lazy-init**, and
+  then rejected passing a ref-reading closure into `PanResponder.create` even from inside a `useMemo`
+  factory. Fixed by dropping the ref entirely: track width lives only in `useState` (already needed for
+  rendering the thumb's position), read directly by the touch handler closed over inside the `useMemo`
+  factory (deps: `min, max, step, onValueChange, trackWidth`) — no ref anywhere in the component.
+- **"Types d'expériences" reuses onboarding's exact 8-item vocabulary, not a new one.** The mockup's
+  labels (Restaurants, Bars & Soirées, Culture, Nature, Activités, Shopping, Bien-être, Événements) are
+  verbatim `onboarding.interests.*` (`InterestsScreen.tsx`, D-25) — same ids, same i18n keys, reused
+  directly rather than duplicated. `EXPERIENCE_TYPES` (`features/profile/data/experienceTypes.ts`)
+  re-declares the small id/icon list (including a cross-feature import of onboarding's `RunnerIcon`/
+  `LotusIcon` — same reuse precedent as `MapPreviewRow` reusing onboarding's `MapPreview`, D-48) rather
+  than relocating onboarding's own file, to avoid touching an already-validated screen for this session.
+  `InterestTile` (`features/onboarding/components/`) is reused as-is, cross-feature, for the same reason
+  — it already is exactly "an icon + label checkbox tile"; a percentage-free numeric `width`/`height` is
+  computed from `useWindowDimensions()` instead of onboarding's own height-constrained shrink logic,
+  since this screen scrolls and isn't fitted into one fixed-height step.
+- **"Ambiance" is a new, screen-specific vocabulary — not a reuse of `Mood` or `Company`.** The mockup's
+  six tags (Calme, Festive, Romantique, Entre amis, En famille, Solo) mix mood-like and company-like
+  concepts in one flat multi-select set that matches neither the onboarding `MoodScreen`'s own 9-tile
+  vocabulary (single choice) nor `Company` (single choice, and wrong grammatical gender for "ambiance",
+  a feminine noun: "Festive" here, "Festif" everywhere else in the app). New ids/keys
+  (`preferences.ambiance.*`, `features/profile/data/ambianceOptions.ts`), icons mirrored from the
+  onboarding Mood screen's own choices for the concepts they share, for visual consistency.
+- **New `ProfilePreferences` type (`types/user.ts`), not the existing `UserPreference`.** The onboarding
+  model's budget is a discrete `BudgetRange` bucket; this screen's budget is a continuous per-person
+  euro amount on a slider — genuinely different shapes, not a duplicate. Documented as local screen
+  state only, like the rest of this screen; no repository, since there is nothing to fetch (the mockup's
+  own default selection is hard-coded local state, the same pattern as every onboarding question
+  screen's own pre-selected default, D-21 to D-25) and "Enregistrer" only needs to simulate a delay.
+- **"Enregistrer mes préférences" simulates a save then `router.back()`** (700 ms, no next screen to
+  push to — this is a settings save, not a flow step) instead of a toast/confirmation UI, which nothing
+  else in the app has yet. "Réinitialiser" resets all four fields to the same mockup defaults, front-end
+  only, per `02_MVP_SCOPE.md`'s "Tout reste mocké" for this screen.
+- **A `fireEvent(el, 'accessibilityAction', …)` call needed the same await as `fireEvent.press`** (D-50
+  already found this for presses): an unawaited accessibility-action fire in one test corrupted the
+  _next_ test's render the same way, confirming the rule is about every `fireEvent` call, not just
+  `.press`.
+- **Not done on purpose**: dragging the slider thumb itself isn't exercised by a test (RNTL fires
+  `PanResponder` callbacks by calling the underlying gesture responder handlers directly, which is
+  possible but adds little over the already-covered increment/decrement path that exercises the same
+  `onValueChange` wiring); persisting preferences (no backend); the other nine `/profile/*` placeholders
+  (each its own session).

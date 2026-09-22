@@ -70,8 +70,10 @@ Use mock data. The onboarding is complete on the front end (no backend, nothing 
 
 - [ ] Favorites
 - [ ] History
-- [~] Profile — main screen built (header, stats, menu), sub-screens still placeholders, sprint 5
-- [ ] Preference editing
+- [~] Profile — main screen built (header, stats, menu); preferences built, other sub-screens still
+      placeholders, sprint 5
+- [~] Preference editing — "Mes préférences" built (experience types, ambiance, budget/distance
+      sliders), sprint 5
 - [ ] Statistics
 
 ## Phase G — Quality

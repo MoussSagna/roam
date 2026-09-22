@@ -29,3 +29,16 @@ export type UserPreference = {
   maxDistanceKm: number;
   usualCompany: Company;
 };
+
+/**
+ * Profile → "Mes préférences" (sprint 5): a purpose-built shape, not `UserPreference` — the budget
+ * here is a continuous per-person amount (a slider), not the onboarding's discrete `BudgetRange`
+ * bucket, and `ambiance` mixes mood- and company-like tags that don't map to `Mood`/`Company`. Local
+ * screen state only for now (docs/DECISIONS.md); no repository, nothing persisted.
+ */
+export type ProfilePreferences = {
+  experienceTypes: string[];
+  ambiance: string[];
+  budgetPerPerson: number;
+  maxDistanceKm: number;
+};
