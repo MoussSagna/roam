@@ -8,6 +8,9 @@
 - Password recovery
 - User profile
 
+Prototype note: the account screens (login, sign up, password recovery) are built first on the front end
+and simulated, with no backend, API, database or real authentication; those come later (`DECISIONS.md` D-28).
+
 ## 2. Onboarding
 
 Collect:

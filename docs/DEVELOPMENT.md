@@ -3,6 +3,10 @@
 This guide describes the repository **as it is today**: a pnpm monorepo containing the mobile app
 only. `apps/web`, `apps/api` and `packages/*` (see `04_TECH_STACK.md`) do not exist yet.
 
+**Prototype status (2026-09-22):** the mobile **onboarding is implemented on the front end**, from the splash to a placeholder
+home (routes below). There is **no backend, no database and no API**: nothing is sent or stored, and the onboarding answers are
+local state used for the prototype only. Next: the authentication screens, front-end only and simulated (`DECISIONS.md` D-28).
+
 ## Requirements
 
 - Node.js ≥ 22.13 (developed with 24)
@@ -48,18 +52,19 @@ apps/mobile/
 ├── metro.config.js          # withNativeWind → src/global.css
 ├── tailwind.config.ts       # NativeWind preset; colors/fonts/radius come from src/theme
 ├── jest.config.js / jest.setup.ts
-├── assets/images/           # splash-background.png, icons, logo/ (roles in logo/README.md)
+├── assets/images/           # splash-background.png, icons, logo/ (roles in logo/README.md), onboarding/
 └── src/
-    ├── app/                 # Expo Router routes ONLY, kept thin (/ and /welcome)
+    ├── app/                 # Expo Router routes ONLY, kept thin (/, /welcome, /onboarding/*, /home)
     ├── components/
     │   ├── ui/              # Text, Button, Chip, Screen, FadeInUp (design-system primitives)
     │   └── brand/           # Logo (light / dark / icon variants)
     ├── features/            # One folder per feature (empty until its sprint)
     │   ├── splash/          # In-app splash screen (route /) + its measured layout
-    │   ├── onboarding/      # WelcomeScreen (placeholder)
-    │   └── home, recommendations, experiences, itinerary, map,
+    │   ├── onboarding/      # Onboarding: the 8 screens, onboardingFlow.ts (routes, order), profileCreation.ts (simulation)
+    │   ├── home/            # Placeholder of the home screen (end of the onboarding)
+    │   └── recommendations, experiences, itinerary, map,
     │       outing, feedback, profile, favorites, auth
-    ├── hooks/               # Cross-feature hooks (useBootstrap)
+    ├── hooks/               # Cross-feature hooks (useBootstrap, useReduceMotion)
     ├── i18n/                # i18next setup + locales/fr.json, locales/en.json
     ├── lib/                 # Small framework-agnostic helpers (storage, cx)
     ├── services/            # Data access: repository interfaces + mock implementation
@@ -70,6 +75,20 @@ apps/mobile/
 ```
 
 Path alias: `@/` → `src/` (TypeScript, Jest and Metro).
+
+## Onboarding (current state)
+
+| Step | Route                                                         | Screen              | Notes                                                                            |
+| ---- | ------------------------------------------------------------- | ------------------- | -------------------------------------------------------------------------------- |
+| —    | `/`                                                           | Splash              | Goes to `/welcome` after 2.6 s (no session yet)                                  |
+| 1    | `/welcome`                                                    | Welcome             | Photo collage; no pagination dots (`PageDots` removed on purpose, do not re-add) |
+| 2–6  | `/onboarding/mood`, `time`, `budget`, `location`, `interests` | Questions           | "Suivant" / "Passer"; `ProgressBars`; answers are local state, not saved         |
+| 7    | `/onboarding/profile-creation`                                | Profile creation    | **Front-end simulation, about 10 s**, no button, moves on by itself (Moti)       |
+| 8    | `/onboarding/ready`                                           | "Prêt à explorer ?" | Reached after the simulation; "Commencer" enters the app                         |
+| —    | `/home`                                                       | Home (placeholder)  | End of the journey                                                               |
+
+The order and the routes live in `features/onboarding/onboardingFlow.ts`. "Passer" jumps to `ready`; "Commencer" and the
+profile creation use `router.replace`. Details: `DECISIONS.md` D-19 to D-28.
 
 ## Conventions
 
@@ -118,6 +137,14 @@ Path alias: `@/` → `src/` (TypeScript, Jest and Metro).
 Keep motion subtle (fade, small translate, ~1.03 scale on selection). `FadeInUp` is the reference
 appearance animation. Moti runs on Reanimated 4 + `react-native-worklets`.
 
+- `MotiView` takes `style`, **not** `className` (NativeWind does not process it): a `className` on it is silently
+  ignored (no flex, no background). Use `style` with `useTheme().colors`, or a plain `View` around it.
+- Reduced motion: `useReduceMotion()` (`src/hooks/`) follows the OS setting; drop translations, scales, rotations and
+  loops when it is true (`ProfileCreationScreen` shows the pattern). Reanimated's own `useReducedMotion` is not in its Jest mock.
+- Animating an SVG attribute (the loader ring): `Animated.createAnimatedComponent(Circle)` + `useAnimatedProps`.
+- Timed sequences (front-end simulations): a `setTimeout` schedule created in one `useEffect` and cleared in its cleanup
+  (see `features/onboarding/profileCreation.ts`), tested with Jest fake timers.
+
 ### Data access (mock now, API later)
 
 ```text
@@ -139,11 +166,23 @@ Screen → hook / service → Repository (interface) → mock implementation  (t
 - Priorities from `04_TECH_STACK.md`: scoring, itinerary constraints, localization, theme, critical
   navigation, feedback persistence.
 
+### Icons
+
+Use Lucide, **one import per icon** — never the package root:
+
+```ts
+import ArrowRight from 'lucide-react-native/icons/arrow-right';
+```
+
+The root barrel pulls ~1 600 icons into the bundle (and makes Jest 10× slower). Colors come from
+`useTheme().colors` (icons cannot use NativeWind classes).
+
 ### Assets
 
 The logo files, the wordmark and the splash photo are official; the app icon and the Android
-adaptive icon are still placeholders. Which file is used for what is documented in
-`apps/mobile/assets/images/logo/README.md`. Fonts are loaded from `@expo-google-fonts/*` (Plus Jakarta Sans, Inter, and Newsreader for the splash only); import each
+adaptive icon are still placeholders. The onboarding photos in
+`assets/images/onboarding/` (the four welcome photos, `ready-background.jpg` and `profile-landscape.jpg`) are **temporary** crops of the mockups (see the README there). Which file is used for what is documented in
+`apps/mobile/assets/images/logo/README.md`. Fonts are loaded from `@expo-google-fonts/*` (Plus Jakarta Sans, Inter, Newsreader, Mrs Saint Delafield); import each
 weight from its own entry point (e.g. `@expo-google-fonts/inter/400Regular`) to keep the bundle small.
 
 ## Troubleshooting

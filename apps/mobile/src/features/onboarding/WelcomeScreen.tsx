@@ -1,32 +1,94 @@
-import { useRouter } from 'expo-router';
+// One icon per import: the package root would pull ~1600 icons into the bundle.
+import ArrowRight from 'lucide-react-native/icons/arrow-right';
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { View } from 'react-native';
+import { Pressable, Text as RNText, useWindowDimensions, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { Button, FadeInUp, Screen, Text } from '@/components/ui';
+import { Button, FadeInUp, Text } from '@/components/ui';
+import { fontFamily } from '@/theme/typography';
+
+import { COLLAGE_DESIGN_HEIGHT, WelcomeCollage } from './components/WelcomeCollage';
+import { useOnboardingNavigation } from './onboardingFlow';
+
+const HORIZONTAL_MARGIN = 30.6;
 
 /**
- * Placeholder for the Welcome screen (docs/03_UX_SCREENS_AND_FLOWS.md → 02 Welcome).
- * It only proves that `/welcome` is routable; the real screen and CTAs come with onboarding.
+ * Onboarding 1 — "Bienvenue sur ROAM" (design mockup "Home Onboarding", first tile after the splash).
  */
 export function WelcomeScreen() {
   const { t } = useTranslation();
-  const router = useRouter();
+  const { width } = useWindowDimensions();
+  const insets = useSafeAreaInsets();
+  const { next, skip } = useOnboardingNavigation('welcome');
+  const [collageHeight, setCollageHeight] = useState<number | null>(null);
 
-  const goBack = () => (router.canGoBack() ? router.back() : router.replace('/'));
+  // Shrink the collage on short screens; never enlarge it beyond the design size.
+  const scale =
+    collageHeight === null ? 1 : Math.min(1, Math.max(0.6, collageHeight / COLLAGE_DESIGN_HEIGHT));
 
   return (
-    <Screen className="justify-center gap-8">
-      <FadeInUp>
-        <View className="gap-4">
-          <Text variant="h1" accessibilityRole="header">
-            {t('welcome.title')}
+    <View className="flex-1 bg-background">
+      <View style={{ paddingTop: insets.top }}>
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={t('common.skip')}
+          onPress={skip}
+          hitSlop={12}
+          className="self-end active:opacity-60"
+          style={{ marginRight: 26, marginTop: 17 }}
+        >
+          <Text variant="small" tone="secondary">
+            {t('common.skip')}
           </Text>
-          <Text variant="bodyLg" tone="secondary">
-            {t('welcome.subtitle')}
+        </Pressable>
+
+        <FadeInUp>
+          <RNText
+            accessibilityRole="header"
+            className="text-text"
+            style={{
+              marginTop: 9,
+              marginHorizontal: HORIZONTAL_MARGIN,
+              fontFamily: fontFamily.editorialSemibold,
+              fontSize: 37,
+              lineHeight: 46,
+            }}
+          >
+            {t('onboarding.welcome.title')}
+          </RNText>
+          <Text
+            variant="bodyLg"
+            tone="secondary"
+            style={{
+              marginTop: 4,
+              marginLeft: HORIZONTAL_MARGIN,
+              marginRight: 18,
+              lineHeight: 26,
+            }}
+          >
+            {t('onboarding.welcome.subtitle')}
           </Text>
-        </View>
-      </FadeInUp>
-      <Button variant="secondary" label={t('common.back')} onPress={goBack} />
-    </Screen>
+        </FadeInUp>
+      </View>
+
+      <View
+        className="flex-1 justify-center"
+        onLayout={(e) => setCollageHeight(e.nativeEvent.layout.height)}
+      >
+        <FadeInUp delay={200}>
+          <WelcomeCollage width={width} scale={scale} />
+        </FadeInUp>
+      </View>
+
+      <View style={{ paddingBottom: Math.max(insets.bottom, 24), paddingHorizontal: 20 }}>
+        <Button
+          label={t('common.next')}
+          trailingIcon={ArrowRight}
+          onPress={next}
+          className="mt-[18px]"
+        />
+      </View>
+    </View>
   );
 }

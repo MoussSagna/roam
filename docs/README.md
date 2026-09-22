@@ -24,4 +24,8 @@ Translation resources (used by the mobile app):
 - `apps/mobile/src/i18n/locales/fr.json`
 - `apps/mobile/src/i18n/locales/en.json`
 
+Current status (2026-09-22): the mobile onboarding is implemented on the front end (no backend, no database; the
+profile creation is a simulation of about 10 s). Next step: authentication screens, front-end only and simulated —
+see `DECISIONS.md` D-28 and `08_AGENT_TODO.md`.
+
 The product is intentionally MVP-first. Do not expand scope without an explicit requirement.

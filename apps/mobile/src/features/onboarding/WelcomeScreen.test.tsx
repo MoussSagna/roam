@@ -5,38 +5,56 @@ import { renderWithProviders } from '@/test/renderWithProviders';
 
 import { WelcomeScreen } from './WelcomeScreen';
 
-const mockBack = jest.fn();
+const mockPush = jest.fn();
 const mockReplace = jest.fn();
-let mockCanGoBack = true;
 jest.mock('expo-router', () => ({
-  useRouter: () => ({ back: mockBack, replace: mockReplace, canGoBack: () => mockCanGoBack }),
+  useRouter: () => ({ push: mockPush, replace: mockReplace }),
 }));
 
-describe('WelcomeScreen (placeholder)', () => {
+describe('WelcomeScreen (onboarding 1)', () => {
   beforeEach(async () => {
-    mockBack.mockClear();
+    mockPush.mockClear();
     mockReplace.mockClear();
-    mockCanGoBack = true;
     await act(() => i18n.changeLanguage('fr'));
   });
 
-  it('renders the localized value proposition', async () => {
+  it('renders the localized welcome copy', async () => {
     await renderWithProviders(<WelcomeScreen />);
+
+    expect(screen.getByRole('header')).toHaveTextContent('Bienvenue sur ROAM');
     expect(
-      screen.getByText('Trouve quoi faire, sans passer ton temps à chercher.'),
+      screen.getByText(
+        'Découvre des expériences uniques, proches de toi, adaptées à ton humeur, ton temps et ton budget.',
+      ),
     ).toBeOnTheScreen();
+    expect(screen.getByText("Plus\nqu'une sortie,\nune expérience.")).toBeOnTheScreen();
+    expect(screen.getByRole('button', { name: 'Passer' })).toBeOnTheScreen();
+    expect(screen.getByRole('button', { name: 'Suivant' })).toBeOnTheScreen();
   });
 
-  it('goes back when there is history', async () => {
+  it('is localized in English', async () => {
+    await act(() => i18n.changeLanguage('en'));
     await renderWithProviders(<WelcomeScreen />);
-    await fireEvent.press(screen.getByRole('button', { name: 'Retour' }));
-    expect(mockBack).toHaveBeenCalled();
+
+    expect(screen.getByRole('header')).toHaveTextContent('Welcome to ROAM');
+    expect(screen.getByRole('button', { name: 'Next' })).toBeOnTheScreen();
+    expect(screen.getByRole('button', { name: 'Skip' })).toBeOnTheScreen();
   });
 
-  it('falls back to / when opened directly (deep link)', async () => {
-    mockCanGoBack = false;
+  it('has no pagination dots (removed on purpose)', async () => {
     await renderWithProviders(<WelcomeScreen />);
-    await fireEvent.press(screen.getByRole('button', { name: 'Retour' }));
-    expect(mockReplace).toHaveBeenCalledWith('/');
+    expect(screen.queryByRole('progressbar')).toBeNull();
+  });
+
+  it('goes to the mood screen with "Suivant"', async () => {
+    await renderWithProviders(<WelcomeScreen />);
+    await fireEvent.press(screen.getByRole('button', { name: 'Suivant' }));
+    expect(mockPush).toHaveBeenCalledWith('/onboarding/mood');
+  });
+
+  it('jumps to the final screen with "Passer"', async () => {
+    await renderWithProviders(<WelcomeScreen />);
+    await fireEvent.press(screen.getByRole('button', { name: 'Passer' }));
+    expect(mockReplace).toHaveBeenCalledWith('/onboarding/ready');
   });
 });

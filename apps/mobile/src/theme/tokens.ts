@@ -36,10 +36,10 @@ export const lightColors: ThemeColors = {
   background: brand.cream,
   surface: brand.white,
   surfaceElevated: brand.white,
-  text: brand.ink,
-  textSecondary: derived.stoneStrong,
+  text: derived.inkDeep,
+  textSecondary: derived.slate,
   border: derived.line,
-  primary: brand.forest,
+  primary: derived.forestDeep,
   primaryForeground: brand.white,
   accent: brand.peach,
   success: derived.success,
@@ -82,6 +82,26 @@ export function themeCssVars(name: ThemeName): Record<string, string> {
     colorTokenNames.map((token) => [cssVarName(token), hexToRgbChannels(colors[token])]),
   );
 }
+
+export type MoodAccent = 'relaxed' | 'festive' | 'romantic';
+
+/** Icon colors of the onboarding mood tiles. Decorative: the label always carries the meaning. */
+export const moodAccents: Record<ThemeName, Record<MoodAccent, string>> = {
+  light: { relaxed: derived.moodGreen, festive: derived.moodOrange, romantic: derived.moodCoral },
+  dark: {
+    relaxed: derived.forestLight,
+    festive: derived.moodOrangeOnDark,
+    romantic: derived.moodCoralOnDark,
+  },
+};
+
+export type MapColors = { base: string; street: string; park: string };
+
+/** Colors of the illustrated map preview (onboarding location). */
+export const mapColors: Record<ThemeName, MapColors> = {
+  light: { base: derived.mapBase, street: derived.mapStreet, park: derived.mapPark },
+  dark: { base: derived.mapBaseDark, street: derived.mapStreetDark, park: derived.mapParkDark },
+};
 
 /** Corner radii (px). Map to `rounded-small`, `rounded-card`… */
 export const radius = {

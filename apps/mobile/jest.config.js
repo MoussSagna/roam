@@ -1,7 +1,7 @@
 const jestExpoPreset = require('jest-expo/jest-preset');
 
 // Packages that ship untranspiled ESM and must go through Babel (in addition to jest-expo's list).
-const esmPackages = ['moti', 'nativewind', 'react-native-css-interop'];
+const esmPackages = ['moti', 'nativewind', 'react-native-css-interop', 'lucide-react-native'];
 
 const transformIgnorePatterns = jestExpoPreset.transformIgnorePatterns.map((pattern) =>
   pattern.includes('(.pnpm|')
@@ -9,10 +9,14 @@ const transformIgnorePatterns = jestExpoPreset.transformIgnorePatterns.map((patt
     : pattern,
 );
 
+// lucide-react-native ships ES modules with the `.mjs` extension, which the preset does not transform.
+const babelTransform = jestExpoPreset.transform['\\.[jt]sx?$'];
+
 /** @type {import('jest').Config} */
 module.exports = {
   preset: 'jest-expo',
   setupFilesAfterEnv: ['<rootDir>/jest.setup.ts'],
+  transform: { ...jestExpoPreset.transform, '\\.mjs$': babelTransform },
   transformIgnorePatterns,
   moduleNameMapper: {
     '^@/(.*)$': '<rootDir>/src/$1',

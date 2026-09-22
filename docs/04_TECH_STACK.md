@@ -103,6 +103,9 @@ Do not couple the recommendation domain to an AI provider.
 Use a standard secure authentication strategy compatible with the chosen web/mobile architecture.
 Do not build password cryptography manually.
 
+Prototype status: there is no authentication yet. The screens come first, front-end only and simulated;
+real authentication (backend, sessions/tokens) is done later, after all the front-end screens (`DECISIONS.md` D-28).
+
 ## Data domains
 
 Likely core entities:
@@ -189,7 +192,8 @@ into `packages/` when the web app needs them.
 | Animation          | Moti on Reanimated + Worklets                              | 0.30 on 4.5.1 / 0.10.1  |
 | i18n               | i18next + react-i18next                                    | 26.4 / 17.0             |
 | Persistence        | `@react-native-async-storage/async-storage` (theme, language) | 2.2.0                |
-| Fonts              | Plus Jakarta Sans + Inter (+ Newsreader for the splash) via `@expo-google-fonts/*` | 0.4.x |
+| Fonts              | Plus Jakarta Sans + Inter (+ Newsreader, Mrs Saint Delafield for the mockups) via `@expo-google-fonts/*` | 0.4.x |
+| Icons              | `lucide-react-native` (one import per icon) + `react-native-svg`                   | 1.47 / 15.15 |
 | Images             | `expo-image`                                               | 57.0                    |
 | Tests              | Jest 29 (`jest-expo`) + React Native Testing Library       | 57.0 / 14.0             |
 | Lint / format      | ESLint 9 (`eslint-config-expo`) + Prettier                 | 9.39 / 3.9              |

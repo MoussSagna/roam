@@ -38,6 +38,8 @@ Transitions:
 Purpose: communicate the value proposition.
 Primary CTA: Start.
 Secondary CTA: Sign in.
+Prototype: the built welcome screen has a single "Suivant" button and no pagination dots. Sign in / sign up
+screens are the next front-end step, simulated (no backend) — see `DECISIONS.md` D-28.
 
 ### 03 Home
 Purpose: start a new outing.
@@ -64,6 +66,11 @@ Location permission denial must not block the user; allow manual area selection.
 Purpose: collect interests for personalization.
 Multiple selection, minimum 3 recommended in the onboarding UX concept.
 All visible copy localized.
+
+### 08b Profile creation (prototype simulation)
+Purpose: after the preferences, show ROAM "building" the user's profile before the final onboarding screen.
+Front-end simulation only (about 10 s, no backend, nothing stored); nothing to press, it moves on to
+"Prêt à explorer ?" by itself. See `DECISIONS.md` D-27.
 
 ### 09 Recommendations
 Purpose: show a limited number of relevant outings.

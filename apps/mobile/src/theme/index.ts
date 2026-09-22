@@ -6,7 +6,10 @@ export { textVariantClasses, type TextVariant } from './typography';
 export {
   THEME_PREFERENCES,
   colorTokenNames,
+  mapColors,
+  moodAccents,
   type ColorToken,
+  type MoodAccent,
   type ThemeColors,
   type ThemeName,
   type ThemePreference,

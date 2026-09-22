@@ -19,10 +19,29 @@ export const brand = {
  * ("accessibility and contrast take priority over exact brand colors" — 05_THEME_AND_I18N.md).
  */
 export const derived = {
-  /** Stone darkened: #747873 is only ~4.0:1 on Cream, below AA for body text. */
-  stoneStrong: '#666A65',
+  /** Deep forest green of buttons and selected states in the onboarding mockups (Forest is too light for them). */
+  forestDeep: '#1A3E30',
+  /** Near-black of headings in the mockups (Ink #171B18 is visibly lighter). */
+  inkDeep: '#060A0E',
+  /** Slate used for secondary text in the mockups. Raw Stone #747873 is only ~4.0:1 on Cream, below AA. */
+  slate: '#454F5B',
   /** Warm hairline that stays visible on Cream. */
   line: '#E2DDD1',
+
+  /** Icon accents of the onboarding mood tiles (mockup): Détendu, Festif, Romantique. Decorative only. */
+  moodGreen: '#5E9474',
+  moodOrange: '#EC9433',
+  moodCoral: '#DE5A46',
+  moodOrangeOnDark: '#F2AE5E',
+  moodCoralOnDark: '#F0857A',
+
+  /** Map preview of the onboarding location screen (illustration, not a real map). */
+  mapBase: '#E8E7DF',
+  mapStreet: '#FAF9F5',
+  mapPark: '#D8E1CD',
+  mapBaseDark: '#1D2621',
+  mapStreetDark: '#2C3831',
+  mapParkDark: '#1F3428',
 
   success: '#2F7A4F',
   warning: '#8F5B00',

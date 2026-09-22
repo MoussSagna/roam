@@ -217,8 +217,8 @@ Do not mix French and English in a single UI state.
 - `useTheme()` → `{ preference, scheme, isDark, colors, setPreference }`.
 - Resulting dark palette: background `#0F1411`, surface `#161D19`, surfaceElevated `#1F2823`,
   text `#F1EDE4`, textSecondary `#A7B4AA`, primary `#86B096`, accent Peach `#E9CDB9`.
-- Light `textSecondary` is `#666A65` (a darker Stone) because raw Stone is below AA on Cream — see
-  `DECISIONS.md` D-04. A test asserts WCAG AA contrast in both themes.
+- Light theme values changed to match the onboarding mockups: `primary` `#1A3E30`, `text` `#060A0E`,
+  `textSecondary` `#454F5B` (raw Stone is below AA on Cream) — see `DECISIONS.md` D-04 and D-19. A test asserts WCAG AA contrast in both themes.
 - There is no settings screen yet, so no UI exposes the Light / Dark / System and Français / English
   switches: the behavior is covered by unit tests (`ThemeProvider.test.tsx`, `i18n.test.ts`) until the
   Profile / Settings screen is built.
@@ -232,5 +232,6 @@ Do not mix French and English in a single UI state.
 - Switching language updates the UI immediately, without restart.
 - Keys added beyond this document's namespace list: `brand` and `splash` (splash tagline, the
   "Explorer. Ressentir. Sortir." headline and the category line; English wording is a natural
-  translation, to be validated). The `welcome` namespace already present in the files is used by the
+  translation, to be validated), `common.next`, and `onboarding.welcome.*` (welcome screen title,
+  subtitle and handwritten line). The legacy `welcome` namespace already present in the files is used by the
   Welcome placeholder.

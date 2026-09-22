@@ -2,7 +2,7 @@
 
 ## Phase A — Project foundation
 
-Status for **mobile** (2026-09-21). Web and API foundations are not started.
+Status for **mobile** (2026-09-22). Web and API foundations are not started.
 
 - [x] Monorepo/app structure (pnpm workspace, `apps/mobile`; `apps/web`, `apps/api`, `packages/*` not created)
 - [x] TypeScript configuration (strict)
@@ -18,9 +18,10 @@ Status for **mobile** (2026-09-21). Web and API foundations are not started.
 ## Phase B — Static UX prototype
 
 - [x] Splash (implemented from the mockup; native app icon still to migrate — see `DECISIONS.md` D-18)
-- [ ] Welcome
-- [ ] Onboarding
-- [ ] Home
+- [x] Welcome (first onboarding screen, see `DECISIONS.md` D-19)
+- [x] Onboarding (the 7 mockup screens plus the animated profile-creation simulation; the photos of the last screens are temporary — see `DECISIONS.md` D-19 to D-27)
+- [~] Home (placeholder route `/home`, the end of the onboarding — `DECISIONS.md` D-26)
+- [ ] Authentication screens — **front-end only, simulated** (Login, Register, Forgot password + their states). **Next step**, see `DECISIONS.md` D-28
 - [ ] Context flow
 - [ ] Recommendation cards
 - [ ] Experience detail
@@ -28,7 +29,7 @@ Status for **mobile** (2026-09-21). Web and API foundations are not started.
 - [ ] Map placeholder
 - [ ] Feedback
 
-Use mock data.
+Use mock data. The onboarding is complete on the front end (no backend, nothing saved: D-28).
 
 ## Phase C — Backend foundation
 
@@ -41,7 +42,7 @@ Use mock data.
 - [ ] Itineraries
 - [ ] Favorites
 - [ ] Feedback
-- [ ] Auth
+- [ ] Auth (real authentication, session/JWT: **after** all the front-end screens; the front-end auth screens are in Phase B)
 
 ## Phase D — Recommendation engine
 

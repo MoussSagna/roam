@@ -10,8 +10,11 @@ export const fontFamily = {
   body: 'Inter_400Regular',
   bodyMedium: 'Inter_500Medium',
   bodySemibold: 'Inter_600SemiBold',
-  /** Editorial serif, used by the splash screen headline (from the design mockup). */
+  /** Editorial serif: splash headline, onboarding screen titles (from the design mockups). */
   editorial: 'Newsreader_400Regular',
+  editorialSemibold: 'Newsreader_600SemiBold',
+  /** Handwritten accent (onboarding welcome screen tagline). */
+  script: 'MrsSaintDelafield_400Regular',
 } as const;
 
 type FontSizeEntry = [size: string, config: { lineHeight: string }];
@@ -30,6 +33,7 @@ export const fontSize = {
   body: ['16px', { lineHeight: '24px' }],
   small: ['14px', { lineHeight: '20px' }],
   caption: ['12px', { lineHeight: '16px' }],
+  cta: ['19px', { lineHeight: '26px' }],
 } satisfies Record<string, FontSizeEntry>;
 
 /** Scale steps plus `label` (Body size, semibold) for buttons and chips. */
@@ -47,4 +51,5 @@ export const textVariantClasses: Record<TextVariant, string> = {
   body: 'font-body text-body',
   small: 'font-body text-small',
   caption: 'font-bodyMedium text-caption',
+  cta: 'font-body text-cta',
 };

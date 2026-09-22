@@ -25,7 +25,8 @@
     "retry": "Try again",
     "seeMore": "See more",
     "done": "Done",
-    "loading": "Loading…"
+    "loading": "Loading…",
+    "next": "Next"
   },
   "navigation": {
     "home": "Home",
@@ -41,21 +42,85 @@
     "signIn": "Sign in"
   },
   "onboarding": {
+    "welcome": {
+      "title": "Welcome\nto ROAM",
+      "subtitle": "Discover unique experiences, close to you, tailored to your mood, time and budget.",
+      "script": "More than\nan outing,\nan experience."
+    },
+    "mood": {
+      "title": "What’s your\nmood today?",
+      "subtitle": "We suggest outings that match your state of mind.",
+      "curious": "Curious",
+      "relaxed": "Relaxed",
+      "festive": "Festive",
+      "cultural": "Cultural",
+      "sporty": "Sporty",
+      "romantic": "Romantic",
+      "solo": "Solo",
+      "friends": "With friends",
+      "family": "With family"
+    },
+    "time": {
+      "title": "How much time\ndo you have?",
+      "subtitle": "We adapt suggestions\nto the time you have available.",
+      "under1h": "Under 1 h",
+      "oneToTwoH": "1 to 2 h",
+      "twoToFourH": "2 to 4 h",
+      "over4h": "Over 4 h"
+    },
     "interests": {
       "eyebrow": "Your interests",
       "title": "What are you into?",
-      "subtitle": "Select at least 3 interests for more relevant recommendations.",
+      "subtitle": "Select your interests\n(mainly).",
       "selected": "{count} selected",
       "addInterest": "Add an interest",
-      "addInterestPlaceholder": "E.g. dance, movies…"
+      "addInterestPlaceholder": "E.g. dance, movies…",
+      "culture": "Culture",
+      "restaurants": "Restaurants",
+      "nightlife": "Bars & Nightlife",
+      "nature": "Nature",
+      "activities": "Activities",
+      "shopping": "Shopping",
+      "wellness": "Wellness",
+      "events": "Events"
+    },
+    "profile": {
+      "waiting": "One moment…",
+      "title": "We’re building your\ntailor-made profile",
+      "subtitle": "We’re analysing your preferences to\nsuggest outings that feel like you.",
+      "analysis": "Analysing your answers",
+      "recommendations": "Selecting recommendations",
+      "experience": "Preparing your experience",
+      "ready": "Your profile is ready",
+      "script": "Beautiful discoveries\nawait you…"
+    },
+    "ready": {
+      "title": "Ready to\nexplore?",
+      "subtitle": "Outings, encounters,\ndiscoveries…\nAll of it awaits you on ROAM.",
+      "script": "The city is\nmore beautiful\nwhen you live it.",
+      "start": "Get started"
     },
     "activities": {
       "title": "What do you like doing?",
       "subtitle": "Choose the activities that feel like you."
     },
     "budget": {
-      "title": "What's your usual budget?",
-      "subtitle": "We'll adapt outings to what you want to spend."
+      "title": "What’s your budget?",
+      "subtitle": "We find outings that respect\nyour budget.",
+      "free": "Free",
+      "under10": "Under 10",
+      "from10to30": "10 – 30",
+      "from30to50": "30 – 50",
+      "over50": "Over 50"
+    },
+    "location": {
+      "title": "Where do you want to go out?",
+      "subtitle": "We suggest outings near you.",
+      "current": "My current location",
+      "city": "Choose a city",
+      "nearby": "Around me",
+      "previewCity": "Paris",
+      "previewCountry": "France"
     },
     "distance": {
       "title": "How far do you want to go?",
@@ -71,7 +136,8 @@
     "title": "What do you feel like doing today?",
     "currentOutings": "What's happening now",
     "createOuting": "Plan my outing",
-    "inspiration": "Need some inspiration?"
+    "inspiration": "Need some inspiration?",
+    "comingSoon": "This screen is coming soon."
   },
   "context": {
     "mood": {

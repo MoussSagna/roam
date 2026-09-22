@@ -1,5 +1,5 @@
 import { contrastRatio, hexToRgbChannels } from './color';
-import { brand } from './palette';
+import { brand, derived } from './palette';
 import {
   colorTokenNames,
   cssVarName,
@@ -19,8 +19,9 @@ describe('theme tokens', () => {
   it('builds the light theme from the ROAM palette', () => {
     expect(lightColors.background).toBe(brand.cream);
     expect(lightColors.surface).toBe(brand.white);
-    expect(lightColors.text).toBe(brand.ink);
-    expect(lightColors.primary).toBe(brand.forest);
+    expect(lightColors.text).toBe(derived.inkDeep);
+    expect(lightColors.primary).toBe(derived.forestDeep);
+    expect(lightColors.textSecondary).toBe(derived.slate);
     expect(lightColors.accent).toBe(brand.peach);
   });
 
@@ -50,7 +51,7 @@ describe('theme tokens', () => {
 
   it('maps tokens to CSS variables holding RGB channels', () => {
     expect(cssVarName('surfaceElevated')).toBe('--color-surface-elevated');
-    expect(themeCssVars('light')['--color-primary']).toBe('63 98 78');
+    expect(themeCssVars('light')['--color-primary']).toBe('26 62 48');
     expect(themeCssVars('dark')['--color-background']).toBe(
       hexToRgbChannels(darkColors.background),
     );
