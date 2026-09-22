@@ -3,7 +3,16 @@
  * (e.g. `context.mood.<Mood>`) so a value can be translated with a template key.
  */
 
-export type Mood = 'calm' | 'discover' | 'energetic' | 'creative' | 'food' | 'shopping' | 'culture';
+export type Mood =
+  | 'calm'
+  | 'discover'
+  | 'energetic'
+  | 'creative'
+  | 'food'
+  | 'shopping'
+  | 'culture'
+  | 'festive'
+  | 'romantic';
 
 export type Company = 'alone' | 'couple' | 'friends' | 'family';
 

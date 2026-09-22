@@ -24,6 +24,7 @@
     "search": "Search",
     "retry": "Try again",
     "seeMore": "See more",
+    "seeAll": "See all",
     "done": "Done",
     "loading": "Loading…",
     "next": "Next",
@@ -140,7 +141,42 @@
     "title": "What do you feel like doing today?",
     "currentOutings": "What's happening now",
     "createOuting": "Plan my outing",
-    "inspiration": "Need some inspiration?"
+    "inspiration": "Need some inspiration?",
+    "notifications": "Notifications",
+    "search": {
+      "placeholder": "Explore a place, an activity…",
+      "filters": "Filters"
+    },
+    "hero": {
+      "eyebrow": "Trending now",
+      "goToSlide": "Go to outing {position} of {count}"
+    },
+    "sections": {
+      "moods": "Match your mood",
+      "popular": "Most popular experiences",
+      "nearby": "Places near you",
+      "forYou": "Picked for you"
+    },
+    "moods": {
+      "calm": "Calm",
+      "food": "Food",
+      "culture": "Culture",
+      "festive": "Festive",
+      "romantic": "Romantic"
+    },
+    "nearby": {
+      "restaurants": "Restaurants",
+      "bars": "Bars",
+      "culture": "Culture",
+      "parks": "Parks",
+      "experiences": "Experiences"
+    },
+    "badges": {
+      "popular": "Trending"
+    },
+    "favoriteAdd": "Add to favorites",
+    "favoriteRemove": "Remove from favorites",
+    "reviewCount": "({count} reviews)"
   },
   "discover": {
     "title": "Discover"
@@ -211,6 +247,7 @@
     "changeMood": "Change your mood"
   },
   "experience": {
+    "viewExperience": "See the experience",
     "createItinerary": "Create my itinerary",
     "whyRoam": "Why ROAM recommends this",
     "photos": "Photos",

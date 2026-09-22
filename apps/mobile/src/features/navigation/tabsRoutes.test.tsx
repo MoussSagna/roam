@@ -36,7 +36,9 @@ async function renderApp() {
 }
 
 const TABS = [
-  { label: 'Accueil', path: '/home', title: "Qu'est-ce que tu veux faire aujourd'hui ?" },
+  // Home's one `header` is the hero carousel's active slide title, not a static page title
+  // (sprint 5): `exp-dinner-view` ("Dîners avec vue") is the mock data's first hero experience.
+  { label: 'Accueil', path: '/home', title: 'Dîners avec vue' },
   { label: 'Découvrir', path: '/discover', title: 'Découvrir' },
   { label: 'Favoris', path: '/favorites', title: 'Mes favoris' },
   { label: 'Profil', path: '/profile', title: 'Profil' },

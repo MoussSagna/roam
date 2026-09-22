@@ -38,6 +38,7 @@ export function AppRoutes() {
 
       <Stack.Protected guard={isLoggedIn}>
         <Stack.Screen name="(tabs)" />
+        <Stack.Screen name="experience/[id]" />
       </Stack.Protected>
     </Stack>
   );

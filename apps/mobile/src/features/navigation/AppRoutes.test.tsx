@@ -130,7 +130,7 @@ describe('AppRoutes (mocked session route protection)', () => {
 
     await act(() => router.navigate('/home'));
 
-    // (tabs) is guarded out while logged out: the placeholder home content never renders.
-    expect(screen.queryByText('Cet écran arrive bientôt.')).toBeNull();
+    // (tabs) is guarded out while logged out: the Home content never renders.
+    expect(screen.queryByText('Explorer un lieu, une activité…')).toBeNull();
   });
 });

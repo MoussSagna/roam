@@ -24,6 +24,7 @@
     "search": "Rechercher",
     "retry": "Réessayer",
     "seeMore": "Voir plus",
+    "seeAll": "Voir tout",
     "done": "Terminé",
     "loading": "Chargement…",
     "next": "Suivant",
@@ -140,7 +141,42 @@
     "title": "Qu'est-ce que tu veux faire aujourd'hui ?",
     "currentOutings": "Les sorties du moment",
     "createOuting": "Créer ma sortie",
-    "inspiration": "Besoin d'inspiration ?"
+    "inspiration": "Besoin d'inspiration ?",
+    "notifications": "Notifications",
+    "search": {
+      "placeholder": "Explorer un lieu, une activité…",
+      "filters": "Filtres"
+    },
+    "hero": {
+      "eyebrow": "Sortie du moment",
+      "goToSlide": "Aller à la sortie {position} sur {count}"
+    },
+    "sections": {
+      "moods": "Selon ton humeur",
+      "popular": "Les expériences les plus populaires",
+      "nearby": "Lieux proches de toi",
+      "forYou": "Des idées pour toi"
+    },
+    "moods": {
+      "calm": "Calme",
+      "food": "Food",
+      "culture": "Culture",
+      "festive": "Festif",
+      "romantic": "Romantique"
+    },
+    "nearby": {
+      "restaurants": "Restaurants",
+      "bars": "Bars",
+      "culture": "Culture",
+      "parks": "Parcs",
+      "experiences": "Expériences"
+    },
+    "badges": {
+      "popular": "Très populaire"
+    },
+    "favoriteAdd": "Ajouter aux favoris",
+    "favoriteRemove": "Retirer des favoris",
+    "reviewCount": "({count} avis)"
   },
   "discover": {
     "title": "Découvrir"
@@ -211,6 +247,7 @@
     "changeMood": "Modifier mon envie"
   },
   "experience": {
+    "viewExperience": "Voir l'expérience",
     "createItinerary": "Créer mon parcours",
     "whyRoam": "Pourquoi ROAM te le propose ?",
     "photos": "Photos",

@@ -912,3 +912,75 @@ renders (the other three unmount, they don't just go transparent) inside the sam
   `authRoutes.test.tsx`, `onboardingRoutes.test.tsx`, `AppRoutes.test.tsx`) is one shared `act()`
   wrapping both the press and `jest.advanceTimersByTimeAsync(...)`, not two separate ones (which
   still passes, but logs a spurious "state update not wrapped in act()").
+
+## Home (2026-09-22)
+
+### D-45 — Home rebuilt as an immersive discovery page; `Experience`/`Mood` extended instead of duplicated
+
+Sprint 5 brief: replace the sprint 3 placeholder `/home` (D-39, "Cet écran arrive bientôt.") with the
+real Home — a hero carousel, mood chips, and three horizontally-scrolling sections — from a supplied
+design mockup, colors mapped to the existing ROAM tokens rather than copied from the mockup.
+
+- **`Experience` (`src/types/experience.ts`) gained optional display fields** (`location`,
+  `distanceLabel`, `durationLabel`, `priceLabel`, `rating`, `reviewCount`, `isPopular`, `isHero`,
+  `isFavorite`, `tags`) instead of a second, parallel type — the brief asked to reuse an existing
+  `Experience` type if one exists. `coverImageUrl?: string` (unused anywhere) became
+  `coverImage?: ImageSourcePropType` so the same field fits both a local `require()`'d placeholder
+  photo (used now) and a future remote URL, without a second image field.
+- **`Mood` (`src/types/common.ts`) gained `festive`/`romantic`**, needed by the Home "Selon ton
+  humeur" chips and reused directly on `Experience.moods` — one mood vocabulary, not a third one next
+  to the existing `Mood` (context/recommendation matching) and `MoodScreen`'s own local, unrelated
+  `Mood` type (onboarding tile ids, D-21).
+- **Mock content lives in the existing mock repository** (`services/mock/data.ts`): 5 hero
+  experiences (`isHero: true`), 3 "most popular" (`isPopular: true`) and 2 extra for "Des idées pour
+  toi", on top of the original `exp-slow-afternoon` fixture (untouched, still covered by
+  `repositories.test.ts`). Categories gained `restaurant`/`bar`/`culture`/`nature`/`experience`
+  slugs. Images are **temporary**: the onboarding/auth photos already in the repo
+  (`welcome-terrace.png`, `welcome-street.png`, `welcome-lake.png`, `welcome-cafe.png`,
+  `entry-background.png`, `ready-background.jpg`, `profile-landscape.jpg`, `splash-background.png`),
+  reused rather than downloading new ones, some more than once — replace with real experience photos
+  later, ids/filenames unaffected.
+- **The Home "moods" and "Lieux proches de toi" are static config**
+  (`features/home/data/moods.ts`, `nearbyCategories.ts`), not a repository — the same precedent as
+  `TAB_CONFIG` (navigation) and onboarding's own local `MOODS`: a fixed, small option list doesn't
+  need an async interface built for it.
+- **"Des idées pour toi" is a small, deterministic, explainable rule set**
+  (`features/home/lib/pickForYou.ts`, unit-tested): a mood match, a preferred-category match, the
+  top-rated popular experience, and the nearest one (parsed from the mock `distanceLabel`) — each
+  rule skips an id already picked, topped up from the remaining pool. `07_DATA_AND_RECOMMENDATION.md`
+  ("start deterministic, explainable scoring") applied to a fourth surface, not a scoring model.
+- **New generic primitives** (`src/components/ui/`): `IconButton` and `SearchBar` — both listed in
+  `06_DESIGN_SYSTEM.md`'s "Core" components but not built before this sprint. `Chip` gained an
+  optional `icon` slot (additive prop, same pattern as `Button`'s `leadingIcon`, D-29) for the mood
+  chips' icons.
+- **Favorites are local, in-memory state only** (`useFavoriteExperienceIds`): no backend, no
+  persistence, same "mock only" scope as the rest of this sprint (`08_AGENT_TODO.md` Phase F still
+  covers the real favorites feature). Only ids the user actually toggled are kept in state, merged
+  with the mock data's own `isFavorite` seed at read time — avoids a `setState` inside a `useEffect`
+  (flagged by the `react-hooks/set-state-in-effect` lint rule) to seed it from the loaded experiences.
+- **`expo-linear-gradient` added as a new dependency** (`~57.0.2`, matching SDK 57) for the hero's
+  dark-gradient-over-photo overlay — same reasoning as `expo-blur` for the tab bar's glass effect
+  (D-41): the brief calls for an actual gradient, which stacked flat views only approximate.
+- **Hero text/icons are fixed white, not theme tokens** — same reasoning as the splash, auth entry
+  and "Prêt à explorer ?" screens (D-18, D-26): the photo is dark enough in both themes that the
+  overlay text stays legible regardless of light/dark mode. The hero's own CTA button is the one
+  deliberate exception to "no hex/literal colors": `bg-white`/`text-white` are Tailwind's built-in
+  colors (kept available by `tailwind.config.ts`'s `extend`), not a new hex value.
+- **Only the active hero slide is exposed to accessibility tools**
+  (`accessibilityElementsHidden`/`importantForAccessibility` on the other slides, same pattern as
+  `RoamTabBar`'s collapsed/expanded layers, D-43): all 5 slides mount at once in the paging
+  `ScrollView` (no virtualization library), so without this every slide's heading/CTA would be
+  simultaneously queryable/announced.
+- **"Voir l'expérience" needed somewhere to land.** `src/app/experience/[id].tsx` +
+  `ExperienceDetailPlaceholder` (`src/features/experiences/`, previously an empty `.gitkeep`) is the
+  same not-yet-built-screen pattern as `AuthPlaceholder`/`OnboardingPlaceholder` (D-20, D-29, D-37,
+  both deleted once unused) — it reads the real title through `repositories.experiences.getById`
+  where it can, and shows `common.comingSoon` otherwise; replace its body, not the route, when
+  `02_MVP_SCOPE.md` §7's real experience detail screen is built. Added to `AppRoutes.tsx` under the
+  existing `guard={isLoggedIn}` block, alongside `(tabs)`.
+- **`RoamTabBar` and its `BottomTabBarProps` usage are untouched**, per this sprint's explicit scope:
+  Home only adds a sibling route (`experience/[id]`) to `AppRoutes`, and wires into the existing
+  `TabBarCollapseContext`/`useTabBarScrollHandler()` exactly like every other tab screen (D-38–D-43).
+- **Not done on purpose** (frontend-only prototype, `08_AGENT_TODO.md`): a real search engine, GPS
+  permission/geolocation, a real recommendation/scoring engine, and the experience detail screen
+  itself — the placeholder above stands in for it.

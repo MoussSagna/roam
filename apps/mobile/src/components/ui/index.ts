@@ -1,8 +1,10 @@
 export { Button, type ButtonProps } from './Button';
 export { Chip, type ChipProps } from './Chip';
 export { FadeInUp } from './FadeInUp';
+export { IconButton, type IconButtonProps } from './IconButton';
 export { PlaceholderCard } from './PlaceholderCard';
 export { Screen } from './Screen';
 export { ScrollScreen } from './ScrollScreen';
+export { SearchBar, type SearchBarProps } from './SearchBar';
 export { Text, type TextProps } from './Text';
 export { TextField, type TextFieldProps } from './TextField';
