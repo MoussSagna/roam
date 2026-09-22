@@ -69,7 +69,7 @@ apps/mobile/
     │   ├── (tabs)/          # Main navigation group: home, discover, favorites, profile + _layout.tsx (no path segment)
     │   └── /, /welcome, /onboarding/*, /auth/*
     ├── components/
-    │   ├── ui/              # Text, Button, IconButton, Chip, SearchBar, Slider, Screen, ScrollScreen, PlaceholderCard, FadeInUp, TextField
+    │   ├── ui/              # Text, Button, IconButton, Chip, SearchBar, Slider, StickyActionFooter, Screen, ScrollScreen, PlaceholderCard, FadeInUp, TextField
     │   └── brand/           # Logo (light / dark / icon variants)
     ├── features/            # One folder per feature (empty until its sprint)
     │   ├── splash/          # In-app splash screen (route /) + its measured layout
@@ -82,7 +82,7 @@ apps/mobile/
     │   ├── auth/            # Authentication: all 7 screens built (Entry, Login, Register, ForgotPassword, ResetCode, NewPassword, ResetSuccess)
     │   ├── itinerary/       # CreateJourneyPlaceholder (route itinerary/create) — not the real screen yet
     │   └── recommendations, map, outing, feedback
-    ├── hooks/               # Cross-feature hooks (useBootstrap, useReduceMotion)
+    ├── hooks/               # Cross-feature hooks (useBootstrap, useReduceMotion, useCtaVisibility)
     ├── i18n/                # i18next setup + locales/fr.json, locales/en.json
     ├── lib/                 # Small framework-agnostic helpers (storage, cx)
     ├── services/            # Data access: repository interfaces + mock implementation
@@ -182,7 +182,7 @@ polish D-49), built on `Experience`'s extended fields through the same `Experien
 | Detail screen         | `experience/[id]` → `features/experiences/ExperienceDetailScreen.tsx`       | Hero, info grid, map preview, why-ROAM, reviews, highlights, similar                                              |
 | Hero                  | `features/experiences/components/ExperienceHero.tsx`                        | Paging pager + counter; one `Pressable` per slide (not wrapping the `ScrollView`, D-49); tap opens the gallery    |
 | Sticky header         | `features/experiences/components/ExperienceDetailHeader.tsx`                | Back/share/favorite (moved out of the hero, D-49); title/blur crossfade in past the hero — always visible         |
-| Sticky CTA footer     | `features/experiences/components/ExperienceDetailFooter.tsx`                | "Créer mon parcours"; hides on scroll down, returns on scroll end/up (`useCtaVisibility`, D-49)                   |
+| Sticky CTA footer     | `components/ui/StickyActionFooter.tsx` (shared, D-52)                       | "Créer mon parcours"; hides on scroll down, returns on scroll end/up (`hooks/useCtaVisibility`, D-49/D-52)        |
 | Gallery screen        | `gallery/[id]` → `features/experiences/gallery/ExperienceGalleryScreen.tsx` | Full-screen; a flat route (not nested under `experience/[id]/`), see D-48                                         |
 | Gallery sync          | Two `FlatList`s (main pager + thumbnail strip) sharing one `activeIndex`    | `getItemLayout` on both; thumbnail press scrolls the main list, main-list scroll re-centers the thumbnail strip   |
 | Hero → gallery motion | `progress` shared value (`useSharedValue`/`withTiming`/`interpolate`)       | Reanimated rect-morph, not a shared-element library (none in the stack) — see D-48 for the full rationale         |
@@ -197,14 +197,14 @@ Built one screen at a time (`docs/SCREEN_INTEGRATION_WORKFLOW.md`), sprint 5. Th
 (`/profile`) and "Mes préférences" (`/profile/preferences`) are real; every other row is still a
 `ProfilePlaceholder` stub (`docs/DECISIONS.md` D-50) until its own session.
 
-| Piece              | Route / component                                                                        | Notes                                                                                                                            |
-| ------------------ | ---------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------- |
-| Main screen        | `/profile` (in `(tabs)`) → `features/profile/ProfileScreen.tsx`                          | Header (avatar/name/bio/edit CTA), stats, grouped menu, logout — built on `UserRepository` (`useCurrentUser`)                    |
-| Header/stats       | `features/profile/components/ProfileHeader.tsx`, `ProfileAvatar.tsx`, `ProfileStats.tsx` | Avatar falls back to an initial letter (no photo in the mock content, same precedent as `ReviewCard`)                            |
-| Menu row           | `features/profile/components/ProfileMenuRow.tsx`                                         | Icon + label (+ optional subtitle or right-aligned value) + chevron; reused for every group                                      |
-| Preferences        | `/profile/preferences` → `features/profile/PreferencesScreen.tsx`                        | Experience types + ambiance (multi-select tile grids), budget + distance (`Slider`) — local state only, `docs/DECISIONS.md` D-51 |
-| Not-yet-built rows | `features/profile/components/ProfilePlaceholder.tsx`                                     | `/profile/{edit,favorites,history,statistics,language,theme,help,privacy,settings}`                                              |
-| Data               | `UserRepository.getCurrentUser()` (`services/mock/user.ts`)                              | One mocked profile (`services/mock/data.ts` → `currentUser`); `User` gained optional `age/city/bio/stats`                        |
+| Piece              | Route / component                                                                        | Notes                                                                                                                                                                     |
+| ------------------ | ---------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Main screen        | `/profile` (in `(tabs)`) → `features/profile/ProfileScreen.tsx`                          | Header (avatar/name/bio/edit CTA), stats, grouped menu, logout — built on `UserRepository` (`useCurrentUser`)                                                             |
+| Header/stats       | `features/profile/components/ProfileHeader.tsx`, `ProfileAvatar.tsx`, `ProfileStats.tsx` | Avatar falls back to an initial letter (no photo in the mock content, same precedent as `ReviewCard`)                                                                     |
+| Menu row           | `features/profile/components/ProfileMenuRow.tsx`                                         | Icon + label (+ optional subtitle or right-aligned value) + chevron; reused for every group                                                                               |
+| Preferences        | `/profile/preferences` → `features/profile/PreferencesScreen.tsx`                        | Experience types + ambiance (multi-select tile grids), budget + distance (`Slider`); save CTA is a `StickyActionFooter` — local state only, `docs/DECISIONS.md` D-51/D-52 |
+| Not-yet-built rows | `features/profile/components/ProfilePlaceholder.tsx`                                     | `/profile/{edit,favorites,history,statistics,language,theme,help,privacy,settings}`                                                                                       |
+| Data               | `UserRepository.getCurrentUser()` (`services/mock/user.ts`)                              | One mocked profile (`services/mock/data.ts` → `currentUser`); `User` gained optional `age/city/bio/stats`                                                                 |
 
 ## Authentication (current state)
 

@@ -4,11 +4,12 @@ import { useCallback, useRef, useState } from 'react';
 const DIRECTION_THRESHOLD = 12;
 
 /**
- * Sticky CTA footer visibility (experience detail polish): visible at rest, hidden while the user is
- * actively scrolling down, shown again the moment scrolling stops OR reverses — unlike
- * `useScrollDirection` (Home's header), which only reacts to sustained direction changes and has no
- * "scroll ended" signal. Kept as its own hook rather than reusing that one: the two screens'
- * bars have different rules on purpose (item 15 — "ne mélange pas leurs états").
+ * Sticky CTA footer visibility (`StickyActionFooter`, `components/ui/`): visible at rest, hidden
+ * while the user is actively scrolling down, shown again the moment scrolling stops OR reverses —
+ * unlike `useScrollDirection` (Home's header), which only reacts to sustained direction changes and
+ * has no "scroll ended" signal. Kept as its own hook rather than merged into that one: a screen's
+ * sticky footer and its header (if any) must not share state (introduced for experience detail,
+ * `docs/DECISIONS.md` D-49; promoted here so Preferences and any future screen can reuse it, D-52).
  */
 export function useCtaVisibility() {
   const [visible, setVisible] = useState(true);

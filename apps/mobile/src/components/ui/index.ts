@@ -7,5 +7,10 @@ export { Screen } from './Screen';
 export { ScrollScreen } from './ScrollScreen';
 export { SearchBar, type SearchBarProps } from './SearchBar';
 export { Slider, type SliderProps } from './Slider';
+export {
+  StickyActionFooter,
+  STICKY_FOOTER_CLEARANCE,
+  type StickyActionFooterProps,
+} from './StickyActionFooter';
 export { Text, type TextProps } from './Text';
 export { TextField, type TextFieldProps } from './TextField';

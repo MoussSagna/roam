@@ -3,6 +3,7 @@ import { StatusBar } from 'expo-status-bar';
 import Clock from 'lucide-react-native/icons/clock';
 import Euro from 'lucide-react-native/icons/euro';
 import MapPin from 'lucide-react-native/icons/map-pin';
+import Sparkles from 'lucide-react-native/icons/sparkles';
 import Star from 'lucide-react-native/icons/star';
 import TrainFront from 'lucide-react-native/icons/train-front';
 import { useCallback, useMemo } from 'react';
@@ -12,14 +13,14 @@ import { ScrollView, Share, useWindowDimensions, View } from 'react-native';
 import { useSharedValue } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { Button, Text } from '@/components/ui';
+import { Button, STICKY_FOOTER_CLEARANCE, StickyActionFooter, Text } from '@/components/ui';
 import { useFavoriteExperienceIds } from '@/features/home/useFavoriteExperienceIds';
 import { useCategories } from '@/hooks/useCategories';
+import { useCtaVisibility } from '@/hooks/useCtaVisibility';
 import type { Experience, GalleryOpenRect } from '@/types';
 import { useTheme } from '@/theme';
 
 import { Badge } from './components/Badge';
-import { ExperienceDetailFooter, FOOTER_CLEARANCE } from './components/ExperienceDetailFooter';
 import { ExperienceDetailHeader, HEADER_HEIGHT } from './components/ExperienceDetailHeader';
 import { ExperienceHero } from './components/ExperienceHero';
 import { HighlightsSection } from './components/HighlightsSection';
@@ -31,7 +32,6 @@ import { WhyRoamSection } from './components/WhyRoamSection';
 import { getCategoryLabel } from './lib/categoryLabel';
 import { getHeroHeight } from './lib/heroHeight';
 import { getWhyRecommended } from './lib/whyRecommended';
-import { useCtaVisibility } from './useCtaVisibility';
 import { useExperienceDetail } from './useExperienceDetail';
 
 type ExperienceDetailScreenProps = {
@@ -191,7 +191,7 @@ export function ExperienceDetailScreen({ experienceId }: ExperienceDetailScreenP
         onScrollEndDrag={ctaOnScrollEnd}
         onMomentumScrollEnd={ctaOnScrollEnd}
         scrollEventThrottle={16}
-        contentContainerStyle={{ paddingBottom: insets.bottom + FOOTER_CLEARANCE }}
+        contentContainerStyle={{ paddingBottom: insets.bottom + STICKY_FOOTER_CLEARANCE }}
       >
         <ExperienceHero
           images={images}
@@ -279,11 +279,11 @@ export function ExperienceDetailScreen({ experienceId }: ExperienceDetailScreenP
         revealOffset={revealOffset}
       />
 
-      <ExperienceDetailFooter
+      <StickyActionFooter
         visible={ctaVisible}
         label={t('experience.createItinerary')}
         onPress={goToCreateJourney}
-        bottomInset={insets.bottom}
+        icon={Sparkles}
       />
     </View>
   );

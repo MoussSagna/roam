@@ -103,4 +103,30 @@ describe('PreferencesScreen', () => {
     expect(mockBack).toHaveBeenCalled();
     jest.useRealTimers();
   });
+
+  it('the sticky footer CTA hides on a sustained downward scroll and comes back once the scroll ends', async () => {
+    await renderWithProviders(<PreferencesScreen />);
+    const scrollView = screen.getByTestId('preferences-scroll');
+
+    expect(screen.getByRole('button', { name: 'Enregistrer mes préférences' })).toBeOnTheScreen();
+
+    await fireEvent.scroll(scrollView, { nativeEvent: { contentOffset: { y: 200 } } });
+    expect(screen.queryByRole('button', { name: 'Enregistrer mes préférences' })).toBeNull();
+
+    await fireEvent(scrollView, 'momentumScrollEnd', {
+      nativeEvent: { contentOffset: { y: 200 } },
+    });
+    expect(screen.getByRole('button', { name: 'Enregistrer mes préférences' })).toBeOnTheScreen();
+  });
+
+  it('brings the sticky footer CTA back on an upward scroll, without waiting for the scroll to end', async () => {
+    await renderWithProviders(<PreferencesScreen />);
+    const scrollView = screen.getByTestId('preferences-scroll');
+
+    await fireEvent.scroll(scrollView, { nativeEvent: { contentOffset: { y: 200 } } });
+    expect(screen.queryByRole('button', { name: 'Enregistrer mes préférences' })).toBeNull();
+
+    await fireEvent.scroll(scrollView, { nativeEvent: { contentOffset: { y: 170 } } });
+    expect(screen.getByRole('button', { name: 'Enregistrer mes préférences' })).toBeOnTheScreen();
+  });
 });

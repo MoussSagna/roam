@@ -10,6 +10,10 @@ type ScrollScreenProps = {
   className?: string;
   contentContainerStyle?: StyleProp<ViewStyle>;
   onScroll?: (event: NativeSyntheticEvent<NativeScrollEvent>) => void;
+  /** Forwarded as-is: a screen pairs these with `useCtaVisibility` to bring a `StickyActionFooter`
+   * back once the scroll gesture actually ends, not just on a sustained upward scroll. */
+  onScrollEndDrag?: (event: NativeSyntheticEvent<NativeScrollEvent>) => void;
+  onMomentumScrollEnd?: (event: NativeSyntheticEvent<NativeScrollEvent>) => void;
   /** Lets a screen grab its own `ScrollView` in tests (e.g. to fire scroll events). */
   testID?: string;
 };
@@ -20,6 +24,8 @@ export function ScrollScreen({
   className,
   contentContainerStyle,
   onScroll,
+  onScrollEndDrag,
+  onMomentumScrollEnd,
   testID,
 }: ScrollScreenProps) {
   return (
@@ -30,6 +36,8 @@ export function ScrollScreen({
           className={cx('flex-1 px-6', className)}
           contentContainerStyle={[{ paddingBottom: 40 }, contentContainerStyle]}
           onScroll={onScroll}
+          onScrollEndDrag={onScrollEndDrag}
+          onMomentumScrollEnd={onMomentumScrollEnd}
           scrollEventThrottle={16}
           showsVerticalScrollIndicator={false}
         >

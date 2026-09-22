@@ -1331,3 +1331,46 @@ distance (sliders), "Réinitialiser" and "Enregistrer mes préférences".
   possible but adds little over the already-covered increment/decrement path that exercises the same
   `onValueChange` wiring); persisting preferences (no backend); the other nine `/profile/*` placeholders
   (each its own session).
+
+### D-52 — `StickyActionFooter` extracted from experience detail's CTA footer; Preferences reuses it
+
+Polish pass, explicitly scoped to presentation/positioning only, requested before moving past
+`/profile/preferences`: "Enregistrer mes préférences" moves from an inline button at the end of the
+scrollable content to a floating sticky footer, matching experience detail's "Créer mon parcours"
+(D-49) exactly rather than inventing a second visual language for the same kind of control.
+
+- **`ExperienceDetailFooter` (`features/experiences/components/`) is promoted to
+  `StickyActionFooter` (`components/ui/`), not duplicated.** Its exact rendering — a full-bleed
+  `bg-surface` bar with a top border sitting flush against the screen's edges (not a floating
+  inset/rounded card), `MotiView` slide+fade tied to a `visible` prop, safe-area bottom padding — is
+  preserved byte-for-byte; only the API changed shape (`icon`, `disabled` and `variant` became
+  optional, generic props instead of a hardcoded `Sparkles` trailing icon and an implicit `primary`
+  Button). `bottomInset` was dropped as a prop: the component now calls `useSafeAreaInsets()` itself
+  (item 4 of the brief: the shared component owns safe-area handling, not each screen), which is a
+  behavior-preserving change since it reads the exact same context either way.
+- **`useCtaVisibility` (scroll-direction/scroll-end visibility) moved from `features/experiences/` to
+  `hooks/`**, alongside `useScrollDirection` — it was already 100% generic (no `Experience` reference
+  anywhere in it), so it belongs with the other cross-feature hooks rather than a single feature
+  folder, and Preferences needed the exact same behavior (item 7 of the brief: reuse the hook, don't
+  re-derive the logic). `FOOTER_CLEARANCE` was renamed `STICKY_FOOTER_CLEARANCE` and now lives with the
+  component it describes.
+- **`ScrollScreen` gained two additive, optional props** (`onScrollEndDrag`/`onMomentumScrollEnd`,
+  forwarded straight to its `ScrollView`) instead of switching `PreferencesScreen` to a raw
+  `ScrollView` like `ExperienceDetailScreen` uses — `ScrollScreen` already owned the safe-area/padding
+  boilerplate Preferences relies on, and every existing call site is unaffected by two new, unused-by-
+  default props (same "additive prop" precedent as `Button`'s `loading`/`leadingIcon`, D-29, and
+  `Chip`'s `icon`, D-45).
+- **`ExperienceDetailScreen`'s own behavior and tests are unchanged.** The refactor only swaps which
+  file the footer/hook come from and how `bottomInset` is supplied; `ExperienceDetailScreen.test.tsx`
+  (including the two scroll-hide/reveal tests) passes with zero modifications, which is the actual
+  proof "no visual/functional regression" holds — not just a visual read.
+- **Preferences' footer is not centered/inset with margins on every side**, despite an earlier draft of
+  this brief describing a floating card that never touches any screen edge — the _actual_,
+  already-validated experience detail footer is a full-width bar flush to the left/right/bottom edges
+  (safe-area bottom padding only, no card/rounded/glass treatment), and item 5 of this brief is explicit
+  that the new footer must match that "EXACTEMENT". Reusing the real implementation, not the
+  abstract description that didn't match it, is what keeps "no two different systems for the same
+  thing" true.
+- **Not done on purpose**: no visual change to either screen's footer beyond what "share one component"
+  requires; `PreferencesScreen`'s own save/reset business logic is untouched, only its CTA's
+  presentation moved.
