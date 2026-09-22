@@ -343,6 +343,16 @@
       "submit": "Envoyer le code",
       "hint": "Tu vas recevoir un email avec un code de réinitialisation.\nPense à vérifier tes spams !"
     },
+    "resetCode": {
+      "title": "Vérifie ton email",
+      "subtitle": "Nous avons envoyé un code à",
+      "expiry": "Le code expire dans 10 minutes.",
+      "continue": "Continuer",
+      "resend": "Renvoyer le code",
+      "helpTitle": "Tu n'as pas reçu l'email ?",
+      "helpBody": "Vérifie tes spams ou clique sur « Renvoyer le code ».",
+      "digitLabel": "Chiffre {position} sur {length}"
+    },
     "placeholder": {
       "comingSoon": "Écran à venir"
     }
@@ -351,7 +361,8 @@
     "required": "Ce champ est requis.",
     "emailInvalid": "Adresse e-mail invalide.",
     "passwordWeak": "Vérifie les critères ci-dessous.",
-    "passwordMismatch": "Les mots de passe ne correspondent pas."
+    "passwordMismatch": "Les mots de passe ne correspondent pas.",
+    "codeIncomplete": "Entre les 6 chiffres du code."
   },
   "errors": {
     "generic": "Une erreur est survenue.",

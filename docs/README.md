@@ -27,8 +27,8 @@ Translation resources (used by the mobile app):
 
 Current status (2026-09-22): the mobile onboarding is implemented on the front end (no backend, no database; the
 profile creation is a simulation of about 10 s). Authentication screens are being built one at a time, front-end
-only and simulated: Entry, Login, Register and Forgot password (email step) are done; the reset-code screen it
-leads to is next — see `DECISIONS.md` D-28, D-29, D-31–D-33, `08_AGENT_TODO.md` and
+only and simulated: Entry, Login, Register, Forgot password and its reset-code step are done; the new-password
+screen it leads to is next — see `DECISIONS.md` D-28, D-29, D-31–D-34, `08_AGENT_TODO.md` and
 `docs/SCREEN_INTEGRATION_WORKFLOW.md`.
 
 The product is intentionally MVP-first. Do not expand scope without an explicit requirement.

@@ -343,6 +343,16 @@
       "submit": "Send code",
       "hint": "You'll receive an email with a reset code.\nRemember to check your spam folder!"
     },
+    "resetCode": {
+      "title": "Verify your email",
+      "subtitle": "We sent a code to",
+      "expiry": "The code expires in 10 minutes.",
+      "continue": "Continue",
+      "resend": "Resend code",
+      "helpTitle": "Didn't receive the email?",
+      "helpBody": "Check your spam folder or tap “Resend code”.",
+      "digitLabel": "Digit {position} of {length}"
+    },
     "placeholder": {
       "comingSoon": "Screen coming soon"
     }
@@ -351,7 +361,8 @@
     "required": "This field is required.",
     "emailInvalid": "Invalid email address.",
     "passwordWeak": "Check the requirements below.",
-    "passwordMismatch": "Passwords don't match."
+    "passwordMismatch": "Passwords don't match.",
+    "codeIncomplete": "Enter all 6 digits of the code."
   },
   "errors": {
     "generic": "Something went wrong.",

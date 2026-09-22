@@ -588,3 +588,34 @@ one `TextField`, one `Button`, no divider/social buttons/footer link.
   are their own screens, not built as part of this one, even though `02_MVP_SCOPE.md`'s brief groups
   "Forgot Password" as a single MVP item — the mockup breaks it into a small sub-flow, and the workflow's
   one-screen-at-a-time rule applies to each of them individually.
+
+### D-34 — Authentication 5 "Code de réinitialisation" (route `/auth/reset-code`)
+
+`ResetCodeScreen` replaces the `AuthPlaceholder` that `/auth/reset-code` rendered since D-33. Measured on
+tile 5 of the design mockup board — a 6-digit OTP entry, one box per digit, one of them shown focused
+(highlighted border) in the mockup.
+
+- **New `OtpInput` component** (`features/auth/components/`): 6 boxes are a _presentation_ of one string
+  value (`onChangeValue`, not per-box state), so the whole code can be set/cleared from outside (used by
+  "Renvoyer le code"). Typing a digit auto-advances to the next box; backspace on an empty box goes back
+  and clears the previous one; a same-tick multi-character input (a paste, or RNTL's `fireEvent.changeText`
+  with a full string) distributes across the remaining boxes instead of being rejected — realistic for
+  both an actual paste and how a code-entry field is normally tested. The focused box gets a `primary`
+  border (matching the mockup's highlighted 3rd box); an invalid submission turns every box's border
+  `error` red instead.
+- **The email from the previous screen is threaded through as a route param**
+  (`router.push({ pathname: '/auth/reset-code', params: { email } })` from `ForgotPasswordScreen`,
+  read with `useLocalSearchParams`), so "Nous avons envoyé un code à **{email}**" shows the address the
+  user actually typed — there's no shared auth store yet for this prototype, so a route param is the
+  simplest way to carry one small piece of state one screen forward. It's optional: the screen degrades
+  to just the prefix line if it's missing (e.g. the screen is opened directly, as the route-tree test
+  for tile 5 alone does).
+- **Any complete 6-digit code "succeeds"** (no backend to check it against, same simulation pattern as
+  D-31–D-33): `handleContinue` simulates a request then `router.push('/auth/new-password')` — a new
+  placeholder stub for tile 6. An incomplete code shows `validation.codeIncomplete` instead of submitting.
+- **"Renvoyer le code" only clears the input**, front-end only — there is no email to actually resend, and
+  no cooldown/rate-limit state invented for it (nothing in the mockup implies one).
+- **The help card's background is `bg-primary/5`**, not a new palette color: sampled on the mockup it's a
+  faint sage-tinted neutral close enough to a 4–5% tint of `primary` over the background that a dedicated
+  token isn't worth adding for one decorative card. Lucide `mail-warning` for its icon (no exact mockup
+  glyph match needed — same approximation spirit as D-25's icons).

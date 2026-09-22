@@ -91,7 +91,10 @@ describe('ForgotPasswordScreen (authentication 4 — forgot password)', () => {
     expect(screen.getByRole('button', { name: 'Envoyer le code' })).toBeDisabled();
     await act(() => jest.advanceTimersByTime(1000));
 
-    expect(mockPush).toHaveBeenCalledWith('/auth/reset-code');
+    expect(mockPush).toHaveBeenCalledWith({
+      pathname: '/auth/reset-code',
+      params: { email: 'moussa@email.com' },
+    });
     jest.useRealTimers();
   });
 });

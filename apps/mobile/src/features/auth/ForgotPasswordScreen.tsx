@@ -20,7 +20,8 @@ const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 /**
  * Forgot password screen (design mockup "Authentification", tile 4 "Mot de passe oublié") —
  * front-end only. There is no backend to send an email through, so a well-formed email simulates
- * a request and moves on to the (not yet built) reset-code screen (`DECISIONS.md` D-33).
+ * a request and moves on to the reset-code screen, passing the email along as a route param
+ * (`DECISIONS.md` D-33, D-34).
  */
 export function ForgotPasswordScreen() {
   const { t } = useTranslation();
@@ -48,7 +49,7 @@ export function ForgotPasswordScreen() {
     setLoading(true);
     setTimeout(() => {
       setLoading(false);
-      router.push('/auth/reset-code');
+      router.push({ pathname: '/auth/reset-code', params: { email: trimmed } });
     }, SEND_CODE_SIMULATION_MS);
   };
 

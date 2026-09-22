@@ -88,7 +88,7 @@ describe('authentication routes', () => {
     expect(screen.getByRole('header')).toHaveTextContent('Mot de passe oublié ?');
   });
 
-  it('sending the reset code moves on to the (placeholder) reset-code screen', async () => {
+  it('sending the reset code opens the reset-code screen with the email carried over', async () => {
     const utils = await renderApp();
     await act(() => router.navigate('/auth/forgot-password'));
 
@@ -97,6 +97,20 @@ describe('authentication routes', () => {
     await act(() => jest.advanceTimersByTimeAsync(1000));
 
     expect(utils.getPathname()).toBe('/auth/reset-code');
+    expect(screen.queryByText(/Unmatched Route/i)).toBeNull();
+    expect(screen.getByRole('header')).toHaveTextContent('Vérifie ton email');
+    expect(screen.getByText('moussa@email.com')).toBeOnTheScreen();
+  });
+
+  it('entering a complete code moves on to the (placeholder) new-password screen', async () => {
+    const utils = await renderApp();
+    await act(() => router.navigate('/auth/reset-code'));
+
+    await fireEvent.changeText(screen.getByLabelText('Chiffre 1 sur 6'), '247193');
+    await fireEvent.press(screen.getByRole('button', { name: 'Continuer' }));
+    await act(() => jest.advanceTimersByTimeAsync(1000));
+
+    expect(utils.getPathname()).toBe('/auth/new-password');
     expect(screen.queryByText(/Unmatched Route/i)).toBeNull();
   });
 
