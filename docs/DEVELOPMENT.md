@@ -69,7 +69,7 @@ apps/mobile/
     │   ├── (tabs)/          # Main navigation group: home, discover, favorites, profile + _layout.tsx (no path segment)
     │   └── /, /welcome, /onboarding/*, /auth/*
     ├── components/
-    │   ├── ui/              # Text, Button, IconButton, Chip, SearchBar, Slider, StickyActionFooter, AppToast, Screen, ScrollScreen, PlaceholderCard, FadeInUp, TextField
+    │   ├── ui/              # Text, Button, IconButton, Chip, SearchBar, Slider, StickyActionFooter, StickyRevealHeader, AppToast, Screen, ScrollScreen, PlaceholderCard, FadeInUp, TextField
     │   └── brand/           # Logo (light / dark / icon variants)
     ├── features/            # One folder per feature (empty until its sprint)
     │   ├── splash/          # In-app splash screen (route /) + its measured layout
@@ -301,6 +301,31 @@ appearance animation. Moti runs on Reanimated 4 + `react-native-worklets`.
 - Animating an SVG attribute (the loader ring): `Animated.createAnimatedComponent(Circle)` + `useAnimatedProps`.
 - Timed sequences (front-end simulations): a `setTimeout` schedule created in one `useEffect` and cleared in its cleanup
   (see `features/onboarding/profileCreation.ts`), tested with Jest fake timers.
+
+### Sticky headers with a scroll-position reveal
+
+`StickyRevealHeader` (`components/ui/`, sprint 5, `docs/DECISIONS.md` D-55) is a generic sticky header
+that starts transparent and crossfades in a background (blur + a `surface`-tinted wash, the same glass
+recipe `RoamTabBar` uses) plus an optional title once the screen has scrolled past a given offset —
+generalized from experience detail's own header for **future screens with the same shape**.
+
+- **Use it for a new screen** that needs "transparent over a hero, background/title fade in once the
+  hero's own title scrolls out of view". Give it `scrollY` (a `SharedValue<number>` you mutate from a
+  plain `onScroll`, not `useAnimatedScrollHandler` — same reasoning as `D-39`/`D-46`) and `revealOffset`
+  (the scroll position where the reveal should be complete, e.g. from a hero-height helper like
+  `getHeroHeight`). `leftSlot`/`rightSlot` are `ReactNode` — the header renders no buttons itself;
+  compose whatever the screen needs (an `IconButton`, a `Pressable`, nothing) — same "component owns
+  chrome, screen owns content" split as `StickyActionFooter`.
+- **Experience detail's own `ExperienceDetailHeader` was intentionally left as-is**, not migrated: it
+  hardcodes back/share/favorite (not slot-based), fixed white icons on a permanent dark backdrop (it
+  only ever sits over a photo, so no theme-aware icon color is needed), and its own `HEADER_HEIGHT`.
+  Migrating it now would touch an already-validated, tested screen for no behavioral gain — **all
+  existing headers (`ExperienceDetailHeader`, `HomeHeader`, `AuthTopBar`, …) will be harmonized in a
+  dedicated pass at the end of the project**, not screen-by-screen as a side effect of building this
+  component.
+- Not reduced-motion gated (see the component's own doc comment): the crossfade is a direct function
+  of scroll position, not a timed animation, so there's nothing to suppress — same as
+  `ExperienceDetailHeader`.
 
 ### Toasts
 

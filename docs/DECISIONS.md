@@ -1485,3 +1485,40 @@ before this (grepped for "toast"/"snackbar"/"notification" across `src/`, nothin
   library's own `// TODO: use a queue when Toast is already visible` — out of scope, and Preferences'
   own `if (saving) return` already prevents overlapping saves from ever triggering two toasts back to
   back).
+
+### D-55 — `StickyRevealHeader` extracted for future screens; experience detail's own header untouched
+
+Explicit brief: generalize experience detail's scroll-reveal header (transparent → background/title
+fade in once the hero's title scrolls out of view, D-49) into a reusable component **for future
+screens**, without migrating or risking the already-validated `ExperienceDetailHeader`.
+
+- **New component, not a refactor of the existing one.** `StickyRevealHeader` (`components/ui/`) is
+  written fresh, informed by `ExperienceDetailHeader`'s logic (same `scrollY`/`revealOffset`/
+  `fadeRange` crossfade via `interpolate`+`useAnimatedStyle`, same absolute/`zIndex`/`box-none`
+  positioning), but `ExperienceDetailHeader.tsx` and `ExperienceDetailScreen.tsx` are **not touched** —
+  zero risk to a validated screen, confirmed by `ExperienceDetailHeader.test.tsx`/
+  `ExperienceDetailScreen.test.tsx` passing unmodified.
+- **Why not extract in place instead**: `ExperienceDetailHeader` hardcodes three specific actions
+  (back/share/favorite, not a slot API) and fixed white-on-black-backdrop icons — correct for a header
+  that only ever sits over a photo, but not a safe default for an unknown future screen that might not.
+  Reshaping it into a generic slot-based, theme-aware component _in place_ would have been the kind of
+  "modify a validated screen for a future, unconfirmed need" the brief explicitly rules out (item 6).
+- **API is two `ReactNode` slots (`leftSlot`/`rightSlot`) instead of fixed action props**, the same
+  "component owns chrome, screen owns content" split `StickyActionFooter` already established (D-52):
+  the header doesn't know or care what a future screen puts in them (an `IconButton`, nothing, two
+  buttons) — no assumed action set to get wrong.
+- **Safe area is internal** (`useSafeAreaInsets()` inside the component, not a `topInset` prop) — same
+  precedent as `StickyActionFooter` dropping its `bottomInset` prop (D-52): the component owns safe
+  area per the brief's own list of responsibilities, not the screen.
+- **Reveal background is blur + a `surface`-tinted wash, not blur alone** — reusing `RoamTabBar`'s exact
+  glass recipe (`hexToRgbChannels(colors.surface)` at 0.75/0.85 alpha, D-41) instead of
+  `ExperienceDetailHeader`'s plain `BlurView`. A bare blur only reads as "a background" over a photo;
+  since this header is meant for screens that may not have one, the wash makes the reveal legible
+  either way — a deliberate generalization, not a copy of the original's exact visual.
+- **`docs/DEVELOPMENT.md` gained a "Sticky headers with a scroll-position reveal" convention**,
+  explicit that existing headers (`ExperienceDetailHeader`, `HomeHeader`, `AuthTopBar`, …) are
+  **not migrated now** and will be harmonized in one dedicated pass at the end of the project — not
+  screen-by-screen as new components appear.
+- **Not done on purpose**: adopting `StickyRevealHeader` on any existing screen (none was asked to
+  change); a `children`/arbitrary-content slot beyond title + two action slots (nothing concrete needs
+  it yet — additive later if a real screen does); migrating any other header.

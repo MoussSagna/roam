@@ -13,5 +13,10 @@ export {
   STICKY_FOOTER_CLEARANCE,
   type StickyActionFooterProps,
 } from './StickyActionFooter';
+export {
+  StickyRevealHeader,
+  STICKY_REVEAL_HEADER_HEIGHT,
+  type StickyRevealHeaderProps,
+} from './StickyRevealHeader';
 export { Text, type TextProps } from './Text';
 export { TextField, type TextFieldProps } from './TextField';
