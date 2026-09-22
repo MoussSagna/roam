@@ -48,7 +48,11 @@ export function HomeScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const tabBarOnScroll = useTabBarScrollHandler();
-  const { visible: headerVisible, handleScrollOffset: onHeaderScrollOffset } = useScrollDirection();
+  const {
+    visible: headerVisible,
+    atTop: headerAtTop,
+    handleScrollOffset: onHeaderScrollOffset,
+  } = useScrollDirection();
 
   // UI-thread value driving the Hero's pull-to-stretch (below); mutated directly from the plain JS
   // `onScroll` handler, like `ProfileOrbit`'s loader progress — this does not re-render `HomeScreen`
@@ -236,7 +240,12 @@ export function HomeScreen() {
         </View>
       </ScrollView>
 
-      <HomeHeader visible={headerVisible} topInset={insets.top} onPressNotifications={() => {}} />
+      <HomeHeader
+        visible={headerVisible}
+        atTop={headerAtTop}
+        topInset={insets.top}
+        onPressNotifications={() => {}}
+      />
     </View>
   );
 }

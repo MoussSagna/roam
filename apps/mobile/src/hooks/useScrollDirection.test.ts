@@ -3,9 +3,30 @@ import { act, renderHook } from '@testing-library/react-native';
 import { useScrollDirection } from './useScrollDirection';
 
 describe('useScrollDirection', () => {
-  it('starts visible', async () => {
+  it('starts visible and at the top', async () => {
     const { result } = await renderHook(() => useScrollDirection());
     expect(result.current.visible).toBe(true);
+    expect(result.current.atTop).toBe(true);
+  });
+
+  it('leaves the top zone once the scroll passes it, and returns to it at the top', async () => {
+    const { result } = await renderHook(() => useScrollDirection());
+
+    await act(() => result.current.handleScrollOffset(100));
+    expect(result.current.atTop).toBe(false);
+
+    await act(() => result.current.handleScrollOffset(0));
+    expect(result.current.atTop).toBe(true);
+  });
+
+  it('reports atTop=false even while visible again from a sustained upward scroll', async () => {
+    const { result } = await renderHook(() => useScrollDirection());
+
+    await act(() => result.current.handleScrollOffset(200));
+    await act(() => result.current.handleScrollOffset(170));
+
+    expect(result.current.visible).toBe(true);
+    expect(result.current.atTop).toBe(false);
   });
 
   it('hides once a downward scroll passes the threshold', async () => {

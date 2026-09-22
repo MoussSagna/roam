@@ -1038,3 +1038,16 @@ design, sections, main ROAM colors, `RoamTabBar` and mock data untouched.
   visibility flip is a small, infrequent `setState` (only on threshold crossings, exactly like the
   pre-existing tab-bar-collapse pattern), not per-pixel, so it doesn't need the UI-thread treatment the
   continuous stretch value does.
+
+### D-47 — Header background fades out at the very top, not just while hidden
+
+Same-day follow-up: at the top of the page the header's blur/wash was always rendered (only its
+visibility — via D-46's `visible` — ever changed), so the Hero always had a faint frosted strip across
+its top even at rest. `useScrollDirection` now also returns `atTop` (already computed internally, it
+just wasn't exposed) alongside `visible`, so `HomeHeader` can tell "shown because we're at the top"
+from "shown because the user scrolled back up mid-page". The `BlurView` moved into its own `MotiView`
+that fades its `opacity` between 0 (`atTop`, nothing rendered behind the bell — the Hero photo shows
+through bare) and 1 (scrolled, kept for legibility against whatever section is behind the header once
+it reappears) — animated, not an instant cut. The bell's own circular backdrop (`bg-black/25`) is
+unrelated and unchanged: it keeps the icon legible against the Hero photo regardless of scroll
+position, only the header's full-width background layer responds to `atTop`.
