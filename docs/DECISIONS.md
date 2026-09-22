@@ -765,3 +765,28 @@ renders (the other three unmount, they don't just go transparent) inside the sam
   `.gitkeep` placeholders from the initial scaffold, now filled; their `.gitkeep` was removed).
   `DiscoverScreen`/`FavoritesScreen`/`ProfileScreen` are intentionally minimal — no real content, per
   the sprint 3 brief (§14, §19): replace their bodies, not their routes, when those features are built.
+
+### D-41 — `RoamTabBar` redone as a static "floating glass pill"; collapse-to-bubble paused, not removed
+
+- **The scroll-driven collapse/bubble morph (D-39, D-38) is temporarily disabled at the component**,
+  per an explicit follow-up brief asking to validate the static visual first and add motion in a
+  separate pass. `RoamTabBar` no longer reads `TabBarCollapseContext`; it always renders the full
+  4-tab pill. The context, `useTabBarScrollHandler`, its provider in `(tabs)/_layout.tsx`, and the
+  `onScroll` wiring in the four tab screens are all left in place (inert for now) so the morph can be
+  reconnected without re-deriving that logic. `RoamTabBar.test.tsx`'s collapse assertions were removed
+  along with the render branch they covered; they return with the morph.
+- **Centered, not left-anchored, overriding D-39's "matches the mockup" rationale for this phase.** The
+  follow-up brief is explicit (§6) that the pill must be horizontally centered with clearance on both
+  sides, not pinned to the left edge. The outer wrapper now spans `left/right: inset + 20` with
+  `alignItems: 'center'`, and the pill itself is content-width. D-39's left-anchoring was chosen so
+  only `width` had to animate during collapse (no recentering math) — worth revisiting in the animation
+  pass: keep the bubble centered (recenter on width change) or revert to left-anchored during collapse
+  only.
+- **Glass effect: `expo-blur`'s `BlurView`, not a plain translucent `View`.** Added as a new dependency
+  (`apps/mobile/package.json`, `~57.0.3` via `expo install` to match SDK 57) since the brief calls for
+  an actual frosted-glass blur, which a semi-transparent background alone can't produce. A `rgba`
+  wash of the `surface` token (0.55 light / 0.45 dark, built with the existing `hexToRgbChannels`
+  helper) sits on top of the blur for the "surface: blanc/cream translucide" direction, and a
+  `rgba(255,255,255,0.35)` 1px border gives the glass-edge highlight the brief asks for literally
+  (§12) — the one deliberately un-tokenized color in the component, since it is a decorative light
+  catch rather than a themed surface (same precedent as the mood accent colors in `palette.ts`).
