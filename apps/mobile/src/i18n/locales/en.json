@@ -310,6 +310,8 @@
     "continueWithApple": "Continue with Apple",
     "showPassword": "Show password",
     "hidePassword": "Hide password",
+    "showConfirmPassword": "Show password confirmation",
+    "hideConfirmPassword": "Hide password confirmation",
     "entry": {
       "tagline": "Outings that feel like you.",
       "legalPrefix": "By continuing, you agree to our",
@@ -326,6 +328,7 @@
       "subtitle": "Join ROAM and start exploring outings that feel like you.",
       "firstName": "First name",
       "firstNamePlaceholder": "Alex",
+      "confirmPassword": "Confirm password",
       "submit": "Create my account",
       "requirementLength": "At least 8 characters",
       "requirementLetterNumber": "A letter and a number",
@@ -342,7 +345,8 @@
   "validation": {
     "required": "This field is required.",
     "emailInvalid": "Invalid email address.",
-    "passwordWeak": "Check the requirements below."
+    "passwordWeak": "Check the requirements below.",
+    "passwordMismatch": "Passwords don't match."
   },
   "errors": {
     "generic": "Something went wrong.",

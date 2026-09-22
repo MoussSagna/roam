@@ -541,8 +541,14 @@ tile 3 of the design mockup board, which shares its whole visual language with t
   exported for the screen's own validation to reuse instead of duplicating the regexes). A weak password
   gets one summary error (`validation.passwordWeak`) rather than repeating each unmet rule as text — the
   checklist above the field already shows which one.
-- **No confirm-password field.** `02_MVP_SCOPE.md` only asks for one "if present in the design"; the
-  mockup shows a single password field with the live checklist as its safety net instead.
+- **Confirm-password field added after the initial build, on explicit request** (not in the mockup, which
+  only has one password field with the live checklist as its safety net — `02_MVP_SCOPE.md` also only asks
+  for one "if present in the design"). Same `TextField`/`secureTextEntry` pattern, its own show/hide
+  toggle (`auth.showConfirmPassword`/`hideConfirmPassword`, distinct labels so both toggles have unique
+  accessible names). `validate()` requires it non-empty and equal to `password`
+  (`validation.passwordMismatch`); like every other field here, its error clears optimistically on the
+  next edit and is re-checked on the next submit — no special-cased live re-validation against the other
+  field, to stay consistent with the rest of the form.
 - **"Prénom" is a new field** (`User` Lucide icon, required, no format check beyond non-empty) — the only
   genuinely new `TextField` usage; Email/Password are identical to Login's.
 - **Same "any well-formed submission succeeds" simulation as Login** (D-31): no backend to register

@@ -30,6 +30,7 @@ describe('RegisterScreen (authentication 3 — register)', () => {
     expect(screen.getByLabelText('Prénom')).toBeOnTheScreen();
     expect(screen.getByLabelText('Email')).toBeOnTheScreen();
     expect(screen.getByLabelText('Mot de passe')).toBeOnTheScreen();
+    expect(screen.getByLabelText('Confirmer le mot de passe')).toBeOnTheScreen();
     expect(screen.getByText('Au moins 8 caractères')).toBeOnTheScreen();
     expect(screen.getByText('Une lettre et un chiffre')).toBeOnTheScreen();
     expect(screen.getByText('Un caractère spécial (optionnel)')).toBeOnTheScreen();
@@ -59,7 +60,7 @@ describe('RegisterScreen (authentication 3 — register)', () => {
 
     await fireEvent.press(screen.getByRole('button', { name: 'Créer mon compte' }));
 
-    expect(screen.getAllByText('Ce champ est requis.')).toHaveLength(3);
+    expect(screen.getAllByText('Ce champ est requis.')).toHaveLength(4);
     expect(mockReplace).not.toHaveBeenCalled();
   });
 
@@ -69,10 +70,36 @@ describe('RegisterScreen (authentication 3 — register)', () => {
     await fireEvent.changeText(screen.getByLabelText('Prénom'), 'Moussa');
     await fireEvent.changeText(screen.getByLabelText('Email'), 'moussa@email.com');
     await fireEvent.changeText(screen.getByLabelText('Mot de passe'), 'short');
+    await fireEvent.changeText(screen.getByLabelText('Confirmer le mot de passe'), 'short');
     await fireEvent.press(screen.getByRole('button', { name: 'Créer mon compte' }));
 
     expect(screen.getByText('Vérifie les critères ci-dessous.')).toBeOnTheScreen();
     expect(mockReplace).not.toHaveBeenCalled();
+  });
+
+  it('rejects a confirmation that does not match the password', async () => {
+    await renderWithProviders(<RegisterScreen />);
+
+    await fireEvent.changeText(screen.getByLabelText('Prénom'), 'Moussa');
+    await fireEvent.changeText(screen.getByLabelText('Email'), 'moussa@email.com');
+    await fireEvent.changeText(screen.getByLabelText('Mot de passe'), 'password123');
+    await fireEvent.changeText(screen.getByLabelText('Confirmer le mot de passe'), 'password456');
+    await fireEvent.press(screen.getByRole('button', { name: 'Créer mon compte' }));
+
+    expect(screen.getByText('Les mots de passe ne correspondent pas.')).toBeOnTheScreen();
+    expect(mockReplace).not.toHaveBeenCalled();
+  });
+
+  it('clears the mismatch error once the confirmation is fixed', async () => {
+    await renderWithProviders(<RegisterScreen />);
+
+    await fireEvent.changeText(screen.getByLabelText('Mot de passe'), 'password123');
+    await fireEvent.changeText(screen.getByLabelText('Confirmer le mot de passe'), 'wrong');
+    await fireEvent.press(screen.getByRole('button', { name: 'Créer mon compte' }));
+    expect(screen.getByText('Les mots de passe ne correspondent pas.')).toBeOnTheScreen();
+
+    await fireEvent.changeText(screen.getByLabelText('Confirmer le mot de passe'), 'password123');
+    expect(screen.queryByText('Les mots de passe ne correspondent pas.')).toBeNull();
   });
 
   it('updates the password requirement checklist as the user types', async () => {
@@ -95,6 +122,7 @@ describe('RegisterScreen (authentication 3 — register)', () => {
     await fireEvent.changeText(screen.getByLabelText('Prénom'), 'Moussa');
     await fireEvent.changeText(screen.getByLabelText('Email'), 'moussa@email.com');
     await fireEvent.changeText(screen.getByLabelText('Mot de passe'), 'password123');
+    await fireEvent.changeText(screen.getByLabelText('Confirmer le mot de passe'), 'password123');
     await fireEvent.press(screen.getByRole('button', { name: 'Créer mon compte' }));
 
     expect(screen.getByRole('button', { name: 'Créer mon compte' })).toBeDisabled();

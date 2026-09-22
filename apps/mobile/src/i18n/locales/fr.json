@@ -310,6 +310,8 @@
     "continueWithApple": "Continuer avec Apple",
     "showPassword": "Afficher le mot de passe",
     "hidePassword": "Masquer le mot de passe",
+    "showConfirmPassword": "Afficher la confirmation du mot de passe",
+    "hideConfirmPassword": "Masquer la confirmation du mot de passe",
     "entry": {
       "tagline": "Des sorties qui te ressemblent.",
       "legalPrefix": "En continuant, tu acceptes nos",
@@ -326,6 +328,7 @@
       "subtitle": "Rejoins ROAM et commence à explorer des sorties qui te ressemblent.",
       "firstName": "Prénom",
       "firstNamePlaceholder": "Moussa",
+      "confirmPassword": "Confirmer le mot de passe",
       "submit": "Créer mon compte",
       "requirementLength": "Au moins 8 caractères",
       "requirementLetterNumber": "Une lettre et un chiffre",
@@ -342,7 +345,8 @@
   "validation": {
     "required": "Ce champ est requis.",
     "emailInvalid": "Adresse e-mail invalide.",
-    "passwordWeak": "Vérifie les critères ci-dessous."
+    "passwordWeak": "Vérifie les critères ci-dessous.",
+    "passwordMismatch": "Les mots de passe ne correspondent pas."
   },
   "errors": {
     "generic": "Une erreur est survenue.",

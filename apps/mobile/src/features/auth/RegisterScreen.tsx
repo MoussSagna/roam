@@ -26,7 +26,12 @@ const SIGN_UP_SIMULATION_MS = 900;
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-type FormErrors = { firstName?: string; email?: string; password?: string };
+type FormErrors = {
+  firstName?: string;
+  email?: string;
+  password?: string;
+  confirmPassword?: string;
+};
 
 /**
  * Register screen (design mockup "Authentification", tile 3 "Inscription") — front-end only.
@@ -40,6 +45,7 @@ export function RegisterScreen() {
   const [firstName, setFirstName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [errors, setErrors] = useState<FormErrors>({});
   const [loading, setLoading] = useState(false);
 
@@ -54,6 +60,10 @@ export function RegisterScreen() {
     if (!password) next.password = t('validation.required');
     else if (!HAS_MIN_LENGTH(password) || !HAS_LETTER_AND_NUMBER(password)) {
       next.password = t('validation.passwordWeak');
+    }
+    if (!confirmPassword) next.confirmPassword = t('validation.required');
+    else if (password && confirmPassword !== password) {
+      next.confirmPassword = t('validation.passwordMismatch');
     }
     setErrors(next);
     return Object.keys(next).length === 0;
@@ -147,14 +157,34 @@ export function RegisterScreen() {
               hideLabel={t('auth.hidePassword')}
               autoComplete="password-new"
               textContentType="newPassword"
-              returnKeyType="done"
-              onSubmitEditing={handleSignUp}
+              returnKeyType="next"
               className="mt-4"
             />
 
             <View className="mt-3">
               <PasswordRequirements password={password} />
             </View>
+
+            <TextField
+              label={t('auth.register.confirmPassword')}
+              icon={Lock}
+              value={confirmPassword}
+              onChangeText={(value) => {
+                setConfirmPassword(value);
+                if (errors.confirmPassword) {
+                  setErrors((prev) => ({ ...prev, confirmPassword: undefined }));
+                }
+              }}
+              error={errors.confirmPassword}
+              secureTextEntry
+              showLabel={t('auth.showConfirmPassword')}
+              hideLabel={t('auth.hideConfirmPassword')}
+              autoComplete="password-new"
+              textContentType="newPassword"
+              returnKeyType="done"
+              onSubmitEditing={handleSignUp}
+              className="mt-4"
+            />
 
             <Button
               label={t('auth.register.submit')}

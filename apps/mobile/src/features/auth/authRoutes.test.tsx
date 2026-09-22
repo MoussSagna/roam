@@ -105,6 +105,7 @@ describe('authentication routes', () => {
     await fireEvent.changeText(screen.getByLabelText('Prénom'), 'Moussa');
     await fireEvent.changeText(screen.getByLabelText('Email'), 'moussa@email.com');
     await fireEvent.changeText(screen.getByLabelText('Mot de passe'), 'password123');
+    await fireEvent.changeText(screen.getByLabelText('Confirmer le mot de passe'), 'password123');
     await fireEvent.press(screen.getByRole('button', { name: 'Créer mon compte' }));
     await act(() => jest.advanceTimersByTimeAsync(1000));
 
