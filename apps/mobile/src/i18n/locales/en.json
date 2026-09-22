@@ -321,8 +321,19 @@
       "title": "Welcome back!",
       "subtitle": "Sign in to find your outings and recommendations again."
     },
+    "register": {
+      "title": "Create an account",
+      "subtitle": "Join ROAM and start exploring outings that feel like you.",
+      "firstName": "First name",
+      "firstNamePlaceholder": "Alex",
+      "submit": "Create my account",
+      "requirementLength": "At least 8 characters",
+      "requirementLetterNumber": "A letter and a number",
+      "requirementSpecial": "A special character (optional)"
+    },
     "footer": {
-      "noAccount": "Don't have an account?"
+      "noAccount": "Don't have an account?",
+      "hasAccount": "Already have an account?"
     },
     "placeholder": {
       "comingSoon": "Screen coming soon"
@@ -330,7 +341,8 @@
   },
   "validation": {
     "required": "This field is required.",
-    "emailInvalid": "Invalid email address."
+    "emailInvalid": "Invalid email address.",
+    "passwordWeak": "Check the requirements below."
   },
   "errors": {
     "generic": "Something went wrong.",

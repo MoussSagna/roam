@@ -87,7 +87,7 @@ describe('authentication routes', () => {
     expect(screen.queryByText(/Unmatched Route/i)).toBeNull();
   });
 
-  it('"Créer un compte" on the entry screen opens the register placeholder without crashing', async () => {
+  it('"Créer un compte" on the entry screen opens the register screen', async () => {
     const utils = await renderApp();
     await act(() => router.navigate('/auth'));
 
@@ -95,9 +95,34 @@ describe('authentication routes', () => {
 
     expect(utils.getPathname()).toBe('/auth/register');
     expect(screen.queryByText(/Unmatched Route/i)).toBeNull();
+    expect(screen.getByRole('header')).toHaveTextContent('Créer un compte');
   });
 
-  it("the login placeholder's back button returns to the entry screen", async () => {
+  it('registering with a valid submission enters the app', async () => {
+    const utils = await renderApp();
+    await act(() => router.navigate('/auth/register'));
+
+    await fireEvent.changeText(screen.getByLabelText('Prénom'), 'Moussa');
+    await fireEvent.changeText(screen.getByLabelText('Email'), 'moussa@email.com');
+    await fireEvent.changeText(screen.getByLabelText('Mot de passe'), 'password123');
+    await fireEvent.press(screen.getByRole('button', { name: 'Créer mon compte' }));
+    await act(() => jest.advanceTimersByTimeAsync(1000));
+
+    expect(utils.getPathname()).toBe('/home');
+  });
+
+  it('register ↔ login cross-links work both ways', async () => {
+    const utils = await renderApp();
+    await act(() => router.navigate('/auth/register'));
+
+    await fireEvent.press(screen.getByRole('button', { name: 'Se connecter' }));
+    expect(utils.getPathname()).toBe('/auth/login');
+
+    await fireEvent.press(screen.getByRole('button', { name: 'Créer un compte' }));
+    expect(utils.getPathname()).toBe('/auth/register');
+  });
+
+  it("the login screen's back button returns to the entry screen", async () => {
     const utils = await renderApp();
     await act(() => router.navigate('/auth'));
     await fireEvent.press(screen.getByRole('button', { name: 'Se connecter' }));

@@ -321,8 +321,19 @@
       "title": "Bon retour !",
       "subtitle": "Connecte-toi pour retrouver tes sorties et tes recommandations."
     },
+    "register": {
+      "title": "Créer un compte",
+      "subtitle": "Rejoins ROAM et commence à explorer des sorties qui te ressemblent.",
+      "firstName": "Prénom",
+      "firstNamePlaceholder": "Moussa",
+      "submit": "Créer mon compte",
+      "requirementLength": "Au moins 8 caractères",
+      "requirementLetterNumber": "Une lettre et un chiffre",
+      "requirementSpecial": "Un caractère spécial (optionnel)"
+    },
     "footer": {
-      "noAccount": "Pas encore de compte ?"
+      "noAccount": "Pas encore de compte ?",
+      "hasAccount": "Déjà un compte ?"
     },
     "placeholder": {
       "comingSoon": "Écran à venir"
@@ -330,7 +341,8 @@
   },
   "validation": {
     "required": "Ce champ est requis.",
-    "emailInvalid": "Adresse e-mail invalide."
+    "emailInvalid": "Adresse e-mail invalide.",
+    "passwordWeak": "Vérifie les critères ci-dessous."
   },
   "errors": {
     "generic": "Une erreur est survenue.",

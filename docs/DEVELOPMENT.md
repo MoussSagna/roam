@@ -4,10 +4,10 @@ This guide describes the repository **as it is today**: a pnpm monorepo containi
 only. `apps/web`, `apps/api` and `packages/*` (see `04_TECH_STACK.md`) do not exist yet.
 
 **Prototype status (2026-09-22):** the mobile **onboarding is implemented on the front end**, from the splash to a placeholder
-home (routes below). **Authentication** entry (`/auth`) and login (`/auth/login`) are implemented; Register and Forgot
-password are still placeholders, built one screen per session (`docs/SCREEN_INTEGRATION_WORKFLOW.md`). There is **no
-backend, no database and no API**: nothing is sent or stored, and every answer/interaction is local state or a simulated
-delay used for the prototype only (`DECISIONS.md` D-28, D-29, D-31).
+home (routes below). **Authentication** entry (`/auth`), login (`/auth/login`) and register (`/auth/register`) are
+implemented; Forgot password is still a placeholder, built one screen per session (`docs/SCREEN_INTEGRATION_WORKFLOW.md`).
+There is **no backend, no database and no API**: nothing is sent or stored, and every answer/interaction is local state or
+a simulated delay used for the prototype only (`DECISIONS.md` D-28, D-29, D-31, D-32).
 
 ## Requirements
 
@@ -64,7 +64,7 @@ apps/mobile/
     │   ├── splash/          # In-app splash screen (route /) + its measured layout
     │   ├── onboarding/      # Onboarding: the 8 screens, onboardingFlow.ts (routes, order), profileCreation.ts (simulation)
     │   ├── home/            # Placeholder of the home screen (end of the onboarding)
-    │   ├── auth/            # Authentication: AuthEntryScreen, LoginScreen (built); AuthPlaceholder stands in for the rest
+    │   ├── auth/            # Authentication: AuthEntryScreen, LoginScreen, RegisterScreen (built); AuthPlaceholder stands in for the rest
     │   └── recommendations, experiences, itinerary, map,
     │       outing, feedback, profile, favorites
     ├── hooks/               # Cross-feature hooks (useBootstrap, useReduceMotion)
@@ -95,18 +95,19 @@ profile creation use `router.replace`. Details: `DECISIONS.md` D-19 to D-28.
 
 ## Authentication (current state)
 
-Built one screen per session (`docs/SCREEN_INTEGRATION_WORKFLOW.md`); front-end only, no backend (`DECISIONS.md` D-28, D-29, D-31).
+Built one screen per session (`docs/SCREEN_INTEGRATION_WORKFLOW.md`); front-end only, no backend (`DECISIONS.md` D-28, D-29, D-31, D-32).
 
 | Route                   | Screen          | Notes                                                                            |
 | ----------------------- | --------------- | -------------------------------------------------------------------------------- |
 | `/auth`                 | Entry           | "Se connecter", "Créer un compte", simulated Google/Apple buttons (loading only) |
 | `/auth/login`           | Login           | Email/password form, local validation; any valid input "succeeds" → `/home`      |
-| `/auth/register`        | Register        | **Placeholder** (`AuthPlaceholder`) — not built yet                              |
+| `/auth/register`        | Register        | First name/email/password + live password checklist; same "succeeds" → `/home`   |
 | `/auth/forgot-password` | Forgot password | **Placeholder** (`AuthPlaceholder`) — not built yet                              |
 
 Reached from `WelcomeScreen`'s "Se connecter" link (`t('welcome.signIn')`, `router.push('/auth')`). Shared
 pieces in `features/auth/components/`: `AuthTopBar` (back + small wordmark), `OrDivider`, `SocialButtons`,
-`AuthFooterLink`. Generic form field: `components/ui/TextField`.
+`AuthFooterLink`, `PasswordRequirements` (Register's live checklist). Generic form field:
+`components/ui/TextField`.
 
 ## Conventions
 
@@ -197,11 +198,10 @@ The root barrel pulls ~1 600 icons into the bundle (and makes Jest 10× slower).
 
 ### Assets
 
-The logo files, the wordmark and the splash photo are official; the app icon and the Android
-adaptive icon are still placeholders. The onboarding photos in
-`assets/images/onboarding/` (the four welcome photos, `ready-background.jpg` and `profile-landscape.jpg`) and the
-authentication photo in `assets/images/auth/` (`entry-background.jpg`) are **temporary** crops of the mockups (see the
-READMEs there). Which file is used for what is documented in
+The logo files, the wordmark, the splash photo and the auth entry photo (`assets/images/auth/entry-background.png`)
+are official. The app icon and the Android adaptive icon are still placeholders, and so are the onboarding photos in
+`assets/images/onboarding/` (the four welcome photos, `ready-background.jpg` and `profile-landscape.jpg`) — **temporary**
+crops of the mockups (see the READMEs there). Which file is used for what is documented in
 `apps/mobile/assets/images/logo/README.md`. Fonts are loaded from `@expo-google-fonts/*` (Plus Jakarta Sans, Inter, Newsreader, Mrs Saint Delafield); import each
 weight from its own entry point (e.g. `@expo-google-fonts/inter/400Regular`) to keep the bundle small.
 

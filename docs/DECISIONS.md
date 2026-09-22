@@ -525,3 +525,36 @@ Measured on tile 2 of the design mockup board.
   every other screen; no loop, no new primitive.
 - **Not done on purpose:** Register, Forgot password (next sessions); wiring Google/Apple to an actual
   destination (still nowhere to send them, D-29); "remember me" / persisted session (no session exists).
+
+### D-32 — Authentication 3 "Inscription" (route `/auth/register`)
+
+`RegisterScreen` replaces the `AuthPlaceholder` that `/auth/register` rendered since D-29. Measured on
+tile 3 of the design mockup board, which shares its whole visual language with tile 2 (D-31): same navy
+`auth.title`-style heading (`derived.authHeading`), same `AuthTopBar`, `TextField`, `OrDivider`,
+`SocialButtons`, `AuthFooterLink`. Nothing new was built for those; this screen is mostly composition.
+
+- **Password requirements checklist is new and live**, not decorative: `PasswordRequirements`
+  (`features/auth/components/`) recomputes 3 rules on every keystroke — length ≥ 8, contains a letter
+  _and_ a digit, contains a special character — and shows a filled/outline circle per rule (Lucide
+  `circle-check` / `circle`, tinted `primary`/`border`). The mockup's third rule is explicitly labeled
+  "(optionnel)", so only the first two are enforced on submit (`HAS_MIN_LENGTH`, `HAS_LETTER_AND_NUMBER`,
+  exported for the screen's own validation to reuse instead of duplicating the regexes). A weak password
+  gets one summary error (`validation.passwordWeak`) rather than repeating each unmet rule as text — the
+  checklist above the field already shows which one.
+- **No confirm-password field.** `02_MVP_SCOPE.md` only asks for one "if present in the design"; the
+  mockup shows a single password field with the live checklist as its safety net instead.
+- **"Prénom" is a new field** (`User` Lucide icon, required, no format check beyond non-empty) — the only
+  genuinely new `TextField` usage; Email/Password are identical to Login's.
+- **Same "any well-formed submission succeeds" simulation as Login** (D-31): no backend to register
+  against, so `handleSignUp` simulates a request then `router.replace('/home')`. This skips the mockup's
+  own post-registration screens (tiles 8–10: a welcome-back moment, location permission, "Tout est
+  prêt") — those aren't built yet and are a different, later step (D-29's "not done on purpose", still
+  true), not specific to Register.
+- **i18n.** New `auth.register.*` (title reuses the same string as `auth.signUp` conceptually but is its
+  own key — a heading and a nav-label copy can diverge later), `auth.footer.hasAccount` (mirrors
+  `noAccount`, D-31), `validation.passwordWeak`. `firstNamePlaceholder` follows the same localization
+  choice as `emailPlaceholder` (D-31): "Moussa" in French (the mockup's own persona), a generic "Alex" in
+  English rather than a literal translation of a name.
+- **Footer cross-link goes both ways.** Register's footer ("Déjà un compte ? Se connecter") pushes to
+  `/auth/login`, mirroring Login's own footer pushing to `/auth/register` — a route test walks both
+  directions.
