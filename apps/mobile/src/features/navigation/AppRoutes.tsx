@@ -38,6 +38,9 @@ export function AppRoutes() {
 
       <Stack.Protected guard={isLoggedIn}>
         <Stack.Screen name="(tabs)" />
+        <Stack.Screen name="experience/[id]" />
+        <Stack.Screen name="gallery/[id]" options={{ animation: 'fade', gestureEnabled: false }} />
+        <Stack.Screen name="itinerary/create" />
       </Stack.Protected>
     </Stack>
   );

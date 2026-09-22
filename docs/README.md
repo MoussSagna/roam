@@ -30,7 +30,10 @@ profile creation is a simulation of about 10 s). Authentication screens are now 
 simulated: Entry, Login, Register, and the whole Forgot password sub-flow (email → reset code → new password →
 success) — see `DECISIONS.md` D-28, D-29, D-31–D-36, `08_AGENT_TODO.md` and `docs/SCREEN_INTEGRATION_WORKFLOW.md`.
 The main navigation is also built: four tabs (Home, Discover, Favorites, Profile) behind a floating pill/bubble
-tab bar that collapses into a bubble on scroll and expands on tap, with placeholder scrollable content on each
-tab — see `DECISIONS.md` D-38 to D-40.
+tab bar that collapses into a bubble on scroll and expands on tap — see `DECISIONS.md` D-38 to D-43. **Home is
+now the real discovery screen** (hero carousel, mood chips, popular/nearby/for-you sections, mock data only) —
+see `DECISIONS.md` D-45; Discover/Favorites/Profile are still sprint 3 placeholder content. **Experience detail
+and its full-screen photo gallery are built** (hero → gallery transition, reviews, similar experiences, mock
+data only) — see `DECISIONS.md` D-48; the itinerary/journey screen its CTAs lead to is still a placeholder.
 
 The product is intentionally MVP-first. Do not expand scope without an explicit requirement.

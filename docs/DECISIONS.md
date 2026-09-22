@@ -912,3 +912,304 @@ renders (the other three unmount, they don't just go transparent) inside the sam
   `authRoutes.test.tsx`, `onboardingRoutes.test.tsx`, `AppRoutes.test.tsx`) is one shared `act()`
   wrapping both the press and `jest.advanceTimersByTimeAsync(...)`, not two separate ones (which
   still passes, but logs a spurious "state update not wrapped in act()").
+
+## Home (2026-09-22)
+
+### D-45 — Home rebuilt as an immersive discovery page; `Experience`/`Mood` extended instead of duplicated
+
+Sprint 5 brief: replace the sprint 3 placeholder `/home` (D-39, "Cet écran arrive bientôt.") with the
+real Home — a hero carousel, mood chips, and three horizontally-scrolling sections — from a supplied
+design mockup, colors mapped to the existing ROAM tokens rather than copied from the mockup.
+
+- **`Experience` (`src/types/experience.ts`) gained optional display fields** (`location`,
+  `distanceLabel`, `durationLabel`, `priceLabel`, `rating`, `reviewCount`, `isPopular`, `isHero`,
+  `isFavorite`, `tags`) instead of a second, parallel type — the brief asked to reuse an existing
+  `Experience` type if one exists. `coverImageUrl?: string` (unused anywhere) became
+  `coverImage?: ImageSourcePropType` so the same field fits both a local `require()`'d placeholder
+  photo (used now) and a future remote URL, without a second image field.
+- **`Mood` (`src/types/common.ts`) gained `festive`/`romantic`**, needed by the Home "Selon ton
+  humeur" chips and reused directly on `Experience.moods` — one mood vocabulary, not a third one next
+  to the existing `Mood` (context/recommendation matching) and `MoodScreen`'s own local, unrelated
+  `Mood` type (onboarding tile ids, D-21).
+- **Mock content lives in the existing mock repository** (`services/mock/data.ts`): 5 hero
+  experiences (`isHero: true`), 3 "most popular" (`isPopular: true`) and 2 extra for "Des idées pour
+  toi", on top of the original `exp-slow-afternoon` fixture (untouched, still covered by
+  `repositories.test.ts`). Categories gained `restaurant`/`bar`/`culture`/`nature`/`experience`
+  slugs. Images are **temporary**: the onboarding/auth photos already in the repo
+  (`welcome-terrace.png`, `welcome-street.png`, `welcome-lake.png`, `welcome-cafe.png`,
+  `entry-background.png`, `ready-background.jpg`, `profile-landscape.jpg`, `splash-background.png`),
+  reused rather than downloading new ones, some more than once — replace with real experience photos
+  later, ids/filenames unaffected.
+- **The Home "moods" and "Lieux proches de toi" are static config**
+  (`features/home/data/moods.ts`, `nearbyCategories.ts`), not a repository — the same precedent as
+  `TAB_CONFIG` (navigation) and onboarding's own local `MOODS`: a fixed, small option list doesn't
+  need an async interface built for it.
+- **"Des idées pour toi" is a small, deterministic, explainable rule set**
+  (`features/home/lib/pickForYou.ts`, unit-tested): a mood match, a preferred-category match, the
+  top-rated popular experience, and the nearest one (parsed from the mock `distanceLabel`) — each
+  rule skips an id already picked, topped up from the remaining pool. `07_DATA_AND_RECOMMENDATION.md`
+  ("start deterministic, explainable scoring") applied to a fourth surface, not a scoring model.
+- **New generic primitives** (`src/components/ui/`): `IconButton` and `SearchBar` — both listed in
+  `06_DESIGN_SYSTEM.md`'s "Core" components but not built before this sprint. `Chip` gained an
+  optional `icon` slot (additive prop, same pattern as `Button`'s `leadingIcon`, D-29) for the mood
+  chips' icons.
+- **Favorites are local, in-memory state only** (`useFavoriteExperienceIds`): no backend, no
+  persistence, same "mock only" scope as the rest of this sprint (`08_AGENT_TODO.md` Phase F still
+  covers the real favorites feature). Only ids the user actually toggled are kept in state, merged
+  with the mock data's own `isFavorite` seed at read time — avoids a `setState` inside a `useEffect`
+  (flagged by the `react-hooks/set-state-in-effect` lint rule) to seed it from the loaded experiences.
+- **`expo-linear-gradient` added as a new dependency** (`~57.0.2`, matching SDK 57) for the hero's
+  dark-gradient-over-photo overlay — same reasoning as `expo-blur` for the tab bar's glass effect
+  (D-41): the brief calls for an actual gradient, which stacked flat views only approximate.
+- **Hero text/icons are fixed white, not theme tokens** — same reasoning as the splash, auth entry
+  and "Prêt à explorer ?" screens (D-18, D-26): the photo is dark enough in both themes that the
+  overlay text stays legible regardless of light/dark mode. The hero's own CTA button is the one
+  deliberate exception to "no hex/literal colors": `bg-white`/`text-white` are Tailwind's built-in
+  colors (kept available by `tailwind.config.ts`'s `extend`), not a new hex value.
+- **Only the active hero slide is exposed to accessibility tools**
+  (`accessibilityElementsHidden`/`importantForAccessibility` on the other slides, same pattern as
+  `RoamTabBar`'s collapsed/expanded layers, D-43): all 5 slides mount at once in the paging
+  `ScrollView` (no virtualization library), so without this every slide's heading/CTA would be
+  simultaneously queryable/announced.
+- **"Voir l'expérience" needed somewhere to land.** `src/app/experience/[id].tsx` +
+  `ExperienceDetailPlaceholder` (`src/features/experiences/`, previously an empty `.gitkeep`) is the
+  same not-yet-built-screen pattern as `AuthPlaceholder`/`OnboardingPlaceholder` (D-20, D-29, D-37,
+  both deleted once unused) — it reads the real title through `repositories.experiences.getById`
+  where it can, and shows `common.comingSoon` otherwise; replace its body, not the route, when
+  `02_MVP_SCOPE.md` §7's real experience detail screen is built. Added to `AppRoutes.tsx` under the
+  existing `guard={isLoggedIn}` block, alongside `(tabs)`.
+- **`RoamTabBar` and its `BottomTabBarProps` usage are untouched**, per this sprint's explicit scope:
+  Home only adds a sibling route (`experience/[id]`) to `AppRoutes`, and wires into the existing
+  `TabBarCollapseContext`/`useTabBarScrollHandler()` exactly like every other tab screen (D-38–D-43).
+- **Not done on purpose** (frontend-only prototype, `08_AGENT_TODO.md`): a real search engine, GPS
+  permission/geolocation, a real recommendation/scoring engine, and the experience detail screen
+  itself — the placeholder above stands in for it.
+
+## Home polish (2026-09-22)
+
+### D-46 — Hero CTA dark-mode contrast, pull-to-stretch, and an independent floating header
+
+Sprint 4: three targeted fixes on the already-validated Home (D-45), explicitly scoped to leave its
+design, sections, main ROAM colors, `RoamTabBar` and mock data untouched.
+
+- **Hero CTA in dark mode reuses `Button`'s existing `primary` variant instead of a new color.** The
+  button was hardcoded to `bg-white` (a literal override on top of the `secondary` variant), paired
+  with the `default` text tone — in dark mode that tone resolves to `derived.offWhite`, i.e.
+  near-white text on a white button, unreadable. Switching to `variant={isDark ? 'primary' : 'secondary'}`
+  (and dropping the `bg-white` override so `secondary`'s own `bg-surface` — white in light — applies
+  unchanged) reuses the same `primary`/`primaryForeground` pair every other primary button in the app
+  already relies on, already covered by `theme.test.ts`'s WCAG AA contrast assertions — no new token,
+  and light mode is visually identical to before.
+- **Pull-to-stretch reuses `react-native-reanimated`'s shared values directly, not
+  `useAnimatedScrollHandler`.** `docs/DECISIONS.md` D-39 already documents that this project's Jest
+  mock stubs `useAnimatedScrollHandler` as a no-op specifically so it doesn't have to be exercised in
+  tests; adopting it here would have made the _existing_ tab-bar-collapse-from-Home tests
+  (`tabsRoutes.test.tsx`) silently stop being exercised too, since it would have replaced the plain
+  `ScrollView.onScroll` prop they rely on. Instead, `HomeScreen` keeps its ordinary `ScrollView` and a
+  plain (non-`useCallback`) `onScroll` function that does three independent things on every native
+  scroll tick: mutates a `useSharedValue` directly (the exact pattern `ProfileOrbit`'s loader progress
+  already uses from a plain `useEffect`, D-27) with no React re-render, calls the existing
+  `useTabBarScrollHandler()` callback unchanged, and calls the new `useScrollDirection` hook's setter.
+  A `useAnimatedStyle` on an `Animated.View` wrapping `HeroCarousel` reads the shared value on the UI
+  thread and interpolates `translateY`/`scale` — only on negative (pulled-down) offsets, clamped via
+  `Extrapolation.CLAMP` so normal downward scrolling into the page is unaffected. Range tuned to a
+  subtle effect (`HERO_OVERSCROLL_RANGE` 120px of pull → `HERO_MAX_SCALE` 1.15), the standard
+  "stretchy header" recipe (`translateY` at half the pull, `scale` up) sized down from the versions
+  usually written for a full-height hero.
+  **Not `useCallback`:** mutating a shared value's `.value` from inside a memoized callback body trips
+  `eslint-plugin-react-hooks`'s `react-hooks/immutability` rule (it cannot know Reanimated shared
+  values are meant to be mutated exactly this way outside a worklet); a plain function recreated each
+  render sidesteps it and costs nothing here, since `ScrollView.onScroll` identity doesn't need to be
+  stable.
+- **The notification bell moved out of `HeroCarousel` into a new `HomeHeader`**
+  (`features/home/components/`), a small floating overlay (blur only, no colored wash, so the Hero
+  stays the focal point) positioned above everything, independent of both the Hero and `RoamTabBar`.
+  Its visibility is driven by a new, generic `useScrollDirection` hook (`src/hooks/`, unit-tested):
+  same threshold/accumulator shape as `TabBarCollapseContext`'s `useTabBarScrollHandler`, but with its
+  own up-scroll-shows branch — the tab bar deliberately dropped that exact branch for its own UI
+  (D-43), so this is a standalone hook, not a shared one, keeping the two behaviors from ever mixing
+  state (this sprint's explicit "ne mélange pas leurs états"). Fed from the same `onScroll` tick as the
+  tab bar and the stretch effect, but through its own setter — three independent consumers of one
+  physical scroll stream, not a shared state object.
+- **`HeroCarousel` lost its `onPressNotifications` prop** (now unused there) but kept `topInset` (still
+  positions the location badge). No other change to the carousel's own swipe/dots/CTA-navigation
+  behavior.
+- **Not done on purpose:** a genuinely native (thread-driven) hide/show for the header — its own
+  visibility flip is a small, infrequent `setState` (only on threshold crossings, exactly like the
+  pre-existing tab-bar-collapse pattern), not per-pixel, so it doesn't need the UI-thread treatment the
+  continuous stretch value does.
+
+### D-47 — Header background fades out at the very top, not just while hidden
+
+Same-day follow-up: at the top of the page the header's blur/wash was always rendered (only its
+visibility — via D-46's `visible` — ever changed), so the Hero always had a faint frosted strip across
+its top even at rest. `useScrollDirection` now also returns `atTop` (already computed internally, it
+just wasn't exposed) alongside `visible`, so `HomeHeader` can tell "shown because we're at the top"
+from "shown because the user scrolled back up mid-page". The `BlurView` moved into its own `MotiView`
+that fades its `opacity` between 0 (`atTop`, nothing rendered behind the bell — the Hero photo shows
+through bare) and 1 (scrolled, kept for legibility against whatever section is behind the header once
+it reappears) — animated, not an instant cut. The bell's own circular backdrop (`bg-black/25`) is
+unrelated and unchanged: it keeps the icon legible against the Hero photo regardless of scroll
+position, only the header's full-width background layer responds to `atTop`.
+
+## Experience detail & gallery (2026-09-22)
+
+### D-48 — Real experience detail + gallery screens; `Experience` extended again, no shared-element library
+
+Sprint 5 brief: replace `ExperienceDetailPlaceholder` (D-45) with the real detail screen from a
+supplied mockup, plus a dedicated full-screen gallery reached by tapping the hero image, with a
+hero -> gallery transition and a synced double-`FlatList` gallery (main pager + thumbnail strip).
+
+- **`Experience` gained detail fields instead of a second type**, same precedent as D-45:
+  `images` (gallery, falls back to `[coverImage]` when absent), `address`, `openingHoursLabel`,
+  `transport` (`{ line, walkLabel }`), `highlights`, `reviews` (new `ExperienceReview` type) and
+  `similarExperienceIds`. All optional, all plain already-formatted mock strings (D-09/D-10).
+- **Mock data**: every experience in `services/mock/data.ts` (11 existing + 3 new: `exp-hasard-ludique`,
+  `exp-mama-shelter`, `exp-bellevilloise` — referenced only from `exp-rooftop-sunset`'s "Suggestions
+  similaires", matching the supplied mockup's example almost verbatim) now carries the full detail set.
+  `images` is built by `buildGallery()`: the experience's own cover first, then a deterministic rotating
+  slice of the same 8-photo pool `coverImage` already draws from (D-45) — no new photos. A small shared
+  `reviews` pool (5 objects) is reused across experiences the same way photos are. **Not** given a
+  `distanceLabel` on `exp-slow-afternoon` despite adding its other detail fields: `pickForYou.test.ts`'s
+  fixture is independent, but `HomeScreen.test.tsx`'s "Des idées pour toi" assertions depend on
+  `exp-panoramic-walk` (800 m) staying the nearest experience — giving `exp-slow-afternoon` a shorter
+  distance would have won that rule and silently changed Home's own test expectations.
+- **Reasons ("Pourquoi ROAM te le propose ?") are derived, not stored per item**
+  (`features/experiences/lib/whyRecommended.ts`, unit-tested): interests (has a mood), budget (free/
+  under10/10to25), nearby (≤ 5 km, parsed from `distanceLabel`), open now (has `openingHoursLabel`) —
+  `07_DATA_AND_RECOMMENDATION.md`'s "reasons must be based on actual matched constraints" applied
+  literally, same spirit as `pickForYou`'s own rule set (D-45) rather than a fixed list in the mock data.
+- **Gallery route is flat (`app/gallery/[id].tsx`), not nested under `experience/[id]/`.** A nested
+  `experience/[id]/index.tsx` + `experience/[id]/gallery.tsx` pair was considered (URL-wise the more
+  "correct" shape) but every dynamic route in this app so far is a single flat segment
+  (`experience/[id]`, `auth/*`, `onboarding/*`); nesting a second dynamic layer under one `Stack` with no
+  scoped `_layout.tsx` was an unverified pattern for this Expo Router version, and the brief only asks
+  for "an equivalent route", not a specific URL shape. `heroX/heroY/heroW/heroH` (the tapped hero's
+  measured on-screen rect) and `index` travel as string search params. Same flat precedent for the CTA
+  placeholder: `app/itinerary/create.tsx`, not nested under `experience/`.
+- **Hero -> gallery transition: a measured-rect Reanimated morph, not a shared-element library.**
+  `react-native-shared-element` (the usual React Navigation answer) is unmaintained and not installed;
+  nothing in the current stack (`04_TECH_STACK.md`) provides real cross-screen shared elements. Per the
+  brief's own fallback instruction, `ExperienceHero` measures its pager's window rect
+  (`View.measureInWindow`) on press and passes it through the route params above; `ExperienceGalleryScreen`
+  drives one `useSharedValue` (`progress`, 0 = collapsed to that rect, 1 = fullscreen) with `withTiming`,
+  interpolating an absolutely-positioned `Animated.Image` overlay's top/left/width/height between the two,
+  while the real gallery content underneath fades in behind it (`opacity: progress`) — by the time the
+  overlay reaches fullscreen it exactly covers the same photo the content is already showing, so the
+  overlay is hidden and the content takes over seamlessly. Closing reverses the same interpolation before
+  calling `router.back()`. Skipped entirely (instant show/hide) when `useReduceMotion()` is true, or when
+  the route is reached without a rect (e.g. a future deep link) — `canMorph` gates the whole thing.
+  `gestureEnabled: false` + `animation: 'fade'` on the route (`AppRoutes.tsx`) so the native swipe-back
+  gesture can't bypass the closing animation; a `BackHandler` listener routes the Android hardware back
+  button through the same `handleClose`.
+  **Lint note:** mutating `progress.value` had to be done from plain functions declared _before_ any
+  `useEffect` that also touches `progress` (not `useCallback`, and not after those effects in source
+  order) to satisfy `eslint-plugin-react-hooks`'s immutability check — the same "plain function, not
+  memoized" shape as `HomeScreen`'s pull-to-stretch `onScroll` (D-46), just also order-sensitive here.
+  Keeping the latest `handleClose` reachable from a stable `BackHandler` subscription uses a ref updated
+  from its own effect (`useEffect(() => { ref.current = handleClose; })`), not a direct assignment during
+  render, which this lint config also rejects.
+- **Double `FlatList` sync (gallery)**: one shared `activeIndex` state — the main pager's
+  `onMomentumScrollEnd` computes it from `contentOffset.x`, a thumbnail press sets it directly and calls
+  `scrollToIndex` on the main list; either path also re-centers the thumbnail strip via its own
+  `scrollToIndex({ viewPosition: 0.5 })` in a `useEffect` keyed on `activeIndex`. Both lists use a fixed
+  `getItemLayout` (screen width / thumbnail size + gap) so `scrollToIndex`/`initialScrollIndex` work
+  without waiting for layout. **Bug caught by its own test**: the gallery's initial `activeIndex` must be
+  `useState(initialIndex)` as-is, not clamped against `images.length` at declaration time — `experience`
+  (and so `images`) is still `[]` on the very first render (it loads asynchronously via `useExperience`),
+  so a clamp evaluated in the `useState` initializer permanently pinned the index to 0.
+- **"Pourquoi ROAM te le propose ?", "Voir sur la carte" and the reviews/highlights sections all reuse
+  existing pieces**: `MapPreviewRow` reuses onboarding's `MapPreview` illustration (still not a real map
+  — `04_TECH_STACK.md` — and not yet navigable, there is no map screen); `SimilarExperiencesSection`
+  reuses Home's `ExperienceCard` and its own `useFavoriteExperienceIds` instance (separate from the
+  hero's own, same "no shared favorites state" scope as D-45); `SectionHeader` gained an optional
+  `seeAllLabel` prop (additive, same pattern as `Chip`'s `icon` slot, D-45) so "Voir tous les avis" isn't
+  a near-duplicate component. New, feature-scoped-only pieces: `Badge` (a non-`Pressable` display pill —
+  `Chip` is always a button, and a badge that does nothing must not claim `accessibilityRole="button"`),
+  `InfoGrid`, `ReviewCard`, `HighlightsSection` (icons cycle through a fixed decorative set, same
+  "decorative only, label carries the meaning" precedent as `moodAccents`), `WantMoreCta`.
+- **Category chip and the two other hero badges use a small, explicit i18n map**
+  (`experience.categories.*`, `lib/categoryLabel.ts`), not a dynamic template literal key — this
+  project's typed i18n keys (checked against `fr.json`) reject a dynamic key built from a template
+  string at compile time. "À proximité" reuses the same ≤ 5 km rule as the "nearby" reason above; "Coup
+  de cœur" is shown for `isPopular` experiences (mockup's "Coup de ❤️" example, reworded — no emoji in
+  the translated string, consistent with the rest of the app's copy).
+- **Fixed white icons/text on the hero and a fixed black gallery background**, not theme tokens — same
+  exception as the Home hero and splash/auth screens (D-18, D-26, D-45): both sit on a photo dark enough
+  in both themes for the overlay content to stay legible regardless of light/dark mode.
+- **Share uses React Native's real `Share.share()`**, not a mocked no-op — unlike `SearchBar`'s search
+  field (no query engine exists to call), a native share sheet is a genuine, already-available platform
+  API, so there was no reason to fake it.
+- **Not done on purpose** (frontend-only prototype): a real map screen to land on from "Voir sur la
+  carte" (still a static preview, exactly like the onboarding location screen's own `MapPreview`), and
+  the itinerary/journey screen itself — `CreateJourneyPlaceholder`
+  (`features/itinerary/`) + `app/itinerary/create.tsx` is the same not-yet-built-screen pattern as
+  `ExperienceDetailPlaceholder` was (D-45), deleted the same way once its route's real screen exists.
+
+## Experience detail polish (2026-09-22)
+
+### D-49 — Sticky header/footer, one fixed CTA, and a swipe bug fixed in `ExperienceHero`
+
+Same-day follow-up, explicitly scoped to interaction/scroll behavior only — no design, palette or
+content changes beyond removing one named section.
+
+- **The hero's swipe was silently broken: a `Pressable` wrapped the whole pager `ScrollView`.** A
+  `Pressable` ancestor negotiates the touch responder before its scrollable child gets a chance to claim
+  a horizontal drag, so the pager could still be tapped but not reliably swiped. Fixed by moving to one
+  `Pressable` **per slide**, `ScrollView` outermost — the same shape every other pressable-inside-a-
+  horizontal-`ScrollView` in this app already uses (`ExperienceCard` on Home) and the one place D-48
+  should have followed to begin with. Not caught by `ExperienceHero.test.tsx` before this fix, and still
+  isn't a regression guard after it: RNTL's `fireEvent.scroll` calls `onScroll` directly, bypassing the
+  native touch/responder negotiation the bug lived in — that layer isn't something this test setup can
+  exercise either way. The fix is verified by matching a known-working pattern already shipped elsewhere,
+  not by a new test.
+- **Back/share/favorite moved out of `ExperienceHero` into a new `ExperienceDetailHeader`, rendered as a
+  sibling overlay above the `ScrollView`, not inside the Hero.** They had to: `ExperienceHero` is the
+  `ScrollView`'s first child, so anything positioned inside it scrolls away with the photo — incompatible
+  with "the header stays visible" (brief item 9). Same extraction precedent as `HomeHeader` (D-46: the
+  bell moved out of `HeroCarousel` for the identical reason). `ExperienceHero`'s own prop surface shrank
+  to `{ images, title, onOpenGallery }`.
+- **Header title reveal uses "scrolled roughly past the hero" as its trigger, not the title's exact
+  measured position.** `getHeroHeight()` (extracted from `ExperienceHero` into `lib/heroHeight.ts` so
+  both the hero and the screen agree on one number) minus the header's own height gives `revealOffset`;
+  a `useAnimatedStyle` interpolates opacity over the `FADE_RANGE` (60px) leading up to it, driven by a
+  `scrollY` shared value mutated from the screen's `onScroll` — cheap (no per-pixel `setState`) and
+  visually "the title arrives as the hero disappears behind the header", which is what the brief actually
+  asks for. A pixel-exact alternative (measuring the title `View`'s real position, e.g. via
+  `measureLayout` against the `ScrollView`) was considered and rejected: it would need a native
+  measurement that isn't stable in this test renderer, whereas the hero-height proxy is a plain formula
+  both screens already share and is exercised by existing tests (`getHeroHeight` reused, not duplicated).
+  **Icon color doesn't track the crossfade**: every header button keeps its fixed white icon on its own
+  permanent `bg-black/25` circular backdrop (the exact treatment `HomeHeader`'s bell and the pre-D-49
+  hero buttons already used) — legible over the raw photo and over the wash alike, so there was no need
+  to interpolate icon color (SVG icons take a plain `color` string, not an animatable style prop; doing
+  this properly would need `useAnimatedProps` per icon for a purely cosmetic gain).
+- **The sticky CTA gets its own hook, `useCtaVisibility`, instead of reusing `useScrollDirection`.** The
+  brief's rule is different from Home's header: hidden while actively scrolling down, but shown again
+  the instant the scroll _ends_ (`onScrollEndDrag`/`onMomentumScrollEnd`) as well as on any upward
+  scroll — `useScrollDirection` has no "scroll ended" signal at all (it only reacts to sustained
+  direction changes) and deliberately shouldn't gain one just for this screen (item 15: three independent
+  systems — header, CTA, `RoamTabBar` — must not share state). Same threshold shape (12px accumulator)
+  and unit-test style as `useScrollDirection.test.ts`.
+- **The CTA footer is a `MotiView` slide+fade (translateY/opacity), same idiom as `HomeHeader`**, wrapping
+  a plain `bg-surface` bar with a top border and `bottomInset + 12` of extra bottom padding so it never
+  touches the Home Indicator edge (item 1). `ExperienceDetailFooter` exports `FOOTER_CLEARANCE` (108px)
+  for the screen's `ScrollView` `contentContainerStyle.paddingBottom`, replacing the old flat `+ 32`, so
+  the last section (now "Suggestions similaires") is never hidden behind the floating bar.
+- **"Envie d'en faire plus ?" is deleted, not hidden**: the component (`WantMoreCta.tsx`) and its
+  `experience.wantMore.*` i18n keys are removed outright — the brief calls this CTA "désormais
+  représentée uniquement par le CTA sticky", i.e. superseded, not a duplicate to keep around unused. The
+  inline (non-sticky) "Créer mon parcours" button that used to sit between `WhyRoamSection` and
+  `ReviewsSection` is also gone — it is the same action, now permanently reachable via the footer, so
+  showing it twice would be redundant rather than a second, distinct feature.
+- **Header/footer crossfade and slide are not unit-tested for their animated values**, only for what
+  they gate (`ExperienceDetailHeader.test.tsx` checks the title renders and the buttons work regardless
+  of scroll position; `ExperienceDetailScreen.test.tsx` checks the CTA button's presence/absence via
+  `getByRole`/`queryByRole`, the same pattern `HomeHeader`'s own tests already use for its visibility).
+  Reason: this project's Reanimated Jest mock stubs `interpolate` as a no-op (confirmed by inspecting the
+  mock directly), the same category of gap D-39 already documents for `useAnimatedScrollHandler` — there
+  is nothing meaningful to assert about an interpolated opacity value under it.
+- **Reduced motion**: the footer's slide/fade already goes through `useReduceMotion()` (drops the
+  `translateY`, shortens the duration — identical to `HomeHeader`'s handling). The header's crossfade is
+  a direct function of scroll position, not a timed animation independent of user input, so there is no
+  separate motion to suppress; it inherently has no bounce, spring or autoplay to turn off.

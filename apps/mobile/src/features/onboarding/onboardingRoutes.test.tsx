@@ -155,7 +155,7 @@ describe('onboarding routes', () => {
     });
 
     expect(utils.getPathname()).toBe('/home');
-    expect(screen.getByText('Cet écran arrive bientôt.')).toBeOnTheScreen();
+    expect(screen.getByText('Explorer un lieu, une activité…')).toBeOnTheScreen();
     // The onboarding is replaced, not stacked: back does not return to it.
     expect(router.canGoBack()).toBe(false);
   });

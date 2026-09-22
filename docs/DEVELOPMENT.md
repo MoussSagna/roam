@@ -8,9 +8,12 @@ main navigation (routes below). **Authentication screens are all implemented**: 
 forgot-password sub-flow (email → reset code → new password → success) — see `docs/SCREEN_INTEGRATION_WORKFLOW.md`. The
 mockup's post-authentication screens (a welcome-back moment, location permission, "Tout est prêt") were never part of that
 sprint's scope and are still not built (`DECISIONS.md` D-29). **Main navigation** (four tabs behind a floating pill/bubble
-tab bar) is built, with placeholder scrollable content on each tab — see `DECISIONS.md` D-38 to D-40. There is **no
-backend, no database and no API**: nothing is sent or stored, and every answer/interaction is local state or a simulated
-delay used for the prototype only (`DECISIONS.md` D-28, D-29, D-31 to D-36).
+tab bar) is built — see `DECISIONS.md` D-38 to D-43. **Home is now the real discovery screen** (hero carousel, mood
+chips, popular/nearby/for-you sections, sprint 5, `DECISIONS.md` D-45); Discover/Favorites/Profile are still the sprint 3
+placeholder content. **Experience detail and its full-screen gallery are also built** (sprint 5, `DECISIONS.md` D-48);
+the itinerary/journey screen it leads to is still a placeholder. There is **no backend, no database and no API**: nothing is sent or stored, and every
+answer/interaction is local state, mock repository content, or a simulated delay used for the prototype only
+(`DECISIONS.md` D-28, D-29, D-31 to D-36, D-45).
 
 ## Requirements
 
@@ -63,15 +66,18 @@ apps/mobile/
     │   ├── (tabs)/          # Main navigation group: home, discover, favorites, profile + _layout.tsx (no path segment)
     │   └── /, /welcome, /onboarding/*, /auth/*
     ├── components/
-    │   ├── ui/              # Text, Button, Chip, Screen, ScrollScreen, PlaceholderCard, FadeInUp, TextField
+    │   ├── ui/              # Text, Button, IconButton, Chip, SearchBar, Screen, ScrollScreen, PlaceholderCard, FadeInUp, TextField
     │   └── brand/           # Logo (light / dark / icon variants)
     ├── features/            # One folder per feature (empty until its sprint)
     │   ├── splash/          # In-app splash screen (route /) + its measured layout
     │   ├── onboarding/      # Onboarding: the 8 screens, onboardingFlow.ts (routes, order), profileCreation.ts (simulation)
     │   ├── navigation/      # Main navigation: RoamTabBar (floating pill/bubble), TabBarCollapseContext, tabBarConfig
-    │   ├── home/, discover/, favorites/, profile/  # The four tabs (placeholder scrollable content, sprint 3)
+    │   ├── home/            # Home (sprint 5): hero carousel, sections, mock data/lib — see the table below
+    │   ├── discover/, favorites/, profile/  # The other three tabs (still sprint 3 placeholder content)
+    │   ├── experiences/     # Experience detail (route experience/[id]) + gallery/ (route gallery/[id]) — sprint 5
     │   ├── auth/            # Authentication: all 7 screens built (Entry, Login, Register, ForgotPassword, ResetCode, NewPassword, ResetSuccess)
-    │   └── recommendations, experiences, itinerary, map, outing, feedback
+    │   ├── itinerary/       # CreateJourneyPlaceholder (route itinerary/create) — not the real screen yet
+    │   └── recommendations, map, outing, feedback
     ├── hooks/               # Cross-feature hooks (useBootstrap, useReduceMotion)
     ├── i18n/                # i18next setup + locales/fr.json, locales/en.json
     ├── lib/                 # Small framework-agnostic helpers (storage, cx)
@@ -93,21 +99,21 @@ Path alias: `@/` → `src/` (TypeScript, Jest and Metro).
 | 2–6  | `/onboarding/mood`, `time`, `budget`, `location`, `interests` | Questions           | "Suivant" / "Passer"; `ProgressBars`; answers are local state, not saved         |
 | 7    | `/onboarding/profile-creation`                                | Profile creation    | **Front-end simulation, about 10 s**, no button, moves on by itself (Moti)       |
 | 8    | `/onboarding/ready`                                           | "Prêt à explorer ?" | Reached after the simulation; "Commencer" enters the app                         |
-| —    | `/home`                                                       | Home (placeholder)  | End of the journey, now the first tab of the main navigation                     |
+| —    | `/home`                                                       | Home                | End of the journey, now the first tab of the main navigation                     |
 
 The order and the routes live in `features/onboarding/onboardingFlow.ts`. "Passer" jumps to `ready`; "Commencer" and the
 profile creation use `router.replace`. Details: `DECISIONS.md` D-19 to D-28.
 
 ## Main navigation (current state)
 
-Four tabs behind one floating pill/bubble tab bar, sprint 3, placeholder scrollable content only — `DECISIONS.md` D-38 to D-40.
+Four tabs behind one floating pill/bubble tab bar, sprint 3, with scroll-collapse — `DECISIONS.md` D-38 to D-43.
 
-| Route        | Screen    | Notes                                                             |
-| ------------ | --------- | ----------------------------------------------------------------- |
-| `/home`      | Home      | Placeholder headline + 8 `PlaceholderCard`s, same route as before |
-| `/discover`  | Discover  | Placeholder headline + 8 `PlaceholderCard`s                       |
-| `/favorites` | Favorites | Placeholder headline + 8 `PlaceholderCard`s                       |
-| `/profile`   | Profile   | Placeholder headline + 8 `PlaceholderCard`s                       |
+| Route        | Screen    | Notes                                                  |
+| ------------ | --------- | ------------------------------------------------------ |
+| `/home`      | Home      | Real discovery screen (sprint 5) — see the table below |
+| `/discover`  | Discover  | Placeholder headline + 8 `PlaceholderCard`s            |
+| `/favorites` | Favorites | Placeholder headline + 8 `PlaceholderCard`s            |
+| `/profile`   | Profile   | Placeholder headline + 8 `PlaceholderCard`s            |
 
 Routes live in `src/app/(tabs)/` (a route _group_: adds no path segment), with `_layout.tsx` rendering
 `expo-router`'s `Tabs` (React Navigation bottom tabs) and a fully custom `tabBar`: `RoamTabBar`
@@ -132,6 +138,54 @@ Routes live in `src/app/(tabs)/` (a route _group_: adds no path segment), with `
 `TAB_NAMES`/`TAB_CONFIG` in `tabBarConfig.ts` (icon + `navigation.*` label key) and to the `<Tabs.Screen>`
 list in `(tabs)/_layout.tsx` in the order it should appear; replace the screen's placeholder body, not its
 route.
+
+## Home (current state)
+
+Immersive discovery page (sprint 5, `DECISIONS.md` D-45), built on the mock experience pool through the
+existing `ExperienceRepository`/`CategoryRepository` (`useHomeExperiences`), not the sprint 3 placeholder.
+
+| Section                             | Component                                                              | Notes                                                                                                     |
+| ----------------------------------- | ---------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------- |
+| Hero carousel                       | `features/home/components/HeroCarousel.tsx`                            | Full-bleed, swipeable, paging `ScrollView`; dots (`CarouselDots`) + prev/next; the 5 `isHero` experiences |
+| Search bar (mocked)                 | `components/ui/SearchBar.tsx`                                          | Reusable primitive; no real query engine yet                                                              |
+| Selon ton humeur                    | `Chip` (icon slot) + `features/home/data/moods.ts`                     | 5 mood chips, single choice, drives "Des idées pour toi"                                                  |
+| Les expériences les plus populaires | `features/home/components/ExperienceCard.tsx`                          | The 3 `isPopular` experiences                                                                             |
+| Lieux proches de toi                | `features/home/components/NearbyCard.tsx` + `data/nearbyCategories.ts` | 5 static category shortcuts (no geolocation)                                                              |
+| Des idées pour toi                  | `ExperienceCard` (reused) + `features/home/lib/pickForYou.ts`          | Deterministic 4-rule pick, unit-tested                                                                    |
+
+`ExperienceCard` is shared by "Les expériences les plus populaires" and "Des idées pour toi" (same card
+shape) rather than duplicated per section. Favorites are local state (`useFavoriteExperienceIds`), no
+persistence. "Voir l'expérience" pushes to `experience/[id]` (`ExperienceDetailScreen`,
+`features/experiences/`, sprint 5). Home reuses `useTabBarScrollHandler()` /
+`TabBarCollapseContext` like every other tab screen; `RoamTabBar` itself was not touched this sprint.
+
+**Polish (sprint 4, `DECISIONS.md` D-46):** the Hero's CTA switches to the `primary` `Button` variant
+in dark mode (was unreadable white-on-white); pulling down past the top stretches the Hero image via a
+`react-native-reanimated` shared value + `useAnimatedStyle` on an `Animated.View` wrapping
+`HeroCarousel` (mutated from a plain `onScroll`, not `useAnimatedScrollHandler` — see D-46 for why);
+the notification bell moved out of `HeroCarousel` into a new floating `HomeHeader`
+(`features/home/components/`) that shows/hides with scroll direction via a new, generic
+`useScrollDirection` hook (`src/hooks/`), fully independent of `TabBarCollapseContext`.
+
+## Experience detail & gallery (current state)
+
+Real detail screen and full-screen gallery (sprint 5, `DECISIONS.md` D-48; scroll/header/CTA/carousel
+polish D-49), built on `Experience`'s extended fields through the same `ExperienceRepository`
+(`useExperienceDetail`/`useExperience`), no second data model.
+
+| Piece                 | Route / component                                                           | Notes                                                                                                             |
+| --------------------- | --------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------- |
+| Detail screen         | `experience/[id]` → `features/experiences/ExperienceDetailScreen.tsx`       | Hero, info grid, map preview, why-ROAM, reviews, highlights, similar                                              |
+| Hero                  | `features/experiences/components/ExperienceHero.tsx`                        | Paging pager + counter; one `Pressable` per slide (not wrapping the `ScrollView`, D-49); tap opens the gallery    |
+| Sticky header         | `features/experiences/components/ExperienceDetailHeader.tsx`                | Back/share/favorite (moved out of the hero, D-49); title/blur crossfade in past the hero — always visible         |
+| Sticky CTA footer     | `features/experiences/components/ExperienceDetailFooter.tsx`                | "Créer mon parcours"; hides on scroll down, returns on scroll end/up (`useCtaVisibility`, D-49)                   |
+| Gallery screen        | `gallery/[id]` → `features/experiences/gallery/ExperienceGalleryScreen.tsx` | Full-screen; a flat route (not nested under `experience/[id]/`), see D-48                                         |
+| Gallery sync          | Two `FlatList`s (main pager + thumbnail strip) sharing one `activeIndex`    | `getItemLayout` on both; thumbnail press scrolls the main list, main-list scroll re-centers the thumbnail strip   |
+| Hero → gallery motion | `progress` shared value (`useSharedValue`/`withTiming`/`interpolate`)       | Reanimated rect-morph, not a shared-element library (none in the stack) — see D-48 for the full rationale         |
+| Why ROAM              | `features/experiences/lib/whyRecommended.ts` (unit-tested)                  | Reasons derived from the experience's own data, not stored per item                                               |
+| Map preview           | `features/experiences/components/MapPreviewRow.tsx`                         | Reuses onboarding's `MapPreview` illustration; not yet navigable (no map screen)                                  |
+| Similar experiences   | `features/experiences/components/SimilarExperiencesSection.tsx`             | Reuses Home's `ExperienceCard`                                                                                    |
+| Create-journey CTA    | `itinerary/create` → `features/itinerary/CreateJourneyPlaceholder.tsx`      | Reached only from the sticky footer CTA now — the old inline button and "Envie d'en faire plus ?" are gone (D-49) |
 
 ## Authentication (current state)
 
