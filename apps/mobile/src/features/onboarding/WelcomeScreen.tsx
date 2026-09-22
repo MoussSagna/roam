@@ -1,4 +1,5 @@
 // One icon per import: the package root would pull ~1600 icons into the bundle.
+import { useRouter } from 'expo-router';
 import ArrowRight from 'lucide-react-native/icons/arrow-right';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -18,6 +19,7 @@ const HORIZONTAL_MARGIN = 30.6;
  */
 export function WelcomeScreen() {
   const { t } = useTranslation();
+  const router = useRouter();
   const { width } = useWindowDimensions();
   const insets = useSafeAreaInsets();
   const { next, skip } = useOnboardingNavigation('welcome');
@@ -88,6 +90,17 @@ export function WelcomeScreen() {
           onPress={next}
           className="mt-[18px]"
         />
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={t('welcome.signIn')}
+          onPress={() => router.push('/auth')}
+          hitSlop={8}
+          className="mt-4 self-center active:opacity-60"
+        >
+          <Text variant="body" tone="secondary">
+            {t('welcome.signIn')}
+          </Text>
+        </Pressable>
       </View>
     </View>
   );

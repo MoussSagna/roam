@@ -57,4 +57,10 @@ describe('WelcomeScreen (onboarding 1)', () => {
     await fireEvent.press(screen.getByRole('button', { name: 'Passer' }));
     expect(mockReplace).toHaveBeenCalledWith('/onboarding/ready');
   });
+
+  it('goes to the authentication entry screen with "Se connecter"', async () => {
+    await renderWithProviders(<WelcomeScreen />);
+    await fireEvent.press(screen.getByRole('button', { name: 'Se connecter' }));
+    expect(mockPush).toHaveBeenCalledWith('/auth');
+  });
 });

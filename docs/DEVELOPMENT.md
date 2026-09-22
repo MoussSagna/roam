@@ -4,8 +4,10 @@ This guide describes the repository **as it is today**: a pnpm monorepo containi
 only. `apps/web`, `apps/api` and `packages/*` (see `04_TECH_STACK.md`) do not exist yet.
 
 **Prototype status (2026-09-22):** the mobile **onboarding is implemented on the front end**, from the splash to a placeholder
-home (routes below). There is **no backend, no database and no API**: nothing is sent or stored, and the onboarding answers are
-local state used for the prototype only. Next: the authentication screens, front-end only and simulated (`DECISIONS.md` D-28).
+home (routes below). The **authentication entry screen** (`/auth`) is implemented; Login, Register and Forgot password are
+still placeholders, built one screen per session (`docs/SCREEN_INTEGRATION_WORKFLOW.md`). There is **no backend, no database
+and no API**: nothing is sent or stored, and every answer/interaction is local state or a simulated delay used for the
+prototype only (`DECISIONS.md` D-28, D-29).
 
 ## Requirements
 
@@ -54,7 +56,7 @@ apps/mobile/
 ├── jest.config.js / jest.setup.ts
 ├── assets/images/           # splash-background.png, icons, logo/ (roles in logo/README.md), onboarding/
 └── src/
-    ├── app/                 # Expo Router routes ONLY, kept thin (/, /welcome, /onboarding/*, /home)
+    ├── app/                 # Expo Router routes ONLY, kept thin (/, /welcome, /onboarding/*, /home, /auth/*)
     ├── components/
     │   ├── ui/              # Text, Button, Chip, Screen, FadeInUp (design-system primitives)
     │   └── brand/           # Logo (light / dark / icon variants)
@@ -62,8 +64,9 @@ apps/mobile/
     │   ├── splash/          # In-app splash screen (route /) + its measured layout
     │   ├── onboarding/      # Onboarding: the 8 screens, onboardingFlow.ts (routes, order), profileCreation.ts (simulation)
     │   ├── home/            # Placeholder of the home screen (end of the onboarding)
+    │   ├── auth/            # Authentication: AuthEntryScreen (built), AuthPlaceholder (stand-in for Login/Register)
     │   └── recommendations, experiences, itinerary, map,
-    │       outing, feedback, profile, favorites, auth
+    │       outing, feedback, profile, favorites
     ├── hooks/               # Cross-feature hooks (useBootstrap, useReduceMotion)
     ├── i18n/                # i18next setup + locales/fr.json, locales/en.json
     ├── lib/                 # Small framework-agnostic helpers (storage, cx)
@@ -89,6 +92,18 @@ Path alias: `@/` → `src/` (TypeScript, Jest and Metro).
 
 The order and the routes live in `features/onboarding/onboardingFlow.ts`. "Passer" jumps to `ready`; "Commencer" and the
 profile creation use `router.replace`. Details: `DECISIONS.md` D-19 to D-28.
+
+## Authentication (current state)
+
+Built one screen per session (`docs/SCREEN_INTEGRATION_WORKFLOW.md`); front-end only, no backend (`DECISIONS.md` D-28, D-29).
+
+| Route            | Screen   | Notes                                                                            |
+| ---------------- | -------- | -------------------------------------------------------------------------------- |
+| `/auth`          | Entry    | "Se connecter", "Créer un compte", simulated Google/Apple buttons (loading only) |
+| `/auth/login`    | Login    | **Placeholder** (`AuthPlaceholder`) — not built yet                              |
+| `/auth/register` | Register | **Placeholder** (`AuthPlaceholder`) — not built yet                              |
+
+Reached from `WelcomeScreen`'s "Se connecter" link (`t('welcome.signIn')`, `router.push('/auth')`).
 
 ## Conventions
 
@@ -181,7 +196,9 @@ The root barrel pulls ~1 600 icons into the bundle (and makes Jest 10× slower).
 
 The logo files, the wordmark and the splash photo are official; the app icon and the Android
 adaptive icon are still placeholders. The onboarding photos in
-`assets/images/onboarding/` (the four welcome photos, `ready-background.jpg` and `profile-landscape.jpg`) are **temporary** crops of the mockups (see the README there). Which file is used for what is documented in
+`assets/images/onboarding/` (the four welcome photos, `ready-background.jpg` and `profile-landscape.jpg`) and the
+authentication photo in `assets/images/auth/` (`entry-background.jpg`) are **temporary** crops of the mockups (see the
+READMEs there). Which file is used for what is documented in
 `apps/mobile/assets/images/logo/README.md`. Fonts are loaded from `@expo-google-fonts/*` (Plus Jakarta Sans, Inter, Newsreader, Mrs Saint Delafield); import each
 weight from its own entry point (e.g. `@expo-google-fonts/inter/400Regular`) to keep the bundle small.
 

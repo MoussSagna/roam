@@ -302,7 +302,20 @@
     "email": "Adresse e-mail",
     "password": "Mot de passe",
     "forgotPassword": "Mot de passe oublié ?",
-    "logout": "Se déconnecter"
+    "logout": "Se déconnecter",
+    "entry": {
+      "tagline": "Des sorties qui te ressemblent.",
+      "or": "ou",
+      "continueWithGoogle": "Continuer avec Google",
+      "continueWithApple": "Continuer avec Apple",
+      "legalPrefix": "En continuant, tu acceptes nos",
+      "termsOfService": "Conditions d'utilisation",
+      "legalMiddle": "et notre",
+      "privacyPolicy": "Politique de confidentialité"
+    },
+    "placeholder": {
+      "comingSoon": "Écran à venir"
+    }
   },
   "errors": {
     "generic": "Une erreur est survenue.",

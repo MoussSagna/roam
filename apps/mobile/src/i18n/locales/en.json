@@ -302,7 +302,20 @@
     "email": "Email address",
     "password": "Password",
     "forgotPassword": "Forgot password?",
-    "logout": "Sign out"
+    "logout": "Sign out",
+    "entry": {
+      "tagline": "Outings that feel like you.",
+      "or": "or",
+      "continueWithGoogle": "Continue with Google",
+      "continueWithApple": "Continue with Apple",
+      "legalPrefix": "By continuing, you agree to our",
+      "termsOfService": "Terms of Service",
+      "legalMiddle": "and our",
+      "privacyPolicy": "Privacy Policy"
+    },
+    "placeholder": {
+      "comingSoon": "Screen coming soon"
+    }
   },
   "errors": {
     "generic": "Something went wrong.",

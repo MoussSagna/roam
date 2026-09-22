@@ -410,3 +410,56 @@ New step `profile`, route **`/onboarding/profile-creation`**. The journey is now
 backend, API, database, Prisma, real authentication, JWT or session: they come **later**, once all the front-end screens are done (`08_AGENT_TODO.md`
 Phase C). Do not add any of them while building these screens, and keep form logic behind a small interface so a real implementation can replace the
 simulation (see _Data access_ in `DEVELOPMENT.md`). The auth screens go in `src/features/auth/` (empty folder today).
+
+## Authentication (2026-09-22)
+
+### D-29 — Authentication 1 "Écran d'entrée" (route `/auth`) and the screen-by-screen workflow
+
+`AuthEntryScreen` (`src/features/auth/`), route `/auth`. Sprint 2 works one authentication screen at a time,
+each one stopping for human validation before the next; the procedure is now written down in
+`docs/SCREEN_INTEGRATION_WORKFLOW.md` so it doesn't have to be re-derived every session. Measured on tile 1
+of the design mockup board ("Authentification").
+
+- **No clean photo asset existed.** Only a flattened mockup board (all 10 tiles in one image) was provided,
+  with "ROAM" and the tagline baked into the Eiffel Tower photo. There was no inpainting tool available in
+  this environment to erase them (unlike `ready-background.jpg` / `profile-landscape.jpg`, D-26/D-27). The
+  photo was cropped and upscaled 3× as `assets/images/auth/entry-background.jpg` (**TEMPORARY**, see the
+  README next to it) and the screen draws its **own** "ROAM" + tagline on top in code (Newsreader SemiBold
+  42 px, cream; `t('auth.entry.tagline')`), in roughly the same spot, so no French/English text is baked
+  into the image (`00_AGENT_INSTRUCTIONS.md` rule 9) — it mostly hides the baked pixels underneath, but they
+  are still technically there until the photo is replaced.
+- **Layout is two flex children, not absolute positioning.** A photo section (`flex: 1`, takes whatever
+  space is left) above a card section (`bg-surface`, intrinsic height, `rounded-t-hero`), matching the
+  mockup's proportions (photo ≈ 48% of the screen at the reference size) without hard-coding either height;
+  on a short screen the photo simply gives way first, the same pattern as the onboarding's `MapPreview`
+  (D-24).
+- **Google / Apple have no Lucide glyph** (brand logos aren't part of an outline icon set). `GoogleIcon`
+  (official 4-color "G", fixed colors) and `AppleIcon` (single path, follows `colors.text`) are drawn with
+  `react-native-svg` in `src/features/auth/components/`, the same pattern as `RunnerIcon`/`LotusIcon`
+  (D-21/D-25).
+- **`Button` gained `leadingIcon` (`ReactNode`) and `loading` (spinner, disables press).** Both are optional
+  and additive — every existing call site is unchanged. `loading` is the generic implementation of "buttons
+  can simulate a request" (`08_AGENT_TODO.md`/the sprint brief): Google/Apple set it for ~900 ms on press,
+  then reset. There is nothing to navigate to afterwards yet (no backend, and the mockup's post-auth screens
+  — "Bienvenue sur ROAM", location permission, "Tout est prêt" — are not built), so the button just returns
+  to normal; wiring a destination is for when those screens exist.
+- **"Se connecter" / "Créer un compte" needed somewhere to land.** `src/app/auth/login.tsx` and
+  `register.tsx` are placeholder routes rendering a small new `AuthPlaceholder` (title + back button),
+  exactly the role `OnboardingPlaceholder` played before the onboarding screens existed (D-20) — not a
+  preview of the Login/Register screens, just infrastructure so navigation doesn't hit "Unmatched Route".
+  Replace their body, not their route, when Login/Register are actually built (next sessions).
+- **The entry screen needed to be reachable from the running app.** `03_UX_SCREENS_AND_FLOWS.md` already
+  documents a "Sign in" secondary CTA on the Welcome screen that the prototype note said was "the next
+  front-end step" — now that it exists, `WelcomeScreen` gained that one `Pressable` (`t('welcome.signIn')`,
+  an unused key already sitting in both locale files since D-19, `router.push('/auth')`). This is the only
+  change to an already-validated screen in this session; no visual/design work on Welcome itself.
+- **i18n.** New `auth.entry.*` (tagline, `or`, `continueWithGoogle`, `continueWithApple`, legal text split
+  into 4 keys so "Conditions d'utilisation" / "Politique de confidentialité" can be styled inline) and
+  `auth.placeholder.comingSoon`. Reused as-is (no new key): `auth.signIn` / `auth.signUp` (button labels)
+  and `welcome.signIn` (the Welcome link). The legal text is styled (primary color, underline) but **not**
+  tappable — Terms/Privacy pages don't exist and aren't in the MVP scope.
+- **Animation.** `FadeInUp` on the photo's text (delay 150 ms) and on the card (delay 300 ms), consistent
+  with the rest of the app; no new animation primitive needed.
+- **Not done on purpose:** Login, Register, Forgot password screens (next sessions, one at a time); wiring
+  Google/Apple to an actual destination; the post-auth screens from the mockup (welcome-back, location
+  permission, "Tout est prêt").
