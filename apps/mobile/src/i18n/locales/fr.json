@@ -362,9 +362,6 @@
     "resetSuccess": {
       "title": "Mot de passe mis à jour !",
       "subtitle": "Ton mot de passe a bien été réinitialisé.\nTu peux maintenant te connecter."
-    },
-    "placeholder": {
-      "comingSoon": "Écran à venir"
     }
   },
   "validation": {

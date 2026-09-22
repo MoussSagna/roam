@@ -362,9 +362,6 @@
     "resetSuccess": {
       "title": "Password updated!",
       "subtitle": "Your password has been reset.\nYou can now sign in."
-    },
-    "placeholder": {
-      "comingSoon": "Screen coming soon"
     }
   },
   "validation": {

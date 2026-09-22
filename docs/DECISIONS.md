@@ -672,3 +672,16 @@ the end of a flow, not a step in one.
 - **Sub-flow now complete end to end**: `/auth/login` → "Mot de passe oublié ?" → `/auth/forgot-password`
   → `/auth/reset-code` (code `123456`) → `/auth/new-password` → `/auth/reset-success` → back to
   `/auth/login`. A route-tree test walks the whole chain.
+
+## Sprint 2 close-out (2026-09-22)
+
+### D-37 — `AuthPlaceholder` removed: dead code once all 7 auth screens were built
+
+All 7 authentication routes (`/auth`, `login`, `register`, `forgot-password`, `reset-code`,
+`new-password`, `reset-success`) render their real screen as of D-36 — none of them used
+`AuthPlaceholder` anymore, so it (and its only i18n key, `auth.placeholder.comingSoon`) were deleted
+during the sprint's final verification pass, rather than left as unreferenced code. Same treatment
+`OnboardingPlaceholder` got in D-26 once the onboarding screens were all built; `SCREEN_INTEGRATION_WORKFLOW.md`
+§7 now says to do this for any future placeholder too. **Reversible:** trivially — re-add if a new
+not-yet-built screen needs a stand-in again.
+No functional change: `pnpm check` (186 tests) passes identically before and after.

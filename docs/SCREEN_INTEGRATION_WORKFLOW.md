@@ -106,10 +106,11 @@ default fade (loops, larger translations, rotations).
 ## 7. Navigation
 
 Add routes in `src/app/` without breaking existing ones. If a screen's primary action leads to a screen
-that isn't built yet in this sprint, add a minimal placeholder route (see `AuthPlaceholder`,
-`DECISIONS.md` D-20 and D-29) so navigation doesn't hit "Unmatched Route" — the placeholder has no
-design content, just a title and a way back; replace its body, not its route path, when that screen's
-turn comes.
+that isn't built yet in this sprint, add a minimal placeholder screen/route (`DECISIONS.md` D-20, D-29,
+D-37 — `OnboardingPlaceholder` and `AuthPlaceholder` were this pattern's two examples so far, each
+deleted once every screen using it was built) so navigation doesn't hit "Unmatched Route" — the
+placeholder has no design content, just a title and a way back; replace its body, not its route path,
+when that screen's turn comes, and delete the placeholder component once nothing references it anymore.
 
 ## 8. Validation
 
