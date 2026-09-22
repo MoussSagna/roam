@@ -39,7 +39,8 @@
     "title": "Trouve quoi faire, sans passer ton temps à chercher.",
     "subtitle": "ROAM te propose des sorties adaptées à ton humeur, ton temps et ton budget.",
     "start": "Commencer",
-    "signIn": "Se connecter"
+    "signIn": "Se connecter",
+    "alreadyHaveAccount": "Déjà un compte ?"
   },
   "onboarding": {
     "welcome": {

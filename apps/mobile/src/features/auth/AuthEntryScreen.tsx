@@ -13,7 +13,7 @@ import { fontFamily } from '@/theme/typography';
 import { AppleIcon } from './components/AppleIcon';
 import { GoogleIcon } from './components/GoogleIcon';
 
-const background = require('../../../assets/images/auth/entry-background.jpg');
+const background = require('../../../assets/images/auth/entry-background.png');
 
 /** How long the Google/Apple buttons show a spinner before settling back (no request exists yet). */
 const SOCIAL_SIMULATION_MS = 900;
@@ -48,6 +48,8 @@ export function AuthEntryScreen() {
           style={{ position: 'absolute', left: 0, top: 0, right: 0, bottom: 0 }}
           accessible={false}
         />
+        {/* Flat scrim (same recipe as the splash screen, D-18) so cream text stays readable on a
+            pale sky; heavier than the splash's 0.34 because this photo's sky is lighter. */}
         <View
           pointerEvents="none"
           style={{
@@ -57,7 +59,7 @@ export function AuthEntryScreen() {
             right: 0,
             bottom: 0,
             backgroundColor: derived.night,
-            opacity: 0.22,
+            opacity: 0.42,
           }}
         />
 

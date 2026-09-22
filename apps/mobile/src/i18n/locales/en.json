@@ -39,7 +39,8 @@
     "title": "Find something to do, without spending your time searching.",
     "subtitle": "ROAM suggests outings tailored to your mood, time and budget.",
     "start": "Get started",
-    "signIn": "Sign in"
+    "signIn": "Sign in",
+    "alreadyHaveAccount": "Already have an account?"
   },
   "onboarding": {
     "welcome": {

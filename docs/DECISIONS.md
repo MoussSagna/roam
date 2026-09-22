@@ -420,14 +420,14 @@ each one stopping for human validation before the next; the procedure is now wri
 `docs/SCREEN_INTEGRATION_WORKFLOW.md` so it doesn't have to be re-derived every session. Measured on tile 1
 of the design mockup board ("Authentification").
 
-- **No clean photo asset existed.** Only a flattened mockup board (all 10 tiles in one image) was provided,
-  with "ROAM" and the tagline baked into the Eiffel Tower photo. There was no inpainting tool available in
-  this environment to erase them (unlike `ready-background.jpg` / `profile-landscape.jpg`, D-26/D-27). The
-  photo was cropped and upscaled 3× as `assets/images/auth/entry-background.jpg` (**TEMPORARY**, see the
-  README next to it) and the screen draws its **own** "ROAM" + tagline on top in code (Newsreader SemiBold
-  42 px, cream; `t('auth.entry.tagline')`), in roughly the same spot, so no French/English text is baked
-  into the image (`00_AGENT_INSTRUCTIONS.md` rule 9) — it mostly hides the baked pixels underneath, but they
-  are still technically there until the photo is replaced.
+- **No clean photo asset existed at first.** Only a flattened mockup board (all 10 tiles in one image) was
+  provided, with "ROAM" and the tagline baked into the Eiffel Tower photo, and no inpainting tool was
+  available in this environment to erase them (unlike `ready-background.jpg` / `profile-landscape.jpg`,
+  D-26/D-27). The screen was built to draw its **own** "ROAM" + tagline on top in code (Newsreader SemiBold
+  42 px, cream; `t('auth.entry.tagline')`) rather than baking French/English text into an image
+  (`00_AGENT_INSTRUCTIONS.md` rule 9), over a temporary cropped/upscaled placeholder photo. **Superseded the
+  same day:** a clean official photo (Paris from Montmartre, no baked text) replaced the placeholder — see
+  D-30.
 - **Layout is two flex children, not absolute positioning.** A photo section (`flex: 1`, takes whatever
   space is left) above a card section (`bg-surface`, intrinsic height, `rounded-t-hero`), matching the
   mockup's proportions (photo ≈ 48% of the screen at the reference size) without hard-coding either height;
@@ -463,3 +463,17 @@ of the design mockup board ("Authentification").
 - **Not done on purpose:** Login, Register, Forgot password screens (next sessions, one at a time); wiring
   Google/Apple to an actual destination; the post-auth screens from the mockup (welcome-back, location
   permission, "Tout est prêt").
+
+### D-30 — Entry screen background replaced; Welcome's "Se connecter" link made visible
+
+Same-day follow-up after reviewing D-29 on device.
+
+- **Official photo.** `assets/images/auth/entry-background.png` (Paris from Montmartre, no baked text)
+  replaced the temporary mockup crop. Its sky is pale, so the flat scrim over it (same recipe as the splash
+  screen, D-18) went from 22% to **42%** opacity (`derived.night`) to keep the cream "ROAM" + tagline
+  readable — the splash photo is already dark enough at 34%, this one needed more.
+- **`WelcomeScreen`'s "Se connecter" link was too easy to miss** (secondary-tone, unstyled text, no
+  context) — flagged on device. Changed to a small composed line, `t('welcome.alreadyHaveAccount')`
+  ("Déjà un compte ?", new key, secondary tone) followed by `t('welcome.signIn')` in `label` variant
+  (semibold) and `primary` tone, mirroring how the Login/Register mockup tiles style their own
+  cross-links. Same pattern to reuse if Login/Register need an equivalent footer link later.

@@ -90,17 +90,22 @@ export function WelcomeScreen() {
           onPress={next}
           className="mt-[18px]"
         />
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel={t('welcome.signIn')}
-          onPress={() => router.push('/auth')}
-          hitSlop={8}
-          className="mt-4 self-center active:opacity-60"
-        >
+        <View className="mt-4 flex-row items-center justify-center gap-1">
           <Text variant="body" tone="secondary">
-            {t('welcome.signIn')}
+            {t('welcome.alreadyHaveAccount')}
           </Text>
-        </Pressable>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={t('welcome.signIn')}
+            onPress={() => router.push('/auth')}
+            hitSlop={8}
+            className="active:opacity-60"
+          >
+            <Text variant="label" tone="primary">
+              {t('welcome.signIn')}
+            </Text>
+          </Pressable>
+        </View>
       </View>
     </View>
   );

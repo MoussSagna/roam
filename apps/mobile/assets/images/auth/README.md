@@ -1,12 +1,12 @@
 # Authentication images
 
-## TEMPORARY — entry screen background
+## Entry screen background
 
-`entry-background.jpg` (Eiffel Tower and Paris rooftops at dusk) is a **low-resolution crop of the design
-mockup**, upscaled 3×. Unlike the onboarding photos, the "ROAM" wordmark and tagline baked into the mockup's
-photo were **not** erased (no clean inpainting tool was available when this screen was built): the screen
-draws its own "ROAM" + tagline text on top, in roughly the same spot, which mostly hides the baked pixels
-underneath at normal viewing size, but they are still technically there.
+`entry-background.png` — Paris rooftops and the Eiffel Tower at sunrise, seen from Montmartre. Official
+photo (replaces the temporary mockup crop used when the screen was first built, `DECISIONS.md` D-29): no
+baked-in text, so the screen's own "ROAM" + tagline (rendered in code) is the only text on it.
 
-Replace it with the original photo, **keeping the file name** (portrait, ≥ 1200 px wide, no baked text; the
-screen fills the top of the display with `cover`).
+The screen fills the top of the display with `cover` and darkens the photo with a flat scrim (`derived.night`
+at 42% opacity) for contrast — this photo's sky is pale, so the scrim is heavier than the splash screen's
+(34%, `D-18`). Replace the file (keeping the name) if a different photo is preferred; re-check the "ROAM"
+title and tagline are still readable against its brightest area.
