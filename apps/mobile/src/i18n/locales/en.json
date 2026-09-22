@@ -338,6 +338,11 @@
       "noAccount": "Don't have an account?",
       "hasAccount": "Already have an account?"
     },
+    "forgotPasswordScreen": {
+      "subtitle": "No worries! Enter your email and we'll send you a reset code.",
+      "submit": "Send code",
+      "hint": "You'll receive an email with a reset code.\nRemember to check your spam folder!"
+    },
     "placeholder": {
       "comingSoon": "Screen coming soon"
     }

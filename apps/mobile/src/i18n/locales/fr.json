@@ -338,6 +338,11 @@
       "noAccount": "Pas encore de compte ?",
       "hasAccount": "Déjà un compte ?"
     },
+    "forgotPasswordScreen": {
+      "subtitle": "Pas de panique ! Entre ton email et nous t'enverrons un code de réinitialisation.",
+      "submit": "Envoyer le code",
+      "hint": "Tu vas recevoir un email avec un code de réinitialisation.\nPense à vérifier tes spams !"
+    },
     "placeholder": {
       "comingSoon": "Écran à venir"
     }

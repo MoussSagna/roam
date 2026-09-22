@@ -1,8 +1,5 @@
-import { useTranslation } from 'react-i18next';
-
-import { AuthPlaceholder } from '@/features/auth/AuthPlaceholder';
+import { ForgotPasswordScreen } from '@/features/auth/ForgotPasswordScreen';
 
 export default function ForgotPasswordRoute() {
-  const { t } = useTranslation();
-  return <AuthPlaceholder title={t('auth.forgotPassword')} />;
+  return <ForgotPasswordScreen />;
 }

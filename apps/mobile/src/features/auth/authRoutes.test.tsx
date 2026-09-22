@@ -77,13 +77,26 @@ describe('authentication routes', () => {
     expect(utils.getPathname()).toBe('/home');
   });
 
-  it('"Mot de passe oublié ?" opens its placeholder without crashing', async () => {
+  it('"Mot de passe oublié ?" opens the forgot-password screen', async () => {
     const utils = await renderApp();
     await act(() => router.navigate('/auth/login'));
 
     await fireEvent.press(screen.getByRole('button', { name: 'Mot de passe oublié ?' }));
 
     expect(utils.getPathname()).toBe('/auth/forgot-password');
+    expect(screen.queryByText(/Unmatched Route/i)).toBeNull();
+    expect(screen.getByRole('header')).toHaveTextContent('Mot de passe oublié ?');
+  });
+
+  it('sending the reset code moves on to the (placeholder) reset-code screen', async () => {
+    const utils = await renderApp();
+    await act(() => router.navigate('/auth/forgot-password'));
+
+    await fireEvent.changeText(screen.getByLabelText('Email'), 'moussa@email.com');
+    await fireEvent.press(screen.getByRole('button', { name: 'Envoyer le code' }));
+    await act(() => jest.advanceTimersByTimeAsync(1000));
+
+    expect(utils.getPathname()).toBe('/auth/reset-code');
     expect(screen.queryByText(/Unmatched Route/i)).toBeNull();
   });
 

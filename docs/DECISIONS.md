@@ -564,3 +564,27 @@ tile 3 of the design mockup board, which shares its whole visual language with t
 - **Footer cross-link goes both ways.** Register's footer ("Déjà un compte ? Se connecter") pushes to
   `/auth/login`, mirroring Login's own footer pushing to `/auth/register` — a route test walks both
   directions.
+
+### D-33 — Authentication 4 "Mot de passe oublié" (route `/auth/forgot-password`)
+
+`ForgotPasswordScreen` replaces the `AuthPlaceholder` that `/auth/forgot-password` rendered since D-29.
+Measured on tile 4 of the design mockup board — the simplest of the four screens built so far: `AuthTopBar`,
+one `TextField`, one `Button`, no divider/social buttons/footer link.
+
+- **The heading text is `auth.forgotPassword`**, the key that already existed and is used as the Login
+  screen's link label ("Mot de passe oublié ?") — same string, same meaning, reused as-is rather than
+  duplicated under a new key. The rest of the screen's copy is `auth.forgotPasswordScreen.*` (a sibling
+  key, not nested under `forgotPassword`, since that key already holds a string, not an object).
+- **The envelope illustration and its caption are static content, not a post-submit state.** They're part
+  of the mockup's single screen (reassurance copy shown before you even submit), not a toggled
+  "email sent" confirmation — so there's no second visual state to build here. Lucide `mail-open`, 64px,
+  colored with the same `derived.authHeading` navy as the title (decorative, `accessible={false}`).
+- **Only one field, so validation is a single `error` string**, not an object like Login/Register's
+  `FormErrors` — simpler than reusing that shape for one field.
+- **"Envoyer le code" simulates a request then `router.push('/auth/reset-code')`** (not `replace`: unlike
+  Login/Register, this doesn't end the auth flow, it continues it — back should return here). That route
+  is a new placeholder stub (`AuthPlaceholder`, same role as every other not-yet-built screen since D-20),
+  for tile 5 "Code de réinitialisation" — a later session. Tiles 5–7 (code entry, new password, success)
+  are their own screens, not built as part of this one, even though `02_MVP_SCOPE.md`'s brief groups
+  "Forgot Password" as a single MVP item — the mockup breaks it into a small sub-flow, and the workflow's
+  one-screen-at-a-time rule applies to each of them individually.

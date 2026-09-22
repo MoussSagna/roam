@@ -21,7 +21,7 @@ Status for **mobile** (2026-09-22). Web and API foundations are not started.
 - [x] Welcome (first onboarding screen, see `DECISIONS.md` D-19)
 - [x] Onboarding (the 7 mockup screens plus the animated profile-creation simulation; the photos of the last screens are temporary — see `DECISIONS.md` D-19 to D-27)
 - [~] Home (placeholder route `/home`, the end of the onboarding — `DECISIONS.md` D-26)
-- [~] Authentication screens — **front-end only, simulated** (Login, Register, Forgot password + their states). Entry (`/auth`), Login (`/auth/login`) and Register (`/auth/register`) done; Forgot password is next — see `DECISIONS.md` D-28, D-29, D-31, D-32 and `docs/SCREEN_INTEGRATION_WORKFLOW.md`
+- [~] Authentication screens — **front-end only, simulated** (Login, Register, Forgot password + their states). Entry, Login, Register and Forgot password's email step done; the reset-code/new-password/success screens of the forgot-password sub-flow are next — see `DECISIONS.md` D-28, D-29, D-31–D-33 and `docs/SCREEN_INTEGRATION_WORKFLOW.md`
 - [ ] Context flow
 - [ ] Recommendation cards
 - [ ] Experience detail
