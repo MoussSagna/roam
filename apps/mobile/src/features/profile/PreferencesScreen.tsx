@@ -15,6 +15,7 @@ import {
 } from '@/components/ui';
 import { InterestTile } from '@/features/onboarding/components/InterestTile';
 import { useCtaVisibility } from '@/hooks/useCtaVisibility';
+import { showToast } from '@/lib/toast';
 import { useTheme } from '@/theme';
 
 import { AMBIANCE_OPTIONS, DEFAULT_AMBIANCE } from './data/ambianceOptions';
@@ -94,8 +95,19 @@ export function PreferencesScreen() {
   const handleSave = async () => {
     if (saving) return;
     setSaving(true);
-    await wait(SAVE_DELAY_MS);
-    router.back();
+    try {
+      await wait(SAVE_DELAY_MS);
+      showToast('success', {
+        title: t('preferences.saveSuccess.title'),
+        message: t('preferences.saveSuccess.message'),
+      });
+      router.back();
+    } catch {
+      // `wait` never rejects today (no backend to fail against, docs/DECISIONS.md D-51) — this branch
+      // is forward-compatible scaffolding for when a real save call can actually fail.
+      setSaving(false);
+      showToast('error', { title: t('preferences.saveError') });
+    }
   };
 
   return (

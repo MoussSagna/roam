@@ -69,7 +69,7 @@ apps/mobile/
     │   ├── (tabs)/          # Main navigation group: home, discover, favorites, profile + _layout.tsx (no path segment)
     │   └── /, /welcome, /onboarding/*, /auth/*
     ├── components/
-    │   ├── ui/              # Text, Button, IconButton, Chip, SearchBar, Slider, StickyActionFooter, Screen, ScrollScreen, PlaceholderCard, FadeInUp, TextField
+    │   ├── ui/              # Text, Button, IconButton, Chip, SearchBar, Slider, StickyActionFooter, AppToast, Screen, ScrollScreen, PlaceholderCard, FadeInUp, TextField
     │   └── brand/           # Logo (light / dark / icon variants)
     ├── features/            # One folder per feature (empty until its sprint)
     │   ├── splash/          # In-app splash screen (route /) + its measured layout
@@ -84,7 +84,7 @@ apps/mobile/
     │   └── recommendations, map, outing, feedback
     ├── hooks/               # Cross-feature hooks (useBootstrap, useReduceMotion, useCtaVisibility)
     ├── i18n/                # i18next setup + locales/fr.json, locales/en.json
-    ├── lib/                 # Small framework-agnostic helpers (storage, cx)
+    ├── lib/                 # Small framework-agnostic helpers (storage, cx, toast)
     ├── services/            # Data access: repository interfaces + mock implementation
     ├── theme/               # Tokens, palette, typography, ThemeProvider
     ├── types/               # Domain types (User, Place, Experience, Itinerary…)
@@ -197,14 +197,14 @@ Built one screen at a time (`docs/SCREEN_INTEGRATION_WORKFLOW.md`), sprint 5. Th
 (`/profile`) and "Mes préférences" (`/profile/preferences`) are real; every other row is still a
 `ProfilePlaceholder` stub (`docs/DECISIONS.md` D-50) until its own session.
 
-| Piece              | Route / component                                                                        | Notes                                                                                                                                                                     |
-| ------------------ | ---------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Main screen        | `/profile` (in `(tabs)`) → `features/profile/ProfileScreen.tsx`                          | Header (avatar/name/bio/edit CTA), stats, grouped menu, logout — built on `UserRepository` (`useCurrentUser`)                                                             |
-| Header/stats       | `features/profile/components/ProfileHeader.tsx`, `ProfileAvatar.tsx`, `ProfileStats.tsx` | Avatar falls back to an initial letter (no photo in the mock content, same precedent as `ReviewCard`)                                                                     |
-| Menu row           | `features/profile/components/ProfileMenuRow.tsx`                                         | Icon + label (+ optional subtitle or right-aligned value) + chevron; reused for every group                                                                               |
-| Preferences        | `/profile/preferences` → `features/profile/PreferencesScreen.tsx`                        | Experience types + ambiance (multi-select tile grids), budget + distance (`Slider`); save CTA is a `StickyActionFooter` — local state only, `docs/DECISIONS.md` D-51/D-52 |
-| Not-yet-built rows | `features/profile/components/ProfilePlaceholder.tsx`                                     | `/profile/{edit,favorites,history,statistics,language,theme,help,privacy,settings}`                                                                                       |
-| Data               | `UserRepository.getCurrentUser()` (`services/mock/user.ts`)                              | One mocked profile (`services/mock/data.ts` → `currentUser`); `User` gained optional `age/city/bio/stats`                                                                 |
+| Piece              | Route / component                                                                        | Notes                                                                                                                                                                                                                 |
+| ------------------ | ---------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Main screen        | `/profile` (in `(tabs)`) → `features/profile/ProfileScreen.tsx`                          | Header (avatar/name/bio/edit CTA), stats, grouped menu, logout — built on `UserRepository` (`useCurrentUser`)                                                                                                         |
+| Header/stats       | `features/profile/components/ProfileHeader.tsx`, `ProfileAvatar.tsx`, `ProfileStats.tsx` | Avatar falls back to an initial letter (no photo in the mock content, same precedent as `ReviewCard`)                                                                                                                 |
+| Menu row           | `features/profile/components/ProfileMenuRow.tsx`                                         | Icon + label (+ optional subtitle or right-aligned value) + chevron; reused for every group                                                                                                                           |
+| Preferences        | `/profile/preferences` → `features/profile/PreferencesScreen.tsx`                        | Experience types + ambiance (multi-select tile grids), budget + distance (`Slider`); save CTA is a `StickyActionFooter`, success/error feedback is `showToast` — local state only, `docs/DECISIONS.md` D-51/D-52/D-54 |
+| Not-yet-built rows | `features/profile/components/ProfilePlaceholder.tsx`                                     | `/profile/{edit,favorites,history,statistics,language,theme,help,privacy,settings}`                                                                                                                                   |
+| Data               | `UserRepository.getCurrentUser()` (`services/mock/user.ts`)                              | One mocked profile (`services/mock/data.ts` → `currentUser`); `User` gained optional `age/city/bio/stats`                                                                                                             |
 
 ## Authentication (current state)
 
@@ -301,6 +301,26 @@ appearance animation. Moti runs on Reanimated 4 + `react-native-worklets`.
 - Animating an SVG attribute (the loader ring): `Animated.createAnimatedComponent(Circle)` + `useAnimatedProps`.
 - Timed sequences (front-end simulations): a `setTimeout` schedule created in one `useEffect` and cleared in its cleanup
   (see `features/onboarding/profileCreation.ts`), tested with Jest fake timers.
+
+### Toasts
+
+Global feedback (a save succeeding/failing, and similar one-off confirmations) goes through
+`showToast('success' | 'error', { title, message? })` (`src/lib/toast.ts`) — never call
+`react-native-toast-message` (`Toast.show`) directly from a screen. This is the only toast/snackbar
+mechanism in the app (sprint 5, `docs/DECISIONS.md` D-54).
+
+- **Library**: `react-native-toast-message` (stable, no beta), pure JS, no native linking. `<AppToast />`
+  (`components/ui/`) is mounted **once**, at the app root (`app/_layout.tsx`, sibling to `AppRoutes`) —
+  a screen never renders its own `<Toast />` or `<AppToast />`.
+- **Rendering is ROAM's own**: `AppToast` passes a custom `config` (`success`/`error`) built from
+  `Text`/theme tokens/Lucide icons, not the library's default look. Add a new variant by adding a case
+  to that `config` and to `ToastVariant` in `toast.ts` — the same "not a full notification system,
+  extend when actually needed" scope as this sprint's `success`/`error` pair.
+- **Position**: always docks at the top (`position="top"`, offset by `useSafeAreaInsets().top`), so it
+  never has to reason about `RoamTabBar` or a screen's `StickyActionFooter` — both are bottom-anchored.
+- Respects `useReduceMotion()` (shortens the library's own enter/exit animation duration, the same
+  "shorten rather than fully strip" compromise `HomeHeader`/`ExperienceDetailFooter` already use, since
+  the library's animation isn't decomposable into "translate vs. opacity" from the outside).
 
 ### Data access (mock now, API later)
 

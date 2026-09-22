@@ -375,6 +375,11 @@
     "reset": "Reset",
     "intro": "These preferences help us suggest outings that suit you.",
     "save": "Save my preferences",
+    "saveSuccess": {
+      "title": "Preferences saved",
+      "message": "Your preferences have been updated."
+    },
+    "saveError": "Couldn't save your preferences",
     "experienceTypes": {
       "title": "Types of experiences",
       "subtitle": "Select what you enjoy (multiple choices possible)"

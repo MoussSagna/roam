@@ -1,5 +1,6 @@
 import { act, fireEvent, screen } from '@testing-library/react-native';
 
+import { AppToast } from '@/components/ui';
 import i18n from '@/i18n';
 import { renderWithProviders } from '@/test/renderWithProviders';
 
@@ -101,6 +102,25 @@ describe('PreferencesScreen', () => {
     await act(() => jest.advanceTimersByTime(1000));
 
     expect(mockBack).toHaveBeenCalled();
+    jest.useRealTimers();
+  });
+
+  it('shows a success toast once the save resolves (AppToast mounted app-wide, like in the real app)', async () => {
+    jest.useFakeTimers();
+    await renderWithProviders(
+      <>
+        <PreferencesScreen />
+        <AppToast />
+      </>,
+    );
+
+    await fireEvent.press(screen.getByRole('button', { name: 'Enregistrer mes préférences' }));
+    expect(screen.queryByText('Préférences enregistrées')).toBeNull();
+
+    await act(() => jest.advanceTimersByTime(1000));
+
+    expect(screen.getByText('Préférences enregistrées')).toBeOnTheScreen();
+    expect(screen.getByText('Tes préférences ont bien été mises à jour.')).toBeOnTheScreen();
     jest.useRealTimers();
   });
 

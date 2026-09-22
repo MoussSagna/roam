@@ -1431,3 +1431,57 @@ it.
 - **Not done on purpose**: no change to any screen's own back-button UI or `router.back()` calls (the
   brief is explicit this is presentation/config only); no new "swipe to dismiss" pattern introduced
   anywhere it didn't already exist.
+
+### D-54 — Global toast feedback (`react-native-toast-message`); Preferences' save gets a success toast
+
+Polish pass: "Enregistrer mes préférences" now shows a success toast after the mocked save resolves,
+instead of only navigating back silently. No toast/snackbar mechanism existed anywhere in the app
+before this (grepped for "toast"/"snackbar"/"notification" across `src/`, nothing).
+
+- **`react-native-toast-message@2.5.2`** (latest stable, no beta — `3.0.0-beta.1` exists and was
+  skipped), added via `pnpm add` rather than `expo install` since it's not an Expo-maintained package
+  (same distinction as `moti`/`lucide-react-native`, both plain `pnpm add`s). Zero runtime dependencies
+  and no native module (confirmed by inspecting its own `package.json` and source — `GestureContext` is
+  a plain `React.createContext`, not `react-native-gesture-handler`), so it needed no compatibility
+  bridging for RN 0.86/Expo 57 and works the same in Expo Go as a dev build.
+- **Mounted once, at the app root** (`<AppToast />` in `app/_layout.tsx`, a sibling of `<AppRoutes />`,
+  after it in render order so it stacks on top): the library's own `Toast.show()`/`Toast.hide()` are
+  already a global singleton API by design (no Context/Provider needed to call them from anywhere), so
+  "mount once" here means the _visual_ host, not a data provider.
+- **`showToast(variant, { title, message? })`** (`lib/toast.ts`) is the only sanctioned entry point —
+  no screen imports `react-native-toast-message` directly. Only `'success' | 'error'` exist today
+  (this sprint's actual need, per the brief's own "ne développe pas un système complet de
+  notifications"); `'warning' | 'info'` are a type-and-config-case addition later, not a redesign.
+- **ROAM-styled `config`, not the library's default look**: `AppToast` renders a small
+  `surfaceElevated` card (icon + `Text variant="label"` + optional secondary line) through the
+  library's `config` prop, reusing existing tokens/`Text`/Lucide icons (`circle-check`/`circle-x`) —
+  the same "shadow via explicit style props, not a `shadow-*` className" convention `RoamTabBar` already
+  established, sized down for a small card instead of a full bar.
+- **Always top-positioned** (`position="top"`, offset by `useSafeAreaInsets().top`): the brief asks
+  that the toast never collide with `RoamTabBar` or a screen's `StickyActionFooter`, both bottom-
+  anchored; anchoring the toast to the opposite edge sidesteps that class of collision entirely instead
+  of computing per-screen bottom clearance.
+- **The error path is real, working code, but not reachable through today's mocked save.** `wait()`
+  (`PreferencesScreen.tsx`) never rejects — no screen's simulated request does anywhere in this app
+  (`AuthRepository.login`/`logout`, D-29/D-31's "any well-formed input succeeds", never reject either).
+  `handleSave`'s `try/catch` calls `showToast('error', …)` on a rejection, which is genuine
+  forward-compatible wiring for when a real save exists, not dead code — but it can't be exercised by
+  driving `PreferencesScreen` itself without inventing an arbitrary failure the brief's own "ne modifie
+  pas la logique de préférences" argues against. The error _rendering_ (card, icon, a11y role) is fully
+  unit-tested at the `AppToast` level instead, which exercises the exact same code the real failure
+  path would hit.
+- **Auto-dismiss is not unit-tested.** `ToastUI`/`AnimatedContainer` (library internals) never unmount
+  a shown toast's content — only an `Animated.Value`-driven style changes — so
+  `queryByText(...).toBeNull()` after advancing fake timers can't observe it; the same "not meaningfully
+  testable under this test setup" category `D-49` already documents for Reanimated-driven visibility.
+  The auto-hide _timer itself_ (`setTimeout(cb, visibilityTime)`) is plain, well-understood library
+  code, not something this app's own logic needs to re-prove.
+- **Reduced motion**: `AppToast` shortens the library's `animationConfig` duration to 120 ms instead of
+  its spring default when `useReduceMotion()` is true — the same "shorten, don't fully strip" compromise
+  used for `HomeHeader`/`ExperienceDetailFooter`, since the library exposes one opaque animated value,
+  not separately toggleable translate/opacity/scale channels.
+- **Not done on purpose**: `warning`/`info` variants (not needed this sprint); wiring `showToast` into
+  any other screen (only Preferences' save asked for it); a queue for multiple simultaneous toasts (the
+  library's own `// TODO: use a queue when Toast is already visible` — out of scope, and Preferences'
+  own `if (saving) return` already prevents overlapping saves from ever triggering two toasts back to
+  back).

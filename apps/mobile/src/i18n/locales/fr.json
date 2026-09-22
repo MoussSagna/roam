@@ -375,6 +375,11 @@
     "reset": "Réinitialiser",
     "intro": "Ces préférences nous aident à te proposer des sorties qui te correspondent.",
     "save": "Enregistrer mes préférences",
+    "saveSuccess": {
+      "title": "Préférences enregistrées",
+      "message": "Tes préférences ont bien été mises à jour."
+    },
+    "saveError": "Impossible d'enregistrer les préférences",
     "experienceTypes": {
       "title": "Types d'expériences",
       "subtitle": "Sélectionne ce que tu aimes (plusieurs choix possibles)"
