@@ -1,13 +1,16 @@
-import { router, Stack } from 'expo-router';
+import { router } from 'expo-router';
 import { act, fireEvent, renderRouter, screen } from 'expo-router/testing-library';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
+import { AuthProvider } from '@/auth';
+import { AppRoutes } from '@/features/navigation/AppRoutes';
 import i18n from '@/i18n';
 import { ThemeProvider } from '@/theme';
 
 /**
  * Mounts the real `src/app` route tree (see `onboardingRoutes.test.tsx`), because mocking
- * `useRouter` cannot tell whether a path has a route file.
+ * `useRouter` cannot tell whether a path has a route file. Only the root `_layout` is replaced
+ * (skips font loading); `AppRoutes` is the exact same guarded stack the app itself renders.
  */
 function TestLayout() {
   return (
@@ -18,7 +21,9 @@ function TestLayout() {
       }}
     >
       <ThemeProvider initialPreference="light">
-        <Stack screenOptions={{ headerShown: false }} />
+        <AuthProvider>
+          <AppRoutes />
+        </AuthProvider>
       </ThemeProvider>
     </SafeAreaProvider>
   );
@@ -71,8 +76,13 @@ describe('authentication routes', () => {
 
     await fireEvent.changeText(screen.getByLabelText('Email'), 'moussa@email.com');
     await fireEvent.changeText(screen.getByLabelText('Mot de passe'), 'password123');
-    await fireEvent.press(screen.getByRole('button', { name: 'Se connecter' }));
-    await act(() => jest.advanceTimersByTimeAsync(1000));
+
+    // Single `act()`: awaiting the press alone would deadlock on the fake timer its own handler
+    // awaits (`login()`), and splitting the advance into its own `act()` misses the state update.
+    await act(async () => {
+      fireEvent.press(screen.getByRole('button', { name: 'Se connecter' }));
+      await jest.advanceTimersByTimeAsync(1000);
+    });
 
     expect(utils.getPathname()).toBe('/home');
   });
@@ -171,8 +181,11 @@ describe('authentication routes', () => {
     await fireEvent.changeText(screen.getByLabelText('Email'), 'moussa@email.com');
     await fireEvent.changeText(screen.getByLabelText('Mot de passe'), 'password123');
     await fireEvent.changeText(screen.getByLabelText('Confirmer le mot de passe'), 'password123');
-    await fireEvent.press(screen.getByRole('button', { name: 'Créer mon compte' }));
-    await act(() => jest.advanceTimersByTimeAsync(1000));
+
+    await act(async () => {
+      fireEvent.press(screen.getByRole('button', { name: 'Créer mon compte' }));
+      await jest.advanceTimersByTimeAsync(1000);
+    });
 
     expect(utils.getPathname()).toBe('/home');
   });

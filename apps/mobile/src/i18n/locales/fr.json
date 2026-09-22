@@ -286,7 +286,8 @@
     "placesDiscovered": "Lieux découverts",
     "areasExplored": "Quartiers explorés",
     "experiencesCompleted": "Expériences réalisées",
-    "favoriteCategory": "Catégorie préférée"
+    "favoriteCategory": "Catégorie préférée",
+    "logout": "Se déconnecter"
   },
   "settings": {
     "title": "Paramètres",

@@ -123,10 +123,14 @@ describe('RegisterScreen (authentication 3 — register)', () => {
     await fireEvent.changeText(screen.getByLabelText('Email'), 'moussa@email.com');
     await fireEvent.changeText(screen.getByLabelText('Mot de passe'), 'password123');
     await fireEvent.changeText(screen.getByLabelText('Confirmer le mot de passe'), 'password123');
-    await fireEvent.press(screen.getByRole('button', { name: 'Créer mon compte' }));
 
-    expect(screen.getByRole('button', { name: 'Créer mon compte' })).toBeDisabled();
-    await act(() => jest.advanceTimersByTime(1000));
+    // The press and the timer advance that unblocks its handler's `await login()` must be a single
+    // `act()` — awaiting the press on its own would deadlock (nothing could advance the timer until
+    // it resolves), and a separate `act()` per step misses the state update in between.
+    await act(async () => {
+      fireEvent.press(screen.getByRole('button', { name: 'Créer mon compte' }));
+      await jest.advanceTimersByTimeAsync(1000);
+    });
 
     expect(mockReplace).toHaveBeenCalledWith('/home');
     jest.useRealTimers();

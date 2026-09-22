@@ -97,7 +97,9 @@ export function WelcomeScreen() {
           <Pressable
             accessibilityRole="button"
             accessibilityLabel={t('welcome.signIn')}
-            onPress={() => router.push('/auth')}
+            // `replace`, not `push`: choosing to sign in leaves Welcome behind for good, so the
+            // back button/gesture can never resurface it from the auth flow (sprint 3 §1).
+            onPress={() => router.replace('/auth')}
             hitSlop={8}
             className="active:opacity-60"
           >

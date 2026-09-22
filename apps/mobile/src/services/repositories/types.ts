@@ -22,8 +22,15 @@ export interface ExperienceRepository {
   getById(id: string): Promise<Experience | null>;
 }
 
+export interface AuthRepository {
+  /** Simulates a login request (no backend yet): always succeeds after a short delay. */
+  login(): Promise<void>;
+  logout(): Promise<void>;
+}
+
 export type Repositories = {
   categories: CategoryRepository;
   places: PlaceRepository;
   experiences: ExperienceRepository;
+  auth: AuthRepository;
 };

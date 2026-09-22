@@ -6,6 +6,7 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { KeyboardAvoidingView, Platform, ScrollView, Text as RNText, View } from 'react-native';
 
+import { useAuth } from '@/auth';
 import { Button, FadeInUp, Screen, Text, TextField } from '@/components/ui';
 import { useTheme } from '@/theme';
 import { derived } from '@/theme/palette';
@@ -21,9 +22,6 @@ import {
 } from './components/PasswordRequirements';
 import { SocialButtons } from './components/SocialButtons';
 
-/** How long "Créer mon compte" simulates a request before entering the app (no backend). */
-const SIGN_UP_SIMULATION_MS = 900;
-
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 type FormErrors = {
@@ -35,13 +33,15 @@ type FormErrors = {
 
 /**
  * Register screen (design mockup "Authentification", tile 3 "Inscription") — front-end only.
- * There is no backend to create an account against, so a well-formed submission simulates a
- * request and enters the app directly, same as `LoginScreen` (`DECISIONS.md` D-32).
+ * There is no backend to create an account against, so a well-formed submission validates
+ * locally, then `useAuth().login()` simulates the request and marks the mocked session as active,
+ * same as `LoginScreen` (`DECISIONS.md` D-32, and the sprint 3 mocked-auth-session pass).
  */
 export function RegisterScreen() {
   const { t } = useTranslation();
   const router = useRouter();
   const { scheme, colors } = useTheme();
+  const { login } = useAuth();
   const [firstName, setFirstName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -69,13 +69,12 @@ export function RegisterScreen() {
     return Object.keys(next).length === 0;
   };
 
-  const handleSignUp = () => {
+  const handleSignUp = async () => {
     if (loading || !validate()) return;
     setLoading(true);
-    setTimeout(() => {
-      setLoading(false);
-      router.replace('/home');
-    }, SIGN_UP_SIMULATION_MS);
+    await login();
+    setLoading(false);
+    router.replace('/home');
   };
 
   return (

@@ -286,7 +286,8 @@
     "placesDiscovered": "Places discovered",
     "areasExplored": "Areas explored",
     "experiencesCompleted": "Experiences completed",
-    "favoriteCategory": "Favorite category"
+    "favoriteCategory": "Favorite category",
+    "logout": "Log out"
   },
   "settings": {
     "title": "Settings",

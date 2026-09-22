@@ -1,13 +1,16 @@
-import { router, Stack } from 'expo-router';
+import { router } from 'expo-router';
 import { act, fireEvent, renderRouter, screen } from 'expo-router/testing-library';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
+import { AuthProvider } from '@/auth';
+import { AppRoutes } from '@/features/navigation/AppRoutes';
 import i18n from '@/i18n';
 import { ThemeProvider } from '@/theme';
 
 /**
  * Mounts the real `src/app` route tree (see `onboardingRoutes.test.tsx` / `authRoutes.test.tsx`),
- * because mocking `useRouter` cannot tell whether a path has a route file.
+ * because mocking `useRouter` cannot tell whether a path has a route file. `(tabs)` is gated behind
+ * a mocked session (`AppRoutes`), so these tests start already logged in.
  */
 function TestLayout() {
   return (
@@ -18,7 +21,9 @@ function TestLayout() {
       }}
     >
       <ThemeProvider initialPreference="light">
-        <Stack screenOptions={{ headerShown: false }} />
+        <AuthProvider initialIsLoggedIn>
+          <AppRoutes />
+        </AuthProvider>
       </ThemeProvider>
     </SafeAreaProvider>
   );

@@ -861,3 +861,54 @@ renders (the other three unmount, they don't just go transparent) inside the sam
 - **Bubble tap only expands** (`expand()`, not `navigate`), confirmed by
   `RoamTabBar.test.tsx`/`tabsRoutes.test.tsx`: `navigation.navigate` is asserted not called and the
   active tab stays the one from before the tap (brief §7-§8).
+
+### D-44 — Mocked auth session (`isLoggedIn`) + `Stack.Protected` route protection
+
+- **`AuthProvider`/`useAuth` (`apps/mobile/src/auth/`), not a bare `const isLoggedIn` in a screen.**
+  Mirrors `ThemeProvider`/`useTheme()`'s exact shape (root-level context, `initial…` prop from
+  `useBootstrap`, persisted via the existing `@/lib/storage` abstraction) since this is the same kind
+  of cross-cutting, reactive, persisted app state — not a "feature", so it lives at `src/auth/` next
+  to `src/theme/`, not under `src/features/auth/` (which holds the auth _screens_).
+  `login()`/`logout()` delegate the actual (simulated) request to a new `repositories.auth`
+  (`AuthRepository`, `services/repositories/types.ts` + `services/mock/auth.ts`) — the project's
+  existing "screen → hook/service → repository (mock now, API later)" convention — while the
+  provider itself owns the resulting `isLoggedIn` state and its persistence.
+- **Persisted on purpose, reusing the existing storage abstraction** (`@/lib/storage`, already used
+  for theme/language — no new dependency): "simulate a real user session" (brief §3) reasonably
+  means it survives a restart, not just app-open-to-close. Storage failures already silently fall
+  back to defaults (`lib/storage.ts`), so a corrupted/missing session value just means "logged out",
+  never a crash.
+- **`Stack.Protected` (`apps/mobile/src/features/navigation/AppRoutes.tsx`), not manual
+  `router.reset`/imperative stack surgery** — the mechanism `expo-router` ~57 ships specifically for
+  this. Two blocks, `guard={!isLoggedIn}` (welcome, the whole onboarding journey, the whole
+  `auth/*` sub-flow) and `guard={isLoggedIn}` ((tabs)), plus an always-reachable `index` (the
+  splash, which itself now reads `isLoggedIn` to replace to `/home` or `/welcome`). Flipping the
+  guard removes the other block's screens from history outright — verified in
+  `AppRoutes.test.tsx` (new: the six scenarios from the brief's §12) — which is what makes "no back
+  to Login after signing in" and "no back to Home after logging out" hold via the hardware back
+  button/gesture, not just via the explicit `router.replace` each screen still also calls (kept,
+  since `Stack.Protected` alone only constrains _reachability_, not which screen is showing the
+  instant the guard changes — see Expo Router's own auth guide for the same combination).
+  `AppRoutes` is extracted out of `app/_layout.tsx` (which still owns font/theme bootstrap and
+  native chrome) specifically so route tests can render the exact same guarded stack the app does,
+  instead of each re-declaring it.
+- **Onboarding and Register also call `login()`, exactly like Login** (explicit product decision,
+  not inferred): both already ended on `/home` with no auth step before route protection existed
+  (`RegisterScreen`, `ReadyScreen`'s "Commencer"), and gating `(tabs)` behind `isLoggedIn` would
+  otherwise strand them. Treating "finished onboarding" and "just registered" as equally valid ways
+  to become a session, alongside "just logged in", was confirmed rather than assumed since it's a
+  product-logic call the brief didn't address.
+- **Welcome → auth entry is `router.replace`, not `push`** (`WelcomeScreen.tsx`) — the one part of
+  "no back to Welcome" `Stack.Protected` doesn't cover, since Welcome and the whole `auth/*` sub-flow
+  sit in the _same_ `!isLoggedIn` guard block (crossing guards is what triggers the history purge,
+  not moving within one). `auth/index → auth/login` and the register/login cross-links stay `push`
+  on purpose — going back to the entry screen from Login is existing, tested behavior
+  (`authRoutes.test.tsx`) the brief never asked to change, and replacing Welcome already removes it
+  from history before any of those pushes happen.
+- **A press with an async, timer-dependent handler (`login()`/`logout()`) must not be individually
+  `await`ed in a test under fake timers**: `await fireEvent.press(...)` deadlocks, since nothing can
+  advance the fake timer the handler is awaiting until that same await resolves. The fix used
+  throughout (`LoginScreen.test.tsx`, `RegisterScreen.test.tsx`, `ReadyScreen.test.tsx`,
+  `authRoutes.test.tsx`, `onboardingRoutes.test.tsx`, `AppRoutes.test.tsx`) is one shared `act()`
+  wrapping both the press and `jest.advanceTimersByTimeAsync(...)`, not two separate ones (which
+  still passes, but logs a spurious "state update not wrapped in act()").

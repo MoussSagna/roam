@@ -2,18 +2,20 @@ import '@/lib/knownWarnings';
 import '@/global.css';
 import '@/i18n';
 
-import { Stack, ThemeProvider as NavigationThemeProvider } from 'expo-router';
+import { ThemeProvider as NavigationThemeProvider } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
 
+import { AuthProvider } from '@/auth';
+import { AppRoutes } from '@/features/navigation/AppRoutes';
 import { useBootstrap } from '@/hooks/useBootstrap';
 import { createNavigationTheme, ThemeProvider, useTheme } from '@/theme';
 
 void SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
-  const { ready, initialThemePreference } = useBootstrap();
+  const { ready, initialThemePreference, initialIsLoggedIn } = useBootstrap();
 
   useEffect(() => {
     if (ready) {
@@ -27,18 +29,21 @@ export default function RootLayout() {
 
   return (
     <ThemeProvider initialPreference={initialThemePreference}>
-      <AppNavigator />
+      <AuthProvider initialIsLoggedIn={initialIsLoggedIn}>
+        <AppChrome />
+      </AuthProvider>
     </ThemeProvider>
   );
 }
 
-function AppNavigator() {
+/** Native chrome (nav bar theme, status bar) around the guarded route table (`AppRoutes`). */
+function AppChrome() {
   const { scheme, colors, isDark } = useTheme();
 
   return (
     <NavigationThemeProvider value={createNavigationTheme(scheme, colors)}>
       <StatusBar style={isDark ? 'light' : 'dark'} />
-      <Stack screenOptions={{ headerShown: false }} />
+      <AppRoutes />
     </NavigationThemeProvider>
   );
 }
