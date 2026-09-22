@@ -115,7 +115,7 @@ describe('authentication routes', () => {
     expect(screen.getByRole('header')).toHaveTextContent('Nouveau mot de passe');
   });
 
-  it('setting a valid new password moves on to the (placeholder) success screen', async () => {
+  it('setting a valid new password moves on to the success screen', async () => {
     const utils = await renderApp();
     await act(() => router.navigate('/auth/new-password'));
 
@@ -126,6 +126,16 @@ describe('authentication routes', () => {
 
     expect(utils.getPathname()).toBe('/auth/reset-success');
     expect(screen.queryByText(/Unmatched Route/i)).toBeNull();
+    expect(screen.getByRole('header')).toHaveTextContent('Mot de passe mis à jour !');
+  });
+
+  it('"Se connecter" on the success screen ends the sub-flow at the login screen', async () => {
+    const utils = await renderApp();
+    await act(() => router.navigate('/auth/reset-success'));
+
+    await fireEvent.press(screen.getByRole('button', { name: 'Se connecter' }));
+
+    expect(utils.getPathname()).toBe('/auth/login');
   });
 
   it('entering a wrong code stays on the reset-code screen with an error', async () => {

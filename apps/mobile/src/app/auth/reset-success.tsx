@@ -1,8 +1,5 @@
-import { useTranslation } from 'react-i18next';
-
-import { AuthPlaceholder } from '@/features/auth/AuthPlaceholder';
+import { ResetSuccessScreen } from '@/features/auth/ResetSuccessScreen';
 
 export default function ResetSuccessRoute() {
-  const { t } = useTranslation();
-  return <AuthPlaceholder title={t('auth.resetSuccess.title')} />;
+  return <ResetSuccessScreen />;
 }

@@ -645,3 +645,30 @@ component was needed.
   stub for tile 7 ("Réinitialisation réussie"), the last screen of the forgot-password sub-flow. Its
   placeholder title, `auth.resetSuccess.title` ("Mot de passe mis à jour !"), is taken directly from that
   tile's own mockup heading rather than reusing an unrelated key, since no existing key fit.
+
+### D-36 — Authentication 7 "Réinitialisation réussie" (route `/auth/reset-success`)
+
+`ResetSuccessScreen` replaces the `AuthPlaceholder` that `/auth/reset-success` rendered since D-35 — the
+last screen of the forgot-password sub-flow started at D-33. Measured on tile 7 of the design mockup
+board: a success badge, heading (`auth.resetSuccess.title`, already added in D-35), a two-line subtitle,
+a decorative landscape, and "Se connecter" in a card over it — the same photo/illustration-then-card shape
+as the entry screen (D-29). No back button and no top bar, like the onboarding's `ReadyScreen`: this is
+the end of a flow, not a step in one.
+
+- **New `SuccessCheckmark`** (`features/auth/components/`), explicitly requested as a "nice to have" beyond
+  the mockup's static icon: on mount, a thin ring pulses outward once and fades behind the badge
+  (`opacity 0.5→0`, `scale 0.7→1.55`, 900 ms) while the filled circle springs in
+  (`type: 'spring', damping: 11, stiffness: 170`) and the checkmark fades/scales in ~240 ms after that —
+  a single, non-looping "success ping". `useReduceMotion()` drops the pulse and the spring/scale entirely,
+  keeping only a plain fade, the same reduced-motion shape the profile-creation loader uses (D-27).
+- **New `SuccessLandscape`** (`features/auth/components/`): the mockup's mountains/lake/evergreens
+  illustration has no source asset, so it's approximated with flat, layered `react-native-svg` shapes at
+  increasing opacity of the `primary` token (same approximation spirit as the onboarding's `MapPreview`,
+  D-24) rather than reproducing it exactly. It fills its flex container and is anchored to the bottom
+  (`preserveAspectRatio="xMidYMax slice"`), so it always reaches the card regardless of screen height.
+- **"Se connecter" uses `router.replace('/auth/login')`**, not `push`: this is the natural end of the
+  forgot-password sub-flow (D-33 to D-36), so back shouldn't return into it — same reasoning as
+  `ReadyScreen`'s "Commencer" (D-26). It reuses `auth.signIn`, no new key.
+- **Sub-flow now complete end to end**: `/auth/login` → "Mot de passe oublié ?" → `/auth/forgot-password`
+  → `/auth/reset-code` (code `123456`) → `/auth/new-password` → `/auth/reset-success` → back to
+  `/auth/login`. A route-tree test walks the whole chain.
