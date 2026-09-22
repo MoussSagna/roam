@@ -613,10 +613,13 @@ tile 5 of the design mockup board — a 6-digit OTP entry, one box per digit, on
 - **A fixed mock code (`123456`), not "any complete code succeeds"** (changed after the initial build, on
   request): there's still no backend to check a real code against, but the screen now simulates an actual
   check instead of accepting anything well-formed — a complete code that isn't `MOCK_VALID_CODE` is
-  rejected with `validation.codeIncorrect` and stays on the screen, only `123456` proceeds. An incomplete
-  code shows `validation.codeIncomplete` instead, without simulating a request at all. On success,
+  rejected with `validation.codeIncorrect` and stays on the screen, only `123456` proceeds. On success,
   `handleContinue` simulates a request then `router.push('/auth/new-password')` — a new placeholder stub
   for tile 6.
+- **"Continuer" is disabled until all 6 digits are entered** (`disabled={!isComplete}` on `Button`, also
+  requested after the initial build), instead of being always pressable and showing an "incomplete" error
+  on press. That error state (and `validation.codeIncomplete`) became unreachable once the button can't be
+  pressed while incomplete, so both were removed rather than left as dead code.
 - **"Renvoyer le code" only clears the input**, front-end only — there is no email to actually resend, and
   no cooldown/rate-limit state invented for it (nothing in the mockup implies one).
 - **The help card's background is `bg-primary/5`**, not a new palette color: sampled on the mockup it's a

@@ -362,7 +362,6 @@
     "emailInvalid": "Invalid email address.",
     "passwordWeak": "Check the requirements below.",
     "passwordMismatch": "Passwords don't match.",
-    "codeIncomplete": "Enter all 6 digits of the code.",
     "codeIncorrect": "This code is incorrect. Check it or tap “Resend code”."
   },
   "errors": {

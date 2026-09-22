@@ -72,13 +72,24 @@ describe('ResetCodeScreen (authentication 5 — reset code)', () => {
     }
   });
 
-  it('rejects an incomplete code', async () => {
+  it('"Continuer" is disabled until all 6 digits are entered', async () => {
+    await renderWithProviders(<ResetCodeScreen />);
+
+    expect(screen.getByRole('button', { name: 'Continuer' })).toBeDisabled();
+
+    await fillCode('24');
+    expect(screen.getByRole('button', { name: 'Continuer' })).toBeDisabled();
+
+    await fillCode('247193');
+    expect(screen.getByRole('button', { name: 'Continuer' })).toBeEnabled();
+  });
+
+  it('pressing "Continuer" while incomplete does nothing', async () => {
     await renderWithProviders(<ResetCodeScreen />);
     await fillCode('24');
 
     await fireEvent.press(screen.getByRole('button', { name: 'Continuer' }));
 
-    expect(screen.getByText('Entre les 6 chiffres du code.')).toBeOnTheScreen();
     expect(mockPush).not.toHaveBeenCalled();
   });
 
