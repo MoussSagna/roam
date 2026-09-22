@@ -235,6 +235,27 @@ form field: `components/ui/TextField`.
 - Before building a screen: read its section in `03_UX_SCREENS_AND_FLOWS.md`, list its states
   (loading / empty / error / success), its translation keys and the theme tokens it uses.
 
+### Navigation back gesture
+
+- **The native swipe-back/interactive-pop gesture is disabled by default** (`gestureEnabled: false`
+  on the root `Stack`'s `screenOptions`, `AppRoutes.tsx`, sprint 5, `docs/DECISIONS.md` D-53). Back
+  navigation is button-only: every screen that needs one renders its own back control (a `Pressable`
+  - `ChevronLeft` calling `router.back()`, the pattern `AuthTopBar`/`ProfilePlaceholder`/
+    `CreateJourneyPlaceholder` already use) — do not rely on the system gesture for a new screen.
+- **Exception, not a pattern to extend**: a handful of pre-existing screens have no back button at all
+  (the mockup doesn't show one) and rely on the gesture — or, on Android, the hardware back button,
+  which this setting never affects either way — as their only way back. Each keeps
+  `options={{ gestureEnabled: true }}` on its own `Stack.Screen`, listed and reasoned about in
+  `AppRoutes.tsx`'s own comments: the onboarding question screens through "ready", and the
+  authentication entry screen. Do not add a new screen to that list; give it a back button instead.
+- **This only affects the Stack navigator's own edge-swipe gesture** — a completely separate system
+  from `ScrollView`/`FlatList` horizontal scrolling, a carousel's paging `ScrollView` (Home's hero,
+  the gallery's pager/thumbnail strip), or any `PanResponder`/Reanimated gesture (`Slider`). None of
+  those are touched by this setting.
+- `gallery/[id]` keeps its own explicit `gestureEnabled: false` (D-48) even though it's now the global
+  default too — that one exists so the screen's custom close animation can't be bypassed, which is a
+  different reason than "no back button exists", so it's kept explicit rather than folded away.
+
 ### Styling (NativeWind 4)
 
 - Style with `className`. Use semantic token classes only: `bg-background`, `bg-surface`,

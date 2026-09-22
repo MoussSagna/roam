@@ -10,24 +10,38 @@ import { useAuth } from '@/auth';
  *
  * Extracted from `app/_layout.tsx` so route tests can mount the exact same guarded stack (with a
  * lightweight `TestLayout` in place of the real one, which also handles font/theme bootstrap).
+ *
+ * **Back navigation is button-only by default** (`gestureEnabled: false` on `screenOptions`, sprint 5
+ * "disable native back gesture" — `docs/DECISIONS.md` D-53): the native edge-swipe/interactive-pop
+ * gesture is off for every screen unless explicitly re-enabled below. The handful of screens with no
+ * back button of their own — where that gesture (or the Android hardware back button, which this
+ * setting does not affect) is genuinely the only way back — keep it on; each is a pre-existing,
+ * documented design choice, not a new exception. Do not add a screen to this list without the same
+ * "no back button exists" justification.
  */
 export function AppRoutes() {
   const { isLoggedIn } = useAuth();
 
   return (
-    <Stack screenOptions={{ headerShown: false }}>
+    <Stack screenOptions={{ headerShown: false, gestureEnabled: false }}>
       <Stack.Screen name="index" />
 
       <Stack.Protected guard={!isLoggedIn}>
         <Stack.Screen name="welcome" />
-        <Stack.Screen name="onboarding/mood" />
-        <Stack.Screen name="onboarding/time" />
-        <Stack.Screen name="onboarding/budget" />
-        <Stack.Screen name="onboarding/location" />
-        <Stack.Screen name="onboarding/interests" />
-        <Stack.Screen name="onboarding/profile-creation" />
-        <Stack.Screen name="onboarding/ready" />
-        <Stack.Screen name="auth/index" />
+        {/* No back button on any of these (`onboarding.welcome.eyebrow`… through "ready"): the
+            mockup has none, and going back a step is the native gesture / hardware button only
+            (`DECISIONS.md` D-21). "ready" also relies on it to reach "interests" (D-27's "back from
+            ready goes to the interests", since "profile-creation" is `replace`d out of history). */}
+        <Stack.Screen name="onboarding/mood" options={{ gestureEnabled: true }} />
+        <Stack.Screen name="onboarding/time" options={{ gestureEnabled: true }} />
+        <Stack.Screen name="onboarding/budget" options={{ gestureEnabled: true }} />
+        <Stack.Screen name="onboarding/location" options={{ gestureEnabled: true }} />
+        <Stack.Screen name="onboarding/interests" options={{ gestureEnabled: true }} />
+        <Stack.Screen name="onboarding/profile-creation" options={{ gestureEnabled: true }} />
+        <Stack.Screen name="onboarding/ready" options={{ gestureEnabled: true }} />
+        {/* Also no back button (D-29: "the mockup's Login/Register/Forgot-password tiles all have
+            it, Entry doesn't") — the gesture is the only way back to Welcome. */}
+        <Stack.Screen name="auth/index" options={{ gestureEnabled: true }} />
         <Stack.Screen name="auth/login" />
         <Stack.Screen name="auth/register" />
         <Stack.Screen name="auth/forgot-password" />

@@ -125,6 +125,15 @@ back), and that the screen matches the design at a short screen width (375 px) a
 width. Add/update the screen's test file (`renderWithProviders`, `fireEvent`) and, if it introduces new
 routes, a route-tree test (see `authRoutes.test.tsx` / `onboardingRoutes.test.tsx`).
 
+Navigation checklist (`docs/DEVELOPMENT.md` → "Navigation back gesture", `DECISIONS.md` D-53):
+
+- [ ] The native swipe-back gesture is disabled (the new route's `Stack.Screen` needs no
+      `gestureEnabled` override) unless the screen has no back button of its own, in which case that's
+      an explicit, reasoned exception in `AppRoutes.tsx` — not a new default.
+- [ ] The screen's own back button (if it has one) works and calls `router.back()`.
+- [ ] The screen's internal gestures (a carousel, a gallery pager, a slider…) still work — they're a
+      separate system from the Stack's gesture and shouldn't need any change either way.
+
 ## 9. Update the documentation
 
 Update whichever of these actually changed:

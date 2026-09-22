@@ -1374,3 +1374,60 @@ scrollable content to a floating sticky footer, matching experience detail's "Cr
 - **Not done on purpose**: no visual change to either screen's footer beyond what "share one component"
   requires; `PreferencesScreen`'s own save/reset business logic is untouched, only its CTA's
   presentation moved.
+
+## Navigation (2026-09-22)
+
+### D-53 — Native back gesture disabled by default; button-only back navigation
+
+Global navigation rule, not scoped to one screen: back navigation should be controlled by ROAM's own
+UI (a back button calling `router.back()`), not the platform's native edge-swipe/interactive-pop
+gesture. `AppRoutes.tsx`'s root `<Stack>` now sets `gestureEnabled: false` in its `screenOptions`,
+applying to every `Stack.Screen` (including the ones inside each `Stack.Protected` block — it's one
+navigator, `Stack.Protected` only conditions which screens are registered) unless a screen overrides
+it.
+
+- **Audit before changing anything, per the brief**: grepped the whole app for existing
+  `gestureEnabled`/`screenOptions` usage (only `gallery/[id]` had one, `false`, from D-48) and read
+  every route file plus `DECISIONS.md` for any screen documented as relying on the gesture. Two
+  patterns turned up, both genuine, both kept working:
+  - **The entire onboarding question flow has no back button at all** — `MoodScreen`, `TimeScreen`,
+    `BudgetScreen`, `LocationScreen`, `InterestsScreen`, `ProfileCreationScreen` and `ReadyScreen`
+    (verified in code: none renders a `Pressable`/back control for it). D-21 says this outright ("No
+    visible 'Retour' — the mockup has none; going back is the native gesture / hardware button of the
+    stack"), D-27 confirms it for the profile-creation loader ("the back gesture stays enabled") and
+    that going back from `ready` lands on `interests` (`profile-creation` is `replace`d out of
+    history, so gesture-back from `ready` is the _only_ way there). Disabling the gesture on any of
+    these would have silently trapped the user going forward-only through onboarding.
+  - **`AuthEntryScreen` has no back button either** — D-29 says so explicitly ("the mockup's
+    Login/Register/Forgot-password tiles all have it, Entry doesn't"), and it's reached by `push` from
+    Welcome (D-30), so the gesture is its only way back. Login, Register, Forgot password, Reset code
+    and New password all _do_ have `AuthTopBar` (a real back button) — they get the new default
+    (gesture off) with zero loss, since the button still works.
+  - **`ResetSuccessScreen` has no back button either, but this is not an exception**: D-36 is explicit
+    that this is deliberate ("this is the end of a flow, not a step in one"), i.e. the screen was never
+    meant to be reachable backward at all — the previously-enabled default gesture was an unintentional
+    gap against the screen's own documented intent, not a validated behavior to preserve. It gets the
+    new default (gesture off) like every undocumented screen.
+- **Each exception is a `Stack.Screen`-level `options={{ gestureEnabled: true }}` override, commented
+  in place in `AppRoutes.tsx`** with its reason and source decision — not a `Stack.Protected`-level
+  `screenOptions` override, since that block also contains screens (Login, Register, the rest of the
+  forgot-password sub-flow) that should get the new default, not the exception.
+- **Carousels, galleries, sliders and any Reanimated/`PanResponder` gesture are architecturally
+  unrelated** to the Stack navigator's own edge-swipe-back (a `react-native-screens`/native-stack
+  feature, not a JS touch responder) — nothing about them needed touching, and the existing
+  `ExperienceHero.test.tsx`/`ExperienceGalleryScreen.test.tsx`/`useCtaVisibility.test.ts` suites (and
+  every route-tree test) pass unmodified, which is the practical proof.
+- **Not unit-tested directly**: `gestureEnabled` isn't a prop any existing test asserts on (a `grep`
+  turned up zero precedent, including for `gallery/[id]`'s own D-48 setting) — it configures
+  `react-native-screens`' native container, not something RNTL's rendered tree exposes as a queryable
+  element, the same category of "not meaningfully testable under this test setup" `D-49` already
+  documents for the header/footer crossfade. The full existing suite (44 files, 296 tests, every
+  route-tree test included) was run instead to confirm nothing broke, which is what an untestable
+  option's regression check actually looks like here.
+- **`docs/DEVELOPMENT.md`** gained a "Navigation back gesture" convention (the rule, the exception list
+  and why the "internal gestures are unaffected" claim holds) and
+  **`docs/SCREEN_INTEGRATION_WORKFLOW.md`**'s validation step gained the three checklist items the
+  brief asked for.
+- **Not done on purpose**: no change to any screen's own back-button UI or `router.back()` calls (the
+  brief is explicit this is presentation/config only); no new "swipe to dismiss" pattern introduced
+  anywhere it didn't already exist.
