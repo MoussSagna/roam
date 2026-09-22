@@ -2,6 +2,7 @@ import type { Repositories } from '../repositories/types';
 
 import { createMockAuthRepository } from './auth';
 import { categories, experiences, places } from './data';
+import { createMockUserRepository } from './user';
 
 /** In-memory implementation used until the backend exists. Returns copies, like a real API would. */
 export function createMockRepositories(): Repositories {
@@ -18,5 +19,6 @@ export function createMockRepositories(): Repositories {
         structuredClone(experiences.find((experience) => experience.id === id) ?? null),
     },
     auth: createMockAuthRepository(),
+    users: createMockUserRepository(),
   };
 }

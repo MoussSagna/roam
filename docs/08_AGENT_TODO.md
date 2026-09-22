@@ -70,7 +70,7 @@ Use mock data. The onboarding is complete on the front end (no backend, nothing 
 
 - [ ] Favorites
 - [ ] History
-- [ ] Profile
+- [~] Profile — main screen built (header, stats, menu), sub-screens still placeholders, sprint 5
 - [ ] Preference editing
 - [ ] Statistics
 

@@ -347,14 +347,27 @@
   },
   "profile": {
     "title": "Profile",
+    "settings": "Settings",
+    "editProfile": "Edit my profile",
+    "ageCity": "{age} years old · {city}",
     "preferences": "My preferences",
+    "preferencesSubtitle": "Mood, budget, interests",
     "history": "My history",
+    "historySubtitle": "All your past outings",
     "favorites": "My favorites",
+    "favoritesSubtitle": "Saved places and experiences",
     "statistics": "My statistics",
+    "statisticsSubtitle": "Your activity and discoveries",
+    "help": "Help & Support",
+    "privacy": "Privacy",
     "placesDiscovered": "Places discovered",
     "areasExplored": "Areas explored",
     "experiencesCompleted": "Experiences completed",
     "favoriteCategory": "Favorite category",
+    "stats": {
+      "outings": "Outings",
+      "favorites": "Favorites"
+    },
     "logout": "Log out"
   },
   "settings": {
@@ -362,6 +375,7 @@
     "appearance": "Appearance",
     "language": "Language",
     "theme": {
+      "title": "Theme",
       "light": "Light",
       "dark": "Dark",
       "system": "System"

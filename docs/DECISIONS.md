@@ -1213,3 +1213,62 @@ content changes beyond removing one named section.
   `translateY`, shortens the duration — identical to `HomeHeader`'s handling). The header's crossfade is
   a direct function of scroll position, not a timed animation independent of user input, so there is no
   separate motion to suppress; it inherently has no bounce, spring or autoplay to turn off.
+
+## Profile (2026-09-22)
+
+### D-50 — Profile 1 "Profil principal" (route `/profile`); `UserRepository` added; ten sub-screens stubbed
+
+Sprint 5, one screen at a time (`docs/SCREEN_INTEGRATION_WORKFLOW.md`): `ProfileScreen` replaces the
+sprint 3 placeholder (D-40) with the real main screen from the supplied mockup board (tile 01) — header,
+stats, and the grouped menu (préférences/favoris/historique/statistiques, langue/thème, aide/confidentialité,
+déconnexion). Screens 2–11 of the mockup board (edit profile, préférences, favoris, historique,
+statistiques, langue, thème, aide, confidentialité, the logout popup) are explicitly **not** built this
+session — each gets its own session and validation, per the brief's "one screen at a time" rule.
+
+- **No user/session data existed beyond `AuthContext`'s `isLoggedIn`.** `User` (`types/user.ts`) gained
+  optional display fields (`age`, `city`, `bio`, `stats: UserStats`) instead of a second type — same
+  precedent as `Experience`'s repeated extensions (D-45, D-48). A new `UserRepository.getCurrentUser()`
+  (`services/mock/user.ts`) follows the existing `Screen → hook → Repository → mock` convention
+  (`useCurrentUser`, mirroring `useExperience`); the mocked profile (`services/mock/data.ts` →
+  `currentUser`, "Moussa", 33, Paris) is the one from the mockup. `bio` is plain mock content, not an
+  i18n key — same "entity content is plain strings" precedent as place/experience descriptions (D-09).
+- **No avatar photo exists, so `ProfileAvatar` falls back to an initial-letter circle** (`bg-accent`,
+  first letter of `displayName`) instead of inventing or cropping one — the exact precedent `ReviewCard`
+  already established for reviewer avatars with no photo asset. Shows `avatarUrl` once a real one exists;
+  no temporary crop was created for this screen.
+- **Ten menu rows lead to screens not built this session; each gets a `ProfilePlaceholder` route**
+  (`features/profile/components/ProfilePlaceholder.tsx`, same shape as `CreateJourneyPlaceholder`/
+  `ExperienceDetailPlaceholder`, D-45/D-48): `/profile/{edit,preferences,favorites,history,statistics,
+language,theme,help,privacy,settings}`. Replace each route's body, not its path, when that screen's own
+  session comes; delete `ProfilePlaceholder` once nothing references it (D-37's precedent).
+- **"Mes favoris" and "Mon historique" get their own `/profile/*` routes, distinct from the existing
+  `/favorites` tab.** The mockup's tiles 03–04 show them as pushed screens with a back arrow and no tab
+  bar, not the tab bar's own Favoris screen — so this keeps the two entry points separate for now rather
+  than repointing the row at the tab. Which one (if either) the real "Mes favoris" screen (écran 5) ends
+  up reusing is that screen's own decision, not decided here.
+- **The mockup's header Settings gear icon has no dedicated screen in this sprint's 11-screen list**
+  (Langue/Thème/Aide/Confidentialité are already separate menu rows). Simplest reversible choice: it
+  pushes its own placeholder, `/profile/settings`, reusing the already-present-but-unused
+  `settings.title` i18n key ("Paramètres") as that placeholder's heading — same treatment as every other
+  not-yet-built destination on this screen, not a special case.
+- **Langue and Thème rows show their live current value**, not the mockup's static "Français"/"Système":
+  `i18n.language` (guarded by `isLanguage`) and `useTheme().preference` are already reactive app state, so
+  showing anything else would be a mock fiction the app doesn't need. Both values are resolved through an
+  explicit key map (`LANGUAGE_LABEL_KEYS`/`THEME_LABEL_KEYS` in `ProfileScreen.tsx`), not a dynamic
+  template-literal key — this project's typed i18n keys reject those (same pattern as `categoryLabel.ts`,
+  D-48).
+- **New generic-looking pieces stay feature-scoped, not promoted to `components/ui/`**: `ProfileAvatar`,
+  `ProfileHeader`, `ProfileStats`, `ProfileMenuRow` are all specific to this screen's exact shapes (a menu
+  row with an icon-in-a-tinted-circle, an optional subtitle _or_ trailing value, a chevron) — reusing
+  `Button`/`IconButton`/`Text`/`ScrollScreen` for everything generic rather than inventing a competing
+  "Card" primitive (`06_DESIGN_SYSTEM.md` lists one, but nothing here needed its full shape).
+- **Logout keeps its existing direct behavior (no confirmation), unchanged from the sprint 3 placeholder.**
+  The confirmation popup is explicitly écran 11 of this sprint's plan, its own session; adding it here
+  would be building ahead of the one-screen-at-a-time rule.
+- **`fireEvent.press` must be individually awaited (RNTL v14, `DEVELOPMENT.md`'s own testing convention) —
+  confirmed the hard way**: an early draft of `ProfileScreen.test.tsx` fired eight unawaited presses in one
+  test, which logged "overlapping act() calls" and left the _next_ test's fresh render unable to find its
+  own elements (a real cross-test failure, not a flake) until every press was awaited.
+- **Not done on purpose**: the ten linked screens themselves, and the logout confirmation popup (each a
+  later session); a "Card" design-system primitive (not needed yet); persisting the mocked profile (no
+  backend, `08_AGENT_TODO.md` Phase F still open).

@@ -9,11 +9,14 @@ forgot-password sub-flow (email → reset code → new password → success) —
 mockup's post-authentication screens (a welcome-back moment, location permission, "Tout est prêt") were never part of that
 sprint's scope and are still not built (`DECISIONS.md` D-29). **Main navigation** (four tabs behind a floating pill/bubble
 tab bar) is built — see `DECISIONS.md` D-38 to D-43. **Home is now the real discovery screen** (hero carousel, mood
-chips, popular/nearby/for-you sections, sprint 5, `DECISIONS.md` D-45); Discover/Favorites/Profile are still the sprint 3
+chips, popular/nearby/for-you sections, sprint 5, `DECISIONS.md` D-45); Discover/Favorites are still the sprint 3
 placeholder content. **Experience detail and its full-screen gallery are also built** (sprint 5, `DECISIONS.md` D-48);
-the itinerary/journey screen it leads to is still a placeholder. There is **no backend, no database and no API**: nothing is sent or stored, and every
+the itinerary/journey screen it leads to is still a placeholder. **Profile's main screen is now real** (header, stats,
+grouped menu; sprint 5, one screen at a time, `DECISIONS.md` D-50); the ten screens it links to (edit profile,
+preferences, favorites, history, statistics, language, theme, help, privacy, settings) are still placeholders, built
+one per session. There is **no backend, no database and no API**: nothing is sent or stored, and every
 answer/interaction is local state, mock repository content, or a simulated delay used for the prototype only
-(`DECISIONS.md` D-28, D-29, D-31 to D-36, D-45).
+(`DECISIONS.md` D-28, D-29, D-31 to D-36, D-45, D-50).
 
 ## Requirements
 
@@ -73,7 +76,8 @@ apps/mobile/
     │   ├── onboarding/      # Onboarding: the 8 screens, onboardingFlow.ts (routes, order), profileCreation.ts (simulation)
     │   ├── navigation/      # Main navigation: RoamTabBar (floating pill/bubble), TabBarCollapseContext, tabBarConfig
     │   ├── home/            # Home (sprint 5): hero carousel, sections, mock data/lib — see the table below
-    │   ├── discover/, favorites/, profile/  # The other three tabs (still sprint 3 placeholder content)
+    │   ├── discover/, favorites/  # Still sprint 3 placeholder content
+    │   ├── profile/          # Profile (sprint 5): main screen real, its sub-screens still placeholders
     │   ├── experiences/     # Experience detail (route experience/[id]) + gallery/ (route gallery/[id]) — sprint 5
     │   ├── auth/            # Authentication: all 7 screens built (Entry, Login, Register, ForgotPassword, ResetCode, NewPassword, ResetSuccess)
     │   ├── itinerary/       # CreateJourneyPlaceholder (route itinerary/create) — not the real screen yet
@@ -186,6 +190,20 @@ polish D-49), built on `Experience`'s extended fields through the same `Experien
 | Map preview           | `features/experiences/components/MapPreviewRow.tsx`                         | Reuses onboarding's `MapPreview` illustration; not yet navigable (no map screen)                                  |
 | Similar experiences   | `features/experiences/components/SimilarExperiencesSection.tsx`             | Reuses Home's `ExperienceCard`                                                                                    |
 | Create-journey CTA    | `itinerary/create` → `features/itinerary/CreateJourneyPlaceholder.tsx`      | Reached only from the sticky footer CTA now — the old inline button and "Envie d'en faire plus ?" are gone (D-49) |
+
+## Profile (current state)
+
+Built one screen at a time (`docs/SCREEN_INTEGRATION_WORKFLOW.md`), sprint 5. Only the main screen
+(`/profile`) is real so far; every row it links to is a `ProfilePlaceholder` stub (`docs/DECISIONS.md`
+D-50) until its own session.
+
+| Piece              | Route / component                                                                        | Notes                                                                                                         |
+| ------------------ | ---------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------- |
+| Main screen        | `/profile` (in `(tabs)`) → `features/profile/ProfileScreen.tsx`                          | Header (avatar/name/bio/edit CTA), stats, grouped menu, logout — built on `UserRepository` (`useCurrentUser`) |
+| Header/stats       | `features/profile/components/ProfileHeader.tsx`, `ProfileAvatar.tsx`, `ProfileStats.tsx` | Avatar falls back to an initial letter (no photo in the mock content, same precedent as `ReviewCard`)         |
+| Menu row           | `features/profile/components/ProfileMenuRow.tsx`                                         | Icon + label (+ optional subtitle or right-aligned value) + chevron; reused for every group                   |
+| Not-yet-built rows | `features/profile/components/ProfilePlaceholder.tsx`                                     | `/profile/{edit,preferences,favorites,history,statistics,language,theme,help,privacy,settings}`               |
+| Data               | `UserRepository.getCurrentUser()` (`services/mock/user.ts`)                              | One mocked profile (`services/mock/data.ts` → `currentUser`); `User` gained optional `age/city/bio/stats`     |
 
 ## Authentication (current state)
 

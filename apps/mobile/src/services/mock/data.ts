@@ -1,4 +1,4 @@
-import type { Category, Experience, ExperienceReview, Place } from '@/types';
+import type { Category, Experience, ExperienceReview, Place, User } from '@/types';
 
 /** Tiny fixture set: just enough to exercise the repository layer. Real mock content comes with the features. */
 
@@ -513,3 +513,19 @@ export const experiences: Experience[] = [
     similarExperienceIds: ['exp-night-museum', 'exp-live-concert'],
   },
 ];
+
+/**
+ * The signed-in user (sprint 5, Profile): no real session/user endpoint, so `UserRepository` always
+ * returns this one profile. `bio` is plain mock content, like place/experience descriptions
+ * (D-09/D-45), not an i18n key. No `avatarUrl`: `ProfileAvatar` falls back to initials, the same
+ * precedent `ReviewCard` already uses for reviewer avatars (no photo asset needed or invented).
+ */
+export const currentUser: User = {
+  id: 'user-moussa',
+  displayName: 'Moussa',
+  email: 'moussa@roam.app',
+  age: 33,
+  city: 'Paris',
+  bio: 'Toujours partant pour découvrir de nouveaux lieux ✨',
+  stats: { outings: 12, placesDiscovered: 36, favorites: 8 },
+};

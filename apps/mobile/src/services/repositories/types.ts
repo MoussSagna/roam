@@ -1,4 +1,4 @@
-import type { Category, Experience, Place } from '@/types';
+import type { Category, Experience, Place, User } from '@/types';
 
 /**
  * Data-access contracts. UI code depends on these interfaces only, never on `fetch`,
@@ -28,9 +28,15 @@ export interface AuthRepository {
   logout(): Promise<void>;
 }
 
+export interface UserRepository {
+  /** No real session/user endpoint yet: always returns the same mocked profile. */
+  getCurrentUser(): Promise<User>;
+}
+
 export type Repositories = {
   categories: CategoryRepository;
   places: PlaceRepository;
   experiences: ExperienceRepository;
   auth: AuthRepository;
+  users: UserRepository;
 };

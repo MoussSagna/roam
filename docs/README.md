@@ -32,8 +32,11 @@ success) — see `DECISIONS.md` D-28, D-29, D-31–D-36, `08_AGENT_TODO.md` and 
 The main navigation is also built: four tabs (Home, Discover, Favorites, Profile) behind a floating pill/bubble
 tab bar that collapses into a bubble on scroll and expands on tap — see `DECISIONS.md` D-38 to D-43. **Home is
 now the real discovery screen** (hero carousel, mood chips, popular/nearby/for-you sections, mock data only) —
-see `DECISIONS.md` D-45; Discover/Favorites/Profile are still sprint 3 placeholder content. **Experience detail
+see `DECISIONS.md` D-45; Discover/Favorites are still sprint 3 placeholder content. **Experience detail
 and its full-screen photo gallery are built** (hero → gallery transition, reviews, similar experiences, mock
 data only) — see `DECISIONS.md` D-48; the itinerary/journey screen its CTAs lead to is still a placeholder.
+**Profile's main screen is now real** (header, stats, grouped menu, mock data only, one screen at a time) —
+see `DECISIONS.md` D-50; the screens it links to (edit profile, preferences, favorites, history, statistics,
+language, theme, help, privacy, settings) are still placeholders, each built in its own session.
 
 The product is intentionally MVP-first. Do not expand scope without an explicit requirement.

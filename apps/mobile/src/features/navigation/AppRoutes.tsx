@@ -41,6 +41,16 @@ export function AppRoutes() {
         <Stack.Screen name="experience/[id]" />
         <Stack.Screen name="gallery/[id]" options={{ animation: 'fade', gestureEnabled: false }} />
         <Stack.Screen name="itinerary/create" />
+        <Stack.Screen name="profile/edit" />
+        <Stack.Screen name="profile/preferences" />
+        <Stack.Screen name="profile/favorites" />
+        <Stack.Screen name="profile/history" />
+        <Stack.Screen name="profile/statistics" />
+        <Stack.Screen name="profile/language" />
+        <Stack.Screen name="profile/theme" />
+        <Stack.Screen name="profile/help" />
+        <Stack.Screen name="profile/privacy" />
+        <Stack.Screen name="profile/settings" />
       </Stack.Protected>
     </Stack>
   );

@@ -347,14 +347,27 @@
   },
   "profile": {
     "title": "Profil",
+    "settings": "Paramètres",
+    "editProfile": "Éditer mon profil",
+    "ageCity": "{age} ans · {city}",
     "preferences": "Mes préférences",
+    "preferencesSubtitle": "Humeur, budget, intérêts",
     "history": "Mon historique",
+    "historySubtitle": "Toutes tes sorties passées",
     "favorites": "Mes favoris",
+    "favoritesSubtitle": "Lieux et expériences sauvegardées",
     "statistics": "Mes statistiques",
+    "statisticsSubtitle": "Mon activité et mes découvertes",
+    "help": "Aide & Support",
+    "privacy": "Confidentialité",
     "placesDiscovered": "Lieux découverts",
     "areasExplored": "Quartiers explorés",
     "experiencesCompleted": "Expériences réalisées",
     "favoriteCategory": "Catégorie préférée",
+    "stats": {
+      "outings": "Sorties",
+      "favorites": "Favoris"
+    },
     "logout": "Se déconnecter"
   },
   "settings": {
@@ -362,6 +375,7 @@
     "appearance": "Apparence",
     "language": "Langue",
     "theme": {
+      "title": "Thème",
       "light": "Clair",
       "dark": "Sombre",
       "system": "Système"
