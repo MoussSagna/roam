@@ -2,6 +2,7 @@ import { Tabs } from 'expo-router/tabs';
 
 import { RoamTabBar } from '@/features/navigation/RoamTabBar';
 import { TabBarCollapseProvider } from '@/features/navigation/TabBarCollapseContext';
+import { TabTransitionProvider } from '@/features/navigation/TabTransitionContext';
 
 /**
  * Main navigation (sprint 3): four tabs sharing one floating pill / bubble tab bar
@@ -12,12 +13,14 @@ import { TabBarCollapseProvider } from '@/features/navigation/TabBarCollapseCont
 export default function TabsLayout() {
   return (
     <TabBarCollapseProvider>
-      <Tabs tabBar={(props) => <RoamTabBar {...props} />} screenOptions={{ headerShown: false }}>
-        <Tabs.Screen name="home" />
-        <Tabs.Screen name="discover" />
-        <Tabs.Screen name="favorites" />
-        <Tabs.Screen name="profile" />
-      </Tabs>
+      <TabTransitionProvider>
+        <Tabs tabBar={(props) => <RoamTabBar {...props} />} screenOptions={{ headerShown: false }}>
+          <Tabs.Screen name="home" />
+          <Tabs.Screen name="discover" />
+          <Tabs.Screen name="favorites" />
+          <Tabs.Screen name="profile" />
+        </Tabs>
+      </TabTransitionProvider>
     </TabBarCollapseProvider>
   );
 }

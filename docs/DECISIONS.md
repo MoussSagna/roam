@@ -790,3 +790,35 @@ renders (the other three unmount, they don't just go transparent) inside the sam
   `rgba(255,255,255,0.35)` 1px border gives the glass-edge highlight the brief asks for literally
   (§12) — the one deliberately un-tokenized color in the component, since it is a decorative light
   catch rather than a themed surface (same precedent as the mood accent colors in `palette.ts`).
+
+### D-42 — Tab bar visual finalization + tab-switch/active-tab animation (still no collapse/bubble)
+
+- **Small, purely numeric finishing touches to the validated D-41 pill**, no structural change: bar
+  68px tall (was 64), items 72px wide (was 68), icon badge 36px/icon 21px (was 34/20 — same ~0.58
+  badge-to-icon ratio), bottom clearance 14px (was 20, still clearly off the safe-area edge), glass
+  border alpha 0.42 and shadow opacity 0.16 (were 0.35/0.12) for a touch more separation from
+  whatever's behind it, without turning it into a hard outline or a heavy shadow.
+- **Tab-switch entrance animation reads a shared "direction" instead of diffing routes itself.** New
+  `TabTransitionContext` (mirrors `TabBarCollapseContext`'s shape): `RoamTabBar` sets `1`/`-1` — the
+  tapped tab's index compared to the active one — right before calling `navigation.navigate`; the four
+  `(tabs)/*.tsx` route files wrap their screen in the new `TabScreenTransition`, which reads it.
+- **`TabScreenTransition` uses `react-native-reanimated` shared values directly, not a declarative
+  Moti `animate`/`from`.** The entering screen must snap to a _fresh_ offset — computed from
+  whatever `direction` is _right now_ — every time it gains focus, not interpolate from wherever it
+  happened to be left (a plain `animate={{opacity: isFocused ? 1 : 0, translateX: ...}}` would reuse
+  the offset from the _previous_ time that screen was hidden, which encodes the wrong direction after
+  a back-and-forth like Home→Discover→Home). Remounting the screen on each focus (a Moti `key` trick)
+  would get the direction right but discards the screen's state — in particular `ScrollView` position —
+  on every tab switch, a regression the brief explicitly rules out (§10). Shared values read via a
+  ref (synced in its own effect, not during render — the new `react-hooks/refs` lint rule forbids
+  mutating a ref mid-render) sidestep both problems: the screen subtree never unmounts, and the
+  snap-then-`withTiming` runs fresh off the latest direction every time `isFocused` flips true.
+- **The active tab's icon badge animates with Moti**, unlike the screen transition: a `MotiView`
+  behind the icon fades its `primary` fill in/out (opacity only, no `backgroundColor` interpolation,
+  per the brief's §8 "prefer transform/opacity"), and the icon itself sits in a second `MotiView` keyed
+  on focus state so switching triggers a fresh `spring` scale-in (`0.82 → 1`) — cheap to remount since
+  it's a ~36px icon, not a whole screen. The label gets the same keyed-remount treatment for a light
+  opacity fade. `useReduceMotion` (already used elsewhere) drops the spring/offset/translate in all
+  three places, keeping only a short opacity change, per the brief's §9.
+- **Collapse/bubble (D-41) still untouched**: `TabBarCollapseContext`, `useTabBarScrollHandler` and
+  their screen wiring remain exactly as paused, unrelated to this pass.
