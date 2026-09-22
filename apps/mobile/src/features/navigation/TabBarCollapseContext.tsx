@@ -41,14 +41,17 @@ export function useTabBarCollapse(): TabBarCollapseContextValue {
   return context;
 }
 
-/** Ignore jitter/bounce smaller than this before reacting to a scroll direction. */
+/** Ignore jitter/bounce smaller than this before reacting to a sustained downward scroll. */
 const DIRECTION_THRESHOLD = 12;
-/** Always expanded near the top, regardless of direction (avoids collapsing right at the start). */
+/** Only zone the bar auto-expands in — reaching the top, not merely scrolling up (sprint 3 §5-§6). */
 const TOP_ZONE = 24;
 
 /**
- * `onScroll` handler a tab screen attaches to its `ScrollView`: scrolling down past the threshold
- * collapses the tab bar into a bubble, scrolling up (or being near the top) expands it again.
+ * `onScroll` handler a tab screen attaches to its `ScrollView`: a sustained downward scroll past the
+ * threshold collapses the tab bar into a bubble. It only expands again once the scroll actually
+ * reaches the top — scrolling up while still mid-page keeps it collapsed (it may pass through this
+ * screen while the user is scrolling back up to find something), it just resets the downward
+ * accumulator so the next collapse needs a fresh sustained pull, not whatever was left over.
  */
 export function useTabBarScrollHandler() {
   const { collapse, expand } = useTabBarCollapse();
@@ -67,17 +70,14 @@ export function useTabBarScrollHandler() {
         return;
       }
 
-      // A change of direction resets the accumulator so a small wobble doesn't trigger a flip.
-      if (Math.sign(delta) !== Math.sign(accumulatedRef.current)) {
+      if (delta < 0) {
         accumulatedRef.current = 0;
+        return;
       }
-      accumulatedRef.current += delta;
 
+      accumulatedRef.current += delta;
       if (accumulatedRef.current > DIRECTION_THRESHOLD) {
         collapse();
-        accumulatedRef.current = 0;
-      } else if (accumulatedRef.current < -DIRECTION_THRESHOLD) {
-        expand();
         accumulatedRef.current = 0;
       }
     },

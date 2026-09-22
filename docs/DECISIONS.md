@@ -822,3 +822,42 @@ renders (the other three unmount, they don't just go transparent) inside the sam
   three places, keeping only a short opacity change, per the brief's §9.
 - **Collapse/bubble (D-41) still untouched**: `TabBarCollapseContext`, `useTabBarScrollHandler` and
   their screen wiring remain exactly as paused, unrelated to this pass.
+
+### D-43 — Collapse-to-bubble reconnected: crossfade morph, left-anchored bubble, top-only auto-expand
+
+- **`RoamTabBar` reads `TabBarCollapseContext` again** (paused since D-41); `TabBarCollapseContext`,
+  `useTabBarScrollHandler` and the four screens' `onScroll` wiring needed no changes — they were kept
+  live the whole time specifically so this step wouldn't have to re-derive them (D-41, D-42), which
+  also means the "centralize collapse logic, don't duplicate it per screen" requirement (this brief's
+  §15) was already satisfied before this pass started.
+- **Crossfade, not a hard content swap.** The pre-D-41 version swapped the pill's children for the
+  bubble's via a plain ternary the instant `collapsed` flipped, while only the container `width`
+  animated — a real transformation of the shape, but an instant cut of the content. Now both the
+  4-item row and the bubble's icon are always mounted, absolutely filling the same animated-width
+  container, and crossfade via opacity while the container's `width`/`marginLeft` animate on the same
+  spring — closer to the brief's "the capsule contracts around the icon" framing (§3-§4) than either a
+  hard swap or literally repositioning 4 icons into 1. Both layers get
+  `pointerEvents`/`accessibilityElementsHidden`/`importantForAccessibility` toggled with `collapsed` so
+  the hidden one is neither tappable nor reachable by a screen reader (brief §9) — RNTL's `getByRole`
+  respects the same hidden-from-accessibility flag, so tests assert the row is gone with
+  `queryByRole(...).toBeNull()`, not `.not.toBeVisible()`.
+- **Bubble is left-anchored (not centered) via an animated `marginLeft`, not `alignItems`.** The
+  outer positioning wrapper (`left`/`right`/`bottom` insets, unchanged since D-41) no longer centers
+  the pill with `alignItems: 'center'`; instead the pill's own `marginLeft` animates between a computed
+  `centeredOffset` (expanded — `(availableWidth - pillWidth) / 2` via `useWindowDimensions`, visually
+  identical to the old `alignItems: 'center'` result) and `0` (collapsed — flush with the wrapper's
+  left inset, i.e. `insets.left + 20`). This resolves the open question D-41 flagged: the bubble slides
+  left as it shrinks rather than staying centered, per this brief's §11.
+- **Scroll handler's expand condition changed: reaching the top, not scrolling up.** D-39's original
+  `useTabBarScrollHandler` expanded on _either_ reaching the top _or_ a sustained upward scroll
+  anywhere on the page. This brief is explicit (§5-§6) that only reaching the top should auto-expand;
+  scrolling up mid-page should leave it collapsed. The upward-scroll expand branch was removed —
+  scrolling up now only resets the downward accumulator (so the next collapse needs a fresh sustained
+  pull instead of picking up leftover progress), `TOP_ZONE` (24px, kept from D-39 — a literal `y <= 0`
+  would make the expand feel like it never quite lands) is still the only path to `expand()`.
+  `TabBarCollapseContext.test.tsx`'s "expands again once an upward scroll passes the threshold" test
+  covered the removed behavior and was replaced with one asserting the new top-only rule plus one
+  asserting the accumulator reset.
+- **Bubble tap only expands** (`expand()`, not `navigate`), confirmed by
+  `RoamTabBar.test.tsx`/`tabsRoutes.test.tsx`: `navigation.navigate` is asserted not called and the
+  active tab stays the one from before the tap (brief §7-§8).

@@ -52,13 +52,30 @@ describe('TabBarCollapseContext', () => {
     expect(result.current.collapse.collapsed).toBe(true);
   });
 
-  it('expands again once an upward scroll passes the threshold', async () => {
+  it('does not expand on an upward scroll alone, only once it actually reaches the top', async () => {
     const { result } = await renderCollapse();
     await act(() => result.current.onScroll(scrollEvent(100)));
     expect(result.current.collapse.collapsed).toBe(true);
 
     await act(() => result.current.onScroll(scrollEvent(60)));
+    expect(result.current.collapse.collapsed).toBe(true);
 
+    await act(() => result.current.onScroll(scrollEvent(10)));
+    expect(result.current.collapse.collapsed).toBe(false);
+  });
+
+  it('an upward scroll resets the downward accumulator instead of collapsing on the next small dip', async () => {
+    const { result } = await renderCollapse();
+    // Get past the top zone gradually so the very first move alone doesn't cross the threshold.
+    await act(() => result.current.onScroll(scrollEvent(20)));
+    await act(() => result.current.onScroll(scrollEvent(30)));
+    expect(result.current.collapse.collapsed).toBe(false);
+
+    await act(() => result.current.onScroll(scrollEvent(20)));
+    expect(result.current.collapse.collapsed).toBe(false);
+
+    // Without the reset above, this +10 would add to the earlier +10 and cross the threshold.
+    await act(() => result.current.onScroll(scrollEvent(30)));
     expect(result.current.collapse.collapsed).toBe(false);
   });
 

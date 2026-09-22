@@ -37,6 +37,10 @@ const TABS = [
   { label: 'Profil', path: '/profile', title: 'Profil' },
 ] as const;
 
+function scrollTo(testID: string, y: number) {
+  return fireEvent.scroll(screen.getByTestId(testID), { nativeEvent: { contentOffset: { y } } });
+}
+
 describe('main navigation (tabs)', () => {
   beforeEach(async () => {
     await act(() => i18n.changeLanguage('fr'));
@@ -75,6 +79,41 @@ describe('main navigation (tabs)', () => {
     expect(screen.getByRole('button', { name: 'Accueil' })).not.toBeSelected();
   });
 
-  // The scroll-driven collapse-to-bubble morph (previously tested here) is paused for this sprint 3
-  // visual-design pass (docs/DECISIONS.md D-41) and will come back once the static pill is validated.
+  it('collapses the tab bar into a bubble on scroll down, and the bubble shows the active tab', async () => {
+    await renderApp();
+    await act(() => router.navigate('/discover'));
+
+    await scrollTo('discover-scroll', 200);
+
+    expect(screen.queryByRole('button', { name: 'Découvrir' })).toBeNull();
+    expect(screen.getByRole('button', { name: 'Agrandir la barre de navigation' })).toBeVisible();
+  });
+
+  it('expands the tab bar back once the scroll reaches the top', async () => {
+    await renderApp();
+    await act(() => router.navigate('/home'));
+
+    await scrollTo('home-scroll', 200);
+    expect(screen.getByRole('button', { name: 'Agrandir la barre de navigation' })).toBeVisible();
+
+    // A small scroll up (still not at the top) is not enough to expand it back — avoids flip-flopping.
+    await scrollTo('home-scroll', 150);
+    expect(screen.getByRole('button', { name: 'Agrandir la barre de navigation' })).toBeVisible();
+
+    await scrollTo('home-scroll', 0);
+    expect(screen.getByRole('button', { name: 'Accueil' })).toBeVisible();
+    expect(screen.getByRole('button', { name: 'Accueil' })).toBeSelected();
+  });
+
+  it('tapping the collapsed bubble redeploys the tab bar without navigating away', async () => {
+    const utils = await renderApp();
+    await act(() => router.navigate('/favorites'));
+    await scrollTo('favorites-scroll', 200);
+
+    await fireEvent.press(screen.getByRole('button', { name: 'Agrandir la barre de navigation' }));
+
+    expect(utils.getPathname()).toBe('/favorites');
+    expect(screen.getByRole('button', { name: 'Favoris' })).toBeVisible();
+    expect(screen.getByRole('button', { name: 'Favoris' })).toBeSelected();
+  });
 });
