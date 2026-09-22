@@ -300,23 +300,37 @@
   "auth": {
     "signIn": "Sign in",
     "signUp": "Create an account",
-    "email": "Email address",
+    "email": "Email",
+    "emailPlaceholder": "you@email.com",
     "password": "Password",
     "forgotPassword": "Forgot password?",
     "logout": "Sign out",
+    "or": "or",
+    "continueWithGoogle": "Continue with Google",
+    "continueWithApple": "Continue with Apple",
+    "showPassword": "Show password",
+    "hidePassword": "Hide password",
     "entry": {
       "tagline": "Outings that feel like you.",
-      "or": "or",
-      "continueWithGoogle": "Continue with Google",
-      "continueWithApple": "Continue with Apple",
       "legalPrefix": "By continuing, you agree to our",
       "termsOfService": "Terms of Service",
       "legalMiddle": "and our",
       "privacyPolicy": "Privacy Policy"
     },
+    "login": {
+      "title": "Welcome back!",
+      "subtitle": "Sign in to find your outings and recommendations again."
+    },
+    "footer": {
+      "noAccount": "Don't have an account?"
+    },
     "placeholder": {
       "comingSoon": "Screen coming soon"
     }
+  },
+  "validation": {
+    "required": "This field is required.",
+    "emailInvalid": "Invalid email address."
   },
   "errors": {
     "generic": "Something went wrong.",

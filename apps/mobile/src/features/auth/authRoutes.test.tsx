@@ -54,7 +54,7 @@ describe('authentication routes', () => {
     expect(screen.queryByText(/Unmatched Route/i)).toBeNull();
   });
 
-  it('"Se connecter" on the entry screen opens the login placeholder without crashing', async () => {
+  it('"Se connecter" on the entry screen opens the login screen', async () => {
     const utils = await renderApp();
     await act(() => router.navigate('/auth'));
 
@@ -62,7 +62,29 @@ describe('authentication routes', () => {
 
     expect(utils.getPathname()).toBe('/auth/login');
     expect(screen.queryByText(/Unmatched Route/i)).toBeNull();
-    expect(screen.getByText('Écran à venir')).toBeOnTheScreen();
+    expect(screen.getByRole('header')).toHaveTextContent('Bon retour !');
+  });
+
+  it('logging in with valid credentials enters the app', async () => {
+    const utils = await renderApp();
+    await act(() => router.navigate('/auth/login'));
+
+    await fireEvent.changeText(screen.getByLabelText('Email'), 'moussa@email.com');
+    await fireEvent.changeText(screen.getByLabelText('Mot de passe'), 'password123');
+    await fireEvent.press(screen.getByRole('button', { name: 'Se connecter' }));
+    await act(() => jest.advanceTimersByTimeAsync(1000));
+
+    expect(utils.getPathname()).toBe('/home');
+  });
+
+  it('"Mot de passe oublié ?" opens its placeholder without crashing', async () => {
+    const utils = await renderApp();
+    await act(() => router.navigate('/auth/login'));
+
+    await fireEvent.press(screen.getByRole('button', { name: 'Mot de passe oublié ?' }));
+
+    expect(utils.getPathname()).toBe('/auth/forgot-password');
+    expect(screen.queryByText(/Unmatched Route/i)).toBeNull();
   });
 
   it('"Créer un compte" on the entry screen opens the register placeholder without crashing', async () => {

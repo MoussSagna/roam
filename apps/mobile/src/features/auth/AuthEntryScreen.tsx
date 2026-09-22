@@ -1,43 +1,28 @@
 import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
-import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Text as RNText, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Button, FadeInUp, Text } from '@/components/ui';
-import { useTheme } from '@/theme';
 import { brand, derived } from '@/theme/palette';
 import { fontFamily } from '@/theme/typography';
 
-import { AppleIcon } from './components/AppleIcon';
-import { GoogleIcon } from './components/GoogleIcon';
+import { OrDivider } from './components/OrDivider';
+import { SocialButtons } from './components/SocialButtons';
 
 const background = require('../../../assets/images/auth/entry-background.png');
-
-/** How long the Google/Apple buttons show a spinner before settling back (no request exists yet). */
-const SOCIAL_SIMULATION_MS = 900;
-
-type SocialProvider = 'google' | 'apple';
 
 /**
  * Authentication entry screen (design mockup "Authentification", tile 1 "Écran d'entrée") — the
  * first screen of the authentication prototype. Front-end only: "Se connecter" and "Créer un
- * compte" navigate to their own screens (placeholders for now); Google/Apple only simulate a
- * request (`DECISIONS.md` D-29). No backend, no real session.
+ * compte" navigate to their own screens; Google/Apple only simulate a request (`DECISIONS.md`
+ * D-29). No backend, no real session.
  */
 export function AuthEntryScreen() {
   const { t } = useTranslation();
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const { colors } = useTheme();
-  const [loadingProvider, setLoadingProvider] = useState<SocialProvider | null>(null);
-
-  const simulateSocialSignIn = (provider: SocialProvider) => {
-    if (loadingProvider) return;
-    setLoadingProvider(provider);
-    setTimeout(() => setLoadingProvider(null), SOCIAL_SIMULATION_MS);
-  };
 
   return (
     <View className="flex-1 bg-background">
@@ -107,30 +92,13 @@ export function AuthEntryScreen() {
             className="mt-3"
           />
 
-          <View className="mt-5 flex-row items-center gap-3">
-            <View className="h-[1px] flex-1 bg-border" />
-            <Text variant="small" tone="secondary">
-              {t('auth.entry.or')}
-            </Text>
-            <View className="h-[1px] flex-1 bg-border" />
+          <View className="mt-5">
+            <OrDivider />
           </View>
 
-          <Button
-            label={t('auth.entry.continueWithGoogle')}
-            variant="secondary"
-            leadingIcon={<GoogleIcon size={20} />}
-            loading={loadingProvider === 'google'}
-            onPress={() => simulateSocialSignIn('google')}
-            className="mt-5"
-          />
-          <Button
-            label={t('auth.entry.continueWithApple')}
-            variant="secondary"
-            leadingIcon={<AppleIcon size={19} color={colors.text} />}
-            loading={loadingProvider === 'apple'}
-            onPress={() => simulateSocialSignIn('apple')}
-            className="mt-3"
-          />
+          <View className="mt-5">
+            <SocialButtons />
+          </View>
 
           <Text
             variant="caption"

@@ -477,3 +477,51 @@ Same-day follow-up after reviewing D-29 on device.
   ("Déjà un compte ?", new key, secondary tone) followed by `t('welcome.signIn')` in `label` variant
   (semibold) and `primary` tone, mirroring how the Login/Register mockup tiles style their own
   cross-links. Same pattern to reuse if Login/Register need an equivalent footer link later.
+
+## Authentication, continued
+
+### D-31 — Authentication 2 "Connexion" (route `/auth/login`)
+
+`LoginScreen` (`src/features/auth/`) replaces the `AuthPlaceholder` that `/auth/login` rendered since D-29.
+Measured on tile 2 of the design mockup board.
+
+- **Deep navy heading, light theme only.** "Bon retour !" and (tile 3) "Créer un compte" are a
+  consistent, saturated navy (`rgb(0,0,~85)` sampled on both tiles independently) — clearly a deliberate
+  choice, not a near-black `text` rendering artifact (`inkDeep` is `#060A0E`, nowhere near it). Added as
+  `derived.authHeading` (`#000050`) in `palette.ts`, used directly via `style`, **not** as a 14th semantic
+  token: it is a narrow, one-off accent for these two headings, not a general-purpose color. No dark-theme
+  equivalent exists in the mockup and navy-on-near-black would be unreadable, so the screen falls back to
+  the normal `colors.text` token when `scheme === 'dark'`.
+- **New `TextField` primitive** (`src/components/ui/`): labeled input, leading icon, inline error, and a
+  `secureTextEntry` show/hide toggle (Lucide `eye`/`eye-off`). Generic and reusable — Register needs the
+  same Email/Password fields. `Text` gained an `error` tone (`text-error`) for the inline message.
+- **Four new shared auth components** (`src/features/auth/components/`), extracted instead of duplicated
+  because Register will need them too: `AuthTopBar` (back chevron + small "ROAM" wordmark — new pattern,
+  the mockup's Login/Register/Forgot-password tiles all have it, Entry doesn't), `OrDivider` and
+  `SocialButtons` (pulled out of `AuthEntryScreen`, which now composes them instead of owning the
+  Google/Apple loading state itself — same behavior, no test changes needed), and `AuthFooterLink`
+  ("Pas encore de compte ? **Créer un compte**" — the same composed-link pattern as `WelcomeScreen`'s
+  `alreadyHaveAccount` link, D-30, but this one is reusable since Register needs its mirror image).
+- **Validation is local and minimal.** Required fields + a basic email-format regex, on submit; an error
+  clears as soon as that field is edited again. `03_UX_SCREENS_AND_FLOWS.md` calls for validation/error
+  states without specifying rules, and there's no backend to enforce anything stronger.
+- **"Any well-formed input succeeds."** There's nothing to check credentials against (no backend, D-28), so
+  `handleSignIn` simulates a request (`loading` on `Button`, ~900 ms) then `router.replace('/home')` —
+  skipping onboarding, since Login implies a returning user. This differs from the entry screen's
+  Google/Apple buttons, which have nowhere to go yet: this button's destination (`/home`) already exists.
+- **"Mot de passe oublié ?" needed somewhere to land.** `src/app/auth/forgot-password.tsx` is a new
+  placeholder route (`AuthPlaceholder`, same role as D-29's Login/Register stubs) — Forgot password is a
+  later session, not this one.
+- **Keyboard handling uses only React Native core** (`KeyboardAvoidingView` + `ScrollView`), no new
+  dependency — `04_TECH_STACK.md`/`00_AGENT_INSTRUCTIONS.md` both favor the simplest option and avoiding
+  overengineering.
+- **i18n reorganized.** `auth.entry.or` / `continueWithGoogle` / `continueWithApple` moved up to `auth.or`
+  etc. (top-level) since Login now needs them too — `auth.entry.*` keeps only what's genuinely entry-only
+  (tagline, legal text). New `auth.login.*`, `auth.footer.noAccount`, `auth.showPassword`/`hidePassword`,
+  `auth.emailPlaceholder`, and a new top-level `validation.*` namespace (`required`, `emailInvalid`) meant
+  to be reused by every form screen, not just this one. `auth.email` changed from "Adresse e-mail" to
+  "Email" to match the mockup's compact label (first real usage of that key).
+- **Animation.** `FadeInUp` staggered across the heading, the form, and the footer link — consistent with
+  every other screen; no loop, no new primitive.
+- **Not done on purpose:** Register, Forgot password (next sessions); wiring Google/Apple to an actual
+  destination (still nowhere to send them, D-29); "remember me" / persisted session (no session exists).

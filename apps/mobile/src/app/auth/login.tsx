@@ -1,8 +1,5 @@
-import { useTranslation } from 'react-i18next';
-
-import { AuthPlaceholder } from '@/features/auth/AuthPlaceholder';
+import { LoginScreen } from '@/features/auth/LoginScreen';
 
 export default function LoginRoute() {
-  const { t } = useTranslation();
-  return <AuthPlaceholder title={t('auth.signIn')} />;
+  return <LoginScreen />;
 }

@@ -300,23 +300,37 @@
   "auth": {
     "signIn": "Se connecter",
     "signUp": "Créer un compte",
-    "email": "Adresse e-mail",
+    "email": "Email",
+    "emailPlaceholder": "moussa@email.com",
     "password": "Mot de passe",
     "forgotPassword": "Mot de passe oublié ?",
     "logout": "Se déconnecter",
+    "or": "ou",
+    "continueWithGoogle": "Continuer avec Google",
+    "continueWithApple": "Continuer avec Apple",
+    "showPassword": "Afficher le mot de passe",
+    "hidePassword": "Masquer le mot de passe",
     "entry": {
       "tagline": "Des sorties qui te ressemblent.",
-      "or": "ou",
-      "continueWithGoogle": "Continuer avec Google",
-      "continueWithApple": "Continuer avec Apple",
       "legalPrefix": "En continuant, tu acceptes nos",
       "termsOfService": "Conditions d'utilisation",
       "legalMiddle": "et notre",
       "privacyPolicy": "Politique de confidentialité"
     },
+    "login": {
+      "title": "Bon retour !",
+      "subtitle": "Connecte-toi pour retrouver tes sorties et tes recommandations."
+    },
+    "footer": {
+      "noAccount": "Pas encore de compte ?"
+    },
     "placeholder": {
       "comingSoon": "Écran à venir"
     }
+  },
+  "validation": {
+    "required": "Ce champ est requis.",
+    "emailInvalid": "Adresse e-mail invalide."
   },
   "errors": {
     "generic": "Une erreur est survenue.",
