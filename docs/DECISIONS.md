@@ -626,3 +626,22 @@ tile 5 of the design mockup board — a 6-digit OTP entry, one box per digit, on
   faint sage-tinted neutral close enough to a 4–5% tint of `primary` over the background that a dedicated
   token isn't worth adding for one decorative card. Lucide `mail-warning` for its icon (no exact mockup
   glyph match needed — same approximation spirit as D-25's icons).
+
+### D-35 — Authentication 6 "Nouveau mot de passe" (route `/auth/new-password`)
+
+`NewPasswordScreen` replaces the `AuthPlaceholder` that `/auth/new-password` rendered since D-33. Measured
+on tile 6 of the design mockup board — almost entirely a composition of pieces `RegisterScreen` (D-32)
+already built: `AuthTopBar`, two `TextField`s (`secureTextEntry`), `PasswordRequirements`. No new
+component was needed.
+
+- **Same password rules as Register, reused directly**: `HAS_MIN_LENGTH`/`HAS_LETTER_AND_NUMBER` from
+  `PasswordRequirements` gate submission, `validation.passwordWeak`/`passwordMismatch` are the same keys,
+  and `auth.register.confirmPassword` labels the second field — a new password being _set_ has no
+  "correct answer" to check against the way the reset code did (D-34's mock value), it only has to satisfy
+  its own rules and match its own confirmation, so Register's exact validation shape applies unchanged.
+- **New keys are only the screen's own copy**: `auth.newPassword.title/subtitle/label/submit`. Everything
+  else is reused.
+- **"Mettre à jour" simulates a request then `router.push('/auth/reset-success')`** — a new placeholder
+  stub for tile 7 ("Réinitialisation réussie"), the last screen of the forgot-password sub-flow. Its
+  placeholder title, `auth.resetSuccess.title` ("Mot de passe mis à jour !"), is taken directly from that
+  tile's own mockup heading rather than reusing an unrelated key, since no existing key fit.

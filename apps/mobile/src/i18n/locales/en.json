@@ -353,6 +353,15 @@
       "helpBody": "Check your spam folder or tap “Resend code”.",
       "digitLabel": "Digit {position} of {length}"
     },
+    "newPassword": {
+      "title": "New password",
+      "subtitle": "Choose a new password for your account.",
+      "label": "New password",
+      "submit": "Update"
+    },
+    "resetSuccess": {
+      "title": "Password updated!"
+    },
     "placeholder": {
       "comingSoon": "Screen coming soon"
     }

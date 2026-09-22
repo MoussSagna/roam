@@ -102,7 +102,7 @@ describe('authentication routes', () => {
     expect(screen.getByText('moussa@email.com')).toBeOnTheScreen();
   });
 
-  it('entering the mock valid code moves on to the (placeholder) new-password screen', async () => {
+  it('entering the mock valid code moves on to the new-password screen', async () => {
     const utils = await renderApp();
     await act(() => router.navigate('/auth/reset-code'));
 
@@ -111,6 +111,20 @@ describe('authentication routes', () => {
     await act(() => jest.advanceTimersByTimeAsync(1000));
 
     expect(utils.getPathname()).toBe('/auth/new-password');
+    expect(screen.queryByText(/Unmatched Route/i)).toBeNull();
+    expect(screen.getByRole('header')).toHaveTextContent('Nouveau mot de passe');
+  });
+
+  it('setting a valid new password moves on to the (placeholder) success screen', async () => {
+    const utils = await renderApp();
+    await act(() => router.navigate('/auth/new-password'));
+
+    await fireEvent.changeText(screen.getByLabelText('Nouveau mot de passe'), 'password123');
+    await fireEvent.changeText(screen.getByLabelText('Confirmer le mot de passe'), 'password123');
+    await fireEvent.press(screen.getByRole('button', { name: 'Mettre à jour' }));
+    await act(() => jest.advanceTimersByTimeAsync(1000));
+
+    expect(utils.getPathname()).toBe('/auth/reset-success');
     expect(screen.queryByText(/Unmatched Route/i)).toBeNull();
   });
 
