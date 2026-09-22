@@ -4,13 +4,16 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { NativeScrollEvent, NativeSyntheticEvent } from 'react-native';
 import { Pressable, useWindowDimensions, View } from 'react-native';
+import { useSharedValue } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import {
   STICKY_FOOTER_CLEARANCE,
+  STICKY_REVEAL_HEADER_HEIGHT,
   ScrollScreen,
   Slider,
   StickyActionFooter,
+  StickyRevealHeader,
   Text,
 } from '@/components/ui';
 import { InterestTile } from '@/features/onboarding/components/InterestTile';
@@ -29,6 +32,10 @@ const GRID_GAP = 12;
 const TILE_HEIGHT = 92;
 /** `ScrollScreen`'s own horizontal padding (`px-6` = 24px each side). */
 const SCREEN_HORIZONTAL_PADDING = 48;
+/** Roughly the height of the in-content title below — where the header's own title should be fully
+ * revealed (same "proxy, not a pixel-exact measurement" approach as experience detail's own
+ * `revealOffset`, D-49). */
+const HEADER_REVEAL_OFFSET = 56;
 
 function wait(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
@@ -41,7 +48,8 @@ function wait(ms: number): Promise<void> {
  * Profile — no repository, no backend (`docs/DECISIONS.md`). The save CTA is a `StickyActionFooter`
  * (D-52), the same floating-footer pattern and `useCtaVisibility` hook as experience detail's
  * "Créer mon parcours" (D-49) — hides on a sustained downward scroll, comes back once the scroll
- * gesture ends or reverses.
+ * gesture ends or reverses. The header is a `StickyRevealHeader` (D-55/D-56): back/"Réinitialiser"
+ * stay pinned, and its own small title crossfades in once the in-content title scrolls out of view.
  */
 export function PreferencesScreen() {
   const { t } = useTranslation();
@@ -49,6 +57,7 @@ export function PreferencesScreen() {
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
+  const scrollY = useSharedValue(0);
   const {
     visible: ctaVisible,
     handleScrollOffset: ctaOnScroll,
@@ -65,9 +74,11 @@ export function PreferencesScreen() {
 
   const tileWidth = (width - SCREEN_HORIZONTAL_PADDING - GRID_GAP) / 2;
 
-  // Not `useCallback`: identical shape to `ExperienceDetailScreen`'s own `handleScroll`, which isn't
-  // memoized either — `ScrollView.onScroll` identity doesn't need to be stable.
+  // Not `useCallback`, same reason as `ExperienceDetailScreen`'s own `handleScroll`: mutating a shared
+  // value from inside a memoized callback trips this project's ref-immutability lint rule, and
+  // `ScrollView.onScroll` identity doesn't need to be stable anyway.
   function handleScroll(event: NativeSyntheticEvent<NativeScrollEvent>) {
+    scrollY.value = event.nativeEvent.contentOffset.y;
     ctaOnScroll(event.nativeEvent.contentOffset.y);
   }
 
@@ -118,39 +129,21 @@ export function PreferencesScreen() {
         onScrollEndDrag={ctaOnScrollEnd}
         onMomentumScrollEnd={ctaOnScrollEnd}
         contentContainerStyle={{
-          paddingTop: 8,
+          // `ScrollScreen`'s own `SafeAreaView` already offsets content by `insets.top`; only the
+          // floating header's own height needs adding on top of that.
+          paddingTop: STICKY_REVEAL_HEADER_HEIGHT + 16,
           paddingBottom: insets.bottom + STICKY_FOOTER_CLEARANCE,
           gap: 28,
         }}
       >
-        <View className="flex-row items-center justify-between">
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel={t('common.back')}
-            onPress={() => router.back()}
-            hitSlop={12}
-            className="-ml-2 h-11 w-11 items-center justify-center active:opacity-60"
-          >
-            <ChevronLeft size={26} strokeWidth={1.5} color={colors.text} />
-          </Pressable>
-          <Text variant="h3" accessibilityRole="header" className="flex-1 text-center">
+        <View className="gap-2">
+          <Text variant="h2" accessibilityRole="header">
             {t('preferences.title')}
           </Text>
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel={t('preferences.reset')}
-            onPress={handleReset}
-            hitSlop={8}
-          >
-            <Text variant="small" tone="primary" className="font-bodyMedium">
-              {t('preferences.reset')}
-            </Text>
-          </Pressable>
+          <Text variant="body" tone="secondary">
+            {t('preferences.intro')}
+          </Text>
         </View>
-
-        <Text variant="body" tone="secondary">
-          {t('preferences.intro')}
-        </Text>
 
         <View className="gap-4">
           <View className="gap-1">
@@ -259,6 +252,35 @@ export function PreferencesScreen() {
           </View>
         </View>
       </ScrollScreen>
+
+      <StickyRevealHeader
+        title={t('preferences.title')}
+        scrollY={scrollY}
+        revealOffset={HEADER_REVEAL_OFFSET}
+        leftSlot={
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={t('common.back')}
+            onPress={() => router.back()}
+            hitSlop={12}
+            className="-ml-2 h-11 w-11 items-center justify-center active:opacity-60"
+          >
+            <ChevronLeft size={26} strokeWidth={1.5} color={colors.text} />
+          </Pressable>
+        }
+        rightSlot={
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={t('preferences.reset')}
+            onPress={handleReset}
+            hitSlop={8}
+          >
+            <Text variant="small" tone="primary" className="font-bodyMedium">
+              {t('preferences.reset')}
+            </Text>
+          </Pressable>
+        }
+      />
 
       <StickyActionFooter
         visible={ctaVisible}

@@ -1519,6 +1519,41 @@ screens**, without migrating or risking the already-validated `ExperienceDetailH
   explicit that existing headers (`ExperienceDetailHeader`, `HomeHeader`, `AuthTopBar`, …) are
   **not migrated now** and will be harmonized in one dedicated pass at the end of the project — not
   screen-by-screen as new components appear.
-- **Not done on purpose**: adopting `StickyRevealHeader` on any existing screen (none was asked to
-  change); a `children`/arbitrary-content slot beyond title + two action slots (nothing concrete needs
-  it yet — additive later if a real screen does); migrating any other header.
+- **Not done on purpose at the time**: adopting `StickyRevealHeader` on any existing screen — Preferences
+  got it the same day, on request, see D-56; a `children`/arbitrary-content slot beyond title + two
+  action slots (nothing concrete needs it yet — additive later if a real screen does); migrating any
+  other header.
+
+### D-56 — `StickyRevealHeader` applied to Preferences (first real adoption)
+
+Same-day follow-up, explicit request to see `StickyRevealHeader` (D-55) on a real, already-shipped
+screen rather than only as an unused primitive. Chosen over Profile's main screen or a new demo-only
+screen (asked the user; Preferences was the answer) — nothing else about Preferences' design,
+sliders, tiles or save/reset logic changed.
+
+- **No hero to reveal past, unlike experience detail — so the screen needed a small restructure, not
+  just a header swap.** Preferences never had a separate "big in-content title" the way experience
+  detail's H1 sits below its hero: the title _was_ the header row. Moving back/"Réinitialiser" into
+  `StickyRevealHeader`'s `leftSlot`/`rightSlot` (pinned, always visible — unchanged from before) only
+  works if something still occupies the content's own top once the floating header's title is hidden
+  at rest, so a plain `Text variant="h2"` "Mes préférences" (`accessibilityRole="header"`) was added at
+  the top of the scrollable content, directly above the existing intro paragraph. This is new content
+  in the screen, not a copy of chrome — same as experience detail's own H1 title.
+- **`HEADER_REVEAL_OFFSET = 56`** is a visually-tuned approximation of that new heading's height, the
+  same "proxy, not a pixel-exact measurement" precedent `revealOffset` already sets in experience
+  detail (D-49) — expect it to need a small tweak once seen on a real device, not a sign of a deeper
+  problem.
+- **Back/"Réinitialiser" keep their exact previous look** (a plain `Pressable` + `ChevronLeft`/`Text`,
+  `colors.text`/`primary`, no circular backdrop) — unlike experience detail's white-icon-on-black-
+  backdrop treatment, which assumes a photo is always underneath. Preferences has no such photo, so
+  the backdrop styling wouldn't have made sense; keeping the pre-existing, already-legible plain style
+  was the safer, minimal choice over inventing a new backdrop rule for one screen.
+- **Padding math**: `ScrollScreen`'s own `SafeAreaView` already offsets content by `insets.top`, so the
+  content's added `paddingTop` only needs `STICKY_REVEAL_HEADER_HEIGHT` (+ a little breathing room) —
+  adding `insets.top` again would have double-counted it and pushed the content down twice as far as
+  intended. Caught before running anything, by re-deriving the two containers' coordinate spaces rather
+  than guessing.
+- **Not verified on a physical device/simulator by the agent** — this environment has no simulator
+  attached. All checks that don't require eyes on a real screen (types, lint, the full existing test
+  suite, unmodified) pass; the visual result (crossfade timing, spacing) still needs a look on-device,
+  which is exactly what this change was requested for.
