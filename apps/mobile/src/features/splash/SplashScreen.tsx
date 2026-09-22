@@ -5,6 +5,7 @@ import { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Text, useWindowDimensions, View } from 'react-native';
 
+import { useAuth } from '@/auth';
 import { Logo } from '@/components/brand/Logo';
 import { FadeInUp } from '@/components/ui';
 import { brand, derived } from '@/theme/palette';
@@ -28,14 +29,18 @@ const SPLASH_DURATION_MS = 2600;
 export function SplashScreen() {
   const { t } = useTranslation();
   const router = useRouter();
+  const { isLoggedIn } = useAuth();
   const { width, height } = useWindowDimensions();
   const layout = computeSplashLayout({ width, height });
 
   useEffect(() => {
-    // No session exists yet, so the user is always unauthenticated → Welcome.
-    const timer = setTimeout(() => router.replace('/welcome'), SPLASH_DURATION_MS);
+    // A restored mocked session skips straight to Home; otherwise the usual Welcome entry.
+    const timer = setTimeout(
+      () => router.replace(isLoggedIn ? '/home' : '/welcome'),
+      SPLASH_DURATION_MS,
+    );
     return () => clearTimeout(timer);
-  }, [router]);
+  }, [router, isLoggedIn]);
 
   const absolute = (box: { left: number; top: number; width: number; height: number }) => ({
     position: 'absolute' as const,

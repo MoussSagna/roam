@@ -10,6 +10,9 @@ jest.mock('expo-router', () => ({
   useRouter: () => ({ replace: mockReplace }),
 }));
 
+/** Matches `SplashScreen`'s own `SPLASH_DURATION_MS`. */
+const SPLASH_DURATION_MS = 2600;
+
 describe('SplashScreen', () => {
   beforeEach(async () => {
     jest.useFakeTimers();
@@ -50,6 +53,14 @@ describe('SplashScreen', () => {
     await act(async () => jest.advanceTimersByTime(200));
     expect(mockReplace).toHaveBeenCalledTimes(1);
     expect(mockReplace).toHaveBeenCalledWith('/welcome');
+  });
+
+  it('moves on to /home instead when a session was restored', async () => {
+    await renderWithProviders(<SplashScreen />, { initialIsLoggedIn: true });
+
+    await act(async () => jest.advanceTimersByTime(SPLASH_DURATION_MS));
+
+    expect(mockReplace).toHaveBeenCalledWith('/home');
   });
 
   it('does not navigate once unmounted', async () => {

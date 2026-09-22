@@ -1,4 +1,5 @@
 // One icon per import: the package root would pull ~1600 icons into the bundle.
+import { useRouter } from 'expo-router';
 import ArrowRight from 'lucide-react-native/icons/arrow-right';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -18,6 +19,7 @@ const HORIZONTAL_MARGIN = 30.6;
  */
 export function WelcomeScreen() {
   const { t } = useTranslation();
+  const router = useRouter();
   const { width } = useWindowDimensions();
   const insets = useSafeAreaInsets();
   const { next, skip } = useOnboardingNavigation('welcome');
@@ -88,6 +90,24 @@ export function WelcomeScreen() {
           onPress={next}
           className="mt-[18px]"
         />
+        <View className="mt-4 flex-row items-center justify-center gap-1">
+          <Text variant="body" tone="secondary">
+            {t('welcome.alreadyHaveAccount')}
+          </Text>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={t('welcome.signIn')}
+            // `replace`, not `push`: choosing to sign in leaves Welcome behind for good, so the
+            // back button/gesture can never resurface it from the auth flow (sprint 3 §1).
+            onPress={() => router.replace('/auth')}
+            hitSlop={8}
+            className="active:opacity-60"
+          >
+            <Text variant="label" tone="primary">
+              {t('welcome.signIn')}
+            </Text>
+          </Pressable>
+        </View>
       </View>
     </View>
   );

@@ -3,6 +3,7 @@ import type { ReactElement } from 'react';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import '@/i18n';
+import { AuthProvider } from '@/auth';
 import { ThemeProvider } from '@/theme';
 import type { ThemePreference } from '@/theme';
 
@@ -11,14 +12,21 @@ const initialWindowMetrics = {
   insets: { top: 47, left: 0, right: 0, bottom: 34 },
 };
 
-/** Renders a component with the same providers as the app (safe area, theme, i18n). */
+type RenderOptions = {
+  themePreference?: ThemePreference;
+  initialIsLoggedIn?: boolean;
+};
+
+/** Renders a component with the same providers as the app (safe area, theme, session, i18n). */
 export async function renderWithProviders(
   ui: ReactElement,
-  { themePreference = 'light' }: { themePreference?: ThemePreference } = {},
+  { themePreference = 'light', initialIsLoggedIn = false }: RenderOptions = {},
 ) {
   return await render(
     <SafeAreaProvider initialMetrics={initialWindowMetrics}>
-      <ThemeProvider initialPreference={themePreference}>{ui}</ThemeProvider>
+      <ThemeProvider initialPreference={themePreference}>
+        <AuthProvider initialIsLoggedIn={initialIsLoggedIn}>{ui}</AuthProvider>
+      </ThemeProvider>
     </SafeAreaProvider>,
   );
 }

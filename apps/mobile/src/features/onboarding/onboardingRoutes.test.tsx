@@ -1,7 +1,9 @@
-import { router, Stack, type Href } from 'expo-router';
+import { router, type Href } from 'expo-router';
 import { act, fireEvent, renderRouter, screen } from 'expo-router/testing-library';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
+import { AuthProvider } from '@/auth';
+import { AppRoutes } from '@/features/navigation/AppRoutes';
 import i18n from '@/i18n';
 import { ThemeProvider } from '@/theme';
 
@@ -11,6 +13,7 @@ import { PROFILE_TIMELINE } from './profileCreation';
 /**
  * These tests mount the real `src/app` route tree (only the root layout is replaced by a light one
  * without font loading), because mocking `useRouter` cannot tell whether a path has a route file.
+ * `AppRoutes` is the exact same guarded stack the app itself renders.
  */
 function TestLayout() {
   return (
@@ -21,7 +24,9 @@ function TestLayout() {
       }}
     >
       <ThemeProvider initialPreference="light">
-        <Stack screenOptions={{ headerShown: false }} />
+        <AuthProvider>
+          <AppRoutes />
+        </AuthProvider>
       </ThemeProvider>
     </SafeAreaProvider>
   );
@@ -142,7 +147,12 @@ describe('onboarding routes', () => {
     const utils = await openWelcomeFromSplash();
     await fireEvent.press(screen.getByRole('button', { name: 'Passer' }));
 
-    await fireEvent.press(screen.getByRole('button', { name: 'Commencer' }));
+    // Single `act()`: "Commencer" now also grants the mocked session (`useAuth().login()`), which
+    // awaits a fake timer — awaiting the press alone would deadlock on it.
+    await act(async () => {
+      fireEvent.press(screen.getByRole('button', { name: 'Commencer' }));
+      await jest.advanceTimersByTimeAsync(1000);
+    });
 
     expect(utils.getPathname()).toBe('/home');
     expect(screen.getByText('Cet écran arrive bientôt.')).toBeOnTheScreen();

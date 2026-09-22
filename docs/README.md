@@ -18,6 +18,7 @@ Implementation documents (kept in sync with the code):
 
 - `DEVELOPMENT.md` — install, run, commands, structure, conventions
 - `DECISIONS.md` — technical decisions taken where the docs were silent
+- `SCREEN_INTEGRATION_WORKFLOW.md` — the step-by-step procedure for integrating one screen at a time
 
 Translation resources (used by the mobile app):
 
@@ -25,7 +26,11 @@ Translation resources (used by the mobile app):
 - `apps/mobile/src/i18n/locales/en.json`
 
 Current status (2026-09-22): the mobile onboarding is implemented on the front end (no backend, no database; the
-profile creation is a simulation of about 10 s). Next step: authentication screens, front-end only and simulated —
-see `DECISIONS.md` D-28 and `08_AGENT_TODO.md`.
+profile creation is a simulation of about 10 s). Authentication screens are now all built, front-end only and
+simulated: Entry, Login, Register, and the whole Forgot password sub-flow (email → reset code → new password →
+success) — see `DECISIONS.md` D-28, D-29, D-31–D-36, `08_AGENT_TODO.md` and `docs/SCREEN_INTEGRATION_WORKFLOW.md`.
+The main navigation is also built: four tabs (Home, Discover, Favorites, Profile) behind a floating pill/bubble
+tab bar that collapses into a bubble on scroll and expands on tap, with placeholder scrollable content on each
+tab — see `DECISIONS.md` D-38 to D-40.
 
 The product is intentionally MVP-first. Do not expand scope without an explicit requirement.

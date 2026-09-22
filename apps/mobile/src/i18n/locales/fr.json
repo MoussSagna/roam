@@ -26,20 +26,24 @@
     "seeMore": "Voir plus",
     "done": "Terminé",
     "loading": "Chargement…",
-    "next": "Suivant"
+    "next": "Suivant",
+    "comingSoon": "Cet écran arrive bientôt.",
+    "placeholder": "Bloc {index}"
   },
   "navigation": {
     "home": "Accueil",
     "discover": "Découvrir",
     "favorites": "Favoris",
     "profile": "Profil",
-    "itinerary": "Parcours"
+    "itinerary": "Parcours",
+    "expand": "Agrandir la barre de navigation"
   },
   "welcome": {
     "title": "Trouve quoi faire, sans passer ton temps à chercher.",
     "subtitle": "ROAM te propose des sorties adaptées à ton humeur, ton temps et ton budget.",
     "start": "Commencer",
-    "signIn": "Se connecter"
+    "signIn": "Se connecter",
+    "alreadyHaveAccount": "Déjà un compte ?"
   },
   "onboarding": {
     "welcome": {
@@ -136,8 +140,10 @@
     "title": "Qu'est-ce que tu veux faire aujourd'hui ?",
     "currentOutings": "Les sorties du moment",
     "createOuting": "Créer ma sortie",
-    "inspiration": "Besoin d'inspiration ?",
-    "comingSoon": "Cet écran arrive bientôt."
+    "inspiration": "Besoin d'inspiration ?"
+  },
+  "discover": {
+    "title": "Découvrir"
   },
   "context": {
     "mood": {
@@ -280,7 +286,8 @@
     "placesDiscovered": "Lieux découverts",
     "areasExplored": "Quartiers explorés",
     "experiencesCompleted": "Expériences réalisées",
-    "favoriteCategory": "Catégorie préférée"
+    "favoriteCategory": "Catégorie préférée",
+    "logout": "Se déconnecter"
   },
   "settings": {
     "title": "Paramètres",
@@ -299,10 +306,76 @@
   "auth": {
     "signIn": "Se connecter",
     "signUp": "Créer un compte",
-    "email": "Adresse e-mail",
+    "email": "Email",
+    "emailPlaceholder": "moussa@email.com",
     "password": "Mot de passe",
     "forgotPassword": "Mot de passe oublié ?",
-    "logout": "Se déconnecter"
+    "logout": "Se déconnecter",
+    "or": "ou",
+    "continueWithGoogle": "Continuer avec Google",
+    "continueWithApple": "Continuer avec Apple",
+    "showPassword": "Afficher le mot de passe",
+    "hidePassword": "Masquer le mot de passe",
+    "showConfirmPassword": "Afficher la confirmation du mot de passe",
+    "hideConfirmPassword": "Masquer la confirmation du mot de passe",
+    "entry": {
+      "tagline": "Des sorties qui te ressemblent.",
+      "legalPrefix": "En continuant, tu acceptes nos",
+      "termsOfService": "Conditions d'utilisation",
+      "legalMiddle": "et notre",
+      "privacyPolicy": "Politique de confidentialité"
+    },
+    "login": {
+      "title": "Bon retour !",
+      "subtitle": "Connecte-toi pour retrouver tes sorties et tes recommandations."
+    },
+    "register": {
+      "title": "Créer un compte",
+      "subtitle": "Rejoins ROAM et commence à explorer des sorties qui te ressemblent.",
+      "firstName": "Prénom",
+      "firstNamePlaceholder": "Moussa",
+      "confirmPassword": "Confirmer le mot de passe",
+      "submit": "Créer mon compte",
+      "requirementLength": "Au moins 8 caractères",
+      "requirementLetterNumber": "Une lettre et un chiffre",
+      "requirementSpecial": "Un caractère spécial (optionnel)"
+    },
+    "footer": {
+      "noAccount": "Pas encore de compte ?",
+      "hasAccount": "Déjà un compte ?"
+    },
+    "forgotPasswordScreen": {
+      "subtitle": "Pas de panique ! Entre ton email et nous t'enverrons un code de réinitialisation.",
+      "submit": "Envoyer le code",
+      "hint": "Tu vas recevoir un email avec un code de réinitialisation.\nPense à vérifier tes spams !"
+    },
+    "resetCode": {
+      "title": "Vérifie ton email",
+      "subtitle": "Nous avons envoyé un code à",
+      "expiry": "Le code expire dans 10 minutes.",
+      "continue": "Continuer",
+      "resend": "Renvoyer le code",
+      "helpTitle": "Tu n'as pas reçu l'email ?",
+      "helpBody": "Vérifie tes spams ou clique sur « Renvoyer le code ».",
+      "digitLabel": "Chiffre {position} sur {length}"
+    },
+    "newPassword": {
+      "title": "Nouveau mot de passe",
+      "subtitle": "Choisis un nouveau mot de passe pour ton compte.",
+      "label": "Nouveau mot de passe",
+      "submit": "Mettre à jour"
+    },
+    "resetSuccess": {
+      "title": "Mot de passe mis à jour !",
+      "subtitle": "Ton mot de passe a bien été réinitialisé.\nTu peux maintenant te connecter."
+    }
+  },
+  "validation": {
+    "required": "Ce champ est requis.",
+    "emailInvalid": "Adresse e-mail invalide.",
+    "passwordWeak": "Vérifie les critères ci-dessous.",
+    "passwordMismatch": "Les mots de passe ne correspondent pas.",
+    "codeIncorrect": "Ce code est incorrect. Vérifie-le ou clique sur « Renvoyer le code »."
   },
   "errors": {
     "generic": "Une erreur est survenue.",

@@ -46,10 +46,18 @@ describe('ReadyScreen (onboarding 7)', () => {
   });
 
   it('enters the app with "Commencer"', async () => {
+    jest.useFakeTimers();
     await renderWithProviders(<ReadyScreen />);
-    await fireEvent.press(screen.getByRole('button', { name: 'Commencer' }));
+
+    // Single `act()`: "Commencer" also grants the mocked session (`useAuth().login()`), which
+    // awaits a fake timer — awaiting the press alone would deadlock on it.
+    await act(async () => {
+      fireEvent.press(screen.getByRole('button', { name: 'Commencer' }));
+      await jest.advanceTimersByTimeAsync(1000);
+    });
 
     expect(mockReplace).toHaveBeenCalledWith('/home');
     expect(mockPush).not.toHaveBeenCalled();
+    jest.useRealTimers();
   });
 });

@@ -410,3 +410,505 @@ New step `profile`, route **`/onboarding/profile-creation`**. The journey is now
 backend, API, database, Prisma, real authentication, JWT or session: they come **later**, once all the front-end screens are done (`08_AGENT_TODO.md`
 Phase C). Do not add any of them while building these screens, and keep form logic behind a small interface so a real implementation can replace the
 simulation (see _Data access_ in `DEVELOPMENT.md`). The auth screens go in `src/features/auth/` (empty folder today).
+
+## Authentication (2026-09-22)
+
+### D-29 — Authentication 1 "Écran d'entrée" (route `/auth`) and the screen-by-screen workflow
+
+`AuthEntryScreen` (`src/features/auth/`), route `/auth`. Sprint 2 works one authentication screen at a time,
+each one stopping for human validation before the next; the procedure is now written down in
+`docs/SCREEN_INTEGRATION_WORKFLOW.md` so it doesn't have to be re-derived every session. Measured on tile 1
+of the design mockup board ("Authentification").
+
+- **No clean photo asset existed at first.** Only a flattened mockup board (all 10 tiles in one image) was
+  provided, with "ROAM" and the tagline baked into the Eiffel Tower photo, and no inpainting tool was
+  available in this environment to erase them (unlike `ready-background.jpg` / `profile-landscape.jpg`,
+  D-26/D-27). The screen was built to draw its **own** "ROAM" + tagline on top in code (Newsreader SemiBold
+  42 px, cream; `t('auth.entry.tagline')`) rather than baking French/English text into an image
+  (`00_AGENT_INSTRUCTIONS.md` rule 9), over a temporary cropped/upscaled placeholder photo. **Superseded the
+  same day:** a clean official photo (Paris from Montmartre, no baked text) replaced the placeholder — see
+  D-30.
+- **Layout is two flex children, not absolute positioning.** A photo section (`flex: 1`, takes whatever
+  space is left) above a card section (`bg-surface`, intrinsic height, `rounded-t-hero`), matching the
+  mockup's proportions (photo ≈ 48% of the screen at the reference size) without hard-coding either height;
+  on a short screen the photo simply gives way first, the same pattern as the onboarding's `MapPreview`
+  (D-24).
+- **Google / Apple have no Lucide glyph** (brand logos aren't part of an outline icon set). `GoogleIcon`
+  (official 4-color "G", fixed colors) and `AppleIcon` (single path, follows `colors.text`) are drawn with
+  `react-native-svg` in `src/features/auth/components/`, the same pattern as `RunnerIcon`/`LotusIcon`
+  (D-21/D-25).
+- **`Button` gained `leadingIcon` (`ReactNode`) and `loading` (spinner, disables press).** Both are optional
+  and additive — every existing call site is unchanged. `loading` is the generic implementation of "buttons
+  can simulate a request" (`08_AGENT_TODO.md`/the sprint brief): Google/Apple set it for ~900 ms on press,
+  then reset. There is nothing to navigate to afterwards yet (no backend, and the mockup's post-auth screens
+  — "Bienvenue sur ROAM", location permission, "Tout est prêt" — are not built), so the button just returns
+  to normal; wiring a destination is for when those screens exist.
+- **"Se connecter" / "Créer un compte" needed somewhere to land.** `src/app/auth/login.tsx` and
+  `register.tsx` are placeholder routes rendering a small new `AuthPlaceholder` (title + back button),
+  exactly the role `OnboardingPlaceholder` played before the onboarding screens existed (D-20) — not a
+  preview of the Login/Register screens, just infrastructure so navigation doesn't hit "Unmatched Route".
+  Replace their body, not their route, when Login/Register are actually built (next sessions).
+- **The entry screen needed to be reachable from the running app.** `03_UX_SCREENS_AND_FLOWS.md` already
+  documents a "Sign in" secondary CTA on the Welcome screen that the prototype note said was "the next
+  front-end step" — now that it exists, `WelcomeScreen` gained that one `Pressable` (`t('welcome.signIn')`,
+  an unused key already sitting in both locale files since D-19, `router.push('/auth')`). This is the only
+  change to an already-validated screen in this session; no visual/design work on Welcome itself.
+- **i18n.** New `auth.entry.*` (tagline, `or`, `continueWithGoogle`, `continueWithApple`, legal text split
+  into 4 keys so "Conditions d'utilisation" / "Politique de confidentialité" can be styled inline) and
+  `auth.placeholder.comingSoon`. Reused as-is (no new key): `auth.signIn` / `auth.signUp` (button labels)
+  and `welcome.signIn` (the Welcome link). The legal text is styled (primary color, underline) but **not**
+  tappable — Terms/Privacy pages don't exist and aren't in the MVP scope.
+- **Animation.** `FadeInUp` on the photo's text (delay 150 ms) and on the card (delay 300 ms), consistent
+  with the rest of the app; no new animation primitive needed.
+- **Not done on purpose:** Login, Register, Forgot password screens (next sessions, one at a time); wiring
+  Google/Apple to an actual destination; the post-auth screens from the mockup (welcome-back, location
+  permission, "Tout est prêt").
+
+### D-30 — Entry screen background replaced; Welcome's "Se connecter" link made visible
+
+Same-day follow-up after reviewing D-29 on device.
+
+- **Official photo.** `assets/images/auth/entry-background.png` (Paris from Montmartre, no baked text)
+  replaced the temporary mockup crop. Its sky is pale, so the flat scrim over it (same recipe as the splash
+  screen, D-18) went from 22% to **42%** opacity (`derived.night`) to keep the cream "ROAM" + tagline
+  readable — the splash photo is already dark enough at 34%, this one needed more.
+- **`WelcomeScreen`'s "Se connecter" link was too easy to miss** (secondary-tone, unstyled text, no
+  context) — flagged on device. Changed to a small composed line, `t('welcome.alreadyHaveAccount')`
+  ("Déjà un compte ?", new key, secondary tone) followed by `t('welcome.signIn')` in `label` variant
+  (semibold) and `primary` tone, mirroring how the Login/Register mockup tiles style their own
+  cross-links. Same pattern to reuse if Login/Register need an equivalent footer link later.
+
+## Authentication, continued
+
+### D-31 — Authentication 2 "Connexion" (route `/auth/login`)
+
+`LoginScreen` (`src/features/auth/`) replaces the `AuthPlaceholder` that `/auth/login` rendered since D-29.
+Measured on tile 2 of the design mockup board.
+
+- **Deep navy heading, light theme only.** "Bon retour !" and (tile 3) "Créer un compte" are a
+  consistent, saturated navy (`rgb(0,0,~85)` sampled on both tiles independently) — clearly a deliberate
+  choice, not a near-black `text` rendering artifact (`inkDeep` is `#060A0E`, nowhere near it). Added as
+  `derived.authHeading` (`#000050`) in `palette.ts`, used directly via `style`, **not** as a 14th semantic
+  token: it is a narrow, one-off accent for these two headings, not a general-purpose color. No dark-theme
+  equivalent exists in the mockup and navy-on-near-black would be unreadable, so the screen falls back to
+  the normal `colors.text` token when `scheme === 'dark'`.
+- **New `TextField` primitive** (`src/components/ui/`): labeled input, leading icon, inline error, and a
+  `secureTextEntry` show/hide toggle (Lucide `eye`/`eye-off`). Generic and reusable — Register needs the
+  same Email/Password fields. `Text` gained an `error` tone (`text-error`) for the inline message.
+- **Four new shared auth components** (`src/features/auth/components/`), extracted instead of duplicated
+  because Register will need them too: `AuthTopBar` (back chevron + small "ROAM" wordmark — new pattern,
+  the mockup's Login/Register/Forgot-password tiles all have it, Entry doesn't), `OrDivider` and
+  `SocialButtons` (pulled out of `AuthEntryScreen`, which now composes them instead of owning the
+  Google/Apple loading state itself — same behavior, no test changes needed), and `AuthFooterLink`
+  ("Pas encore de compte ? **Créer un compte**" — the same composed-link pattern as `WelcomeScreen`'s
+  `alreadyHaveAccount` link, D-30, but this one is reusable since Register needs its mirror image).
+- **Validation is local and minimal.** Required fields + a basic email-format regex, on submit; an error
+  clears as soon as that field is edited again. `03_UX_SCREENS_AND_FLOWS.md` calls for validation/error
+  states without specifying rules, and there's no backend to enforce anything stronger.
+- **"Any well-formed input succeeds."** There's nothing to check credentials against (no backend, D-28), so
+  `handleSignIn` simulates a request (`loading` on `Button`, ~900 ms) then `router.replace('/home')` —
+  skipping onboarding, since Login implies a returning user. This differs from the entry screen's
+  Google/Apple buttons, which have nowhere to go yet: this button's destination (`/home`) already exists.
+- **"Mot de passe oublié ?" needed somewhere to land.** `src/app/auth/forgot-password.tsx` is a new
+  placeholder route (`AuthPlaceholder`, same role as D-29's Login/Register stubs) — Forgot password is a
+  later session, not this one.
+- **Keyboard handling uses only React Native core** (`KeyboardAvoidingView` + `ScrollView`), no new
+  dependency — `04_TECH_STACK.md`/`00_AGENT_INSTRUCTIONS.md` both favor the simplest option and avoiding
+  overengineering.
+- **i18n reorganized.** `auth.entry.or` / `continueWithGoogle` / `continueWithApple` moved up to `auth.or`
+  etc. (top-level) since Login now needs them too — `auth.entry.*` keeps only what's genuinely entry-only
+  (tagline, legal text). New `auth.login.*`, `auth.footer.noAccount`, `auth.showPassword`/`hidePassword`,
+  `auth.emailPlaceholder`, and a new top-level `validation.*` namespace (`required`, `emailInvalid`) meant
+  to be reused by every form screen, not just this one. `auth.email` changed from "Adresse e-mail" to
+  "Email" to match the mockup's compact label (first real usage of that key).
+- **Animation.** `FadeInUp` staggered across the heading, the form, and the footer link — consistent with
+  every other screen; no loop, no new primitive.
+- **Not done on purpose:** Register, Forgot password (next sessions); wiring Google/Apple to an actual
+  destination (still nowhere to send them, D-29); "remember me" / persisted session (no session exists).
+
+### D-32 — Authentication 3 "Inscription" (route `/auth/register`)
+
+`RegisterScreen` replaces the `AuthPlaceholder` that `/auth/register` rendered since D-29. Measured on
+tile 3 of the design mockup board, which shares its whole visual language with tile 2 (D-31): same navy
+`auth.title`-style heading (`derived.authHeading`), same `AuthTopBar`, `TextField`, `OrDivider`,
+`SocialButtons`, `AuthFooterLink`. Nothing new was built for those; this screen is mostly composition.
+
+- **Password requirements checklist is new and live**, not decorative: `PasswordRequirements`
+  (`features/auth/components/`) recomputes 3 rules on every keystroke — length ≥ 8, contains a letter
+  _and_ a digit, contains a special character — and shows a filled/outline circle per rule (Lucide
+  `circle-check` / `circle`, tinted `primary`/`border`). The mockup's third rule is explicitly labeled
+  "(optionnel)", so only the first two are enforced on submit (`HAS_MIN_LENGTH`, `HAS_LETTER_AND_NUMBER`,
+  exported for the screen's own validation to reuse instead of duplicating the regexes). A weak password
+  gets one summary error (`validation.passwordWeak`) rather than repeating each unmet rule as text — the
+  checklist above the field already shows which one.
+- **Confirm-password field added after the initial build, on explicit request** (not in the mockup, which
+  only has one password field with the live checklist as its safety net — `02_MVP_SCOPE.md` also only asks
+  for one "if present in the design"). Same `TextField`/`secureTextEntry` pattern, its own show/hide
+  toggle (`auth.showConfirmPassword`/`hideConfirmPassword`, distinct labels so both toggles have unique
+  accessible names). `validate()` requires it non-empty and equal to `password`
+  (`validation.passwordMismatch`); like every other field here, its error clears optimistically on the
+  next edit and is re-checked on the next submit — no special-cased live re-validation against the other
+  field, to stay consistent with the rest of the form.
+- **"Prénom" is a new field** (`User` Lucide icon, required, no format check beyond non-empty) — the only
+  genuinely new `TextField` usage; Email/Password are identical to Login's.
+- **Same "any well-formed submission succeeds" simulation as Login** (D-31): no backend to register
+  against, so `handleSignUp` simulates a request then `router.replace('/home')`. This skips the mockup's
+  own post-registration screens (tiles 8–10: a welcome-back moment, location permission, "Tout est
+  prêt") — those aren't built yet and are a different, later step (D-29's "not done on purpose", still
+  true), not specific to Register.
+- **i18n.** New `auth.register.*` (title reuses the same string as `auth.signUp` conceptually but is its
+  own key — a heading and a nav-label copy can diverge later), `auth.footer.hasAccount` (mirrors
+  `noAccount`, D-31), `validation.passwordWeak`. `firstNamePlaceholder` follows the same localization
+  choice as `emailPlaceholder` (D-31): "Moussa" in French (the mockup's own persona), a generic "Alex" in
+  English rather than a literal translation of a name.
+- **Footer cross-link goes both ways.** Register's footer ("Déjà un compte ? Se connecter") pushes to
+  `/auth/login`, mirroring Login's own footer pushing to `/auth/register` — a route test walks both
+  directions.
+
+### D-33 — Authentication 4 "Mot de passe oublié" (route `/auth/forgot-password`)
+
+`ForgotPasswordScreen` replaces the `AuthPlaceholder` that `/auth/forgot-password` rendered since D-29.
+Measured on tile 4 of the design mockup board — the simplest of the four screens built so far: `AuthTopBar`,
+one `TextField`, one `Button`, no divider/social buttons/footer link.
+
+- **The heading text is `auth.forgotPassword`**, the key that already existed and is used as the Login
+  screen's link label ("Mot de passe oublié ?") — same string, same meaning, reused as-is rather than
+  duplicated under a new key. The rest of the screen's copy is `auth.forgotPasswordScreen.*` (a sibling
+  key, not nested under `forgotPassword`, since that key already holds a string, not an object).
+- **The envelope illustration and its caption are static content, not a post-submit state.** They're part
+  of the mockup's single screen (reassurance copy shown before you even submit), not a toggled
+  "email sent" confirmation — so there's no second visual state to build here. Lucide `mail-open`, 64px,
+  colored with the same `derived.authHeading` navy as the title (decorative, `accessible={false}`).
+- **Only one field, so validation is a single `error` string**, not an object like Login/Register's
+  `FormErrors` — simpler than reusing that shape for one field.
+- **"Envoyer le code" simulates a request then `router.push('/auth/reset-code')`** (not `replace`: unlike
+  Login/Register, this doesn't end the auth flow, it continues it — back should return here). That route
+  is a new placeholder stub (`AuthPlaceholder`, same role as every other not-yet-built screen since D-20),
+  for tile 5 "Code de réinitialisation" — a later session. Tiles 5–7 (code entry, new password, success)
+  are their own screens, not built as part of this one, even though `02_MVP_SCOPE.md`'s brief groups
+  "Forgot Password" as a single MVP item — the mockup breaks it into a small sub-flow, and the workflow's
+  one-screen-at-a-time rule applies to each of them individually.
+
+### D-34 — Authentication 5 "Code de réinitialisation" (route `/auth/reset-code`)
+
+`ResetCodeScreen` replaces the `AuthPlaceholder` that `/auth/reset-code` rendered since D-33. Measured on
+tile 5 of the design mockup board — a 6-digit OTP entry, one box per digit, one of them shown focused
+(highlighted border) in the mockup.
+
+- **New `OtpInput` component** (`features/auth/components/`): 6 boxes are a _presentation_ of one string
+  value (`onChangeValue`, not per-box state), so the whole code can be set/cleared from outside (used by
+  "Renvoyer le code"). Typing a digit auto-advances to the next box; backspace on an empty box goes back
+  and clears the previous one; a same-tick multi-character input (a paste, or RNTL's `fireEvent.changeText`
+  with a full string) distributes across the remaining boxes instead of being rejected — realistic for
+  both an actual paste and how a code-entry field is normally tested. The focused box gets a `primary`
+  border (matching the mockup's highlighted 3rd box); an invalid submission turns every box's border
+  `error` red instead.
+- **The email from the previous screen is threaded through as a route param**
+  (`router.push({ pathname: '/auth/reset-code', params: { email } })` from `ForgotPasswordScreen`,
+  read with `useLocalSearchParams`), so "Nous avons envoyé un code à **{email}**" shows the address the
+  user actually typed — there's no shared auth store yet for this prototype, so a route param is the
+  simplest way to carry one small piece of state one screen forward. It's optional: the screen degrades
+  to just the prefix line if it's missing (e.g. the screen is opened directly, as the route-tree test
+  for tile 5 alone does).
+- **A fixed mock code (`123456`), not "any complete code succeeds"** (changed after the initial build, on
+  request): there's still no backend to check a real code against, but the screen now simulates an actual
+  check instead of accepting anything well-formed — a complete code that isn't `MOCK_VALID_CODE` is
+  rejected with `validation.codeIncorrect` and stays on the screen, only `123456` proceeds. On success,
+  `handleContinue` simulates a request then `router.push('/auth/new-password')` — a new placeholder stub
+  for tile 6.
+- **"Continuer" is disabled until all 6 digits are entered** (`disabled={!isComplete}` on `Button`, also
+  requested after the initial build), instead of being always pressable and showing an "incomplete" error
+  on press. That error state (and `validation.codeIncomplete`) became unreachable once the button can't be
+  pressed while incomplete, so both were removed rather than left as dead code.
+- **"Renvoyer le code" only clears the input**, front-end only — there is no email to actually resend, and
+  no cooldown/rate-limit state invented for it (nothing in the mockup implies one).
+- **The help card's background is `bg-primary/5`**, not a new palette color: sampled on the mockup it's a
+  faint sage-tinted neutral close enough to a 4–5% tint of `primary` over the background that a dedicated
+  token isn't worth adding for one decorative card. Lucide `mail-warning` for its icon (no exact mockup
+  glyph match needed — same approximation spirit as D-25's icons).
+
+### D-35 — Authentication 6 "Nouveau mot de passe" (route `/auth/new-password`)
+
+`NewPasswordScreen` replaces the `AuthPlaceholder` that `/auth/new-password` rendered since D-33. Measured
+on tile 6 of the design mockup board — almost entirely a composition of pieces `RegisterScreen` (D-32)
+already built: `AuthTopBar`, two `TextField`s (`secureTextEntry`), `PasswordRequirements`. No new
+component was needed.
+
+- **Same password rules as Register, reused directly**: `HAS_MIN_LENGTH`/`HAS_LETTER_AND_NUMBER` from
+  `PasswordRequirements` gate submission, `validation.passwordWeak`/`passwordMismatch` are the same keys,
+  and `auth.register.confirmPassword` labels the second field — a new password being _set_ has no
+  "correct answer" to check against the way the reset code did (D-34's mock value), it only has to satisfy
+  its own rules and match its own confirmation, so Register's exact validation shape applies unchanged.
+- **New keys are only the screen's own copy**: `auth.newPassword.title/subtitle/label/submit`. Everything
+  else is reused.
+- **"Mettre à jour" simulates a request then `router.push('/auth/reset-success')`** — a new placeholder
+  stub for tile 7 ("Réinitialisation réussie"), the last screen of the forgot-password sub-flow. Its
+  placeholder title, `auth.resetSuccess.title` ("Mot de passe mis à jour !"), is taken directly from that
+  tile's own mockup heading rather than reusing an unrelated key, since no existing key fit.
+
+### D-36 — Authentication 7 "Réinitialisation réussie" (route `/auth/reset-success`)
+
+`ResetSuccessScreen` replaces the `AuthPlaceholder` that `/auth/reset-success` rendered since D-35 — the
+last screen of the forgot-password sub-flow started at D-33. Measured on tile 7 of the design mockup
+board: a success badge, heading (`auth.resetSuccess.title`, already added in D-35), a two-line subtitle,
+a decorative landscape, and "Se connecter" in a card over it — the same photo/illustration-then-card shape
+as the entry screen (D-29). No back button and no top bar, like the onboarding's `ReadyScreen`: this is
+the end of a flow, not a step in one.
+
+- **New `SuccessCheckmark`** (`features/auth/components/`), explicitly requested as a "nice to have" beyond
+  the mockup's static icon: on mount, a thin ring pulses outward once and fades behind the badge
+  (`opacity 0.5→0`, `scale 0.7→1.55`, 900 ms) while the filled circle springs in
+  (`type: 'spring', damping: 11, stiffness: 170`) and the checkmark fades/scales in ~240 ms after that —
+  a single, non-looping "success ping". `useReduceMotion()` drops the pulse and the spring/scale entirely,
+  keeping only a plain fade, the same reduced-motion shape the profile-creation loader uses (D-27).
+- **New `SuccessLandscape`** (`features/auth/components/`): the mockup's mountains/lake/evergreens
+  illustration has no source asset, so it's approximated with flat, layered `react-native-svg` shapes at
+  increasing opacity of the `primary` token (same approximation spirit as the onboarding's `MapPreview`,
+  D-24) rather than reproducing it exactly. It fills its flex container and is anchored to the bottom
+  (`preserveAspectRatio="xMidYMax slice"`), so it always reaches the card regardless of screen height.
+- **"Se connecter" uses `router.replace('/auth/login')`**, not `push`: this is the natural end of the
+  forgot-password sub-flow (D-33 to D-36), so back shouldn't return into it — same reasoning as
+  `ReadyScreen`'s "Commencer" (D-26). It reuses `auth.signIn`, no new key.
+- **Sub-flow now complete end to end**: `/auth/login` → "Mot de passe oublié ?" → `/auth/forgot-password`
+  → `/auth/reset-code` (code `123456`) → `/auth/new-password` → `/auth/reset-success` → back to
+  `/auth/login`. A route-tree test walks the whole chain.
+
+## Sprint 2 close-out (2026-09-22)
+
+### D-37 — `AuthPlaceholder` removed: dead code once all 7 auth screens were built
+
+All 7 authentication routes (`/auth`, `login`, `register`, `forgot-password`, `reset-code`,
+`new-password`, `reset-success`) render their real screen as of D-36 — none of them used
+`AuthPlaceholder` anymore, so it (and its only i18n key, `auth.placeholder.comingSoon`) were deleted
+during the sprint's final verification pass, rather than left as unreferenced code. Same treatment
+`OnboardingPlaceholder` got in D-26 once the onboarding screens were all built; `SCREEN_INTEGRATION_WORKFLOW.md`
+§7 now says to do this for any future placeholder too. **Reversible:** trivially — re-add if a new
+not-yet-built screen needs a stand-in again.
+No functional change: `pnpm check` (186 tests) passes identically before and after.
+
+## Main navigation (2026-09-22)
+
+### D-38 — Custom `tabBar` on `expo-router`'s `Tabs` (React Navigation bottom tabs), not `NativeTabs` or the headless `expo-router/ui` primitives
+
+`04_TECH_STACK.md`/D-16 left bottom-tab navigation undecided. The sprint 3 brief (floating pill that
+morphs into a bubble on scroll, expands on tap, always shows the active icon) needs full control over
+layout and animation that a native tab bar cannot give:
+
+- **`NativeTabs`** (`expo-router/unstable-native-tabs`) renders the platform's own native tab bar
+  (SwiftUI/Jetpack Compose): no custom morph animation, no bubble state, ruled out by the brief's own
+  §11 ("if `NativeTabs` doesn't allow this customization, don't force it").
+- **The headless `expo-router/ui`** (`Tabs`/`TabList`/`TabTrigger`/`TabSlot`) is a newer, less-proven
+  primitive in this project with no prior usage to build on.
+- **`expo-router`'s `Tabs`** (`import { Tabs } from 'expo-router/tabs'`, not the package root — this
+  version does not re-export it from `expo-router` itself) wraps `@react-navigation/bottom-tabs` and
+  accepts a `tabBar` prop (`(props: BottomTabBarProps) => ReactNode`) that fully replaces the rendered
+  bar while keeping the standard screen/route wiring (`<Tabs.Screen name="home" />` per file). This is
+  React Navigation's own documented "custom tab bar" pattern, well-proven, and keeps inactive tab
+  screens mounted (lazy on first visit, then kept alive) so switching tabs preserves scroll position —
+  the brief's own "avoid losing scroll where the architecture allows it".
+- `tabBar` is a prop of the navigator itself, not of `screenOptions` (a `BottomTabNavigationOptions` —
+  confirmed by `tsc`, which is why `src/app/(tabs)/_layout.tsx` passes `tabBar={...}` directly to
+  `<Tabs>` and keeps `headerShown: false` in `screenOptions`).
+
+`RoamTabBar` (`src/features/navigation/`) draws the pill/bubble itself with `MotiView` (the app's usual
+animation primitive) animating one `width` between the pill's full width and a square equal to its own
+height (a perfect circle at `borderRadius: 999`), rather than two absolutely-stacked layers — simpler,
+and the outer shape visibly changing size is what makes it read as a morph rather than a fade
+(`opacity: 0` alone was explicitly ruled out by the brief). Collapsed, only the active tab's icon
+renders (the other three unmount, they don't just go transparent) inside the same shrinking container.
+**Reversible:** yes — swapping `tabBar` for a different render function, or the whole navigator for
+`NativeTabs`, does not touch the four screens.
+
+### D-39 — `/home` moved into a `(tabs)` route group; scroll-collapse is a plain JS threshold, not a Reanimated worklet
+
+- **Route group, not a path segment.** `src/app/home.tsx` moved to `src/app/(tabs)/home.tsx`
+  (`discover.tsx`, `favorites.tsx`, `profile.tsx` are new siblings); `(tabs)` is a _group_ folder
+  (parentheses), so it adds no path segment — `/home` still resolves exactly as it did for the
+  onboarding's "Commencer" and the login/register "any valid input succeeds" (`HOME_ROUTE` in
+  `onboardingFlow.ts`, `router.replace('/home')` in `LoginScreen`/`RegisterScreen`): none of those
+  needed to change. Tab order (`Accueil, Découvrir, Favoris, Profil`) comes from the explicit
+  `<Tabs.Screen>` order in `(tabs)/_layout.tsx`, not the files' alphabetical order (which would put
+  Discover first).
+- **The collapse/expand state is a plain `useState<boolean>` in a `TabBarCollapseContext`**
+  (`src/features/navigation/TabBarCollapseContext.tsx`), driven by a regular `onScroll` prop on each
+  screen's `ScrollView`, not `react-native-reanimated`'s `useAnimatedScrollHandler`/shared values. Two
+  reasons: (1) the project's Jest mock for Reanimated (`jest.setup.ts`, D-11) stubs
+  `useAnimatedScrollHandler` as a no-op, which would make the collapse logic itself untestable; (2) the
+  rest of the app's interactive animations (tile/row selection, D-21–D-23) already follow the same
+  "plain state drives a `MotiView`'s `animate` prop" pattern — this keeps the tab bar consistent with
+  that rather than introducing worklets for the first time outside the profile-creation loader (D-27,
+  which needed them specifically to animate an SVG attribute Moti doesn't expose).
+- **One shared boolean, not per-screen state:** switching tabs while collapsed keeps the bar collapsed
+  and swaps the bubble's icon to the new active tab, matching the brief's §9 example. A `useRef`-based
+  accumulator (`TabBarCollapseContext.tsx`) requires a sustained scroll of 12px in one direction (reset
+  on direction change) before flipping state, and forces expanded within 24px of the top — avoids
+  flipping on every pixel/bounce (brief §7) without needing a debounce timer.
+- **Left-anchored, not centered or full-width**, `insets.left + 20` from the edge for both the pill and
+  the bubble: matches the mockup (image `1.png`, tiles 03–06), and means only `width` needs to animate
+  (no recentering math).
+
+### D-40 — Placeholder screens: `common.comingSoon`/`common.placeholder` replace `home.comingSoon`; `discover` is a new feature
+
+- **`home.comingSoon` (D-20-era placeholder key) became `common.comingSoon`**, same FR/EN wording,
+  reused by all four tab screens instead of adding four near-identical `<feature>.comingSoon` keys —
+  existing tests asserting the literal placeholder text (`onboardingRoutes.test.tsx`,
+  `authRoutes.test.tsx`) needed no change since the rendered string is unchanged. `home.title`
+  (headline), `favorites.title` ("Mes favoris") and `profile.title` ("Profil") are reused as each
+  screen's heading since they already existed with the right meaning; `discover.title` is new (no
+  prior "Découvrir" page title existed, only the `navigation.discover` tab label).
+- **New shared primitives** (`src/components/ui/`): `ScrollScreen` (the `Screen` primitive's scrollable
+  sibling — safe top inset, `bg-background`, forwards `onScroll`/`testID`) and `PlaceholderCard`
+  (`common.placeholder`, "Bloc {index}") — eight per screen, enough height to make the scroll/collapse
+  behavior obvious and testable. Bottom content padding is `insets.bottom + TAB_BAR_CLEARANCE` (100px,
+  `features/navigation/tabBarConfig.ts`) so the last card clears the floating bar.
+- **`src/features/discover/` is a new feature folder** (`favorites`/`profile` already existed as empty
+  `.gitkeep` placeholders from the initial scaffold, now filled; their `.gitkeep` was removed).
+  `DiscoverScreen`/`FavoritesScreen`/`ProfileScreen` are intentionally minimal — no real content, per
+  the sprint 3 brief (§14, §19): replace their bodies, not their routes, when those features are built.
+
+### D-41 — `RoamTabBar` redone as a static "floating glass pill"; collapse-to-bubble paused, not removed
+
+- **The scroll-driven collapse/bubble morph (D-39, D-38) is temporarily disabled at the component**,
+  per an explicit follow-up brief asking to validate the static visual first and add motion in a
+  separate pass. `RoamTabBar` no longer reads `TabBarCollapseContext`; it always renders the full
+  4-tab pill. The context, `useTabBarScrollHandler`, its provider in `(tabs)/_layout.tsx`, and the
+  `onScroll` wiring in the four tab screens are all left in place (inert for now) so the morph can be
+  reconnected without re-deriving that logic. `RoamTabBar.test.tsx`'s collapse assertions were removed
+  along with the render branch they covered; they return with the morph.
+- **Centered, not left-anchored, overriding D-39's "matches the mockup" rationale for this phase.** The
+  follow-up brief is explicit (§6) that the pill must be horizontally centered with clearance on both
+  sides, not pinned to the left edge. The outer wrapper now spans `left/right: inset + 20` with
+  `alignItems: 'center'`, and the pill itself is content-width. D-39's left-anchoring was chosen so
+  only `width` had to animate during collapse (no recentering math) — worth revisiting in the animation
+  pass: keep the bubble centered (recenter on width change) or revert to left-anchored during collapse
+  only.
+- **Glass effect: `expo-blur`'s `BlurView`, not a plain translucent `View`.** Added as a new dependency
+  (`apps/mobile/package.json`, `~57.0.3` via `expo install` to match SDK 57) since the brief calls for
+  an actual frosted-glass blur, which a semi-transparent background alone can't produce. A `rgba`
+  wash of the `surface` token (0.55 light / 0.45 dark, built with the existing `hexToRgbChannels`
+  helper) sits on top of the blur for the "surface: blanc/cream translucide" direction, and a
+  `rgba(255,255,255,0.35)` 1px border gives the glass-edge highlight the brief asks for literally
+  (§12) — the one deliberately un-tokenized color in the component, since it is a decorative light
+  catch rather than a themed surface (same precedent as the mood accent colors in `palette.ts`).
+
+### D-42 — Tab bar visual finalization + tab-switch/active-tab animation (still no collapse/bubble)
+
+- **Small, purely numeric finishing touches to the validated D-41 pill**, no structural change: bar
+  68px tall (was 64), items 72px wide (was 68), icon badge 36px/icon 21px (was 34/20 — same ~0.58
+  badge-to-icon ratio), bottom clearance 14px (was 20, still clearly off the safe-area edge), glass
+  border alpha 0.42 and shadow opacity 0.16 (were 0.35/0.12) for a touch more separation from
+  whatever's behind it, without turning it into a hard outline or a heavy shadow.
+- **Tab-switch entrance animation reads a shared "direction" instead of diffing routes itself.** New
+  `TabTransitionContext` (mirrors `TabBarCollapseContext`'s shape): `RoamTabBar` sets `1`/`-1` — the
+  tapped tab's index compared to the active one — right before calling `navigation.navigate`; the four
+  `(tabs)/*.tsx` route files wrap their screen in the new `TabScreenTransition`, which reads it.
+- **`TabScreenTransition` uses `react-native-reanimated` shared values directly, not a declarative
+  Moti `animate`/`from`.** The entering screen must snap to a _fresh_ offset — computed from
+  whatever `direction` is _right now_ — every time it gains focus, not interpolate from wherever it
+  happened to be left (a plain `animate={{opacity: isFocused ? 1 : 0, translateX: ...}}` would reuse
+  the offset from the _previous_ time that screen was hidden, which encodes the wrong direction after
+  a back-and-forth like Home→Discover→Home). Remounting the screen on each focus (a Moti `key` trick)
+  would get the direction right but discards the screen's state — in particular `ScrollView` position —
+  on every tab switch, a regression the brief explicitly rules out (§10). Shared values read via a
+  ref (synced in its own effect, not during render — the new `react-hooks/refs` lint rule forbids
+  mutating a ref mid-render) sidestep both problems: the screen subtree never unmounts, and the
+  snap-then-`withTiming` runs fresh off the latest direction every time `isFocused` flips true.
+- **The active tab's icon badge animates with Moti**, unlike the screen transition: a `MotiView`
+  behind the icon fades its `primary` fill in/out (opacity only, no `backgroundColor` interpolation,
+  per the brief's §8 "prefer transform/opacity"), and the icon itself sits in a second `MotiView` keyed
+  on focus state so switching triggers a fresh `spring` scale-in (`0.82 → 1`) — cheap to remount since
+  it's a ~36px icon, not a whole screen. The label gets the same keyed-remount treatment for a light
+  opacity fade. `useReduceMotion` (already used elsewhere) drops the spring/offset/translate in all
+  three places, keeping only a short opacity change, per the brief's §9.
+- **Collapse/bubble (D-41) still untouched**: `TabBarCollapseContext`, `useTabBarScrollHandler` and
+  their screen wiring remain exactly as paused, unrelated to this pass.
+
+### D-43 — Collapse-to-bubble reconnected: crossfade morph, left-anchored bubble, top-only auto-expand
+
+- **`RoamTabBar` reads `TabBarCollapseContext` again** (paused since D-41); `TabBarCollapseContext`,
+  `useTabBarScrollHandler` and the four screens' `onScroll` wiring needed no changes — they were kept
+  live the whole time specifically so this step wouldn't have to re-derive them (D-41, D-42), which
+  also means the "centralize collapse logic, don't duplicate it per screen" requirement (this brief's
+  §15) was already satisfied before this pass started.
+- **Crossfade, not a hard content swap.** The pre-D-41 version swapped the pill's children for the
+  bubble's via a plain ternary the instant `collapsed` flipped, while only the container `width`
+  animated — a real transformation of the shape, but an instant cut of the content. Now both the
+  4-item row and the bubble's icon are always mounted, absolutely filling the same animated-width
+  container, and crossfade via opacity while the container's `width`/`marginLeft` animate on the same
+  spring — closer to the brief's "the capsule contracts around the icon" framing (§3-§4) than either a
+  hard swap or literally repositioning 4 icons into 1. Both layers get
+  `pointerEvents`/`accessibilityElementsHidden`/`importantForAccessibility` toggled with `collapsed` so
+  the hidden one is neither tappable nor reachable by a screen reader (brief §9) — RNTL's `getByRole`
+  respects the same hidden-from-accessibility flag, so tests assert the row is gone with
+  `queryByRole(...).toBeNull()`, not `.not.toBeVisible()`.
+- **Bubble is left-anchored (not centered) via an animated `marginLeft`, not `alignItems`.** The
+  outer positioning wrapper (`left`/`right`/`bottom` insets, unchanged since D-41) no longer centers
+  the pill with `alignItems: 'center'`; instead the pill's own `marginLeft` animates between a computed
+  `centeredOffset` (expanded — `(availableWidth - pillWidth) / 2` via `useWindowDimensions`, visually
+  identical to the old `alignItems: 'center'` result) and `0` (collapsed — flush with the wrapper's
+  left inset, i.e. `insets.left + 20`). This resolves the open question D-41 flagged: the bubble slides
+  left as it shrinks rather than staying centered, per this brief's §11.
+- **Scroll handler's expand condition changed: reaching the top, not scrolling up.** D-39's original
+  `useTabBarScrollHandler` expanded on _either_ reaching the top _or_ a sustained upward scroll
+  anywhere on the page. This brief is explicit (§5-§6) that only reaching the top should auto-expand;
+  scrolling up mid-page should leave it collapsed. The upward-scroll expand branch was removed —
+  scrolling up now only resets the downward accumulator (so the next collapse needs a fresh sustained
+  pull instead of picking up leftover progress), `TOP_ZONE` (24px, kept from D-39 — a literal `y <= 0`
+  would make the expand feel like it never quite lands) is still the only path to `expand()`.
+  `TabBarCollapseContext.test.tsx`'s "expands again once an upward scroll passes the threshold" test
+  covered the removed behavior and was replaced with one asserting the new top-only rule plus one
+  asserting the accumulator reset.
+- **Bubble tap only expands** (`expand()`, not `navigate`), confirmed by
+  `RoamTabBar.test.tsx`/`tabsRoutes.test.tsx`: `navigation.navigate` is asserted not called and the
+  active tab stays the one from before the tap (brief §7-§8).
+
+### D-44 — Mocked auth session (`isLoggedIn`) + `Stack.Protected` route protection
+
+- **`AuthProvider`/`useAuth` (`apps/mobile/src/auth/`), not a bare `const isLoggedIn` in a screen.**
+  Mirrors `ThemeProvider`/`useTheme()`'s exact shape (root-level context, `initial…` prop from
+  `useBootstrap`, persisted via the existing `@/lib/storage` abstraction) since this is the same kind
+  of cross-cutting, reactive, persisted app state — not a "feature", so it lives at `src/auth/` next
+  to `src/theme/`, not under `src/features/auth/` (which holds the auth _screens_).
+  `login()`/`logout()` delegate the actual (simulated) request to a new `repositories.auth`
+  (`AuthRepository`, `services/repositories/types.ts` + `services/mock/auth.ts`) — the project's
+  existing "screen → hook/service → repository (mock now, API later)" convention — while the
+  provider itself owns the resulting `isLoggedIn` state and its persistence.
+- **Persisted on purpose, reusing the existing storage abstraction** (`@/lib/storage`, already used
+  for theme/language — no new dependency): "simulate a real user session" (brief §3) reasonably
+  means it survives a restart, not just app-open-to-close. Storage failures already silently fall
+  back to defaults (`lib/storage.ts`), so a corrupted/missing session value just means "logged out",
+  never a crash.
+- **`Stack.Protected` (`apps/mobile/src/features/navigation/AppRoutes.tsx`), not manual
+  `router.reset`/imperative stack surgery** — the mechanism `expo-router` ~57 ships specifically for
+  this. Two blocks, `guard={!isLoggedIn}` (welcome, the whole onboarding journey, the whole
+  `auth/*` sub-flow) and `guard={isLoggedIn}` ((tabs)), plus an always-reachable `index` (the
+  splash, which itself now reads `isLoggedIn` to replace to `/home` or `/welcome`). Flipping the
+  guard removes the other block's screens from history outright — verified in
+  `AppRoutes.test.tsx` (new: the six scenarios from the brief's §12) — which is what makes "no back
+  to Login after signing in" and "no back to Home after logging out" hold via the hardware back
+  button/gesture, not just via the explicit `router.replace` each screen still also calls (kept,
+  since `Stack.Protected` alone only constrains _reachability_, not which screen is showing the
+  instant the guard changes — see Expo Router's own auth guide for the same combination).
+  `AppRoutes` is extracted out of `app/_layout.tsx` (which still owns font/theme bootstrap and
+  native chrome) specifically so route tests can render the exact same guarded stack the app does,
+  instead of each re-declaring it.
+- **Onboarding and Register also call `login()`, exactly like Login** (explicit product decision,
+  not inferred): both already ended on `/home` with no auth step before route protection existed
+  (`RegisterScreen`, `ReadyScreen`'s "Commencer"), and gating `(tabs)` behind `isLoggedIn` would
+  otherwise strand them. Treating "finished onboarding" and "just registered" as equally valid ways
+  to become a session, alongside "just logged in", was confirmed rather than assumed since it's a
+  product-logic call the brief didn't address.
+- **Welcome → auth entry is `router.replace`, not `push`** (`WelcomeScreen.tsx`) — the one part of
+  "no back to Welcome" `Stack.Protected` doesn't cover, since Welcome and the whole `auth/*` sub-flow
+  sit in the _same_ `!isLoggedIn` guard block (crossing guards is what triggers the history purge,
+  not moving within one). `auth/index → auth/login` and the register/login cross-links stay `push`
+  on purpose — going back to the entry screen from Login is existing, tested behavior
+  (`authRoutes.test.tsx`) the brief never asked to change, and replacing Welcome already removes it
+  from history before any of those pushes happen.
+- **A press with an async, timer-dependent handler (`login()`/`logout()`) must not be individually
+  `await`ed in a test under fake timers**: `await fireEvent.press(...)` deadlocks, since nothing can
+  advance the fake timer the handler is awaiting until that same await resolves. The fix used
+  throughout (`LoginScreen.test.tsx`, `RegisterScreen.test.tsx`, `ReadyScreen.test.tsx`,
+  `authRoutes.test.tsx`, `onboardingRoutes.test.tsx`, `AppRoutes.test.tsx`) is one shared `act()`
+  wrapping both the press and `jest.advanceTimersByTimeAsync(...)`, not two separate ones (which
+  still passes, but logs a spurious "state update not wrapped in act()").

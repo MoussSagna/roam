@@ -3,9 +3,14 @@
 This guide describes the repository **as it is today**: a pnpm monorepo containing the mobile app
 only. `apps/web`, `apps/api` and `packages/*` (see `04_TECH_STACK.md`) do not exist yet.
 
-**Prototype status (2026-09-22):** the mobile **onboarding is implemented on the front end**, from the splash to a placeholder
-home (routes below). There is **no backend, no database and no API**: nothing is sent or stored, and the onboarding answers are
-local state used for the prototype only. Next: the authentication screens, front-end only and simulated (`DECISIONS.md` D-28).
+**Prototype status (2026-09-22):** the mobile **onboarding is implemented on the front end**, from the splash to the app's
+main navigation (routes below). **Authentication screens are all implemented**: entry, login, register, and the whole
+forgot-password sub-flow (email → reset code → new password → success) — see `docs/SCREEN_INTEGRATION_WORKFLOW.md`. The
+mockup's post-authentication screens (a welcome-back moment, location permission, "Tout est prêt") were never part of that
+sprint's scope and are still not built (`DECISIONS.md` D-29). **Main navigation** (four tabs behind a floating pill/bubble
+tab bar) is built, with placeholder scrollable content on each tab — see `DECISIONS.md` D-38 to D-40. There is **no
+backend, no database and no API**: nothing is sent or stored, and every answer/interaction is local state or a simulated
+delay used for the prototype only (`DECISIONS.md` D-28, D-29, D-31 to D-36).
 
 ## Requirements
 
@@ -54,16 +59,19 @@ apps/mobile/
 ├── jest.config.js / jest.setup.ts
 ├── assets/images/           # splash-background.png, icons, logo/ (roles in logo/README.md), onboarding/
 └── src/
-    ├── app/                 # Expo Router routes ONLY, kept thin (/, /welcome, /onboarding/*, /home)
+    ├── app/                 # Expo Router routes ONLY, kept thin
+    │   ├── (tabs)/          # Main navigation group: home, discover, favorites, profile + _layout.tsx (no path segment)
+    │   └── /, /welcome, /onboarding/*, /auth/*
     ├── components/
-    │   ├── ui/              # Text, Button, Chip, Screen, FadeInUp (design-system primitives)
+    │   ├── ui/              # Text, Button, Chip, Screen, ScrollScreen, PlaceholderCard, FadeInUp, TextField
     │   └── brand/           # Logo (light / dark / icon variants)
     ├── features/            # One folder per feature (empty until its sprint)
     │   ├── splash/          # In-app splash screen (route /) + its measured layout
     │   ├── onboarding/      # Onboarding: the 8 screens, onboardingFlow.ts (routes, order), profileCreation.ts (simulation)
-    │   ├── home/            # Placeholder of the home screen (end of the onboarding)
-    │   └── recommendations, experiences, itinerary, map,
-    │       outing, feedback, profile, favorites, auth
+    │   ├── navigation/      # Main navigation: RoamTabBar (floating pill/bubble), TabBarCollapseContext, tabBarConfig
+    │   ├── home/, discover/, favorites/, profile/  # The four tabs (placeholder scrollable content, sprint 3)
+    │   ├── auth/            # Authentication: all 7 screens built (Entry, Login, Register, ForgotPassword, ResetCode, NewPassword, ResetSuccess)
+    │   └── recommendations, experiences, itinerary, map, outing, feedback
     ├── hooks/               # Cross-feature hooks (useBootstrap, useReduceMotion)
     ├── i18n/                # i18next setup + locales/fr.json, locales/en.json
     ├── lib/                 # Small framework-agnostic helpers (storage, cx)
@@ -85,10 +93,65 @@ Path alias: `@/` → `src/` (TypeScript, Jest and Metro).
 | 2–6  | `/onboarding/mood`, `time`, `budget`, `location`, `interests` | Questions           | "Suivant" / "Passer"; `ProgressBars`; answers are local state, not saved         |
 | 7    | `/onboarding/profile-creation`                                | Profile creation    | **Front-end simulation, about 10 s**, no button, moves on by itself (Moti)       |
 | 8    | `/onboarding/ready`                                           | "Prêt à explorer ?" | Reached after the simulation; "Commencer" enters the app                         |
-| —    | `/home`                                                       | Home (placeholder)  | End of the journey                                                               |
+| —    | `/home`                                                       | Home (placeholder)  | End of the journey, now the first tab of the main navigation                     |
 
 The order and the routes live in `features/onboarding/onboardingFlow.ts`. "Passer" jumps to `ready`; "Commencer" and the
 profile creation use `router.replace`. Details: `DECISIONS.md` D-19 to D-28.
+
+## Main navigation (current state)
+
+Four tabs behind one floating pill/bubble tab bar, sprint 3, placeholder scrollable content only — `DECISIONS.md` D-38 to D-40.
+
+| Route        | Screen    | Notes                                                             |
+| ------------ | --------- | ----------------------------------------------------------------- |
+| `/home`      | Home      | Placeholder headline + 8 `PlaceholderCard`s, same route as before |
+| `/discover`  | Discover  | Placeholder headline + 8 `PlaceholderCard`s                       |
+| `/favorites` | Favorites | Placeholder headline + 8 `PlaceholderCard`s                       |
+| `/profile`   | Profile   | Placeholder headline + 8 `PlaceholderCard`s                       |
+
+Routes live in `src/app/(tabs)/` (a route _group_: adds no path segment), with `_layout.tsx` rendering
+`expo-router`'s `Tabs` (React Navigation bottom tabs) and a fully custom `tabBar`: `RoamTabBar`
+(`features/navigation/`). Behavior:
+
+- **Expanded (at rest):** a floating pill, left-anchored above the content, showing all four
+  icon+label tabs; the active one has a filled `primary` icon badge.
+- **Collapsed (scrolling down):** the pill morphs (animated `width`, not `opacity`) into a small
+  circular bubble showing only the active tab's icon. Tapping the bubble re-expands the pill without
+  navigating; scrolling up (or being near the top) also re-expands it. Switching tabs while collapsed
+  keeps it collapsed and swaps the bubble's icon.
+- **State:** `TabBarCollapseContext` (`features/navigation/TabBarCollapseContext.tsx`) holds one shared
+  `collapsed` boolean; `useTabBarScrollHandler()` is the `onScroll` handler each tab screen's
+  `ScrollView` attaches — a plain JS threshold/direction accumulator (12px sustained movement to flip,
+  always expanded within 24px of the top), not a Reanimated worklet (`DECISIONS.md` D-39 explains why).
+- **New shared primitives:** `components/ui/ScrollScreen` (scrollable `Screen` sibling) and
+  `components/ui/PlaceholderCard`. Every new screen using this pattern reuses both, plus
+  `useTabBarScrollHandler()` and `TAB_BAR_CLEARANCE` (`features/navigation/tabBarConfig.ts`) for the
+  bottom padding that keeps content clear of the floating bar.
+
+**Conventions for a future screen behind a tab:** add the route file under `src/app/(tabs)/`, add it to
+`TAB_NAMES`/`TAB_CONFIG` in `tabBarConfig.ts` (icon + `navigation.*` label key) and to the `<Tabs.Screen>`
+list in `(tabs)/_layout.tsx` in the order it should appear; replace the screen's placeholder body, not its
+route.
+
+## Authentication (current state)
+
+Built one screen per session (`docs/SCREEN_INTEGRATION_WORKFLOW.md`); front-end only, no backend (`DECISIONS.md` D-28, D-29, D-31 to D-36). All 7 screens are done.
+
+| Route                   | Screen          | Notes                                                                                   |
+| ----------------------- | --------------- | --------------------------------------------------------------------------------------- |
+| `/auth`                 | Entry           | "Se connecter", "Créer un compte", simulated Google/Apple buttons (loading only)        |
+| `/auth/login`           | Login           | Email/password form, local validation; any valid input "succeeds" → `/home`             |
+| `/auth/register`        | Register        | First name/email/password/confirm + live checklist; same "succeeds" → `/home`           |
+| `/auth/forgot-password` | Forgot password | Email step; sends to the reset-code screen (mockup tile 5)                              |
+| `/auth/reset-code`      | Reset code      | 6-digit `OtpInput`; only the mock code `123456` "succeeds" → `/auth/new-password`       |
+| `/auth/new-password`    | New password    | Password + confirm, same rules/checklist as Register → `/auth/reset-success`            |
+| `/auth/reset-success`   | Reset success   | Success badge (`SuccessCheckmark`) + landscape; "Se connecter" replaces → `/auth/login` |
+
+Reached from `WelcomeScreen`'s "Se connecter" link (`t('welcome.signIn')`, `router.push('/auth')`). Shared
+pieces in `features/auth/components/`: `AuthTopBar` (back + small wordmark), `OrDivider`, `SocialButtons`,
+`AuthFooterLink`, `PasswordRequirements` (Register's live checklist), `OtpInput` (Reset code's 6-digit
+entry), `SuccessCheckmark`/`SuccessLandscape` (Reset success's animated badge and illustration). Generic
+form field: `components/ui/TextField`.
 
 ## Conventions
 
@@ -179,9 +242,10 @@ The root barrel pulls ~1 600 icons into the bundle (and makes Jest 10× slower).
 
 ### Assets
 
-The logo files, the wordmark and the splash photo are official; the app icon and the Android
-adaptive icon are still placeholders. The onboarding photos in
-`assets/images/onboarding/` (the four welcome photos, `ready-background.jpg` and `profile-landscape.jpg`) are **temporary** crops of the mockups (see the README there). Which file is used for what is documented in
+The logo files, the wordmark, the splash photo and the auth entry photo (`assets/images/auth/entry-background.png`)
+are official. The app icon and the Android adaptive icon are still placeholders, and so are the onboarding photos in
+`assets/images/onboarding/` (the four welcome photos, `ready-background.jpg` and `profile-landscape.jpg`) — **temporary**
+crops of the mockups (see the READMEs there). Which file is used for what is documented in
 `apps/mobile/assets/images/logo/README.md`. Fonts are loaded from `@expo-google-fonts/*` (Plus Jakarta Sans, Inter, Newsreader, Mrs Saint Delafield); import each
 weight from its own entry point (e.g. `@expo-google-fonts/inter/400Regular`) to keep the bundle small.
 

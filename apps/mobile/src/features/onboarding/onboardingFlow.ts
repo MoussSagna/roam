@@ -1,5 +1,7 @@
 import { useRouter, type Href } from 'expo-router';
 
+import { useAuth } from '@/auth';
+
 /**
  * Onboarding journey (design mockup, "Home Onboarding"):
  * Splash → welcome → mood → time → budget → location → interests → profile → ready → app.
@@ -41,6 +43,7 @@ export const HOME_ROUTE = '/home';
 /** "Suivant" goes to the next step, "Passer" jumps to the final "ready" screen, "Commencer" enters the app. */
 export function useOnboardingNavigation(step: OnboardingStep) {
   const router = useRouter();
+  const { login } = useAuth();
 
   return {
     next: () => {
@@ -53,6 +56,14 @@ export function useOnboardingNavigation(step: OnboardingStep) {
       if (target) router.replace(ROUTES[target] as Href);
     },
     skip: () => router.replace(ROUTES.ready as Href),
-    finish: () => router.replace(HOME_ROUTE as Href),
+    /**
+     * Completing onboarding is this app's other "become a user" path, alongside Login/Register:
+     * it marks the mocked session active the same way, so the guarded `(tabs)` routes are reachable
+     * and Welcome/onboarding can't be reached again from the back button (sprint 3 §17).
+     */
+    finish: async () => {
+      await login();
+      router.replace(HOME_ROUTE as Href);
+    },
   };
 }

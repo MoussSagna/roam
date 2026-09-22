@@ -4,6 +4,8 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 export const STORAGE_KEYS = {
   theme: 'roam.theme',
   language: 'roam.language',
+  /** Mocked session (no backend yet), see `docs/DECISIONS.md`. */
+  session: 'roam.session.isLoggedIn',
 } as const;
 
 /** Storage failures must never crash the app: preferences simply fall back to defaults. */

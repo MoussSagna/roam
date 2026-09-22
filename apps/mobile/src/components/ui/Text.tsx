@@ -3,13 +3,14 @@ import { Text as RNText, type TextProps as RNTextProps } from 'react-native';
 import { cx } from '@/lib/cx';
 import { textVariantClasses, type TextVariant } from '@/theme';
 
-type Tone = 'default' | 'secondary' | 'primary' | 'onPrimary';
+type Tone = 'default' | 'secondary' | 'primary' | 'onPrimary' | 'error';
 
 const toneClasses: Record<Tone, string> = {
   default: 'text-text',
   secondary: 'text-textSecondary',
   primary: 'text-primary',
   onPrimary: 'text-primaryForeground',
+  error: 'text-error',
 };
 
 export type TextProps = RNTextProps & {

@@ -28,6 +28,11 @@ export const derived = {
   /** Warm hairline that stays visible on Cream. */
   line: '#E2DDD1',
 
+  /** Deep navy of the "Bon retour !" / "Créer un compte" headings on the auth form screens
+   * (measured on the Login and Register mockup tiles — clearly distinct from `inkDeep`, not an
+   * artifact: light theme only, see `DECISIONS.md` D-31). */
+  authHeading: '#000050',
+
   /** Icon accents of the onboarding mood tiles (mockup): Détendu, Festif, Romantique. Decorative only. */
   moodGreen: '#5E9474',
   moodOrange: '#EC9433',
