@@ -26,14 +26,17 @@
     "seeMore": "See more",
     "done": "Done",
     "loading": "Loading…",
-    "next": "Next"
+    "next": "Next",
+    "comingSoon": "This screen is coming soon.",
+    "placeholder": "Block {index}"
   },
   "navigation": {
     "home": "Home",
     "discover": "Discover",
     "favorites": "Favorites",
     "profile": "Profile",
-    "itinerary": "Itinerary"
+    "itinerary": "Itinerary",
+    "expand": "Expand navigation bar"
   },
   "welcome": {
     "title": "Find something to do, without spending your time searching.",
@@ -137,8 +140,10 @@
     "title": "What do you feel like doing today?",
     "currentOutings": "What's happening now",
     "createOuting": "Plan my outing",
-    "inspiration": "Need some inspiration?",
-    "comingSoon": "This screen is coming soon."
+    "inspiration": "Need some inspiration?"
+  },
+  "discover": {
+    "title": "Discover"
   },
   "context": {
     "mood": {

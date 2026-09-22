@@ -26,14 +26,17 @@
     "seeMore": "Voir plus",
     "done": "Terminé",
     "loading": "Chargement…",
-    "next": "Suivant"
+    "next": "Suivant",
+    "comingSoon": "Cet écran arrive bientôt.",
+    "placeholder": "Bloc {index}"
   },
   "navigation": {
     "home": "Accueil",
     "discover": "Découvrir",
     "favorites": "Favoris",
     "profile": "Profil",
-    "itinerary": "Parcours"
+    "itinerary": "Parcours",
+    "expand": "Agrandir la barre de navigation"
   },
   "welcome": {
     "title": "Trouve quoi faire, sans passer ton temps à chercher.",
@@ -137,8 +140,10 @@
     "title": "Qu'est-ce que tu veux faire aujourd'hui ?",
     "currentOutings": "Les sorties du moment",
     "createOuting": "Créer ma sortie",
-    "inspiration": "Besoin d'inspiration ?",
-    "comingSoon": "Cet écran arrive bientôt."
+    "inspiration": "Besoin d'inspiration ?"
+  },
+  "discover": {
+    "title": "Découvrir"
   },
   "context": {
     "mood": {

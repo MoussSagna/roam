@@ -685,3 +685,83 @@ during the sprint's final verification pass, rather than left as unreferenced co
 §7 now says to do this for any future placeholder too. **Reversible:** trivially — re-add if a new
 not-yet-built screen needs a stand-in again.
 No functional change: `pnpm check` (186 tests) passes identically before and after.
+
+## Main navigation (2026-09-22)
+
+### D-38 — Custom `tabBar` on `expo-router`'s `Tabs` (React Navigation bottom tabs), not `NativeTabs` or the headless `expo-router/ui` primitives
+
+`04_TECH_STACK.md`/D-16 left bottom-tab navigation undecided. The sprint 3 brief (floating pill that
+morphs into a bubble on scroll, expands on tap, always shows the active icon) needs full control over
+layout and animation that a native tab bar cannot give:
+
+- **`NativeTabs`** (`expo-router/unstable-native-tabs`) renders the platform's own native tab bar
+  (SwiftUI/Jetpack Compose): no custom morph animation, no bubble state, ruled out by the brief's own
+  §11 ("if `NativeTabs` doesn't allow this customization, don't force it").
+- **The headless `expo-router/ui`** (`Tabs`/`TabList`/`TabTrigger`/`TabSlot`) is a newer, less-proven
+  primitive in this project with no prior usage to build on.
+- **`expo-router`'s `Tabs`** (`import { Tabs } from 'expo-router/tabs'`, not the package root — this
+  version does not re-export it from `expo-router` itself) wraps `@react-navigation/bottom-tabs` and
+  accepts a `tabBar` prop (`(props: BottomTabBarProps) => ReactNode`) that fully replaces the rendered
+  bar while keeping the standard screen/route wiring (`<Tabs.Screen name="home" />` per file). This is
+  React Navigation's own documented "custom tab bar" pattern, well-proven, and keeps inactive tab
+  screens mounted (lazy on first visit, then kept alive) so switching tabs preserves scroll position —
+  the brief's own "avoid losing scroll where the architecture allows it".
+- `tabBar` is a prop of the navigator itself, not of `screenOptions` (a `BottomTabNavigationOptions` —
+  confirmed by `tsc`, which is why `src/app/(tabs)/_layout.tsx` passes `tabBar={...}` directly to
+  `<Tabs>` and keeps `headerShown: false` in `screenOptions`).
+
+`RoamTabBar` (`src/features/navigation/`) draws the pill/bubble itself with `MotiView` (the app's usual
+animation primitive) animating one `width` between the pill's full width and a square equal to its own
+height (a perfect circle at `borderRadius: 999`), rather than two absolutely-stacked layers — simpler,
+and the outer shape visibly changing size is what makes it read as a morph rather than a fade
+(`opacity: 0` alone was explicitly ruled out by the brief). Collapsed, only the active tab's icon
+renders (the other three unmount, they don't just go transparent) inside the same shrinking container.
+**Reversible:** yes — swapping `tabBar` for a different render function, or the whole navigator for
+`NativeTabs`, does not touch the four screens.
+
+### D-39 — `/home` moved into a `(tabs)` route group; scroll-collapse is a plain JS threshold, not a Reanimated worklet
+
+- **Route group, not a path segment.** `src/app/home.tsx` moved to `src/app/(tabs)/home.tsx`
+  (`discover.tsx`, `favorites.tsx`, `profile.tsx` are new siblings); `(tabs)` is a _group_ folder
+  (parentheses), so it adds no path segment — `/home` still resolves exactly as it did for the
+  onboarding's "Commencer" and the login/register "any valid input succeeds" (`HOME_ROUTE` in
+  `onboardingFlow.ts`, `router.replace('/home')` in `LoginScreen`/`RegisterScreen`): none of those
+  needed to change. Tab order (`Accueil, Découvrir, Favoris, Profil`) comes from the explicit
+  `<Tabs.Screen>` order in `(tabs)/_layout.tsx`, not the files' alphabetical order (which would put
+  Discover first).
+- **The collapse/expand state is a plain `useState<boolean>` in a `TabBarCollapseContext`**
+  (`src/features/navigation/TabBarCollapseContext.tsx`), driven by a regular `onScroll` prop on each
+  screen's `ScrollView`, not `react-native-reanimated`'s `useAnimatedScrollHandler`/shared values. Two
+  reasons: (1) the project's Jest mock for Reanimated (`jest.setup.ts`, D-11) stubs
+  `useAnimatedScrollHandler` as a no-op, which would make the collapse logic itself untestable; (2) the
+  rest of the app's interactive animations (tile/row selection, D-21–D-23) already follow the same
+  "plain state drives a `MotiView`'s `animate` prop" pattern — this keeps the tab bar consistent with
+  that rather than introducing worklets for the first time outside the profile-creation loader (D-27,
+  which needed them specifically to animate an SVG attribute Moti doesn't expose).
+- **One shared boolean, not per-screen state:** switching tabs while collapsed keeps the bar collapsed
+  and swaps the bubble's icon to the new active tab, matching the brief's §9 example. A `useRef`-based
+  accumulator (`TabBarCollapseContext.tsx`) requires a sustained scroll of 12px in one direction (reset
+  on direction change) before flipping state, and forces expanded within 24px of the top — avoids
+  flipping on every pixel/bounce (brief §7) without needing a debounce timer.
+- **Left-anchored, not centered or full-width**, `insets.left + 20` from the edge for both the pill and
+  the bubble: matches the mockup (image `1.png`, tiles 03–06), and means only `width` needs to animate
+  (no recentering math).
+
+### D-40 — Placeholder screens: `common.comingSoon`/`common.placeholder` replace `home.comingSoon`; `discover` is a new feature
+
+- **`home.comingSoon` (D-20-era placeholder key) became `common.comingSoon`**, same FR/EN wording,
+  reused by all four tab screens instead of adding four near-identical `<feature>.comingSoon` keys —
+  existing tests asserting the literal placeholder text (`onboardingRoutes.test.tsx`,
+  `authRoutes.test.tsx`) needed no change since the rendered string is unchanged. `home.title`
+  (headline), `favorites.title` ("Mes favoris") and `profile.title` ("Profil") are reused as each
+  screen's heading since they already existed with the right meaning; `discover.title` is new (no
+  prior "Découvrir" page title existed, only the `navigation.discover` tab label).
+- **New shared primitives** (`src/components/ui/`): `ScrollScreen` (the `Screen` primitive's scrollable
+  sibling — safe top inset, `bg-background`, forwards `onScroll`/`testID`) and `PlaceholderCard`
+  (`common.placeholder`, "Bloc {index}") — eight per screen, enough height to make the scroll/collapse
+  behavior obvious and testable. Bottom content padding is `insets.bottom + TAB_BAR_CLEARANCE` (100px,
+  `features/navigation/tabBarConfig.ts`) so the last card clears the floating bar.
+- **`src/features/discover/` is a new feature folder** (`favorites`/`profile` already existed as empty
+  `.gitkeep` placeholders from the initial scaffold, now filled; their `.gitkeep` was removed).
+  `DiscoverScreen`/`FavoritesScreen`/`ProfileScreen` are intentionally minimal — no real content, per
+  the sprint 3 brief (§14, §19): replace their bodies, not their routes, when those features are built.

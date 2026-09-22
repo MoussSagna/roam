@@ -8,18 +8,18 @@ import { useTabBarScrollHandler } from '@/features/navigation/TabBarCollapseCont
 const PLACEHOLDER_COUNT = 8;
 
 /**
- * Placeholder of the home screen (03 in `03_UX_SCREENS_AND_FLOWS.md`), the end of the onboarding.
- * Scrollable test ground for the floating tab bar (sprint 3); replace the body with the real screen
- * when the recommendations feature is built — the route (`/home`) does not change.
+ * Placeholder of the profile tab (sprint 3): scrollable test ground for the floating tab bar.
+ * Replace the body with the real profile screen when that feature is built; the route (`/profile`)
+ * does not change.
  */
-export function HomeScreen() {
+export function ProfileScreen() {
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
   const onScroll = useTabBarScrollHandler();
 
   return (
     <ScrollScreen
-      testID="home-scroll"
+      testID="profile-scroll"
       onScroll={onScroll}
       contentContainerStyle={{
         paddingTop: 24,
@@ -28,7 +28,7 @@ export function HomeScreen() {
       }}
     >
       <Text variant="h2" accessibilityRole="header">
-        {t('home.title')}
+        {t('profile.title')}
       </Text>
       <Text variant="body" tone="secondary">
         {t('common.comingSoon')}

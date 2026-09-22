@@ -29,5 +29,8 @@ Current status (2026-09-22): the mobile onboarding is implemented on the front e
 profile creation is a simulation of about 10 s). Authentication screens are now all built, front-end only and
 simulated: Entry, Login, Register, and the whole Forgot password sub-flow (email → reset code → new password →
 success) — see `DECISIONS.md` D-28, D-29, D-31–D-36, `08_AGENT_TODO.md` and `docs/SCREEN_INTEGRATION_WORKFLOW.md`.
+The main navigation is also built: four tabs (Home, Discover, Favorites, Profile) behind a floating pill/bubble
+tab bar that collapses into a bubble on scroll and expands on tap, with placeholder scrollable content on each
+tab — see `DECISIONS.md` D-38 to D-40.
 
 The product is intentionally MVP-first. Do not expand scope without an explicit requirement.

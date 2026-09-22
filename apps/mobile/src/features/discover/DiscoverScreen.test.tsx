@@ -4,23 +4,21 @@ import { TabBarCollapseProvider } from '@/features/navigation/TabBarCollapseCont
 import i18n from '@/i18n';
 import { renderWithProviders } from '@/test/renderWithProviders';
 
-import { HomeScreen } from './HomeScreen';
+import { DiscoverScreen } from './DiscoverScreen';
 
-describe('HomeScreen (placeholder)', () => {
+describe('DiscoverScreen (placeholder)', () => {
   beforeEach(async () => {
     await act(() => i18n.changeLanguage('fr'));
   });
 
-  it('shows the home headline, a coming-soon note and scrollable placeholder content', async () => {
+  it('shows the discover headline and scrollable placeholder content', async () => {
     await renderWithProviders(
       <TabBarCollapseProvider>
-        <HomeScreen />
+        <DiscoverScreen />
       </TabBarCollapseProvider>,
     );
 
-    expect(screen.getByRole('header')).toHaveTextContent(
-      "Qu'est-ce que tu veux faire aujourd'hui ?",
-    );
+    expect(screen.getByRole('header')).toHaveTextContent('Découvrir');
     expect(screen.getByText('Cet écran arrive bientôt.')).toBeOnTheScreen();
     expect(screen.getByText('Bloc 1')).toBeOnTheScreen();
     expect(screen.getByText('Bloc 8')).toBeOnTheScreen();
