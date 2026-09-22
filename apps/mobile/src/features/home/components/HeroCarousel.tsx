@@ -1,6 +1,5 @@
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
-import Bell from 'lucide-react-native/icons/bell';
 import ChevronLeft from 'lucide-react-native/icons/chevron-left';
 import ChevronRight from 'lucide-react-native/icons/chevron-right';
 import MapPin from 'lucide-react-native/icons/map-pin';
@@ -10,6 +9,7 @@ import type { NativeScrollEvent, NativeSyntheticEvent } from 'react-native';
 import { Pressable, ScrollView, useWindowDimensions, View } from 'react-native';
 
 import { Button, Text } from '@/components/ui';
+import { useTheme } from '@/theme';
 import type { Experience } from '@/types';
 
 import { CarouselDots } from './CarouselDots';
@@ -17,7 +17,8 @@ import { CarouselDots } from './CarouselDots';
 type HeroCarouselProps = {
   experiences: readonly Experience[];
   onPressExperience: (experience: Experience) => void;
-  onPressNotifications: () => void;
+  /** Positions the location badge clear of the status bar/notch; the notification bell now lives in
+   * `HomeHeader`, a separate floating element (sprint 4 polish §6). */
   topInset: number;
 };
 
@@ -29,13 +30,9 @@ const HERO_MIN_HEIGHT = 420;
  * with dots. Slides are plain paging `ScrollView` pages (no new dependency): position is tracked from
  * `onScroll` like the tab bar's own scroll handler (`TabBarCollapseContext`), not a gesture library.
  */
-export function HeroCarousel({
-  experiences,
-  onPressExperience,
-  onPressNotifications,
-  topInset,
-}: HeroCarouselProps) {
+export function HeroCarousel({ experiences, onPressExperience, topInset }: HeroCarouselProps) {
   const { t } = useTranslation();
+  const { isDark } = useTheme();
   const { width, height } = useWindowDimensions();
   const heroHeight = Math.max(HERO_MIN_HEIGHT, Math.round(height * HERO_HEIGHT_RATIO));
   const [activeIndex, setActiveIndex] = useState(0);
@@ -133,43 +130,36 @@ export function HeroCarousel({
                     </View>
                   ))}
               </View>
+              {/*
+                Dark mode: `secondary` (bg-surface, near-black in dark) would read as a near-invisible
+                CTA against the already-dark gradient overlay. `primary` reuses the same token pair
+                every other primary button already relies on (`primary`/`primaryForeground`, AA
+                contrast covered by `theme.test.ts`) instead of a one-off hardcoded color — light
+                mode is untouched (sprint 4 polish §1).
+              */}
               <Button
                 label={t('experience.viewExperience')}
-                variant="secondary"
+                variant={isDark ? 'primary' : 'secondary'}
                 onPress={() => onPressExperience(experience)}
-                className="mt-2 min-h-14 self-start bg-white px-6"
+                className="mt-2 min-h-14 self-start px-6"
               />
             </View>
           </View>
         ))}
       </ScrollView>
 
-      <View
-        pointerEvents="box-none"
-        style={{ position: 'absolute', top: topInset + 12, left: 24, right: 24 }}
-        className="flex-row items-center justify-between"
-      >
-        {active?.location ? (
-          <View className="flex-row items-center gap-1 rounded-pill bg-black/30 px-3 py-1.5">
-            <MapPin size={14} strokeWidth={1.8} color="#FFFFFF" />
-            <Text variant="small" className="text-white">
-              {active.location}
-            </Text>
-          </View>
-        ) : (
-          <View />
-        )}
-
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel={t('home.notifications')}
-          onPress={onPressNotifications}
-          hitSlop={8}
-          className="h-11 w-11 items-center justify-center rounded-pill bg-black/25 active:opacity-80"
+      {active?.location ? (
+        <View
+          pointerEvents="none"
+          style={{ position: 'absolute', top: topInset + 12, left: 24 }}
+          className="flex-row items-center gap-1 rounded-pill bg-black/30 px-3 py-1.5"
         >
-          <Bell size={20} strokeWidth={1.8} color="#FFFFFF" />
-        </Pressable>
-      </View>
+          <MapPin size={14} strokeWidth={1.8} color="#FFFFFF" />
+          <Text variant="small" className="text-white">
+            {active.location}
+          </Text>
+        </View>
+      ) : null}
 
       <View
         pointerEvents="box-none"

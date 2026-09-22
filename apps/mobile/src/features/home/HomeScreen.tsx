@@ -2,17 +2,26 @@ import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useCallback, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import type { NativeScrollEvent, NativeSyntheticEvent } from 'react-native';
 import { ScrollView, View } from 'react-native';
+import Animated, {
+  Extrapolation,
+  interpolate,
+  useAnimatedStyle,
+  useSharedValue,
+} from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Chip, SearchBar, Text } from '@/components/ui';
 import { useTabBarScrollHandler } from '@/features/navigation/TabBarCollapseContext';
 import { TAB_BAR_CLEARANCE } from '@/features/navigation/tabBarConfig';
+import { useScrollDirection } from '@/hooks/useScrollDirection';
 import { useTheme } from '@/theme';
 import type { Experience, Mood } from '@/types';
 
 import { ExperienceCard } from './components/ExperienceCard';
 import { HeroCarousel } from './components/HeroCarousel';
+import { HomeHeader } from './components/HomeHeader';
 import { NearbyCard } from './components/NearbyCard';
 import { SectionHeader } from './components/SectionHeader';
 import { HOME_MOODS } from './data/moods';
@@ -22,6 +31,11 @@ import { useFavoriteExperienceIds } from './useFavoriteExperienceIds';
 import { useHomeExperiences } from './useHomeExperiences';
 
 const DEFAULT_MOOD: Mood = 'calm';
+
+/** How far (px) of overscroll counts as a "full" pull-to-stretch. */
+const HERO_OVERSCROLL_RANGE = 120;
+/** Peak scale of the Hero image at `HERO_OVERSCROLL_RANGE` — kept subtle on purpose. */
+const HERO_MAX_SCALE = 1.15;
 
 /**
  * Home / Accueil (sprint 5): an immersive discovery page — hero carousel, mood chips, and three
@@ -33,7 +47,47 @@ export function HomeScreen() {
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
   const router = useRouter();
-  const onScroll = useTabBarScrollHandler();
+  const tabBarOnScroll = useTabBarScrollHandler();
+  const { visible: headerVisible, handleScrollOffset: onHeaderScrollOffset } = useScrollDirection();
+
+  // UI-thread value driving the Hero's pull-to-stretch (below); mutated directly from the plain JS
+  // `onScroll` handler, like `ProfileOrbit`'s loader progress — this does not re-render `HomeScreen`
+  // on every scroll tick, only the `useAnimatedStyle` consumer below (sprint 4 polish §5).
+  const scrollY = useSharedValue(0);
+
+  // Not `useCallback`: mutating a shared value's `.value` inside a memoized callback trips the
+  // `react-hooks/immutability` rule (it can't know Reanimated's shared values are meant to be
+  // mutated this way, the same pattern `ProfileOrbit` uses from a plain `useEffect`). A fresh
+  // function per render is harmless here — `ScrollView.onScroll` isn't a memoization-sensitive prop.
+  const handleScroll = (event: NativeSyntheticEvent<NativeScrollEvent>) => {
+    scrollY.value = event.nativeEvent.contentOffset.y;
+    tabBarOnScroll(event);
+    onHeaderScrollOffset(event.nativeEvent.contentOffset.y);
+  };
+
+  const heroAnimatedStyle = useAnimatedStyle(() => {
+    const pull = Math.min(scrollY.value, 0);
+    return {
+      transform: [
+        {
+          translateY: interpolate(
+            pull,
+            [-HERO_OVERSCROLL_RANGE, 0],
+            [-HERO_OVERSCROLL_RANGE / 2, 0],
+            Extrapolation.CLAMP,
+          ),
+        },
+        {
+          scale: interpolate(
+            pull,
+            [-HERO_OVERSCROLL_RANGE, 0],
+            [HERO_MAX_SCALE, 1],
+            Extrapolation.CLAMP,
+          ),
+        },
+      ],
+    };
+  });
 
   const { experiences, isLoading } = useHomeExperiences();
   const { favoriteIds, toggleFavorite } = useFavoriteExperienceIds(experiences);
@@ -82,17 +136,18 @@ export function HomeScreen() {
       <StatusBar style="light" />
       <ScrollView
         testID="home-scroll"
-        onScroll={onScroll}
+        onScroll={handleScroll}
         scrollEventThrottle={16}
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ paddingBottom: insets.bottom + TAB_BAR_CLEARANCE }}
       >
-        <HeroCarousel
-          experiences={heroExperiences}
-          onPressExperience={goToExperience}
-          onPressNotifications={() => {}}
-          topInset={insets.top}
-        />
+        <Animated.View style={heroAnimatedStyle}>
+          <HeroCarousel
+            experiences={heroExperiences}
+            onPressExperience={goToExperience}
+            topInset={insets.top}
+          />
+        </Animated.View>
 
         <View className="gap-8 px-6 pt-6">
           <SearchBar
@@ -180,6 +235,8 @@ export function HomeScreen() {
           </View>
         </View>
       </ScrollView>
+
+      <HomeHeader visible={headerVisible} topInset={insets.top} onPressNotifications={() => {}} />
     </View>
   );
 }

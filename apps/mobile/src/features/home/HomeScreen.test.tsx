@@ -126,4 +126,40 @@ describe('HomeScreen (sprint 5 — discovery)', () => {
       params: { id: 'exp-dinner-view' },
     });
   });
+
+  it('shows the notification button at the top, hides it on a sustained scroll down, and brings it back on scroll up', async () => {
+    await renderHome();
+
+    expect(screen.getByRole('button', { name: 'Notifications' })).toBeOnTheScreen();
+
+    const homeScroll = screen.getByTestId('home-scroll');
+    await fireEvent.scroll(homeScroll, { nativeEvent: { contentOffset: { y: 200 } } });
+
+    expect(screen.queryByRole('button', { name: 'Notifications' })).toBeNull();
+
+    await fireEvent.scroll(homeScroll, { nativeEvent: { contentOffset: { y: 170 } } });
+
+    expect(screen.getByRole('button', { name: 'Notifications' })).toBeOnTheScreen();
+  });
+
+  it('keeps the notification button visible for a small scroll that never leaves the top zone', async () => {
+    await renderHome();
+
+    const homeScroll = screen.getByTestId('home-scroll');
+    await fireEvent.scroll(homeScroll, { nativeEvent: { contentOffset: { y: 10 } } });
+
+    expect(screen.getByRole('button', { name: 'Notifications' })).toBeOnTheScreen();
+  });
+
+  it('brings the notification button back once the scroll returns to the top', async () => {
+    await renderHome();
+
+    const homeScroll = screen.getByTestId('home-scroll');
+    await fireEvent.scroll(homeScroll, { nativeEvent: { contentOffset: { y: 200 } } });
+    expect(screen.queryByRole('button', { name: 'Notifications' })).toBeNull();
+
+    await fireEvent.scroll(homeScroll, { nativeEvent: { contentOffset: { y: 0 } } });
+
+    expect(screen.getByRole('button', { name: 'Notifications' })).toBeOnTheScreen();
+  });
 });

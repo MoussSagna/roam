@@ -157,6 +157,14 @@ persistence. "Voir l'expérience" pushes to `experience/[id]` (`ExperienceDetail
 `features/experiences/`) — not the real detail screen yet. Home reuses `useTabBarScrollHandler()` /
 `TabBarCollapseContext` like every other tab screen; `RoamTabBar` itself was not touched this sprint.
 
+**Polish (sprint 4, `DECISIONS.md` D-46):** the Hero's CTA switches to the `primary` `Button` variant
+in dark mode (was unreadable white-on-white); pulling down past the top stretches the Hero image via a
+`react-native-reanimated` shared value + `useAnimatedStyle` on an `Animated.View` wrapping
+`HeroCarousel` (mutated from a plain `onScroll`, not `useAnimatedScrollHandler` — see D-46 for why);
+the notification bell moved out of `HeroCarousel` into a new floating `HomeHeader`
+(`features/home/components/`) that shows/hides with scroll direction via a new, generic
+`useScrollDirection` hook (`src/hooks/`), fully independent of `TabBarCollapseContext`.
+
 ## Authentication (current state)
 
 Built one screen per session (`docs/SCREEN_INTEGRATION_WORKFLOW.md`); front-end only, no backend (`DECISIONS.md` D-28, D-29, D-31 to D-36). All 7 screens are done.

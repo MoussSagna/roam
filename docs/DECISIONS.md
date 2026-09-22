@@ -984,3 +984,57 @@ design mockup, colors mapped to the existing ROAM tokens rather than copied from
 - **Not done on purpose** (frontend-only prototype, `08_AGENT_TODO.md`): a real search engine, GPS
   permission/geolocation, a real recommendation/scoring engine, and the experience detail screen
   itself — the placeholder above stands in for it.
+
+## Home polish (2026-09-22)
+
+### D-46 — Hero CTA dark-mode contrast, pull-to-stretch, and an independent floating header
+
+Sprint 4: three targeted fixes on the already-validated Home (D-45), explicitly scoped to leave its
+design, sections, main ROAM colors, `RoamTabBar` and mock data untouched.
+
+- **Hero CTA in dark mode reuses `Button`'s existing `primary` variant instead of a new color.** The
+  button was hardcoded to `bg-white` (a literal override on top of the `secondary` variant), paired
+  with the `default` text tone — in dark mode that tone resolves to `derived.offWhite`, i.e.
+  near-white text on a white button, unreadable. Switching to `variant={isDark ? 'primary' : 'secondary'}`
+  (and dropping the `bg-white` override so `secondary`'s own `bg-surface` — white in light — applies
+  unchanged) reuses the same `primary`/`primaryForeground` pair every other primary button in the app
+  already relies on, already covered by `theme.test.ts`'s WCAG AA contrast assertions — no new token,
+  and light mode is visually identical to before.
+- **Pull-to-stretch reuses `react-native-reanimated`'s shared values directly, not
+  `useAnimatedScrollHandler`.** `docs/DECISIONS.md` D-39 already documents that this project's Jest
+  mock stubs `useAnimatedScrollHandler` as a no-op specifically so it doesn't have to be exercised in
+  tests; adopting it here would have made the _existing_ tab-bar-collapse-from-Home tests
+  (`tabsRoutes.test.tsx`) silently stop being exercised too, since it would have replaced the plain
+  `ScrollView.onScroll` prop they rely on. Instead, `HomeScreen` keeps its ordinary `ScrollView` and a
+  plain (non-`useCallback`) `onScroll` function that does three independent things on every native
+  scroll tick: mutates a `useSharedValue` directly (the exact pattern `ProfileOrbit`'s loader progress
+  already uses from a plain `useEffect`, D-27) with no React re-render, calls the existing
+  `useTabBarScrollHandler()` callback unchanged, and calls the new `useScrollDirection` hook's setter.
+  A `useAnimatedStyle` on an `Animated.View` wrapping `HeroCarousel` reads the shared value on the UI
+  thread and interpolates `translateY`/`scale` — only on negative (pulled-down) offsets, clamped via
+  `Extrapolation.CLAMP` so normal downward scrolling into the page is unaffected. Range tuned to a
+  subtle effect (`HERO_OVERSCROLL_RANGE` 120px of pull → `HERO_MAX_SCALE` 1.15), the standard
+  "stretchy header" recipe (`translateY` at half the pull, `scale` up) sized down from the versions
+  usually written for a full-height hero.
+  **Not `useCallback`:** mutating a shared value's `.value` from inside a memoized callback body trips
+  `eslint-plugin-react-hooks`'s `react-hooks/immutability` rule (it cannot know Reanimated shared
+  values are meant to be mutated exactly this way outside a worklet); a plain function recreated each
+  render sidesteps it and costs nothing here, since `ScrollView.onScroll` identity doesn't need to be
+  stable.
+- **The notification bell moved out of `HeroCarousel` into a new `HomeHeader`**
+  (`features/home/components/`), a small floating overlay (blur only, no colored wash, so the Hero
+  stays the focal point) positioned above everything, independent of both the Hero and `RoamTabBar`.
+  Its visibility is driven by a new, generic `useScrollDirection` hook (`src/hooks/`, unit-tested):
+  same threshold/accumulator shape as `TabBarCollapseContext`'s `useTabBarScrollHandler`, but with its
+  own up-scroll-shows branch — the tab bar deliberately dropped that exact branch for its own UI
+  (D-43), so this is a standalone hook, not a shared one, keeping the two behaviors from ever mixing
+  state (this sprint's explicit "ne mélange pas leurs états"). Fed from the same `onScroll` tick as the
+  tab bar and the stretch effect, but through its own setter — three independent consumers of one
+  physical scroll stream, not a shared state object.
+- **`HeroCarousel` lost its `onPressNotifications` prop** (now unused there) but kept `topInset` (still
+  positions the location badge). No other change to the carousel's own swipe/dots/CTA-navigation
+  behavior.
+- **Not done on purpose:** a genuinely native (thread-driven) hide/show for the header — its own
+  visibility flip is a small, infrequent `setState` (only on threshold crossings, exactly like the
+  pre-existing tab-bar-collapse pattern), not per-pixel, so it doesn't need the UI-thread treatment the
+  continuous stretch value does.
