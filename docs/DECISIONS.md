@@ -410,3 +410,278 @@ New step `profile`, route **`/onboarding/profile-creation`**. The journey is now
 backend, API, database, Prisma, real authentication, JWT or session: they come **later**, once all the front-end screens are done (`08_AGENT_TODO.md`
 Phase C). Do not add any of them while building these screens, and keep form logic behind a small interface so a real implementation can replace the
 simulation (see _Data access_ in `DEVELOPMENT.md`). The auth screens go in `src/features/auth/` (empty folder today).
+
+## Authentication (2026-09-22)
+
+### D-29 — Authentication 1 "Écran d'entrée" (route `/auth`) and the screen-by-screen workflow
+
+`AuthEntryScreen` (`src/features/auth/`), route `/auth`. Sprint 2 works one authentication screen at a time,
+each one stopping for human validation before the next; the procedure is now written down in
+`docs/SCREEN_INTEGRATION_WORKFLOW.md` so it doesn't have to be re-derived every session. Measured on tile 1
+of the design mockup board ("Authentification").
+
+- **No clean photo asset existed at first.** Only a flattened mockup board (all 10 tiles in one image) was
+  provided, with "ROAM" and the tagline baked into the Eiffel Tower photo, and no inpainting tool was
+  available in this environment to erase them (unlike `ready-background.jpg` / `profile-landscape.jpg`,
+  D-26/D-27). The screen was built to draw its **own** "ROAM" + tagline on top in code (Newsreader SemiBold
+  42 px, cream; `t('auth.entry.tagline')`) rather than baking French/English text into an image
+  (`00_AGENT_INSTRUCTIONS.md` rule 9), over a temporary cropped/upscaled placeholder photo. **Superseded the
+  same day:** a clean official photo (Paris from Montmartre, no baked text) replaced the placeholder — see
+  D-30.
+- **Layout is two flex children, not absolute positioning.** A photo section (`flex: 1`, takes whatever
+  space is left) above a card section (`bg-surface`, intrinsic height, `rounded-t-hero`), matching the
+  mockup's proportions (photo ≈ 48% of the screen at the reference size) without hard-coding either height;
+  on a short screen the photo simply gives way first, the same pattern as the onboarding's `MapPreview`
+  (D-24).
+- **Google / Apple have no Lucide glyph** (brand logos aren't part of an outline icon set). `GoogleIcon`
+  (official 4-color "G", fixed colors) and `AppleIcon` (single path, follows `colors.text`) are drawn with
+  `react-native-svg` in `src/features/auth/components/`, the same pattern as `RunnerIcon`/`LotusIcon`
+  (D-21/D-25).
+- **`Button` gained `leadingIcon` (`ReactNode`) and `loading` (spinner, disables press).** Both are optional
+  and additive — every existing call site is unchanged. `loading` is the generic implementation of "buttons
+  can simulate a request" (`08_AGENT_TODO.md`/the sprint brief): Google/Apple set it for ~900 ms on press,
+  then reset. There is nothing to navigate to afterwards yet (no backend, and the mockup's post-auth screens
+  — "Bienvenue sur ROAM", location permission, "Tout est prêt" — are not built), so the button just returns
+  to normal; wiring a destination is for when those screens exist.
+- **"Se connecter" / "Créer un compte" needed somewhere to land.** `src/app/auth/login.tsx` and
+  `register.tsx` are placeholder routes rendering a small new `AuthPlaceholder` (title + back button),
+  exactly the role `OnboardingPlaceholder` played before the onboarding screens existed (D-20) — not a
+  preview of the Login/Register screens, just infrastructure so navigation doesn't hit "Unmatched Route".
+  Replace their body, not their route, when Login/Register are actually built (next sessions).
+- **The entry screen needed to be reachable from the running app.** `03_UX_SCREENS_AND_FLOWS.md` already
+  documents a "Sign in" secondary CTA on the Welcome screen that the prototype note said was "the next
+  front-end step" — now that it exists, `WelcomeScreen` gained that one `Pressable` (`t('welcome.signIn')`,
+  an unused key already sitting in both locale files since D-19, `router.push('/auth')`). This is the only
+  change to an already-validated screen in this session; no visual/design work on Welcome itself.
+- **i18n.** New `auth.entry.*` (tagline, `or`, `continueWithGoogle`, `continueWithApple`, legal text split
+  into 4 keys so "Conditions d'utilisation" / "Politique de confidentialité" can be styled inline) and
+  `auth.placeholder.comingSoon`. Reused as-is (no new key): `auth.signIn` / `auth.signUp` (button labels)
+  and `welcome.signIn` (the Welcome link). The legal text is styled (primary color, underline) but **not**
+  tappable — Terms/Privacy pages don't exist and aren't in the MVP scope.
+- **Animation.** `FadeInUp` on the photo's text (delay 150 ms) and on the card (delay 300 ms), consistent
+  with the rest of the app; no new animation primitive needed.
+- **Not done on purpose:** Login, Register, Forgot password screens (next sessions, one at a time); wiring
+  Google/Apple to an actual destination; the post-auth screens from the mockup (welcome-back, location
+  permission, "Tout est prêt").
+
+### D-30 — Entry screen background replaced; Welcome's "Se connecter" link made visible
+
+Same-day follow-up after reviewing D-29 on device.
+
+- **Official photo.** `assets/images/auth/entry-background.png` (Paris from Montmartre, no baked text)
+  replaced the temporary mockup crop. Its sky is pale, so the flat scrim over it (same recipe as the splash
+  screen, D-18) went from 22% to **42%** opacity (`derived.night`) to keep the cream "ROAM" + tagline
+  readable — the splash photo is already dark enough at 34%, this one needed more.
+- **`WelcomeScreen`'s "Se connecter" link was too easy to miss** (secondary-tone, unstyled text, no
+  context) — flagged on device. Changed to a small composed line, `t('welcome.alreadyHaveAccount')`
+  ("Déjà un compte ?", new key, secondary tone) followed by `t('welcome.signIn')` in `label` variant
+  (semibold) and `primary` tone, mirroring how the Login/Register mockup tiles style their own
+  cross-links. Same pattern to reuse if Login/Register need an equivalent footer link later.
+
+## Authentication, continued
+
+### D-31 — Authentication 2 "Connexion" (route `/auth/login`)
+
+`LoginScreen` (`src/features/auth/`) replaces the `AuthPlaceholder` that `/auth/login` rendered since D-29.
+Measured on tile 2 of the design mockup board.
+
+- **Deep navy heading, light theme only.** "Bon retour !" and (tile 3) "Créer un compte" are a
+  consistent, saturated navy (`rgb(0,0,~85)` sampled on both tiles independently) — clearly a deliberate
+  choice, not a near-black `text` rendering artifact (`inkDeep` is `#060A0E`, nowhere near it). Added as
+  `derived.authHeading` (`#000050`) in `palette.ts`, used directly via `style`, **not** as a 14th semantic
+  token: it is a narrow, one-off accent for these two headings, not a general-purpose color. No dark-theme
+  equivalent exists in the mockup and navy-on-near-black would be unreadable, so the screen falls back to
+  the normal `colors.text` token when `scheme === 'dark'`.
+- **New `TextField` primitive** (`src/components/ui/`): labeled input, leading icon, inline error, and a
+  `secureTextEntry` show/hide toggle (Lucide `eye`/`eye-off`). Generic and reusable — Register needs the
+  same Email/Password fields. `Text` gained an `error` tone (`text-error`) for the inline message.
+- **Four new shared auth components** (`src/features/auth/components/`), extracted instead of duplicated
+  because Register will need them too: `AuthTopBar` (back chevron + small "ROAM" wordmark — new pattern,
+  the mockup's Login/Register/Forgot-password tiles all have it, Entry doesn't), `OrDivider` and
+  `SocialButtons` (pulled out of `AuthEntryScreen`, which now composes them instead of owning the
+  Google/Apple loading state itself — same behavior, no test changes needed), and `AuthFooterLink`
+  ("Pas encore de compte ? **Créer un compte**" — the same composed-link pattern as `WelcomeScreen`'s
+  `alreadyHaveAccount` link, D-30, but this one is reusable since Register needs its mirror image).
+- **Validation is local and minimal.** Required fields + a basic email-format regex, on submit; an error
+  clears as soon as that field is edited again. `03_UX_SCREENS_AND_FLOWS.md` calls for validation/error
+  states without specifying rules, and there's no backend to enforce anything stronger.
+- **"Any well-formed input succeeds."** There's nothing to check credentials against (no backend, D-28), so
+  `handleSignIn` simulates a request (`loading` on `Button`, ~900 ms) then `router.replace('/home')` —
+  skipping onboarding, since Login implies a returning user. This differs from the entry screen's
+  Google/Apple buttons, which have nowhere to go yet: this button's destination (`/home`) already exists.
+- **"Mot de passe oublié ?" needed somewhere to land.** `src/app/auth/forgot-password.tsx` is a new
+  placeholder route (`AuthPlaceholder`, same role as D-29's Login/Register stubs) — Forgot password is a
+  later session, not this one.
+- **Keyboard handling uses only React Native core** (`KeyboardAvoidingView` + `ScrollView`), no new
+  dependency — `04_TECH_STACK.md`/`00_AGENT_INSTRUCTIONS.md` both favor the simplest option and avoiding
+  overengineering.
+- **i18n reorganized.** `auth.entry.or` / `continueWithGoogle` / `continueWithApple` moved up to `auth.or`
+  etc. (top-level) since Login now needs them too — `auth.entry.*` keeps only what's genuinely entry-only
+  (tagline, legal text). New `auth.login.*`, `auth.footer.noAccount`, `auth.showPassword`/`hidePassword`,
+  `auth.emailPlaceholder`, and a new top-level `validation.*` namespace (`required`, `emailInvalid`) meant
+  to be reused by every form screen, not just this one. `auth.email` changed from "Adresse e-mail" to
+  "Email" to match the mockup's compact label (first real usage of that key).
+- **Animation.** `FadeInUp` staggered across the heading, the form, and the footer link — consistent with
+  every other screen; no loop, no new primitive.
+- **Not done on purpose:** Register, Forgot password (next sessions); wiring Google/Apple to an actual
+  destination (still nowhere to send them, D-29); "remember me" / persisted session (no session exists).
+
+### D-32 — Authentication 3 "Inscription" (route `/auth/register`)
+
+`RegisterScreen` replaces the `AuthPlaceholder` that `/auth/register` rendered since D-29. Measured on
+tile 3 of the design mockup board, which shares its whole visual language with tile 2 (D-31): same navy
+`auth.title`-style heading (`derived.authHeading`), same `AuthTopBar`, `TextField`, `OrDivider`,
+`SocialButtons`, `AuthFooterLink`. Nothing new was built for those; this screen is mostly composition.
+
+- **Password requirements checklist is new and live**, not decorative: `PasswordRequirements`
+  (`features/auth/components/`) recomputes 3 rules on every keystroke — length ≥ 8, contains a letter
+  _and_ a digit, contains a special character — and shows a filled/outline circle per rule (Lucide
+  `circle-check` / `circle`, tinted `primary`/`border`). The mockup's third rule is explicitly labeled
+  "(optionnel)", so only the first two are enforced on submit (`HAS_MIN_LENGTH`, `HAS_LETTER_AND_NUMBER`,
+  exported for the screen's own validation to reuse instead of duplicating the regexes). A weak password
+  gets one summary error (`validation.passwordWeak`) rather than repeating each unmet rule as text — the
+  checklist above the field already shows which one.
+- **Confirm-password field added after the initial build, on explicit request** (not in the mockup, which
+  only has one password field with the live checklist as its safety net — `02_MVP_SCOPE.md` also only asks
+  for one "if present in the design"). Same `TextField`/`secureTextEntry` pattern, its own show/hide
+  toggle (`auth.showConfirmPassword`/`hideConfirmPassword`, distinct labels so both toggles have unique
+  accessible names). `validate()` requires it non-empty and equal to `password`
+  (`validation.passwordMismatch`); like every other field here, its error clears optimistically on the
+  next edit and is re-checked on the next submit — no special-cased live re-validation against the other
+  field, to stay consistent with the rest of the form.
+- **"Prénom" is a new field** (`User` Lucide icon, required, no format check beyond non-empty) — the only
+  genuinely new `TextField` usage; Email/Password are identical to Login's.
+- **Same "any well-formed submission succeeds" simulation as Login** (D-31): no backend to register
+  against, so `handleSignUp` simulates a request then `router.replace('/home')`. This skips the mockup's
+  own post-registration screens (tiles 8–10: a welcome-back moment, location permission, "Tout est
+  prêt") — those aren't built yet and are a different, later step (D-29's "not done on purpose", still
+  true), not specific to Register.
+- **i18n.** New `auth.register.*` (title reuses the same string as `auth.signUp` conceptually but is its
+  own key — a heading and a nav-label copy can diverge later), `auth.footer.hasAccount` (mirrors
+  `noAccount`, D-31), `validation.passwordWeak`. `firstNamePlaceholder` follows the same localization
+  choice as `emailPlaceholder` (D-31): "Moussa" in French (the mockup's own persona), a generic "Alex" in
+  English rather than a literal translation of a name.
+- **Footer cross-link goes both ways.** Register's footer ("Déjà un compte ? Se connecter") pushes to
+  `/auth/login`, mirroring Login's own footer pushing to `/auth/register` — a route test walks both
+  directions.
+
+### D-33 — Authentication 4 "Mot de passe oublié" (route `/auth/forgot-password`)
+
+`ForgotPasswordScreen` replaces the `AuthPlaceholder` that `/auth/forgot-password` rendered since D-29.
+Measured on tile 4 of the design mockup board — the simplest of the four screens built so far: `AuthTopBar`,
+one `TextField`, one `Button`, no divider/social buttons/footer link.
+
+- **The heading text is `auth.forgotPassword`**, the key that already existed and is used as the Login
+  screen's link label ("Mot de passe oublié ?") — same string, same meaning, reused as-is rather than
+  duplicated under a new key. The rest of the screen's copy is `auth.forgotPasswordScreen.*` (a sibling
+  key, not nested under `forgotPassword`, since that key already holds a string, not an object).
+- **The envelope illustration and its caption are static content, not a post-submit state.** They're part
+  of the mockup's single screen (reassurance copy shown before you even submit), not a toggled
+  "email sent" confirmation — so there's no second visual state to build here. Lucide `mail-open`, 64px,
+  colored with the same `derived.authHeading` navy as the title (decorative, `accessible={false}`).
+- **Only one field, so validation is a single `error` string**, not an object like Login/Register's
+  `FormErrors` — simpler than reusing that shape for one field.
+- **"Envoyer le code" simulates a request then `router.push('/auth/reset-code')`** (not `replace`: unlike
+  Login/Register, this doesn't end the auth flow, it continues it — back should return here). That route
+  is a new placeholder stub (`AuthPlaceholder`, same role as every other not-yet-built screen since D-20),
+  for tile 5 "Code de réinitialisation" — a later session. Tiles 5–7 (code entry, new password, success)
+  are their own screens, not built as part of this one, even though `02_MVP_SCOPE.md`'s brief groups
+  "Forgot Password" as a single MVP item — the mockup breaks it into a small sub-flow, and the workflow's
+  one-screen-at-a-time rule applies to each of them individually.
+
+### D-34 — Authentication 5 "Code de réinitialisation" (route `/auth/reset-code`)
+
+`ResetCodeScreen` replaces the `AuthPlaceholder` that `/auth/reset-code` rendered since D-33. Measured on
+tile 5 of the design mockup board — a 6-digit OTP entry, one box per digit, one of them shown focused
+(highlighted border) in the mockup.
+
+- **New `OtpInput` component** (`features/auth/components/`): 6 boxes are a _presentation_ of one string
+  value (`onChangeValue`, not per-box state), so the whole code can be set/cleared from outside (used by
+  "Renvoyer le code"). Typing a digit auto-advances to the next box; backspace on an empty box goes back
+  and clears the previous one; a same-tick multi-character input (a paste, or RNTL's `fireEvent.changeText`
+  with a full string) distributes across the remaining boxes instead of being rejected — realistic for
+  both an actual paste and how a code-entry field is normally tested. The focused box gets a `primary`
+  border (matching the mockup's highlighted 3rd box); an invalid submission turns every box's border
+  `error` red instead.
+- **The email from the previous screen is threaded through as a route param**
+  (`router.push({ pathname: '/auth/reset-code', params: { email } })` from `ForgotPasswordScreen`,
+  read with `useLocalSearchParams`), so "Nous avons envoyé un code à **{email}**" shows the address the
+  user actually typed — there's no shared auth store yet for this prototype, so a route param is the
+  simplest way to carry one small piece of state one screen forward. It's optional: the screen degrades
+  to just the prefix line if it's missing (e.g. the screen is opened directly, as the route-tree test
+  for tile 5 alone does).
+- **A fixed mock code (`123456`), not "any complete code succeeds"** (changed after the initial build, on
+  request): there's still no backend to check a real code against, but the screen now simulates an actual
+  check instead of accepting anything well-formed — a complete code that isn't `MOCK_VALID_CODE` is
+  rejected with `validation.codeIncorrect` and stays on the screen, only `123456` proceeds. On success,
+  `handleContinue` simulates a request then `router.push('/auth/new-password')` — a new placeholder stub
+  for tile 6.
+- **"Continuer" is disabled until all 6 digits are entered** (`disabled={!isComplete}` on `Button`, also
+  requested after the initial build), instead of being always pressable and showing an "incomplete" error
+  on press. That error state (and `validation.codeIncomplete`) became unreachable once the button can't be
+  pressed while incomplete, so both were removed rather than left as dead code.
+- **"Renvoyer le code" only clears the input**, front-end only — there is no email to actually resend, and
+  no cooldown/rate-limit state invented for it (nothing in the mockup implies one).
+- **The help card's background is `bg-primary/5`**, not a new palette color: sampled on the mockup it's a
+  faint sage-tinted neutral close enough to a 4–5% tint of `primary` over the background that a dedicated
+  token isn't worth adding for one decorative card. Lucide `mail-warning` for its icon (no exact mockup
+  glyph match needed — same approximation spirit as D-25's icons).
+
+### D-35 — Authentication 6 "Nouveau mot de passe" (route `/auth/new-password`)
+
+`NewPasswordScreen` replaces the `AuthPlaceholder` that `/auth/new-password` rendered since D-33. Measured
+on tile 6 of the design mockup board — almost entirely a composition of pieces `RegisterScreen` (D-32)
+already built: `AuthTopBar`, two `TextField`s (`secureTextEntry`), `PasswordRequirements`. No new
+component was needed.
+
+- **Same password rules as Register, reused directly**: `HAS_MIN_LENGTH`/`HAS_LETTER_AND_NUMBER` from
+  `PasswordRequirements` gate submission, `validation.passwordWeak`/`passwordMismatch` are the same keys,
+  and `auth.register.confirmPassword` labels the second field — a new password being _set_ has no
+  "correct answer" to check against the way the reset code did (D-34's mock value), it only has to satisfy
+  its own rules and match its own confirmation, so Register's exact validation shape applies unchanged.
+- **New keys are only the screen's own copy**: `auth.newPassword.title/subtitle/label/submit`. Everything
+  else is reused.
+- **"Mettre à jour" simulates a request then `router.push('/auth/reset-success')`** — a new placeholder
+  stub for tile 7 ("Réinitialisation réussie"), the last screen of the forgot-password sub-flow. Its
+  placeholder title, `auth.resetSuccess.title` ("Mot de passe mis à jour !"), is taken directly from that
+  tile's own mockup heading rather than reusing an unrelated key, since no existing key fit.
+
+### D-36 — Authentication 7 "Réinitialisation réussie" (route `/auth/reset-success`)
+
+`ResetSuccessScreen` replaces the `AuthPlaceholder` that `/auth/reset-success` rendered since D-35 — the
+last screen of the forgot-password sub-flow started at D-33. Measured on tile 7 of the design mockup
+board: a success badge, heading (`auth.resetSuccess.title`, already added in D-35), a two-line subtitle,
+a decorative landscape, and "Se connecter" in a card over it — the same photo/illustration-then-card shape
+as the entry screen (D-29). No back button and no top bar, like the onboarding's `ReadyScreen`: this is
+the end of a flow, not a step in one.
+
+- **New `SuccessCheckmark`** (`features/auth/components/`), explicitly requested as a "nice to have" beyond
+  the mockup's static icon: on mount, a thin ring pulses outward once and fades behind the badge
+  (`opacity 0.5→0`, `scale 0.7→1.55`, 900 ms) while the filled circle springs in
+  (`type: 'spring', damping: 11, stiffness: 170`) and the checkmark fades/scales in ~240 ms after that —
+  a single, non-looping "success ping". `useReduceMotion()` drops the pulse and the spring/scale entirely,
+  keeping only a plain fade, the same reduced-motion shape the profile-creation loader uses (D-27).
+- **New `SuccessLandscape`** (`features/auth/components/`): the mockup's mountains/lake/evergreens
+  illustration has no source asset, so it's approximated with flat, layered `react-native-svg` shapes at
+  increasing opacity of the `primary` token (same approximation spirit as the onboarding's `MapPreview`,
+  D-24) rather than reproducing it exactly. It fills its flex container and is anchored to the bottom
+  (`preserveAspectRatio="xMidYMax slice"`), so it always reaches the card regardless of screen height.
+- **"Se connecter" uses `router.replace('/auth/login')`**, not `push`: this is the natural end of the
+  forgot-password sub-flow (D-33 to D-36), so back shouldn't return into it — same reasoning as
+  `ReadyScreen`'s "Commencer" (D-26). It reuses `auth.signIn`, no new key.
+- **Sub-flow now complete end to end**: `/auth/login` → "Mot de passe oublié ?" → `/auth/forgot-password`
+  → `/auth/reset-code` (code `123456`) → `/auth/new-password` → `/auth/reset-success` → back to
+  `/auth/login`. A route-tree test walks the whole chain.
+
+## Sprint 2 close-out (2026-09-22)
+
+### D-37 — `AuthPlaceholder` removed: dead code once all 7 auth screens were built
+
+All 7 authentication routes (`/auth`, `login`, `register`, `forgot-password`, `reset-code`,
+`new-password`, `reset-success`) render their real screen as of D-36 — none of them used
+`AuthPlaceholder` anymore, so it (and its only i18n key, `auth.placeholder.comingSoon`) were deleted
+during the sprint's final verification pass, rather than left as unreferenced code. Same treatment
+`OnboardingPlaceholder` got in D-26 once the onboarding screens were all built; `SCREEN_INTEGRATION_WORKFLOW.md`
+§7 now says to do this for any future placeholder too. **Reversible:** trivially — re-add if a new
+not-yet-built screen needs a stand-in again.
+No functional change: `pnpm check` (186 tests) passes identically before and after.

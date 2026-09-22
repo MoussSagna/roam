@@ -21,7 +21,7 @@ Status for **mobile** (2026-09-22). Web and API foundations are not started.
 - [x] Welcome (first onboarding screen, see `DECISIONS.md` D-19)
 - [x] Onboarding (the 7 mockup screens plus the animated profile-creation simulation; the photos of the last screens are temporary — see `DECISIONS.md` D-19 to D-27)
 - [~] Home (placeholder route `/home`, the end of the onboarding — `DECISIONS.md` D-26)
-- [ ] Authentication screens — **front-end only, simulated** (Login, Register, Forgot password + their states). **Next step**, see `DECISIONS.md` D-28
+- [x] Authentication screens — **front-end only, simulated** (Login, Register, Forgot password + their states). All 7 screens done: Entry, Login, Register, Forgot password, Reset code, New password, Reset success — see `DECISIONS.md` D-28, D-29, D-31–D-36 and `docs/SCREEN_INTEGRATION_WORKFLOW.md`. The mockup's post-auth screens (welcome-back, location permission, "Tout est prêt") were never in this sprint's scope and remain undone.
 - [ ] Context flow
 - [ ] Recommendation cards
 - [ ] Experience detail

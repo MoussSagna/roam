@@ -39,7 +39,8 @@
     "title": "Find something to do, without spending your time searching.",
     "subtitle": "ROAM suggests outings tailored to your mood, time and budget.",
     "start": "Get started",
-    "signIn": "Sign in"
+    "signIn": "Sign in",
+    "alreadyHaveAccount": "Already have an account?"
   },
   "onboarding": {
     "welcome": {
@@ -299,10 +300,76 @@
   "auth": {
     "signIn": "Sign in",
     "signUp": "Create an account",
-    "email": "Email address",
+    "email": "Email",
+    "emailPlaceholder": "you@email.com",
     "password": "Password",
     "forgotPassword": "Forgot password?",
-    "logout": "Sign out"
+    "logout": "Sign out",
+    "or": "or",
+    "continueWithGoogle": "Continue with Google",
+    "continueWithApple": "Continue with Apple",
+    "showPassword": "Show password",
+    "hidePassword": "Hide password",
+    "showConfirmPassword": "Show password confirmation",
+    "hideConfirmPassword": "Hide password confirmation",
+    "entry": {
+      "tagline": "Outings that feel like you.",
+      "legalPrefix": "By continuing, you agree to our",
+      "termsOfService": "Terms of Service",
+      "legalMiddle": "and our",
+      "privacyPolicy": "Privacy Policy"
+    },
+    "login": {
+      "title": "Welcome back!",
+      "subtitle": "Sign in to find your outings and recommendations again."
+    },
+    "register": {
+      "title": "Create an account",
+      "subtitle": "Join ROAM and start exploring outings that feel like you.",
+      "firstName": "First name",
+      "firstNamePlaceholder": "Alex",
+      "confirmPassword": "Confirm password",
+      "submit": "Create my account",
+      "requirementLength": "At least 8 characters",
+      "requirementLetterNumber": "A letter and a number",
+      "requirementSpecial": "A special character (optional)"
+    },
+    "footer": {
+      "noAccount": "Don't have an account?",
+      "hasAccount": "Already have an account?"
+    },
+    "forgotPasswordScreen": {
+      "subtitle": "No worries! Enter your email and we'll send you a reset code.",
+      "submit": "Send code",
+      "hint": "You'll receive an email with a reset code.\nRemember to check your spam folder!"
+    },
+    "resetCode": {
+      "title": "Verify your email",
+      "subtitle": "We sent a code to",
+      "expiry": "The code expires in 10 minutes.",
+      "continue": "Continue",
+      "resend": "Resend code",
+      "helpTitle": "Didn't receive the email?",
+      "helpBody": "Check your spam folder or tap “Resend code”.",
+      "digitLabel": "Digit {position} of {length}"
+    },
+    "newPassword": {
+      "title": "New password",
+      "subtitle": "Choose a new password for your account.",
+      "label": "New password",
+      "submit": "Update"
+    },
+    "resetSuccess": {
+      "title": "Password updated!",
+      "subtitle": "Your password has been reset.\nYou can now sign in."
+    }
+  },
+  "validation": {
+    "required": "This field is required.",
+    "emailInvalid": "Invalid email address.",
+    "passwordWeak": "Check the requirements below.",
+    "passwordMismatch": "Passwords don't match.",
+    "codeIncorrect": "This code is incorrect. Check it or tap “Resend code”."
   },
   "errors": {
     "generic": "Something went wrong.",

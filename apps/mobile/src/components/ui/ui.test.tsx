@@ -21,6 +21,16 @@ describe('NativeWind UI components', () => {
     expect(onPress).not.toHaveBeenCalled();
   });
 
+  it('does not fire presses and shows a busy state when loading', async () => {
+    const onPress = jest.fn();
+    await renderWithProviders(<Button label="Continuer" loading onPress={onPress} />);
+
+    const button = screen.getByRole('button', { name: 'Continuer' });
+    expect(button).toBeDisabled();
+    await fireEvent.press(button);
+    expect(onPress).not.toHaveBeenCalled();
+  });
+
   it('exposes the selected state of a Chip to assistive technologies', async () => {
     await renderWithProviders(<Chip label="Clair" selected />);
     expect(screen.getByRole('button', { name: 'Clair', selected: true })).toBeOnTheScreen();
