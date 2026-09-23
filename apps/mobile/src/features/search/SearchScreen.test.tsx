@@ -1,4 +1,5 @@
 import { act, fireEvent, screen, waitFor, within } from '@testing-library/react-native';
+import { Keyboard } from 'react-native';
 
 import i18n from '@/i18n';
 import { renderWithProviders } from '@/test/renderWithProviders';
@@ -232,6 +233,77 @@ describe('SearchScreen (sprint 6 — global search)', () => {
     await waitFor(() => {
       expect(screen.getByText('Filtres')).toBeOnTheScreen();
       expect(screen.getByRole('button', { name: 'Réinitialiser' })).toBeOnTheScreen();
+    });
+  });
+
+  describe('filters never raise the keyboard (D-77)', () => {
+    // By role: the label is the placeholder, which depends on the entry point (Home vs Discover).
+    const input = () => screen.getByRole('search', { includeHiddenElements: true });
+    let dismiss: jest.SpyInstance;
+
+    beforeEach(() => {
+      dismiss = jest.spyOn(Keyboard, 'dismiss');
+    });
+    afterEach(() => dismiss.mockRestore());
+
+    it('opened from Home\'s "Filtrer" (openFilters=1): the sheet opens and the field does not autofocus', async () => {
+      mockParams = { context: 'home', openFilters: '1' };
+      await renderSearch();
+
+      await waitFor(() => {
+        expect(screen.getByRole('button', { name: 'Réinitialiser' })).toBeOnTheScreen();
+      });
+      expect(input().props.autoFocus).toBe(false);
+    });
+
+    it('closing that sheet does not bring the keyboard back (the field stays unfocused)', async () => {
+      mockParams = { context: 'home', openFilters: '1' };
+      await renderSearch();
+      await waitFor(() => {
+        expect(screen.getByRole('button', { name: /Voir \d+ résultats/ })).toBeOnTheScreen();
+      });
+      expect(input().props.autoFocus).toBe(false);
+
+      await fireEvent.press(screen.getByRole('button', { name: /Voir \d+ résultats/ }));
+      await act(async () => {
+        await jest.advanceTimersByTimeAsync(500);
+      });
+
+      expect(screen.queryByRole('button', { name: 'Réinitialiser' })).toBeNull();
+      expect(input().props.autoFocus).toBe(false);
+    });
+
+    it('opened from the search bar itself: the field still autofocuses (unchanged)', async () => {
+      mockParams = { context: 'home' };
+      await renderSearch();
+
+      expect(input().props.autoFocus).toBe(true);
+      expect(screen.queryByRole('button', { name: 'Réinitialiser' })).toBeNull();
+    });
+
+    it('typing, then "Filtres": the keyboard is dismissed before the sheet opens', async () => {
+      await renderSearch();
+      await submitQuery('rooftop');
+      await fireEvent(input(), 'focus');
+      await fireEvent.changeText(input(), 'rooft');
+
+      await fireEvent.press(screen.getByRole('button', { name: 'Filtres' }));
+
+      expect(dismiss).toHaveBeenCalledTimes(1);
+      await waitFor(() => {
+        expect(screen.getByRole('button', { name: 'Réinitialiser' })).toBeOnTheScreen();
+      });
+    });
+
+    it('"Filtres" without a focused field opens the sheet just the same', async () => {
+      await renderSearch();
+      await submitQuery('rooftop');
+
+      await fireEvent.press(screen.getByRole('button', { name: 'Filtres' }));
+
+      await waitFor(() => {
+        expect(screen.getByRole('button', { name: 'Réinitialiser' })).toBeOnTheScreen();
+      });
     });
   });
 

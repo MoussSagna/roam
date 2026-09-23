@@ -2638,3 +2638,16 @@ Only what was asked; no new library, mock data, no Maps API.
   Each now has its own neighbourhood (`Oberkampf, Paris 11e`, `Pigalle, Paris 9e`…); coordinates of six experiences
   were moved to their existing address (they sat elsewhere), and the two Île-de-France ones got distinct addresses.
   `Montmartre, Paris` / `Saint-Germain, Paris` unchanged (asserted by the Profile tests).
+
+### D-77 — "Filtrer" never raises the keyboard: no autofocus when Search is opened for its filters
+
+- **Cause.** Home's `SearchBar` has no text field (a `Pressable` entry point). Its filter icon pushes
+  `/search?openFilters=1`; `SearchScreen` mounted with the filter sheet already open **and** `SearchInput`'s
+  `autoFocus={!hasSubmitted}` (true on arrival), so the field focused on mount and the native keyboard came up over the
+  sheet — and stayed up once it closed. Same path from Discover's `SearchBar` (same route, same param). Inside Search,
+  the "Filtres" chip opened the sheet without ending text editing, so a keyboard raised while typing stayed over it.
+- **Fix, in `SearchScreen` (the screen that owns both the field and the sheet), nothing global:** no autofocus when
+  `openFilters === '1'` (the user asked for filters, not to type); opening the sheet from the chip first calls
+  `Keyboard.dismiss()` (blurs the field). Closing the sheet never refocuses (`autoFocus` only acts on mount). `SearchBar`,
+  `SearchInput`, the sheet, the filters and the Home are unchanged; opening Search from the bar itself still autofocuses.
+- **Tests:** `SearchScreen.test.tsx` → "filters never raise the keyboard (D-77)".

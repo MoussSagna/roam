@@ -2,7 +2,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import ChevronLeft from 'lucide-react-native/icons/chevron-left';
 import { useCallback, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Pressable, ScrollView, View } from 'react-native';
+import { Keyboard, Pressable, ScrollView, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Text } from '@/components/ui';
@@ -68,7 +68,17 @@ export function SearchScreen() {
   } = useSearchSession();
 
   const [sortSheetVisible, setSortSheetVisible] = useState(false);
-  const [filtersVisible, setFiltersVisible] = useState(params.openFilters === '1');
+  // Opened from a `SearchBar`'s filter icon (Home/Discover): the user asked for the filters, not to
+  // type — so the field must not autofocus under the sheet (it raised the keyboard over it, D-77).
+  const openedForFilters = params.openFilters === '1';
+  const [filtersVisible, setFiltersVisible] = useState(openedForFilters);
+
+  // Opening the sheet ends any text editing first: blurs the field and closes its keyboard, which
+  // would otherwise stay up over the sheet and after it closes.
+  const openFilters = useCallback(() => {
+    Keyboard.dismiss();
+    setFiltersVisible(true);
+  }, []);
 
   const placeholder =
     params.context === 'discover' ? t('discover.search.placeholder') : t('home.search.placeholder');
@@ -121,7 +131,7 @@ export function SearchScreen() {
             onSubmit={() => runSearch(queryText)}
             onClear={reset}
             placeholder={placeholder}
-            autoFocus={!hasSubmitted}
+            autoFocus={!hasSubmitted && !openedForFilters}
           />
         </View>
 
@@ -160,7 +170,7 @@ export function SearchScreen() {
               isSortActive={sort !== 'recommended'}
               isFiltersActive={hasActiveFilters(filters)}
               onOpenSort={() => setSortSheetVisible(true)}
-              onOpenFilters={() => setFiltersVisible(true)}
+              onOpenFilters={openFilters}
               onPressMap={goToMap}
             />
 
