@@ -1557,3 +1557,64 @@ sliders, tiles or save/reset logic changed.
   attached. All checks that don't require eyes on a real screen (types, lint, the full existing test
   suite, unmodified) pass; the visual result (crossfade timing, spacing) still needs a look on-device,
   which is exactly what this change was requested for.
+
+### D-57 — Profile 4 "Mes favoris" (route `/profile/favorites`); no separate Lieux/Expériences data split
+
+Sprint 5, one screen at a time: `FavoritesScreen` (`features/profile/`) replaces the `ProfilePlaceholder`
+that `/profile/favorites` rendered since D-50, from the mockup's tile 03 — thumbnail rows, a heart to
+remove, an empty state, `StickyRevealHeader` (D-55/D-56). This is the _profile_ favorites screen, distinct
+from the `/favorites` tab (still sprint-3 placeholder content, untouched this session — D-50 already
+reserved that separation).
+
+- **Backed entirely by `Experience.isFavorite`, not a new `Place`-favoriting system.** The mockup shows a
+  "Lieux"/"Expériences" segmented control, but nothing in the current data model draws that line: every
+  mock entity (including single-location items like "Rooftop Sunset" or "Musée d'Art Moderne") is an
+  `Experience`, already carrying every display field a "Lieux" row would need (image, category, location,
+  price). `Place` (`types/place.ts`) is unused scaffolding kept only to prove the repository pattern
+  (D-09) — two fields, no `list()`, two fixture rows, referenced nowhere in the UI. Building it out to
+  back a second tab would duplicate fields `Experience` already has under a different name, exactly what
+  `docs/SCREEN_INTEGRATION_WORKFLOW.md`'s "reuse before creating" argues against. The `cat-experience`
+  category that could in principle separate "a place" from "a composed outing" is itself unused by every
+  mock experience, so a category-based split would always leave one tab empty — decorative, not
+  functional. The task's own functional spec talks only about "expériences" throughout, which matches this
+  choice. **Not reproduced on purpose**; revisit if/when a real place-level favoriting concept exists.
+- **Removal is local component state on top of the mock seed (`useFavoriteExperiences`), not a shared
+  favorites store.** Same known gap as Home's own toggle (`useFavoriteExperienceIds`, D-45): this screen
+  and Home do not sync with each other (no backend, no global store yet) — removing a favorite here
+  doesn't un-favorite it on Home and vice versa. Forward-compatible: swapping the hook's body for a real
+  `FavoriteRepository` later doesn't change the screen's props.
+- **Five mock experiences were seeded `isFavorite: true`** (`exp-dinner-view`, `exp-nature-getaway`,
+  `exp-jazz-night`, `exp-mama-shelter`, `exp-bellevilloise`) so the screen has real content instead of an
+  empty list by default — matching the mockup's own populated state. Deliberately **not**
+  `exp-rooftop-sunset`, `exp-lake-hike` or `exp-modern-art-museum` (the three `isPopular` experiences):
+  `HomeScreen.test.tsx`'s favorite-toggle test counts "Ajouter aux favoris"/"Retirer des favoris" buttons
+  within Home's own "populaire" section and assumes all three start unfavorited, and
+  `ExperienceDetailScreen.test.tsx` defaults to `exp-rooftop-sunset` assuming the same — found by running
+  the full suite after the first seeding attempt, not by inspection alone.
+- **New feature-scoped `FavoriteExperienceRow`** (`features/profile/components/`), a full-width list row
+  (thumbnail, title, "category · location", a heart button), not a reuse of Home's `ExperienceCard`: that
+  component is a wide, image-heavy horizontal-scroll card (fixed 260px width) built for Home's carousel
+  sections, not a dense vertical list — reusing it verbatim would not match the mockup's row density. The
+  heart button reuses the exact nested-`Pressable`-inside-a-`Pressable` pattern `ExperienceCard` already
+  established (tapping it doesn't also trigger the row's own navigation, D-45) and the same
+  `home.favoriteRemove` label (identical action, no new key).
+- **Category label resolved via the existing `useCategories()`/`getCategoryLabel()` pair**
+  (`hooks/useCategories.ts`, `features/experiences/lib/categoryLabel.ts`), cross-feature reuse rather than
+  a second resolver — same precedent as `MapPreviewRow` reusing onboarding's `MapPreview` (D-48).
+- **Header follows Preferences' own restructure** (D-56): no hero to reveal past, so a plain in-content
+  `Text variant="h2"` stands in for the title until `StickyRevealHeader`'s own title crossfades in past
+  `HEADER_REVEAL_OFFSET`. Back button only — no right-side action (no reset/settings equivalent here).
+- **Empty state reuses `favorites.empty`/`favorites.discover`**, i18n keys already sitting in both locale
+  files, unused, since before this screen was built — no new key needed. "Découvrir" pushes to
+  `/discover`, the same destination Home's own "Voir tout" links use.
+- **Animation**: `FadeInUp` per row with a small stagger (`Math.min(index * 60, 240)` ms), consistent with
+  the rest of the app's unguarded `FadeInUp` usage (`ProfileScreen`, `SimilarExperiencesSection`) — not
+  gated behind `useReduceMotion()`, matching that same precedent (a single-shot fade+translate, not a loop
+  or rotation). No exit animation on removal: the item disappears on the next render, same "instant" result
+  the brief asked for; `AnimatePresence` isn't used anywhere else in this codebase yet, so adding it here
+  for one interaction would be a new pattern, not a reuse.
+- **Not done on purpose**: place-level favoriting (see above); a shared cross-screen favorites store (no
+  backend, `08_AGENT_TODO.md` Phase F); swipe-to-delete (the heart-tap removal already matches the app's
+  one existing favorite-toggle affordance, no need for a second gesture); a route-tree test (this screen's
+  test is a standalone component test, same convention `PreferencesScreen.test.tsx` already set — no
+  `/profile/*` sub-route has one).

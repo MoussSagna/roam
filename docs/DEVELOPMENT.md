@@ -3,20 +3,21 @@
 This guide describes the repository **as it is today**: a pnpm monorepo containing the mobile app
 only. `apps/web`, `apps/api` and `packages/*` (see `04_TECH_STACK.md`) do not exist yet.
 
-**Prototype status (2026-09-22):** the mobile **onboarding is implemented on the front end**, from the splash to the app's
+**Prototype status (2026-09-23):** the mobile **onboarding is implemented on the front end**, from the splash to the app's
 main navigation (routes below). **Authentication screens are all implemented**: entry, login, register, and the whole
 forgot-password sub-flow (email → reset code → new password → success) — see `docs/SCREEN_INTEGRATION_WORKFLOW.md`. The
 mockup's post-authentication screens (a welcome-back moment, location permission, "Tout est prêt") were never part of that
 sprint's scope and are still not built (`DECISIONS.md` D-29). **Main navigation** (four tabs behind a floating pill/bubble
 tab bar) is built — see `DECISIONS.md` D-38 to D-43. **Home is now the real discovery screen** (hero carousel, mood
-chips, popular/nearby/for-you sections, sprint 5, `DECISIONS.md` D-45); Discover/Favorites are still the sprint 3
-placeholder content. **Experience detail and its full-screen gallery are also built** (sprint 5, `DECISIONS.md` D-48);
-the itinerary/journey screen it leads to is still a placeholder. **Profile's main screen and "Mes préférences" are now
-real** (header, stats, grouped menu; experience types/ambiance/budget/distance; sprint 5, one screen at a time,
-`DECISIONS.md` D-50, D-51); the other nine screens it links to (edit profile, favorites, history, statistics, language,
-theme, help, privacy, settings) are still placeholders, built one per session. There is **no backend, no database and no
-API**: nothing is sent or stored, and every answer/interaction is local state, mock repository content, or a simulated
-delay used for the prototype only (`DECISIONS.md` D-28, D-29, D-31 to D-36, D-45, D-50, D-51).
+chips, popular/nearby/for-you sections, sprint 5, `DECISIONS.md` D-45); the `/discover` and `/favorites` tabs are still the
+sprint 3 placeholder content. **Experience detail and its full-screen gallery are also built** (sprint 5, `DECISIONS.md`
+D-48); the itinerary/journey screen it leads to is still a placeholder. **Profile's main screen, "Mes préférences" and
+"Mes favoris" are now real** (header, stats, grouped menu; experience types/ambiance/budget/distance; favorited
+experiences with removal and an empty state; sprint 5, one screen at a time, `DECISIONS.md` D-50, D-51, D-57); the other
+eight screens it links to (edit profile, history, statistics, language, theme, help, privacy, settings) are still
+placeholders, built one per session. There is **no backend, no database and no API**: nothing is sent or stored, and
+every answer/interaction is local state, mock repository content, or a simulated delay used for the prototype only
+(`DECISIONS.md` D-28, D-29, D-31 to D-36, D-45, D-50, D-51, D-57).
 
 ## Requirements
 
@@ -76,8 +77,9 @@ apps/mobile/
     │   ├── onboarding/      # Onboarding: the 8 screens, onboardingFlow.ts (routes, order), profileCreation.ts (simulation)
     │   ├── navigation/      # Main navigation: RoamTabBar (floating pill/bubble), TabBarCollapseContext, tabBarConfig
     │   ├── home/            # Home (sprint 5): hero carousel, sections, mock data/lib — see the table below
-    │   ├── discover/, favorites/  # Still sprint 3 placeholder content
-    │   ├── profile/          # Profile (sprint 5): main screen + preferences real, other sub-screens still placeholders
+    │   ├── discover/        # Still sprint 3 placeholder content
+    │   ├── favorites/       # `/favorites` tab: still sprint 3 placeholder content (distinct from `/profile/favorites`)
+    │   ├── profile/         # Profile (sprint 5): main screen + preferences + favorites real, other sub-screens still placeholders
     │   ├── experiences/     # Experience detail (route experience/[id]) + gallery/ (route gallery/[id]) — sprint 5
     │   ├── auth/            # Authentication: all 7 screens built (Entry, Login, Register, ForgotPassword, ResetCode, NewPassword, ResetSuccess)
     │   ├── itinerary/       # CreateJourneyPlaceholder (route itinerary/create) — not the real screen yet
@@ -194,17 +196,19 @@ polish D-49), built on `Experience`'s extended fields through the same `Experien
 ## Profile (current state)
 
 Built one screen at a time (`docs/SCREEN_INTEGRATION_WORKFLOW.md`), sprint 5. The main screen
-(`/profile`) and "Mes préférences" (`/profile/preferences`) are real; every other row is still a
-`ProfilePlaceholder` stub (`docs/DECISIONS.md` D-50) until its own session.
+(`/profile`), "Mes préférences" (`/profile/preferences`) and "Mes favoris" (`/profile/favorites`) are
+real; every other row is still a `ProfilePlaceholder` stub (`docs/DECISIONS.md` D-50) until its own
+session.
 
-| Piece              | Route / component                                                                        | Notes                                                                                                                                                                                                                                                        |
-| ------------------ | ---------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| Main screen        | `/profile` (in `(tabs)`) → `features/profile/ProfileScreen.tsx`                          | Header (avatar/name/bio/edit CTA), stats, grouped menu, logout — built on `UserRepository` (`useCurrentUser`)                                                                                                                                                |
-| Header/stats       | `features/profile/components/ProfileHeader.tsx`, `ProfileAvatar.tsx`, `ProfileStats.tsx` | Avatar falls back to an initial letter (no photo in the mock content, same precedent as `ReviewCard`)                                                                                                                                                        |
-| Menu row           | `features/profile/components/ProfileMenuRow.tsx`                                         | Icon + label (+ optional subtitle or right-aligned value) + chevron; reused for every group                                                                                                                                                                  |
-| Preferences        | `/profile/preferences` → `features/profile/PreferencesScreen.tsx`                        | Experience types + ambiance (multi-select tile grids), budget + distance (`Slider`); header is a `StickyRevealHeader`, save CTA is a `StickyActionFooter`, success/error feedback is `showToast` — local state only, `docs/DECISIONS.md` D-51/D-52/D-54/D-56 |
-| Not-yet-built rows | `features/profile/components/ProfilePlaceholder.tsx`                                     | `/profile/{edit,favorites,history,statistics,language,theme,help,privacy,settings}`                                                                                                                                                                          |
-| Data               | `UserRepository.getCurrentUser()` (`services/mock/user.ts`)                              | One mocked profile (`services/mock/data.ts` → `currentUser`); `User` gained optional `age/city/bio/stats`                                                                                                                                                    |
+| Piece              | Route / component                                                                        | Notes                                                                                                                                                                                                                                                                         |
+| ------------------ | ---------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Main screen        | `/profile` (in `(tabs)`) → `features/profile/ProfileScreen.tsx`                          | Header (avatar/name/bio/edit CTA), stats, grouped menu, logout — built on `UserRepository` (`useCurrentUser`)                                                                                                                                                                 |
+| Header/stats       | `features/profile/components/ProfileHeader.tsx`, `ProfileAvatar.tsx`, `ProfileStats.tsx` | Avatar falls back to an initial letter (no photo in the mock content, same precedent as `ReviewCard`)                                                                                                                                                                         |
+| Menu row           | `features/profile/components/ProfileMenuRow.tsx`                                         | Icon + label (+ optional subtitle or right-aligned value) + chevron; reused for every group                                                                                                                                                                                   |
+| Preferences        | `/profile/preferences` → `features/profile/PreferencesScreen.tsx`                        | Experience types + ambiance (multi-select tile grids), budget + distance (`Slider`); header is a `StickyRevealHeader`, save CTA is a `StickyActionFooter`, success/error feedback is `showToast` — local state only, `docs/DECISIONS.md` D-51/D-52/D-54/D-56                  |
+| Favorites          | `/profile/favorites` → `features/profile/FavoritesScreen.tsx`                            | Favorited experiences (`useFavoriteExperiences`, backed by `Experience.isFavorite`), one `FavoriteExperienceRow` per item, heart-tap removal, empty state; header is a `StickyRevealHeader` — local state only, no separate place-favoriting system, `docs/DECISIONS.md` D-57 |
+| Not-yet-built rows | `features/profile/components/ProfilePlaceholder.tsx`                                     | `/profile/{edit,history,statistics,language,theme,help,privacy,settings}`                                                                                                                                                                                                     |
+| Data               | `UserRepository.getCurrentUser()` (`services/mock/user.ts`)                              | One mocked profile (`services/mock/data.ts` → `currentUser`); `User` gained optional `age/city/bio/stats`                                                                                                                                                                     |
 
 ## Authentication (current state)
 
