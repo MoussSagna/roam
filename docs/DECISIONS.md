@@ -1678,3 +1678,88 @@ completed experiences", unlike Favorites' explicit removal requirement).
 - **Not done on purpose**: a "no results for this filter" state (see above, structurally unreachable);
   removing/editing a history entry (not in scope, `02_MVP_SCOPE.md` §10); a route-tree test (standalone
   component test, same convention as Favorites/Preferences).
+
+### D-59 — Profile 6 "Mes statistiques" (route `/profile/statistics`); `react-native-gifted-charts` added, used only for the donut
+
+Sprint 5, one screen at a time, from a design mockup this session was told is final ("le design est déjà
+défini... ne le redesign pas"): `StatisticsScreen` (`features/profile/`) replaces the `ProfilePlaceholder`
+that `/profile/statistics` rendered since D-50 — time-range chips, three summary cards, three breakdown
+sections (genres, mood donut, cities), an insight card.
+
+- **`react-native-gifted-charts` was added (`pnpm add`, 1.4.78), used for exactly one chart: the mood
+  donut.** No chart library existed before this screen (grepped `package.json` and `src/` for
+  `chart|gifted|victory|d3-|skia`, only `react-native-svg` — already a dependency, used for icons/
+  illustrations, not a charting layer). Its only real peer dependency, `expo-linear-gradient`, is already
+  part of the Expo SDK, so nothing new needed native linking or a dev-client rebuild — it works in Expo
+  Go. `react-native-gifted-charts`/`gifted-charts-core` ship untranspiled ESM, so both were added to
+  `jest.config.js`'s `esmPackages` list (same reason `moti`/`lucide-react-native` are there) — the test
+  suite failed with "Unexpected token 'export'" until they were, the same failure mode `react-native-css-
+interop` already documents for this project's ESM handling.
+- **The genre/city proportion bars are deliberately NOT built on the charting library.** They are a label
+  - percentage + a single horizontal fill, not a chart with axes/gridlines/categories — the library's
+    `BarChart` is shaped for that, and fitting a plain proportion-bar row into its API would mean fighting
+    its own bar-chart rendering for a shape it isn't built for (component/spacing/radius all governed by its
+    own props, not NativeWind classes). `PercentBarRow` (`features/profile/components/`) is a themed `View`
+    instead: a full-width track (`bg-border`) with a colored fill sized to the percentage, animated in via
+    `MotiView`'s `scaleX` (`transformOrigin: 'left'`, a plain RN style prop, no extra dependency) — full
+    control over the exact look, same "build it on what's installed" reasoning as `Slider` (D-51). The mood
+    donut, by contrast, is a genuine circular chart (real arc math for 5 proportional slices) — the one case
+    in this screen where hand-rolling would cost more than it's worth, so it uses the library's own `PieChart`
+    (`donut`, `innerRadius`, `centerLabelComponent` for "N sorties" in the middle) instead.
+- **New decorative color tokens**: `moodBreakdownColors` (5 named hues: relaxed/curious/festive/romantic/
+  family) and `genreChartColors` (6 categorical hues, cycled by index) in `theme/tokens.ts`, plus
+  `chartBlue(OnDark)`/`chartViolet(OnDark)` in `palette.ts` — the only two genuinely new hues; `relaxed`/
+  `festive`/`romantic` reuse the exact same `derived.moodGreen`/`moodOrange`/`moodCoral` constants
+  `moodAccents` already uses for the onboarding mood tiles' icons (same concepts, so same colors), rather
+  than inventing parallel ones. `moodAccents` itself (typed `MoodAccent = 'relaxed'|'festive'|'romantic'`,
+  scoped to the onboarding mood tiles) was **not** extended with `curious`/`family` and reused here: it's a
+  different screen's decoration with its own narrower scope, and widening its type to fit an unrelated
+  chart would couple the two for no shared benefit — a new, separate token pair is the safer, minimal
+  choice (same "why not extract in place" reasoning `StickyRevealHeader` used against reshaping
+  `ExperienceDetailHeader`, D-55).
+- **The three summary cards reuse `UserStats` (`useCurrentUser`), not new data** — "12 Sorties / 36 Lieux
+  découverts / 8 Favoris" are the exact same numbers the main Profile screen already shows (`ProfileStats`,
+  D-50); the donut's center label reuses `stats.outings` again, so both places on this one screen agree.
+  **`StatCard` is a new, separate component from `ProfileStats`**, not a reuse: the mockup's three cards
+  are individually bordered with an icon above the number, `ProfileStats` is one continuous row divided by
+  vertical rules with no icons (mockup tile 01) — same data, a genuinely different presentation the brief
+  asked not to simplify away, so forcing `ProfileStats`' shape onto it would have meant redesigning one of
+  the two mockups, not "reusing a component."
+- **Genre labels reuse `EXPERIENCE_TYPES`** (`features/profile/data/experienceTypes.ts`, D-51) for both the
+  id list and the i18n key/label — the mockup's six genres (Culture, Restaurants, Bars & Soirées, Nature,
+  Activités, Événements) are an exact subset of that already-built 8-item vocabulary (itself reused from
+  onboarding's "Centres d'intérêt"), so `GENRE_BREAKDOWN` (`data/statisticsBreakdown.ts`) only carries an
+  `id`/`percentage` pair per genre and looks the label/icon up from `EXPERIENCE_TYPES` at render time —
+  the third reuse of that same vocabulary in this codebase, not a fourth copy of the label strings.
+- **"Ton humeur lors des sorties" is its own new vocabulary (`relaxed/curious/festive/romantic/family`),
+  not a reuse of `Mood` or the Preferences screen's `AMBIANCE_OPTIONS`.** Neither matches: `Mood`'s own
+  labels are "Calme"/"Découvrir" (context/onboarding wording, not "Détendu"/"Curieux"), and
+  `AMBIANCE_OPTIONS` has no "curious" concept at all and spells "festive" as "Festive" not "Festif" — same
+  "screen-specific vocabulary, not a forced reuse of an almost-but-not-quite-matching enum" reasoning
+  `AMBIANCE_OPTIONS` itself already used against `Mood`/`Company` (D-51). New `statistics.moods.*` i18n
+  keys.
+- **All breakdown numbers (genres/moods/cities/the three cards) are static, curated mock content — none of
+  it is computed from the favorites/history pools.** Same "plain mock content" precedent as `UserStats`
+  itself and place/experience descriptions (D-09/D-50): nothing in this prototype tracks a real per-outing
+  genre, mood or city yet, so inventing a computation over the 6 history entries or 5 favorites would be a
+  fake precision this MVP doesn't have data to back.
+- **Time-range chips ("Tout"/"30 jours"/"6 mois"/"1 an") are local selection state only — they do not
+  change any displayed number.** Building four genuinely different datasets for a value nothing else in
+  this app tracks per-range would be invented precision, not a real feature; the chips are a faithful,
+  interactive reproduction of the mockup's own control (single-choice, "Tout" selected by default), wired
+  the same "control exists, not yet backed by real logic" way this prototype already accepts elsewhere
+  (the onboarding `LocationScreen`'s position/city choice, D-24; the auth entry screen's Google/Apple
+  buttons with nowhere to go yet, D-29).
+- **Header follows Favorites'/History's own restructure** (D-57/D-58): no hero to reveal past, a plain
+  in-content `Text variant="h2"` stands in for the title until `StickyRevealHeader`'s own title crossfades
+  in. `profile.statistics` ("Mes statistiques") is reused directly for both the menu row and this screen's
+  own title — unlike `history.title`, which needed a fix, this key already matched, nothing to change.
+- **Animation**: `FadeInUp` staggers the range chips' row, the three cards, and each section (unguarded,
+  same precedent as Favorites/History); `PercentBarRow`'s fill and the donut both honor
+  `useReduceMotion()` — the bars skip the `scaleX` grow-in (render at full width immediately), and the
+  donut's `isAnimated` prop is set to `false` (the library exposes one opaque animation toggle, not
+  separate translate/opacity/scale channels — same "shorten/disable, don't fully decompose" compromise
+  `AppToast`/`HomeHeader` already use for an opaque third-party animation).
+- **Not done on purpose**: computing any figure from real data (see above); a fourth chart type beyond the
+  donut (nothing else in the mockup needs one); wiring the time-range chips to change numbers (see above);
+  a route-tree test (standalone component test, same convention as Favorites/History/Preferences).

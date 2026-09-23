@@ -1,8 +1,5 @@
-import { useTranslation } from 'react-i18next';
-
-import { ProfilePlaceholder } from '@/features/profile/components/ProfilePlaceholder';
+import { StatisticsScreen } from '@/features/profile/StatisticsScreen';
 
 export default function ProfileStatisticsRoute() {
-  const { t } = useTranslation();
-  return <ProfilePlaceholder title={t('profile.statistics')} />;
+  return <StatisticsScreen />;
 }

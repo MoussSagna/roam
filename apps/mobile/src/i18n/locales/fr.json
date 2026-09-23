@@ -378,6 +378,32 @@
     },
     "logout": "Se déconnecter"
   },
+  "statistics": {
+    "ranges": {
+      "all": "Tout",
+      "30d": "30 jours",
+      "6m": "6 mois",
+      "1y": "1 an"
+    },
+    "sections": {
+      "genres": "Tes genres préférés",
+      "moods": "Ton humeur lors des sorties",
+      "cities": "Villes visitées"
+    },
+    "moods": {
+      "relaxed": "Détendu",
+      "curious": "Curieux",
+      "festive": "Festif",
+      "romantic": "Romantique",
+      "family": "En famille"
+    },
+    "cities": {
+      "paris": "Paris",
+      "lyon": "Lyon",
+      "other": "Autres"
+    },
+    "insight": "Tu explores surtout des lieux culturels et des restaurants, avec une préférence pour les ambiances calmes. On garde ça en tête !"
+  },
   "preferences": {
     "title": "Mes préférences",
     "reset": "Réinitialiser",

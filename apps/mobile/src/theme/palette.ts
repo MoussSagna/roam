@@ -40,6 +40,13 @@ export const derived = {
   moodOrangeOnDark: '#F2AE5E',
   moodCoralOnDark: '#F0857A',
 
+  /** Two extra categorical hues for the statistics screen's charts (mockup tile 05): decorative
+   * only, chosen to stay distinguishable from `moodGreen`/`moodOrange`/`moodCoral` above. */
+  chartBlue: '#3E7CB1',
+  chartBlueOnDark: '#6FB2E0',
+  chartViolet: '#7B5EA7',
+  chartVioletOnDark: '#B29AD9',
+
   /** Map preview of the onboarding location screen (illustration, not a real map). */
   mapBase: '#E8E7DF',
   mapStreet: '#FAF9F5',

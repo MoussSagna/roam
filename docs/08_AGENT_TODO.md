@@ -72,11 +72,12 @@ Use mock data. The onboarding is complete on the front end (no backend, nothing 
       state), sprint 5; the separate `/favorites` tab is still sprint-3 placeholder content
 - [~] History — "Mon historique" (`/profile/history`) built (completed experiences grouped by date,
       category filter, empty state), sprint 5
-- [~] Profile — main screen built (header, stats, menu); preferences, favorites and history built,
-      other sub-screens still placeholders, sprint 5
+- [~] Profile — main screen built (header, stats, menu); preferences, favorites, history and
+      statistics built, other sub-screens still placeholders, sprint 5
 - [~] Preference editing — "Mes préférences" built (experience types, ambiance, budget/distance
       sliders), sprint 5
-- [ ] Statistics
+- [~] Statistics — "Mes statistiques" (`/profile/statistics`) built (summary cards, genre/city
+      breakdown bars, mood donut chart), sprint 5; all mock numbers, none computed from real data
 
 ## Phase G — Quality
 

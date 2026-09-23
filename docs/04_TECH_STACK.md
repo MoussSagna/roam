@@ -194,6 +194,7 @@ into `packages/` when the web app needs them.
 | Persistence        | `@react-native-async-storage/async-storage` (theme, language) | 2.2.0                |
 | Fonts              | Plus Jakarta Sans + Inter (+ Newsreader, Mrs Saint Delafield for the mockups) via `@expo-google-fonts/*` | 0.4.x |
 | Icons              | `lucide-react-native` (one import per icon) + `react-native-svg`                   | 1.47 / 15.15 |
+| Charts             | `react-native-gifted-charts` (donut chart only, sprint 5, `DECISIONS.md` D-59)     | 1.4.78 |
 | Images             | `expo-image`                                               | 57.0                    |
 | Tests              | Jest 29 (`jest-expo`) + React Native Testing Library       | 57.0 / 14.0             |
 | Lint / format      | ESLint 9 (`eslint-config-expo`) + Prettier                 | 9.39 / 3.9              |

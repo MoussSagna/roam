@@ -378,6 +378,32 @@
     },
     "logout": "Log out"
   },
+  "statistics": {
+    "ranges": {
+      "all": "All",
+      "30d": "30 days",
+      "6m": "6 months",
+      "1y": "1 year"
+    },
+    "sections": {
+      "genres": "Your favorite genres",
+      "moods": "Your mood while out",
+      "cities": "Cities visited"
+    },
+    "moods": {
+      "relaxed": "Relaxed",
+      "curious": "Curious",
+      "festive": "Festive",
+      "romantic": "Romantic",
+      "family": "With family"
+    },
+    "cities": {
+      "paris": "Paris",
+      "lyon": "Lyon",
+      "other": "Other"
+    },
+    "insight": "You mostly explore cultural spots and restaurants, with a preference for calm atmospheres. We'll keep that in mind!"
+  },
   "preferences": {
     "title": "My preferences",
     "reset": "Reset",
