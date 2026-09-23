@@ -144,6 +144,8 @@ export const experiences: Experience[] = [
     ],
     reviews: [reviewCalm, reviewService],
     similarExperienceIds: ['exp-picnic-park', 'exp-lake-hike'],
+    visitedAt: 'Sam. 9 mars 2024',
+    historyPeriod: 'thisMonth',
   },
   // Hero carousel (Home, top of screen) — 5 featured experiences.
   {
@@ -207,6 +209,8 @@ export const experiences: Experience[] = [
     ],
     reviews: [reviewCalm, reviewCulture],
     similarExperienceIds: ['exp-nature-getaway', 'exp-lake-hike'],
+    visitedAt: 'Dim. 3 mars 2024',
+    historyPeriod: 'thisMonth',
   },
   {
     id: 'exp-jazz-night',
@@ -323,6 +327,8 @@ export const experiences: Experience[] = [
     ],
     reviews: [reviewRooftop, reviewService],
     similarExperienceIds: ['exp-hasard-ludique', 'exp-mama-shelter', 'exp-bellevilloise'],
+    visitedAt: 'Sam. 16 mars 2024',
+    historyPeriod: 'thisWeek',
   },
   {
     id: 'exp-lake-hike',
@@ -379,6 +385,8 @@ export const experiences: Experience[] = [
     ],
     reviews: [reviewCulture, reviewFood],
     similarExperienceIds: ['exp-night-museum', 'exp-bellevilloise'],
+    visitedAt: 'Jeu. 14 mars 2024',
+    historyPeriod: 'thisWeek',
   },
   // Extra pool for "Des idées pour toi" (deterministic recommendations, see `pickForYou`).
   {
@@ -409,6 +417,8 @@ export const experiences: Experience[] = [
     ],
     reviews: [reviewCalm, reviewFood],
     similarExperienceIds: ['exp-slow-afternoon', 'exp-lake-hike'],
+    visitedAt: '12 fév. 2024',
+    historyPeriod: 'earlier',
   },
   {
     id: 'exp-live-concert',
@@ -464,6 +474,8 @@ export const experiences: Experience[] = [
     ],
     reviews: [reviewRooftop, reviewService],
     similarExperienceIds: ['exp-rooftop-sunset', 'exp-jazz-night'],
+    visitedAt: '28 janv. 2024',
+    historyPeriod: 'earlier',
   },
   {
     id: 'exp-mama-shelter',

@@ -1,8 +1,5 @@
-import { useTranslation } from 'react-i18next';
-
-import { ProfilePlaceholder } from '@/features/profile/components/ProfilePlaceholder';
+import { HistoryScreen } from '@/features/profile/HistoryScreen';
 
 export default function ProfileHistoryRoute() {
-  const { t } = useTranslation();
-  return <ProfilePlaceholder title={t('profile.history')} />;
+  return <HistoryScreen />;
 }

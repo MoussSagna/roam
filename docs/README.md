@@ -35,10 +35,11 @@ now the real discovery screen** (hero carousel, mood chips, popular/nearby/for-y
 see `DECISIONS.md` D-45; the `Discover` tab and the `Favorites` tab are still sprint 3 placeholder content.
 **Experience detail and its full-screen photo gallery are built** (hero → gallery transition, reviews, similar
 experiences, mock data only) — see `DECISIONS.md` D-48; the itinerary/journey screen its CTAs lead to is still
-a placeholder. **Profile's main screen, "Mes préférences" and "Mes favoris" are now real** (header, stats,
+a placeholder. **Profile's main screen, "Mes préférences", "Mes favoris" and "Mon historique" are now real** (header, stats,
 grouped menu; experience types, ambiance, budget/distance sliders; favorited experiences with removal and an
-empty state — mock data only, one screen at a time) — see `DECISIONS.md` D-50, D-51, D-57; the other screens
-it links to (edit profile, history, statistics, language, theme, help, privacy, settings) are still
+empty state; completed experiences grouped by date with a category filter — mock data only, one screen at a
+time) — see `DECISIONS.md` D-50, D-51, D-57, D-58; the other screens it links to (edit profile, statistics,
+language, theme, help, privacy, settings) are still
 placeholders, each built in its own session.
 
 The product is intentionally MVP-first. Do not expand scope without an explicit requirement.

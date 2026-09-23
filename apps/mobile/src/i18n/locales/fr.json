@@ -340,10 +340,18 @@
     "discover": "Découvrir"
   },
   "history": {
-    "title": "Mes expériences",
+    "title": "Mon historique",
     "empty": "Pas encore d'expérience.",
     "findOuting": "Trouver une sortie",
-    "redo": "Refaire"
+    "redo": "Refaire",
+    "filters": {
+      "all": "Tout"
+    },
+    "sections": {
+      "thisWeek": "Cette semaine",
+      "thisMonth": "Ce mois-ci",
+      "earlier": "Plus tôt"
+    }
   },
   "profile": {
     "title": "Profil",

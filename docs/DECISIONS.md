@@ -1618,3 +1618,63 @@ reserved that separation).
   one existing favorite-toggle affordance, no need for a second gesture); a route-tree test (this screen's
   test is a standalone component test, same convention `PreferencesScreen.test.tsx` already set — no
   `/profile/*` sub-route has one).
+
+### D-58 — Profile 5 "Mon historique" (route `/profile/history`); `Experience` extended again, dynamic category filter
+
+Sprint 5, one screen at a time: `HistoryScreen` (`features/profile/`) replaces the `ProfilePlaceholder`
+that `/profile/history` rendered since D-50, from the mockup's tile 04 — category filter chips, entries
+grouped by "Cette semaine"/"Ce mois-ci"/"Plus tôt", each row showing a thumbnail, title, "category ·
+location", a visit date and a chevron (no removal interaction — `02_MVP_SCOPE.md` §10 only asks to "show
+completed experiences", unlike Favorites' explicit removal requirement).
+
+- **`Experience` gained `visitedAt`/`historyPeriod` instead of a new history/outing entity** — same choice
+  as `isFavorite` (D-57): `Experience` already carries every display field a history row needs, so a
+  parallel "CompletedOuting" type would duplicate them under a different name. `visitedAt` is a plain,
+  already-formatted string (`"Sam. 16 mars 2024"`), the same "no separate formatting layer for mock data"
+  convention `ExperienceReview.date` already set (D-09/D-10) — it is only ever displayed, never parsed.
+  `historyPeriod` (`'thisWeek' | 'thisMonth' | 'earlier'`) is a **precomputed** bucket, not derived from
+  `visitedAt` at render time: the mock dates are fixed in the past, so comparing them against the real
+  "today" would keep sliding every entry into `earlier` as real time passes — authoring the bucket
+  directly keeps the screen's grouping stable regardless of when it's opened.
+- **Six mock experiences were seeded** (`exp-rooftop-sunset`, `exp-modern-art-museum` → this week;
+  `exp-slow-afternoon`, `exp-panoramic-walk` → this month; `exp-picnic-park`, `exp-hasard-ludique` →
+  earlier), chosen to be unaffected by the constraint D-57 already found the hard way: three of them
+  (`exp-rooftop-sunset`, `exp-modern-art-museum`, and D-57's own picks) overlap with `isPopular`/
+  `isFavorite` fixtures, but `visitedAt`/`historyPeriod` are brand-new fields nothing else reads, so unlike
+  `isFavorite` they cannot affect any existing test's assertions regardless of which experiences carry
+  them — confirmed by running the full suite, not just inspected.
+- **Filter chips are derived from the history pool's own categories, not a fixed "Tout/Restaurants/
+  Bars/Culture" list copied from the mockup.** The mockup shows a fixed four; reproducing it verbatim would
+  either go stale against whatever experiences actually carry `historyPeriod`, or need inventing a
+  distinction the data doesn't drive. Deriving "Tout" + one chip per category actually present (first
+  appearance order, via `useCategories()`/`getCategoryLabel()` — the same cross-feature reuse Favorites
+  already established, D-57/D-48) means every generated chip is guaranteed at least one match, which also
+  sidesteps designing a "no results for this filter" state entirely — selecting any chip can only ever
+  narrow the list, never empty it outright (only clearing all history could do that, which is the existing
+  empty state).
+- **New feature-scoped `HistoryEntryRow`** (`features/profile/components/`), `FavoriteExperienceRow`'s
+  shape (thumbnail, title, "category · location") minus the heart, plus a visit date line and a trailing
+  chevron (`ChevronRight`, same icon/size/color `ProfileMenuRow` already uses for "this row opens
+  something") instead of a nested `Pressable` action — no second interaction to protect from bubbling here.
+- **Section headers reuse Home's `SectionHeader`** (title only, no `onSeeAll`) rather than a new heading
+  component — same cross-feature reuse precedent as `SimilarExperiencesSection`.
+- **`history.title` was corrected from "Mes expériences" to "Mon historique"/"My history"**, matching
+  `profile.history` (the menu row's own label, and what the mockup's header actually shows) — the key
+  existed, unused, since before this screen was built but held a different, never-shown string; the
+  mismatch would have made the same destination show two different names depending on which screen you
+  came from. Same kind of stale-key fix as D-23. `history.redo` ("Refaire") stays unused: the mockup's
+  history rows show only a chevron, no per-row secondary action — left in place rather than removed, same
+  "unused key left in place" precedent as D-25's `eyebrow`/`selected`/`addInterest…`.
+- **New `history.filters.all` / `history.sections.{thisWeek,thisMonth,earlier}` keys**, added to both
+  locale files (parity test enforces it).
+- **Empty state reuses `history.empty`, and "Trouver une sortie" (`history.findOuting`) pushes to
+  `/home`**, not `/discover` — unlike Favorites' "Découvrir" (D-57), which matches `/discover`'s own name
+  almost literally, "Trouver une sortie" ("find an outing") is `03_UX_SCREENS_AND_FLOWS.md`'s own
+  description of Home's purpose ("Purpose: start a new outing"), so Home is the more literal destination
+  for this specific wording.
+- **Animation**: `FadeInUp` per row, stagger continues across section boundaries (a single running index
+  rather than resetting per section) so the whole list reads as one progressive reveal, not three separate
+  ones — same unguarded-`FadeInUp` precedent as Favorites (D-57).
+- **Not done on purpose**: a "no results for this filter" state (see above, structurally unreachable);
+  removing/editing a history entry (not in scope, `02_MVP_SCOPE.md` §10); a route-tree test (standalone
+  component test, same convention as Favorites/Preferences).

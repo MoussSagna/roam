@@ -59,4 +59,14 @@ export type Experience = {
   reviews?: ExperienceReview[];
   /** Other experience ids shown under "Suggestions similaires". */
   similarExperienceIds?: string[];
+  /**
+   * "Mon historique" fields (sprint 5). Present only on experiences the user has already completed.
+   * `visitedAt` is a plain, already-formatted display string, same convention as `ExperienceReview.date`
+   * (`docs/DECISIONS.md` D-09/D-10) — not a real date, so it is never parsed. `historyPeriod` is a
+   * precomputed grouping bucket rather than something derived from `visitedAt` at render time: with mock
+   * dates fixed in the past, comparing them against the real "today" would only ever resolve to `earlier`
+   * as time passes, so the section a mock entry belongs to is authored directly instead.
+   */
+  visitedAt?: string;
+  historyPeriod?: 'thisWeek' | 'thisMonth' | 'earlier';
 };

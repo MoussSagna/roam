@@ -340,10 +340,18 @@
     "discover": "Discover"
   },
   "history": {
-    "title": "My experiences",
+    "title": "My history",
     "empty": "No experiences yet.",
     "findOuting": "Find an outing",
-    "redo": "Do it again"
+    "redo": "Do it again",
+    "filters": {
+      "all": "All"
+    },
+    "sections": {
+      "thisWeek": "This week",
+      "thisMonth": "This month",
+      "earlier": "Earlier"
+    }
   },
   "profile": {
     "title": "Profile",
