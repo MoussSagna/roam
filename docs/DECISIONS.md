@@ -1970,3 +1970,78 @@ independently ("Login affiche un bouton retour qui plante").
   at all, a different, already-correct case, D-53); a `getCurrentSession()`-style new auth abstraction
   (the brief's own §7 keeps the mocked session exactly as it is — `AuthProvider`/`useAuth`, D-44 — no
   API, JWT, Prisma or backend introduced).
+
+## Profile / Settings split (2026-09-23)
+
+### D-63 — Profile becomes identity/activity/taste; a new, real Settings screen holds configuration
+
+Refactor, not a new screen from scratch: `ProfileScreen` (sprint 5 écran 1, D-50) is rebuilt around
+"qui je suis, ce que j'aime et ce que je fais sur ROAM"; everything that was account/app configuration
+moves to a new `SettingsScreen`, reached from the existing gear icon (`/profile/settings`, already
+wired to that route since D-50 — a `ProfilePlaceholder` until now). No route was added, renamed or
+duplicated: every destination this session touches already existed.
+
+- **What moved, and why each one qualifies as "configuration" and not "taste/activity"**: Préférences
+  (row removed from Profile's menu, `/profile/preferences` itself untouched — see "two entry points"
+  below), Langue, Thème, Aide & Support, Confidentialité, Se déconnecter (+ its `ConfirmationModal`,
+  D-62, moved verbatim — same `logout()`/`router.replace('/auth/login')` call, no new logic). "Modifier
+  mon profil" also gained a **second** entry point in Settings' "Compte" group (`/profile/edit`,
+  unchanged route) — the brief's own suggested structure asks for it there, alongside the pencil-edit
+  button already on `ProfileHeader`, the same "more than one door to the same room" pattern already
+  established for Preferences (see below).
+- **Two access points to Preferences, one screen — not two.** `PreferencesScreen`/`/profile/preferences`
+  is completely unchanged; both "Profil → Ce que j'aime → Modifier" and "Paramètres → Mes préférences"
+  `router.push` the exact same route. The brief was explicit this must not become two different
+  Preferences screens, and reusing one route from two call sites needed no new code to keep that true.
+- **`SettingsScreen` reuses `ProfileMenuRow` for every row** — the brief's own instruction ("ne crée pas
+  inutilement de nouveaux patterns si un composant SettingsRow/ListItem existe déjà") is satisfied
+  literally: that component already _is_ the settings-row shape (icon, label, optional value/subtitle,
+  chevron), unchanged. Group headers ("Compte", "Préférences ROAM", "Apparence", "Support",
+  "Confidentialité & données", "Session") are a plain `Text variant="caption"` each — not a new
+  component, since a static label above a group needed nothing more.
+- **"Ce que j'aime" shows the current `DEFAULT_EXPERIENCE_TYPES`/`DEFAULT_AMBIANCE` selection
+  (`Chip`, unselected style, non-interactive), not a richer, invented tag list.** `PreferencesScreen`'s
+  own selection state is local to that screen (D-51: "no repository, nothing persisted") — there is no
+  shared, queryable "user's current preferences" to read from anywhere else yet. Reading the exact same
+  default constants `PreferencesScreen` itself seeds from is the only truthful thing Profile can show
+  without inventing a fake selection or building the shared-state layer the brief explicitly scoped out
+  ("ne fais pas un gros refactor global"). Reused as-is: `EXPERIENCE_TYPES`/`AMBIANCE_OPTIONS`
+  (`features/profile/data/`, D-51) for the id/icon/i18n-key list, filtered down to the default ids.
+- **"Parcours en cours" is new UI over a small, purpose-built mock overlay
+  (`data/activeJourney.ts`/`useActiveJourney`), not a new itinerary system.** There is no
+  itinerary-progress feature yet (`itinerary/create` is still `CreateJourneyPlaceholder`,
+  `04_TECH_STACK.md`), so "current step 2 of 5" etc. has nothing real to compute from. Same "extend
+  `Experience`... no, actually don't" call as the statistics screen's breakdowns (D-59): here the
+  progress fields are kept in their own small record (`experienceId` + `currentStep`/`totalSteps`/
+  `nextStep`) rather than added to `Experience` itself, because journey progress is per-user session
+  state conceptually, not a property of the experience — the hook joins the two at read time
+  (`repositories.experiences.getById`) instead. The referenced experience (`exp-live-concert`) was
+  chosen deliberately **not** already seeded as a favorite or history entry (D-57/D-58), so this
+  section reads as its own distinct thing instead of visually overlapping the favorites/history
+  previews directly below it — confirmed the hard way, by an initial pick (`exp-jazz-night`) that _was_
+  also a favorite, producing ambiguous duplicate-text test queries once both sections rendered it.
+  "Continuer mon parcours" pushes the existing `itinerary/create` placeholder (the one registered
+  route this app has for "an itinerary flow", D-48) rather than inventing a new route for a screen that
+  doesn't exist; "Voir sur la carte" from the brief's own mockup was **not** built — no map screen exists
+  yet (`features/map` is an empty `.gitkeep`) and the brief itself marks that action "éventuellement".
+- **New `ExperiencePreviewCard`, not a reuse of Home's `ExperienceCard`.** The favorites/history
+  previews are a fixed 3-column row sized to a third of the screen width; `ExperienceCard` is a fixed
+  260px horizontal-scroll card (Home's carousels) — forcing that width into a 3-up grid would have
+  meant fighting its own sizing, not reusing it. The new card is deliberately smaller and simpler (image,
+  title, one subtitle line, an optional decorative badge slot) — the favorites preview passes a small
+  static heart badge (no toggle: removal stays the full Favorites screen's job, same "preview, not a
+  second full feature" scope as the rest of this section), the history preview passes none.
+- **Both preview rows hide themselves when empty** (`favorites.length > 0` / `history.length > 0`)
+  rather than rendering their own nested empty state — Profile is a preview surface for those lists, and
+  the real empty states already exist on `/profile/favorites`/`/profile/history` (D-57/D-58); duplicating
+  them here would be a second copy of the same UI for a screen this brief didn't ask to touch.
+- **New `ActivitySummaryCard`, reusing `UserStats` (`useCurrentUser`) — same numbers as the top
+  `ProfileStats` row, a second, year-framed presentation of them**, not new data. Same "same data,
+  different shape, so a different component" reasoning the statistics screen's own `StatCard` already
+  used against `ProfileStats` (D-59).
+- **Not done on purpose**: a shared/persisted preferences store (see above — explicitly out of the
+  "no big refactor" scope); a real itinerary-progress system behind "Parcours en cours" (see above); a
+  "Voir sur la carte" action (no map screen exists); deleting or renaming any existing route (every
+  destination already existed); touching `PreferencesScreen`, `FavoritesScreen`, `HistoryScreen`,
+  `StatisticsScreen`, `LanguageScreen`, `ThemeScreen` or any other already-validated screen beyond what
+  points to them.

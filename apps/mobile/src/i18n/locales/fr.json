@@ -380,6 +380,24 @@
     "logoutConfirm": {
       "title": "Se déconnecter ?",
       "description": "Tu seras déconnecté de ton compte, mais tes données resteront en sécurité."
+    },
+    "likes": {
+      "title": "Ce que j'aime",
+      "edit": "Modifier"
+    },
+    "journey": {
+      "title": "Parcours en cours",
+      "stepsProgress": "{current} / {total} étapes",
+      "nextStep": "Prochaine étape",
+      "continueCta": "Continuer mon parcours",
+      "empty": {
+        "title": "Tu n'as aucun parcours en cours.",
+        "cta": "Découvrir des expériences"
+      }
+    },
+    "activity": {
+      "title": "Mon activité cette année",
+      "outingsThisYear": "sorties cette année"
     }
   },
   "statistics": {
@@ -460,6 +478,13 @@
     "languages": {
       "fr": "Français",
       "en": "English"
+    },
+    "sections": {
+      "account": "Compte",
+      "preferences": "Préférences ROAM",
+      "support": "Support",
+      "privacyData": "Confidentialité & données",
+      "session": "Session"
     }
   },
   "auth": {

@@ -380,6 +380,24 @@
     "logoutConfirm": {
       "title": "Log out?",
       "description": "You'll be signed out of your account, but your data will stay safe."
+    },
+    "likes": {
+      "title": "What I like",
+      "edit": "Edit"
+    },
+    "journey": {
+      "title": "Ongoing journey",
+      "stepsProgress": "{current} / {total} steps",
+      "nextStep": "Next stop",
+      "continueCta": "Continue my journey",
+      "empty": {
+        "title": "You have no ongoing journey.",
+        "cta": "Discover experiences"
+      }
+    },
+    "activity": {
+      "title": "My activity this year",
+      "outingsThisYear": "outings this year"
     }
   },
   "statistics": {
@@ -460,6 +478,13 @@
     "languages": {
       "fr": "Français",
       "en": "English"
+    },
+    "sections": {
+      "account": "Account",
+      "preferences": "ROAM preferences",
+      "support": "Support",
+      "privacyData": "Privacy & data",
+      "session": "Session"
     }
   },
   "auth": {

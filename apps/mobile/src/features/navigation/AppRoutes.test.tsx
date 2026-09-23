@@ -100,15 +100,16 @@ describe('AppRoutes (mocked session route protection)', () => {
   });
 
   // Scenario 4
-  it('Home → Profil → logout confirmation → Login, and back cannot return to Home', async () => {
+  it('Home → Profil → Paramètres → logout confirmation → Login, and back cannot return to Home', async () => {
     const utils = await renderApp(true);
-    await act(() => router.navigate('/profile'));
+    // "Se déconnecter" now lives in Paramètres, not Profil directly (sprint 5 Profile/Settings split).
+    await act(() => router.navigate('/profile/settings'));
 
     // Tapping "Se déconnecter" only opens the confirmation modal — no navigation yet.
     await act(async () => {
       fireEvent.press(screen.getByRole('button', { name: 'Se déconnecter' }));
     });
-    expect(utils.getPathname()).toBe('/profile');
+    expect(utils.getPathname()).toBe('/profile/settings');
     expect(screen.getByText('Se déconnecter ?')).toBeOnTheScreen();
 
     // Confirming inside the modal is what actually logs out and navigates.
@@ -125,7 +126,7 @@ describe('AppRoutes (mocked session route protection)', () => {
   // Scenario 4b
   it('Login reached via logout shows no back button, and cancelling the modal never logs out', async () => {
     const utils = await renderApp(true);
-    await act(() => router.navigate('/profile'));
+    await act(() => router.navigate('/profile/settings'));
 
     // The menu row is always the first "Se déconnecter" match; once the modal is open, the
     // confirm button is the last one — using `getAllByRole` throughout avoids ambiguity between
@@ -139,7 +140,7 @@ describe('AppRoutes (mocked session route protection)', () => {
     await act(async () => {
       fireEvent.press(screen.getByRole('button', { name: 'Annuler' }));
     });
-    expect(utils.getPathname()).toBe('/profile');
+    expect(utils.getPathname()).toBe('/profile/settings');
 
     // Reopen and confirm this time.
     await act(async () => {

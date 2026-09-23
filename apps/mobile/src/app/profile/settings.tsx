@@ -1,8 +1,5 @@
-import { useTranslation } from 'react-i18next';
-
-import { ProfilePlaceholder } from '@/features/profile/components/ProfilePlaceholder';
+import { SettingsScreen } from '@/features/profile/SettingsScreen';
 
 export default function ProfileSettingsRoute() {
-  const { t } = useTranslation();
-  return <ProfilePlaceholder title={t('profile.settings')} />;
+  return <SettingsScreen />;
 }

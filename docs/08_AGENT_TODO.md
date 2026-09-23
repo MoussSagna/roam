@@ -74,8 +74,10 @@ Use mock data. The onboarding is complete on the front end (no backend, nothing 
       state), sprint 5; the separate `/favorites` tab is still sprint-3 placeholder content
 - [~] History — "Mon historique" (`/profile/history`) built (completed experiences grouped by date,
       category filter, empty state), sprint 5
-- [~] Profile — main screen built (header, stats, menu); preferences, favorites, history, statistics,
-      language and theme built, other sub-screens still placeholders, sprint 5
+- [~] Profile — refactored into identity/activity/taste (header, stats, active journey, likes,
+      favorites/history previews, yearly activity) plus a new Settings screen for configuration
+      (`/profile/settings`); preferences, favorites, history, statistics, language and theme built,
+      other Settings sub-screens still placeholders, sprint 5
 - [~] Preference editing — "Mes préférences" built (experience types, ambiance, budget/distance
       sliders), sprint 5
 - [~] Statistics — "Mes statistiques" (`/profile/statistics`) built (summary cards, genre/city

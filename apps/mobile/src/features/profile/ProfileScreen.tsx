@@ -1,72 +1,74 @@
 import { useRouter } from 'expo-router';
-import CircleQuestionMark from 'lucide-react-native/icons/circle-question-mark';
-import Clock from 'lucide-react-native/icons/clock';
-import Globe from 'lucide-react-native/icons/globe';
 import Heart from 'lucide-react-native/icons/heart';
-import LogOut from 'lucide-react-native/icons/log-out';
 import Settings from 'lucide-react-native/icons/settings';
-import Shield from 'lucide-react-native/icons/shield';
-import SlidersHorizontal from 'lucide-react-native/icons/sliders-horizontal';
-import SunMoon from 'lucide-react-native/icons/sun-moon';
-import TrendingUp from 'lucide-react-native/icons/trending-up';
-import { useState } from 'react';
+import { useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
-import { View } from 'react-native';
+import { useWindowDimensions, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { useAuth } from '@/auth';
-import { ConfirmationModal, FadeInUp, IconButton, ScrollScreen, Text } from '@/components/ui';
+import { Chip, FadeInUp, IconButton, ScrollScreen, Text } from '@/components/ui';
+import { getCategoryLabel } from '@/features/experiences/lib/categoryLabel';
 import { TAB_BAR_CLEARANCE } from '@/features/navigation/tabBarConfig';
 import { useTabBarScrollHandler } from '@/features/navigation/TabBarCollapseContext';
-import { isLanguage, type Language } from '@/i18n';
-import { useTheme, type ThemePreference } from '@/theme';
+import { useCategories } from '@/hooks/useCategories';
+import { useTheme } from '@/theme';
+import type { Experience } from '@/types';
 
+import { ActiveJourneyCard } from './components/ActiveJourneyCard';
+import { ActivitySummaryCard } from './components/ActivitySummaryCard';
+import { ExperiencePreviewCard } from './components/ExperiencePreviewCard';
 import { ProfileHeader } from './components/ProfileHeader';
-import { ProfileMenuRow } from './components/ProfileMenuRow';
 import { ProfileStats } from './components/ProfileStats';
+import { SectionHeader } from '../home/components/SectionHeader';
+import { AMBIANCE_OPTIONS, DEFAULT_AMBIANCE } from './data/ambianceOptions';
+import { DEFAULT_EXPERIENCE_TYPES, EXPERIENCE_TYPES } from './data/experienceTypes';
+import { useActiveJourney } from './useActiveJourney';
 import { useCurrentUser } from './useCurrentUser';
+import { useFavoriteExperiences } from './useFavoriteExperiences';
+import { useHistoryExperiences } from './useHistoryExperiences';
 
 const DEFAULT_STATS = { outings: 0, placesDiscovered: 0, favorites: 0 };
-
-/** Explicit maps so each value stays a typed, checked i18n key, not a dynamic template literal
- * (`react-i18next`'s typed keys reject those — same pattern as `categoryLabel.ts`). */
-const LANGUAGE_LABEL_KEYS = {
-  fr: 'settings.languages.fr',
-  en: 'settings.languages.en',
-} as const satisfies Record<Language, string>;
-
-const THEME_LABEL_KEYS = {
-  light: 'settings.theme.light',
-  dark: 'settings.theme.dark',
-  system: 'settings.theme.system',
-} as const satisfies Record<ThemePreference, string>;
+const PREVIEW_COUNT = 3;
+const PREVIEW_GAP = 12;
+/** `ScrollScreen`'s own horizontal padding (`px-6` = 24px each side). */
+const SCREEN_HORIZONTAL_PADDING = 48;
 
 /**
- * Real profile screen (sprint 5, écran 1): header (avatar, name, bio, edit CTA), stats, and the
- * menu grouped exactly like the mockup — discovery (préférences/favoris/historique/statistiques),
- * settings (langue/thème) and support (aide/confidentialité) — then logout. Every row not built yet
- * this sprint pushes to a `ProfilePlaceholder` route (`docs/SCREEN_INTEGRATION_WORKFLOW.md` §7); its
- * body, not its route, gets replaced when that screen's own session comes.
+ * Real profile screen (sprint 5, "Profile / Settings" refactor): identity, activity and taste —
+ * "qui je suis, ce que j'aime et ce que je fais sur ROAM" — not a settings list. Everything that was
+ * account/app configuration (préférences/langue/thème/aide/confidentialité/déconnexion) moved to
+ * `SettingsScreen` (`/profile/settings`, reached from the gear icon); `docs/DECISIONS.md`.
  */
 export function ProfileScreen() {
-  const { t, i18n } = useTranslation();
+  const { t } = useTranslation();
   const router = useRouter();
-  const { logout } = useAuth();
-  const { preference: themePreference } = useTheme();
+  const { colors } = useTheme();
   const insets = useSafeAreaInsets();
   const onScroll = useTabBarScrollHandler();
   const { user } = useCurrentUser();
-  const [loggingOut, setLoggingOut] = useState(false);
-  const [logoutModalVisible, setLogoutModalVisible] = useState(false);
+  const { journey, isLoading: journeyLoading } = useActiveJourney();
+  const { favorites } = useFavoriteExperiences();
+  const { history } = useHistoryExperiences();
+  const categories = useCategories();
 
-  const language: Language = isLanguage(i18n.language) ? i18n.language : 'fr';
+  const { width: windowWidth } = useWindowDimensions();
+  const previewWidth =
+    (windowWidth - SCREEN_HORIZONTAL_PADDING - PREVIEW_GAP * (PREVIEW_COUNT - 1)) / PREVIEW_COUNT;
 
-  const handleLogout = async () => {
-    if (loggingOut) return;
-    setLoggingOut(true);
-    await logout();
-    router.replace('/auth/login');
-  };
+  const categoryLabelFor = useCallback(
+    (experience: Experience) => {
+      const category = categories.find((item) => experience.categoryIds.includes(item.id));
+      return category ? getCategoryLabel(t, category.slug) : null;
+    },
+    [categories, t],
+  );
+
+  const goToExperience = useCallback(
+    (experience: Experience) => {
+      router.push({ pathname: '/experience/[id]', params: { id: experience.id } });
+    },
+    [router],
+  );
 
   return (
     <ScrollScreen
@@ -75,7 +77,7 @@ export function ProfileScreen() {
       contentContainerStyle={{
         paddingTop: 24,
         paddingBottom: insets.bottom + TAB_BAR_CLEARANCE,
-        gap: 24,
+        gap: 28,
       }}
     >
       <View className="flex-row items-center justify-between">
@@ -98,81 +100,101 @@ export function ProfileScreen() {
             </View>
           </FadeInUp>
 
-          <View>
-            <ProfileMenuRow
-              icon={SlidersHorizontal}
-              label={t('profile.preferences')}
-              subtitle={t('profile.preferencesSubtitle')}
-              onPress={() => router.push('/profile/preferences')}
+          {!journeyLoading ? (
+            <ActiveJourneyCard
+              journey={journey}
+              onContinue={() => router.push('/itinerary/create')}
+              onDiscover={() => router.push('/discover')}
             />
-            <ProfileMenuRow
-              icon={Heart}
-              label={t('profile.favorites')}
-              subtitle={t('profile.favoritesSubtitle')}
-              onPress={() => router.push('/profile/favorites')}
+          ) : null}
+
+          <View className="gap-3">
+            <SectionHeader
+              title={t('profile.likes.title')}
+              onSeeAll={() => router.push('/profile/preferences')}
+              seeAllLabel={t('profile.likes.edit')}
             />
-            <ProfileMenuRow
-              icon={Clock}
-              label={t('profile.history')}
-              subtitle={t('profile.historySubtitle')}
-              onPress={() => router.push('/profile/history')}
-            />
-            <ProfileMenuRow
-              icon={TrendingUp}
-              label={t('profile.statistics')}
-              subtitle={t('profile.statisticsSubtitle')}
-              onPress={() => router.push('/profile/statistics')}
-            />
+            <View className="flex-row flex-wrap gap-2">
+              {EXPERIENCE_TYPES.filter((item) => DEFAULT_EXPERIENCE_TYPES.includes(item.id)).map(
+                (item) => (
+                  <Chip
+                    key={item.id}
+                    label={t(item.key)}
+                    icon={<item.icon size={14} strokeWidth={1.8} color={colors.text} />}
+                  />
+                ),
+              )}
+              {AMBIANCE_OPTIONS.filter((item) => DEFAULT_AMBIANCE.includes(item.id)).map((item) => (
+                <Chip
+                  key={item.id}
+                  label={t(item.key)}
+                  icon={<item.icon size={14} strokeWidth={1.8} color={colors.text} />}
+                />
+              ))}
+            </View>
           </View>
 
-          <View>
-            <ProfileMenuRow
-              icon={Globe}
-              label={t('settings.language')}
-              value={t(LANGUAGE_LABEL_KEYS[language])}
-              onPress={() => router.push('/profile/language')}
-            />
-            <ProfileMenuRow
-              icon={SunMoon}
-              label={t('settings.theme.title')}
-              value={t(THEME_LABEL_KEYS[themePreference])}
-              onPress={() => router.push('/profile/theme')}
-            />
-          </View>
+          {favorites.length > 0 ? (
+            <View className="gap-3">
+              <SectionHeader
+                title={t('profile.favorites')}
+                onSeeAll={() => router.push('/profile/favorites')}
+              />
+              <View className="flex-row" style={{ gap: PREVIEW_GAP }}>
+                {favorites.slice(0, PREVIEW_COUNT).map((experience) => (
+                  <ExperiencePreviewCard
+                    key={experience.id}
+                    experience={experience}
+                    subtitle={[categoryLabelFor(experience), experience.location]
+                      .filter(Boolean)
+                      .join(' · ')}
+                    width={previewWidth}
+                    onPress={goToExperience}
+                    badge={
+                      <View className="h-6 w-6 items-center justify-center rounded-pill bg-surface/90">
+                        <Heart
+                          size={12}
+                          strokeWidth={1.8}
+                          color={colors.error}
+                          fill={colors.error}
+                        />
+                      </View>
+                    }
+                  />
+                ))}
+              </View>
+            </View>
+          ) : null}
 
-          <View>
-            <ProfileMenuRow
-              icon={CircleQuestionMark}
-              label={t('profile.help')}
-              onPress={() => router.push('/profile/help')}
-            />
-            <ProfileMenuRow
-              icon={Shield}
-              label={t('profile.privacy')}
-              onPress={() => router.push('/profile/privacy')}
-            />
-          </View>
+          {history.length > 0 ? (
+            <View className="gap-3">
+              <SectionHeader
+                title={t('profile.history')}
+                onSeeAll={() => router.push('/profile/history')}
+              />
+              <View className="flex-row" style={{ gap: PREVIEW_GAP }}>
+                {history.slice(0, PREVIEW_COUNT).map((experience) => (
+                  <ExperiencePreviewCard
+                    key={experience.id}
+                    experience={experience}
+                    subtitle={[experience.visitedAt, experience.location]
+                      .filter(Boolean)
+                      .join(' · ')}
+                    width={previewWidth}
+                    onPress={goToExperience}
+                  />
+                ))}
+              </View>
+            </View>
+          ) : null}
 
-          <ProfileMenuRow
-            icon={LogOut}
-            label={t('profile.logout')}
-            tone="error"
-            onPress={() => setLogoutModalVisible(true)}
+          <ActivitySummaryCard
+            outings={user.stats?.outings ?? DEFAULT_STATS.outings}
+            placesDiscovered={user.stats?.placesDiscovered ?? DEFAULT_STATS.placesDiscovered}
+            onPress={() => router.push('/profile/statistics')}
           />
         </>
       ) : null}
-
-      <ConfirmationModal
-        visible={logoutModalVisible}
-        title={t('profile.logoutConfirm.title')}
-        description={t('profile.logoutConfirm.description')}
-        confirmLabel={t('profile.logout')}
-        cancelLabel={t('common.cancel')}
-        icon={LogOut}
-        loading={loggingOut}
-        onCancel={() => setLogoutModalVisible(false)}
-        onConfirm={() => void handleLogout()}
-      />
     </ScrollScreen>
   );
 }
