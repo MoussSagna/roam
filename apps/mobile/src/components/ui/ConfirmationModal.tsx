@@ -1,6 +1,6 @@
 import type { LucideIcon } from 'lucide-react-native';
 import { MotiView } from 'moti';
-import { useEffect, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { Modal, Pressable, View } from 'react-native';
 
 import { useReduceMotion } from '@/hooks/useReduceMotion';
@@ -32,6 +32,11 @@ export type ConfirmationModalProps = {
   loading?: boolean;
   /** Decorative icon shown in a tinted circle above the title. Omit for a text-only dialog. */
   icon?: LucideIcon;
+  /** Called once the dialog has fully left the screen (exit animation done, native `Modal` gone).
+   * For a confirm action that tears down the screen rendering this dialog (logout): run it here,
+   * not in `onConfirm` — a native `Modal` whose screen is removed while it is still presented stays
+   * frozen on iOS, with dead buttons (D-78). */
+  onExited?: () => void;
 };
 
 /**
@@ -52,6 +57,7 @@ export function ConfirmationModal({
   variant = 'default',
   loading = false,
   icon: Icon,
+  onExited,
 }: ConfirmationModalProps) {
   const { colors } = useTheme();
   const reduceMotion = useReduceMotion();
@@ -78,6 +84,17 @@ export function ConfirmationModal({
     const timeout = setTimeout(() => setShouldRender(false), EXIT_DURATION_MS);
     return () => clearTimeout(timeout);
   }, [visible]);
+
+  // Fired after the commit that unmounted the `Modal`, so the native dialog is really dismissed.
+  const onExitedRef = useRef(onExited);
+  useLayoutEffect(() => {
+    onExitedRef.current = onExited;
+  });
+  const wasRenderedRef = useRef(shouldRender);
+  useEffect(() => {
+    if (wasRenderedRef.current && !shouldRender) onExitedRef.current?.();
+    wasRenderedRef.current = shouldRender;
+  }, [shouldRender]);
 
   if (!shouldRender) {
     return null;

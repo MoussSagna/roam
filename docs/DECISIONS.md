@@ -2651,3 +2651,19 @@ Only what was asked; no new library, mock data, no Maps API.
   `Keyboard.dismiss()` (blurs the field). Closing the sheet never refocuses (`autoFocus` only acts on mount). `SearchBar`,
   `SearchInput`, the sheet, the filters and the Home are unchanged; opening Search from the bar itself still autofocuses.
 - **Tests:** `SearchScreen.test.tsx` → "filters never raise the keyboard (D-77)".
+
+### D-78 — Logout confirmation: log out only once the dialog has exited (frozen dialog on iOS)
+
+- **Symptom:** in Settings, the "Se déconnecter ?" dialog opened, but after "Se déconnecter" it stayed on screen and its
+  buttons did nothing.
+- **Cause:** `onConfirm` called `handleLogout` directly while the dialog was still presented. `logout()` (mock, instant)
+  flips `isLoggedIn`, and `Stack.Protected` removes every authenticated screen at once — Settings included, which renders
+  the dialog. On iOS the native `Modal` presented over that screen outlives it: still displayed, but its React tree (and
+  so its handlers) gone. It surfaced when D-63 moved logout from the Profile tab into the pushed Settings screen. Jest's
+  `Modal` is a plain view, so no test could see it.
+- **Fix:** `ConfirmationModal` gained a generic `onExited` (called after the commit that unmounted the `Modal`, i.e.
+  once the exit animation is over and the native dialog dismissed). Settings' confirm now closes the dialog and records
+  the choice; `onExited` runs the unchanged `handleLogout` (`logout()` → `router.replace('/auth/login')`). Cancel never
+  logs out. Rule for any confirm that tears its own screen down: run it in `onExited`, not `onConfirm`.
+- **Tests:** `ConfirmationModal` (`onExited` timing), `SettingsScreen` (no logout while the dialog is up, then Login);
+  the two `AppRoutes` logout scenarios flush the post-exit logout.

@@ -59,6 +59,7 @@ export function SettingsScreen() {
   const { logout } = useAuth();
   const [loggingOut, setLoggingOut] = useState(false);
   const [logoutModalVisible, setLogoutModalVisible] = useState(false);
+  const [logoutConfirmed, setLogoutConfirmed] = useState(false);
 
   const language: Language = isLanguage(i18n.language) ? i18n.language : 'fr';
 
@@ -67,6 +68,13 @@ export function SettingsScreen() {
     setLoggingOut(true);
     await logout();
     router.replace('/auth/login');
+  };
+
+  // Logging out removes this screen (`Stack.Protected`), so the dialog must be gone first: confirm
+  // closes it, and the logout itself runs once it has exited (`onExited`, D-78).
+  const confirmLogout = () => {
+    setLogoutConfirmed(true);
+    setLogoutModalVisible(false);
   };
 
   // Not `useCallback`, same reason as every other screen's own `handleScroll`: mutating a shared
@@ -194,7 +202,10 @@ export function SettingsScreen() {
         icon={LogOut}
         loading={loggingOut}
         onCancel={() => setLogoutModalVisible(false)}
-        onConfirm={() => void handleLogout()}
+        onConfirm={confirmLogout}
+        onExited={() => {
+          if (logoutConfirmed) void handleLogout();
+        }}
       />
     </View>
   );

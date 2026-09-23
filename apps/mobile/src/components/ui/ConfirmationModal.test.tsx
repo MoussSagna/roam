@@ -1,5 +1,7 @@
 import LogOut from 'lucide-react-native/icons/log-out';
-import { fireEvent, screen } from '@testing-library/react-native';
+import { fireEvent, screen, waitFor } from '@testing-library/react-native';
+import { useState } from 'react';
+import { Pressable } from 'react-native';
 
 import { renderWithProviders } from '@/test/renderWithProviders';
 
@@ -110,5 +112,47 @@ describe('ConfirmationModal', () => {
     );
 
     expect(screen.getByRole('header')).toHaveTextContent('Se déconnecter ?');
+  });
+
+  describe('onExited (D-78)', () => {
+    function Harness({ onExited }: { onExited: () => void }) {
+      const [visible, setVisible] = useState(false);
+      return (
+        <>
+          <Pressable testID="open" onPress={() => setVisible(true)} />
+          <ConfirmationModal
+            visible={visible}
+            title="Se déconnecter ?"
+            confirmLabel="Se déconnecter"
+            cancelLabel="Annuler"
+            onConfirm={() => setVisible(false)}
+            onCancel={() => setVisible(false)}
+            onExited={onExited}
+          />
+        </>
+      );
+    }
+
+    it('is not called while hidden from the start, nor on opening', async () => {
+      const onExited = jest.fn();
+      await renderWithProviders(<Harness onExited={onExited} />);
+
+      await fireEvent.press(screen.getByTestId('open'));
+      expect(screen.getByText('Se déconnecter ?')).toBeOnTheScreen();
+      expect(onExited).not.toHaveBeenCalled();
+    });
+
+    it('is called once, only after the dialog is fully gone', async () => {
+      const onExited = jest.fn();
+      await renderWithProviders(<Harness onExited={onExited} />);
+      await fireEvent.press(screen.getByTestId('open'));
+
+      await fireEvent.press(screen.getByRole('button', { name: 'Se déconnecter' }));
+      // Still mounted during the exit animation: not yet.
+      expect(onExited).not.toHaveBeenCalled();
+
+      await waitFor(() => expect(onExited).toHaveBeenCalledTimes(1));
+      expect(screen.queryByText('Se déconnecter ?')).toBeNull();
+    });
   });
 });

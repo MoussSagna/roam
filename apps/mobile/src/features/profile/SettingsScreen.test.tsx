@@ -102,7 +102,22 @@ describe('SettingsScreen', () => {
       const confirmButtons = screen.getAllByRole('button', { name: 'Se déconnecter' });
       await fireEvent.press(confirmButtons[confirmButtons.length - 1]);
 
-      expect(mockReplace).toHaveBeenCalledWith('/auth/login');
+      // Logout waits for the dialog to be fully gone (D-78), then replaces with Login.
+      await waitFor(() => expect(mockReplace).toHaveBeenCalledWith('/auth/login'));
+    });
+
+    it('confirming closes the dialog first and logs out only once it is gone (no frozen dialog, D-78)', async () => {
+      await renderSettings();
+
+      await fireEvent.press(screen.getByRole('button', { name: 'Se déconnecter' }));
+      const confirmButtons = screen.getAllByRole('button', { name: 'Se déconnecter' });
+      await fireEvent.press(confirmButtons[confirmButtons.length - 1]);
+
+      // Logging out tears this screen down: it must not happen while the dialog is still up.
+      expect(mockReplace).not.toHaveBeenCalled();
+      await waitFor(() => expect(mockReplace).toHaveBeenCalledWith('/auth/login'));
+      expect(screen.queryByText('Se déconnecter ?')).toBeNull();
+      expect(mockReplace).toHaveBeenCalledTimes(1);
     });
   });
 });

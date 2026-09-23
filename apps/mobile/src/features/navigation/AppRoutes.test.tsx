@@ -118,6 +118,10 @@ describe('AppRoutes (mocked session route protection)', () => {
       fireEvent.press(confirmButtons[confirmButtons.length - 1]);
       await jest.advanceTimersByTimeAsync(1000);
     });
+    // The logout runs once the dialog has fully exited (D-78): flush what that triggers.
+    await act(async () => {
+      await jest.advanceTimersByTimeAsync(1000);
+    });
 
     expect(utils.getPathname()).toBe('/auth/login');
     expect(router.canGoBack()).toBe(false);
@@ -149,6 +153,10 @@ describe('AppRoutes (mocked session route protection)', () => {
     await act(async () => {
       const buttons = logoutButtons();
       fireEvent.press(buttons[buttons.length - 1]);
+      await jest.advanceTimersByTimeAsync(1000);
+    });
+    // The logout runs once the dialog has fully exited (D-78): flush what that triggers.
+    await act(async () => {
       await jest.advanceTimersByTimeAsync(1000);
     });
     expect(utils.getPathname()).toBe('/auth/login');
