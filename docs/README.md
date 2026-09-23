@@ -35,12 +35,13 @@ now the real discovery screen** (hero carousel, mood chips, popular/nearby/for-y
 see `DECISIONS.md` D-45; the `Discover` tab and the `Favorites` tab are still sprint 3 placeholder content.
 **Experience detail and its full-screen photo gallery are built** (hero → gallery transition, reviews, similar
 experiences, mock data only) — see `DECISIONS.md` D-48; the itinerary/journey screen its CTAs lead to is still
-a placeholder. **Profile's main screen, "Mes préférences", "Mes favoris", "Mon historique", "Mes statistiques"
-and "Langue" are now real** (header, stats, grouped menu; experience types, ambiance, budget/distance sliders;
-favorited experiences with removal and an empty state; completed experiences grouped by date with a category
-filter; summary cards, a genre/city breakdown and a mood donut chart (`react-native-gifted-charts`); a
-dynamically derived, never-hardcoded language list — mock data only except the language system, one screen at
-a time) — see `DECISIONS.md` D-50, D-51, D-57, D-58, D-59, D-60; the other screens it links to (edit
-profile, theme, help, privacy, settings) are still placeholders, each built in its own session.
+a placeholder. **Profile's main screen, "Mes préférences", "Mes favoris", "Mon historique", "Mes statistiques",
+"Langue" and "Thème" are now real** (header, stats, grouped menu; experience types, ambiance, budget/distance
+sliders; favorited experiences with removal and an empty state; completed experiences grouped by date with a
+category filter; summary cards, a genre/city breakdown and a mood donut chart (`react-native-gifted-charts`); a
+dynamically derived, never-hardcoded language list; Light/Dark/System selection — mock data only except the
+language/theme systems, one screen at a time) — see `DECISIONS.md` D-50, D-51, D-57, D-58, D-59, D-60, D-61;
+the other screens it links to (edit profile, help, privacy, settings) are still placeholders, each built in
+its own session.
 
 The product is intentionally MVP-first. Do not expand scope without an explicit requirement.

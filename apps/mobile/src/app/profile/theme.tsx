@@ -1,8 +1,5 @@
-import { useTranslation } from 'react-i18next';
-
-import { ProfilePlaceholder } from '@/features/profile/components/ProfilePlaceholder';
+import { ThemeScreen } from '@/features/profile/ThemeScreen';
 
 export default function ProfileThemeRoute() {
-  const { t } = useTranslation();
-  return <ProfilePlaceholder title={t('settings.theme.title')} />;
+  return <ThemeScreen />;
 }

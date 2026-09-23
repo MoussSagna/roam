@@ -219,9 +219,10 @@ Do not mix French and English in a single UI state.
   text `#F1EDE4`, textSecondary `#A7B4AA`, primary `#86B096`, accent Peach `#E9CDB9`.
 - Light theme values changed to match the onboarding mockups: `primary` `#1A3E30`, `text` `#060A0E`,
   `textSecondary` `#454F5B` (raw Stone is below AA on Cream) — see `DECISIONS.md` D-04 and D-19. A test asserts WCAG AA contrast in both themes.
-- The Light / Dark / System switch has no dedicated UI yet (`/profile/theme` is still a placeholder);
-  the behavior is covered by `ThemeProvider.test.tsx` until that screen is built. The Français /
-  English switch **does** have a real screen now — see "Langue screen" below.
+- The Light / Dark / System switch has a real screen (`/profile/theme` → `ThemeScreen`, sprint 5,
+  `DECISIONS.md` D-61): a row per `THEME_PREFERENCES` entry, selecting one calls
+  `useTheme().setPreference` directly. The Français / English switch also has one — see "Langue
+  screen" below.
 
 ### i18n
 

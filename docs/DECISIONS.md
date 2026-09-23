@@ -1823,3 +1823,45 @@ churning a shared, already-validated file for a cleanup unrelated to the brief i
   entries in `fr.json`/`en.json` (see above — out of scope, no functional effect); a `getCurrentLanguage()`/
   `persistLanguage()` wrapper (see above, already covered); a route-tree test (standalone component test,
   same convention as every other profile sub-screen this sprint).
+
+### D-61 — Profile 8 "Thème" (route `/profile/theme`); reuses `THEME_PREFERENCES`, no design image this session
+
+Sprint 5, one screen at a time: `ThemeScreen` (`features/profile/`) replaces the `ProfilePlaceholder`
+that `/profile/theme` rendered since D-50. Built from memory of the same mockup board's tile 08 (no
+fresh image was attached this session) plus `05_THEME_AND_I18N.md`'s own documented order — Light,
+Dark, System — used to resolve the one point of genuine uncertainty (see below).
+
+- **Reuses `THEME_PREFERENCES` (`theme/tokens.ts`) directly, not a second list.** Same "derive, don't
+  hardcode" principle "Langue" established (D-60), but simpler here: the theme preference set is a
+  small, fixed enum (light/dark/system) that doesn't grow file-by-file the way locales do, so there is
+  no dynamic-derivation mechanism to build — iterating the existing array is already the correct,
+  minimal choice. Grepped every usage of `THEME_PREFERENCES` first (only `isThemePreference`'s
+  membership check) to confirm reusing it for display order wouldn't couple two unrelated concerns.
+- **Row order (Light, Dark, System) was not re-verified against the mockup pixel-for-pixel** — this
+  session had no image attached, only a text instruction to follow "l'écran fourni" from earlier in the
+  project. Recall of the board's own tile 08 was genuinely uncertain on ordering (System first, or
+  Light first), so the order was resolved from the one written source available:
+  `05_THEME_AND_I18N.md`'s own "Theme switching UX" section, which lists "Light / Dark / System" —
+  matching `THEME_PREFERENCES`'s own declared order for free. **Flag for visual re-check**: if the
+  actual mockup shows a different order, this is a one-line change (`THEME_PREFERENCES`'s declared
+  order, or a local display-order override in this screen — not a redesign).
+- **New `ThemeOptionRow`** (`features/profile/components/`): icon (in a tinted circle, matching
+  `ProfileMenuRow`'s own icon treatment) + label + checkmark when active — same shape and
+  `radiogroup`/`radio` semantics as "Langue"'s `LanguageOptionRow` (D-60), a `LucideIcon` in place of
+  the flag emoji since a theme preference has no flag-like asset. Not a generalized shared row
+  component covering both screens: the two leading elements (a `LucideIcon` component vs. an emoji
+  string) have different prop shapes, and this is only the second use — same "don't abstract on the
+  second occurrence" restraint the rest of this sprint's small per-screen row components already show
+  (`FavoriteExperienceRow`, `HistoryEntryRow`).
+- **Selecting a row calls the existing `useTheme().setPreference` directly** — already resolves
+  `system` against the OS scheme and persists under `roam.theme` (D-05); no new persistence, no second
+  provider. Applies immediately, stays on the screen, same "no save button, no navigate-away" choice as
+  "Langue" (D-60): a preference switch, not a multi-field form to commit (unlike Preferences, D-52).
+- **Icons**: `Sun`/`Moon`/`Monitor` (Lucide) — `Monitor` for "Système" rather than reusing
+  `ProfileMenuRow`'s own `SunMoon` (that one represents "theme" as a menu-row concept generically; here
+  each of the three rows needs its own distinct, literal icon).
+- **Animation**: `FadeInUp` staggers the three rows on mount (unguarded, same precedent as every other
+  list this sprint); no separate checkmark animation, same reasoning as "Langue".
+- **Not done on purpose**: verifying the exact row order/spacing against the real mockup image (see
+  above, flagged for human review); a route-tree test (standalone component test, same convention as
+  every other profile sub-screen this sprint).
