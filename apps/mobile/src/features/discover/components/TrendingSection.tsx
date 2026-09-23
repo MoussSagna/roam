@@ -1,7 +1,8 @@
 import { useTranslation } from 'react-i18next';
-import { FlatList, View } from 'react-native';
+import { View } from 'react-native';
 
-import { ExperienceCard } from '@/features/home/components/ExperienceCard';
+import { HorizontalCarousel } from '@/components/ui';
+import { CARD_WIDTH, ExperienceCard } from '@/features/home/components/ExperienceCard';
 import { SectionHeader } from '@/features/home/components/SectionHeader';
 import type { Experience } from '@/types';
 
@@ -12,8 +13,11 @@ type TrendingSectionProps = {
   onPress: (experience: Experience) => void;
 };
 
+const SPACING = 16;
+
 /** "Ce qui fait envie en ce moment" (Discover, sprint 6 §"Section 5"): reuses Home's `ExperienceCard`,
- * ranked by `pickTrending` (highest rated first). */
+ * ranked by `pickTrending` (highest rated first). Full-bleed + snap (`HorizontalCarousel`): reuses
+ * `ExperienceCard`'s own `CARD_WIDTH`. */
 export function TrendingSection({
   experiences,
   favoriteIds,
@@ -29,12 +33,11 @@ export function TrendingSection({
   return (
     <View className="gap-3" testID="discover-section-trending">
       <SectionHeader title={t('discover.sections.trending')} />
-      <FlatList
-        horizontal
+      <HorizontalCarousel
         data={experiences}
         keyExtractor={(experience) => experience.id}
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={{ gap: 16, paddingRight: 24 }}
+        itemWidth={CARD_WIDTH}
+        spacing={SPACING}
         renderItem={({ item }) => (
           <ExperienceCard
             experience={item}

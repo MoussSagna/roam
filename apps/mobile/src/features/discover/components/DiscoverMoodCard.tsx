@@ -13,7 +13,9 @@ type DiscoverMoodCardProps = {
   onPress: (mood: SuggestionMood) => void;
 };
 
-const TILE_SIZE = 96;
+/** Exported so `SuggestionsSection`'s carousel can compute its own `snapToInterval` from the exact
+ * same width — no separate hardcoded copy. */
+export const TILE_SIZE = 96;
 
 /** "Suggestions pour toi" tile (Discover, sprint 6 §"Section 2"): icon + label, purely presentational —
  * selecting one only highlights it, no downstream filtering (same "local state, nothing wired to it

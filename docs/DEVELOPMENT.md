@@ -198,8 +198,9 @@ repositories) — not a social feed: no profiles, followers, stories, comments o
 | Ce qui fait envie en ce moment | `TrendingSection.tsx` + `lib/pickTrending.ts`                                 | Reuses Home's `ExperienceCard`, highest-rated first, `FlatList horizontal`                                                                       |
 | Explorer par envie             | `CollectionsSection.tsx` + `DiscoverCollectionCard` (`variant="compact"`)     | Non-featured collections only (the featured ones already have their own card above), `FlatList horizontal`                                       |
 
-Every carousel/list on this page is a `FlatList horizontal`, not a `ScrollView` — see "Horizontal lists /
-carousels" below. "Voir l'expérience"/a card tap pushes to `experience/[id]`; a collection tap pushes to
+Every carousel on this page (all but the secondary nav) is `components/ui/HorizontalCarousel.tsx`, not a
+plain `FlatList` or `ScrollView` — full-bleed past the page's own padding, snaps one card at a time; see
+"Horizontal lists / carousels" below. "Voir l'expérience"/a card tap pushes to `experience/[id]`; a collection tap pushes to
 `collection/[id]` (`CollectionDetailPlaceholder`, not the real screen yet). Favorites reuse Home's own
 `useFavoriteExperienceIds` (in-memory, no persistence). Discover reuses `useTabBarScrollHandler()` like
 every other tab screen, but has no floating/`StickyRevealHeader` chrome of its own: unlike Experience
@@ -350,21 +351,49 @@ gallery) or other genuinely non-repeating/special-cased content — not for a pl
   being a small fixed mock array.
 - **Good practices**: a stable `keyExtractor` (the item's own id, not its index, once one exists);
   `renderItem` stays a plain function unless a card is expensive enough to be worth `React.memo`; don't
-  reshape/recreate the `data` array on every render (memoize it if it's derived); always
-  `showsHorizontalScrollIndicator={false}`; `contentContainerStyle` uses the same `gap`/`paddingRight`
-  shape every carousel in this codebase already uses (e.g. `{ gap: 16, paddingRight: 24 }`); consider a
-  loading/empty state once a section's data can genuinely be empty (Discover's sections return `null`
-  when their pool is empty, rather than rendering an empty `FlatList`). Don't reach for `getItemLayout`,
-  `windowSize` or other virtualization tuning prematurely — only when a real performance problem shows up.
+  reshape/recreate the `data` array on every render (memoize it if it's derived); consider a loading/empty
+  state once a section's data can genuinely be empty (Discover's sections return `null` when their pool
+  is empty, rather than rendering an empty `FlatList`). Don't reach for `getItemLayout`, `windowSize` or
+  other virtualization tuning prematurely — only when a real performance problem shows up.
 - **Not a carousel**: a single, non-repeating block (Discover's `ImmersiveExperienceCard`) or a paging
   pager with its own `ref`/shared-value scroll tracking (Home's `HeroCarousel`, experience detail's
   `ExperienceHero`) stay a plain `View` or `ScrollView` respectively — the rule is about lists of
   repeating items, not every horizontally-laid-out thing.
-- **Existing `ScrollView horizontal` carousels were audited, not migrated, this sprint** (Home's mood/
-  popular/nearby/for-you sections, experience detail's "Suggestions similaires", the history screen's
-  category filter): each is an already-validated, tested screen, and this sprint's job was to put the
-  strategy in place and apply it to Discover, not to retrofit every existing screen in one sweep. Migrate
-  one of them the next time it's touched for an unrelated reason — see `docs/DECISIONS.md` D-66.
+- **Existing `ScrollView horizontal` carousels were audited, not migrated** (Home's mood/popular/nearby/
+  for-you sections, experience detail's "Suggestions similaires", the history screen's category filter):
+  each is an already-validated, tested screen, and the sprints that introduced this rule focused on
+  putting the strategy in place and applying it to Discover, not retrofitting every existing screen in
+  one sweep. Migrate one of them the next time it's touched for an unrelated reason — see
+  `docs/DECISIONS.md` D-66.
+
+#### Full-bleed carousels and snapping (`docs/DECISIONS.md` D-67)
+
+A carousel of partial-width "peek" cards sitting inside a page's own horizontal padding (`px-6`) gets
+visually boxed in: cards near either edge are clipped by that padding instead of bleeding to the screen's
+physical edge, and nothing about `ScrollView`/`FlatList` prevents that on its own. `components/ui/`'s
+`HorizontalCarousel` (all of Discover's own carousels use it, `RoamSelectionSection` /
+`SuggestionsSection` / `NearbySection` / `TrendingSection` / `CollectionsSection`) is the reusable fix:
+
+- **Full bleed**: `marginHorizontal: -sidePadding` on the `FlatList` itself cancels the parent's padding
+  (`sidePadding` defaults to 24, matching `px-6`), while `contentContainerStyle`'s matching
+  `paddingHorizontal: sidePadding` keeps the first/last item aligned with the rest of the page's content
+  instead of touching the physical screen edge. Reach for this whenever a horizontal carousel sits inside
+  a padded page and should visually escape that padding — not just in Discover.
+- **Snap**: `snapToInterval={itemWidth + spacing}`, `snapToAlignment="start"`,
+  `decelerationRate="fast"`. `itemWidth` must be the exact value the card renders at — a fixed constant
+  (`ExperienceCard`'s `CARD_WIDTH`, `DiscoverMoodCard`'s `TILE_SIZE`, `DiscoverCollectionCard`'s
+  `COMPACT_WIDTH`) or a value derived from `useWindowDimensions()` the same way the card derives it
+  (`DiscoverCollectionCard`'s `getHeroCardWidth`) — **exported by the card itself and imported by the
+  section**, not a second hardcoded copy that can silently drift out of sync with what actually renders.
+  `pagingEnabled` was considered instead for the hero cards (near-full-width) and rejected: the carousel's
+  own frame is full window width once it's full-bleed, but the hero card's width is
+  `windowWidth - 2 * sidePadding` — narrower than the frame — so paging (which pages by the scroll view's
+  own frame width) would drift out of alignment after a few swipes; `snapToInterval` computed from the
+  card's real width doesn't have that problem.
+- **Not every horizontal list needs this**: `HorizontalCarousel` takes `snapEnabled` (default `true`) for
+  a future non-snapping full-bleed use, and `DiscoverTabs` (the secondary-nav chip row) was deliberately
+  left as a plain, padded `FlatList` — it's a navigation control, not a "peek card" carousel, and bleeding
+  it to the edges wasn't asked for.
 
 ### Theme (Light / Dark / System)
 

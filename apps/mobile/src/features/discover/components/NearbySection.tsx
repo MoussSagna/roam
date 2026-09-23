@@ -1,7 +1,8 @@
 import { useTranslation } from 'react-i18next';
-import { FlatList, View } from 'react-native';
+import { View } from 'react-native';
 
-import { ExperienceCard } from '@/features/home/components/ExperienceCard';
+import { HorizontalCarousel } from '@/components/ui';
+import { CARD_WIDTH, ExperienceCard } from '@/features/home/components/ExperienceCard';
 import { SectionHeader } from '@/features/home/components/SectionHeader';
 import type { Experience } from '@/types';
 
@@ -13,9 +14,12 @@ type NearbySectionProps = {
   onSeeMap: () => void;
 };
 
+const SPACING = 16;
+
 /** "Près de toi" (Discover, sprint 6 §"Section 4"): reuses Home's `ExperienceCard` — same shape the
  * brief asks for (image, category/type, distance, rating) and the same "one card, several sections"
- * precedent as `SimilarExperiencesSection`. "Voir la carte" leads to the (placeholder) Map screen. */
+ * precedent as `SimilarExperiencesSection`. "Voir la carte" leads to the (placeholder) Map screen.
+ * Full-bleed + snap (`HorizontalCarousel`): reuses `ExperienceCard`'s own `CARD_WIDTH`. */
 export function NearbySection({
   experiences,
   favoriteIds,
@@ -36,12 +40,11 @@ export function NearbySection({
         onSeeAll={onSeeMap}
         seeAllLabel={t('discover.sections.seeMap')}
       />
-      <FlatList
-        horizontal
+      <HorizontalCarousel
         data={experiences}
         keyExtractor={(experience) => experience.id}
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={{ gap: 16, paddingRight: 24 }}
+        itemWidth={CARD_WIDTH}
+        spacing={SPACING}
         renderItem={({ item }) => (
           <ExperienceCard
             experience={item}

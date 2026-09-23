@@ -7,6 +7,7 @@ export {
   type ConfirmationModalVariant,
 } from './ConfirmationModal';
 export { FadeInUp } from './FadeInUp';
+export { HorizontalCarousel, type HorizontalCarouselProps } from './HorizontalCarousel';
 export { IconButton, type IconButtonProps } from './IconButton';
 export { PlaceholderCard } from './PlaceholderCard';
 export { Screen } from './Screen';

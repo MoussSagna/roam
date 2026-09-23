@@ -17,9 +17,18 @@ type DiscoverCollectionCardProps = {
 };
 
 const HERO_HEIGHT = 220;
-const COMPACT_WIDTH = 180;
+/** Exported so `CollectionsSection`'s carousel can compute its own `snapToInterval` from the exact
+ * same width — no separate hardcoded copy. */
+export const COMPACT_WIDTH = 180;
 const COMPACT_HEIGHT = 220;
 const SCREEN_PADDING = 24 * 2;
+
+/** The hero card's width is derived from the window, not fixed — exported so `RoamSelectionSection`'s
+ * carousel can compute its own `snapToInterval` from the exact same value (no separate copy that could
+ * drift out of sync with what the card actually renders at). */
+export function getHeroCardWidth(windowWidth: number): number {
+  return Math.round(windowWidth - SCREEN_PADDING);
+}
 
 /**
  * Discover's collection card, configurable rather than duplicated (sprint 6 brief §7 "Composants"):
@@ -72,7 +81,7 @@ export function DiscoverCollectionCard({
     );
   }
 
-  const heroWidth = Math.round(windowWidth - SCREEN_PADDING);
+  const heroWidth = getHeroCardWidth(windowWidth);
 
   return (
     <Pressable

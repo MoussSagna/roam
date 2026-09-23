@@ -2168,3 +2168,56 @@ API data (a `FlatList` doesn't change shape when its `data` stops being a small 
   - Every vertical page-container `ScrollView` (`ScrollScreen`, the auth screens' own `ScrollView` +
     `KeyboardAvoidingView`, `ExperienceDetailScreen`'s main scroll) — the rule is about **horizontal**
     carousels of repeating items; a page's own vertical scroll container is a different thing entirely.
+
+## Discover carousels: full-bleed + snap (2026-09-23)
+
+### D-67 — `HorizontalCarousel` (generic, reusable); Discover's five carousels bleed past the page padding and snap
+
+Follow-up requested after reviewing D-65/D-66 on device: Discover's carousels sat inside the page's own
+`px-6` padding, so "peek" cards were visually boxed in (clipped by that padding instead of bleeding to the
+screen's physical edge) and swiping didn't settle cleanly on a card boundary. Explicitly **not** a
+redesign — no section, card, color, text, navigation or animation changed; this only touches how the five
+existing `FlatList`s scroll and are positioned.
+
+- **New primitive: `components/ui/HorizontalCarousel.tsx`.** A thin `FlatList` wrapper, not a new
+  abstraction over cards/data: it owns exactly two mechanics — full-bleed positioning and snap — and
+  passes everything else (`data`, `renderItem`, `keyExtractor`, …) straight through. Checked first for an
+  existing carousel component to adapt (brief §7); none existed, so this is new, placed in
+  `components/ui/` (not `features/discover/`) since nothing about it is Discover-specific — any future
+  screen with the same "padded page, full-bleed peek-card carousel" shape can reuse it as-is.
+- **Full bleed**: `marginHorizontal: -sidePadding` on the `FlatList` (default 24, matching `px-6`) cancels
+  the parent's padding; a matching `paddingHorizontal: sidePadding` in `contentContainerStyle` keeps the
+  first/last item aligned with the rest of the page's content rather than touching the physical screen
+  edge. A wrapper `View` with negative margin around an untouched `FlatList` was considered and rejected
+  as an unnecessary extra layer — the negation belongs on the scrollable element itself.
+- **Snap**: `snapToInterval={itemWidth + spacing}`, `snapToAlignment="start"`, `decelerationRate="fast"`,
+  exactly as requested. `pagingEnabled` was evaluated for the Sélection ROAM hero cards (brief's own
+  suggestion for "cards occupying exactly one page") and rejected: once full-bleed, the carousel's own
+  frame is the full window width, but the hero card itself is narrower
+  (`windowWidth - 2 * sidePadding`, `DiscoverCollectionCard`'s `getHeroCardWidth`) — paging by the frame's
+  width would drift out of alignment with the card's actual width after a few swipes. `snapToInterval`
+  computed from the card's real width doesn't have that mismatch, so it's used uniformly for all five
+  carousels rather than special-casing the hero one.
+- **One exported width constant per card, not a second hardcoded copy in each section** — the exact
+  failure mode brief §5 warns about ("ne mets pas une valeur arbitraire en dur"): `ExperienceCard` exports
+  `CARD_WIDTH` (used by `NearbySection`/`TrendingSection`), `DiscoverMoodCard` exports `TILE_SIZE`
+  (`SuggestionsSection`), `DiscoverCollectionCard` exports `COMPACT_WIDTH` (`CollectionsSection`) and
+  `getHeroCardWidth(windowWidth)` (`RoamSelectionSection`, which calls `useWindowDimensions()` itself and
+  passes the same number both to the card and to the carousel's `itemWidth`). None of these exports change
+  what the card looks like — purely making an already-fixed value or already-existing formula reusable.
+- **`DiscoverTabs` (the secondary-nav chip row) was deliberately left untouched.** It's a navigation
+  control, not a "peek card" carousel — the reported problem (cards clipped by the page's padding) doesn't
+  really apply to a row of pill-shaped chips, and bleeding the tab selector to the screen edges wasn't
+  asked for; doing it anyway would be exactly the "modifier la navigation" this pass was told not to do.
+- **Existing `ScrollView horizontal` carousels (D-66's audit) are unaffected** — this pass only touches
+  Discover's own `FlatList`s; Home's mood/popular/nearby/for-you sections, experience detail's
+  "Suggestions similaires" and the history screen's category filter still use their original
+  `ScrollView`s, unchanged. `HorizontalCarousel` exists now as the target shape for whenever one of them
+  is migrated later, but adopting it there is still its own, separate change (D-66 still applies: migrate
+  one screen at a time, not as a drive-by of this pass).
+- **New test file `HorizontalCarousel.test.tsx`.** No visible role/text distinguishes a full-bleed,
+  snapping `FlatList` from a plain one, so — unlike the rest of this codebase's component tests — it reads
+  the rendered `FlatList` element's own props via a `testID` passed straight through
+  (`screen.getByTestId(...).props`), the only query that can actually see `style`/`snapToInterval`/etc.
+  `UNSAFE_getByType` (the more common React Testing Library escape hatch for this) doesn't exist in this
+  project's RNTL version (14.0.1) — `getByTestId` reaches the same props on the host node without it.
