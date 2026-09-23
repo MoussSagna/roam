@@ -1,5 +1,5 @@
-import { MapPlaceholder } from '@/features/map/MapPlaceholder';
+import { MapScreen } from '@/features/map/MapScreen';
 
 export default function MapRoute() {
-  return <MapPlaceholder />;
+  return <MapScreen />;
 }

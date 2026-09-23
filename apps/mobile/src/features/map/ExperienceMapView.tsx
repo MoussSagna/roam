@@ -1,14 +1,8 @@
-import { Image } from 'expo-image';
-import Star from 'lucide-react-native/icons/star';
-import X from 'lucide-react-native/icons/x';
 import { useState } from 'react';
-import { useTranslation } from 'react-i18next';
 import type { LayoutChangeEvent } from 'react-native';
 import { Pressable, View } from 'react-native';
 import Svg, { Path, Polygon, Rect } from 'react-native-svg';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { Button, Text } from '@/components/ui';
 import {
   MAP_DESIGN_HEIGHT,
   MAP_DESIGN_WIDTH,
@@ -17,6 +11,8 @@ import {
 } from '@/features/onboarding/components/MapPreview';
 import { mapColors, useTheme } from '@/theme';
 import type { Experience } from '@/types';
+
+import { ExperienceMapCard } from './components/ExperienceMapCard';
 
 const PIN_SIZE = 28;
 const PIN_MARGIN_PERCENT = 12;
@@ -32,8 +28,8 @@ function pinPosition(id: string): { leftPercent: number; topPercent: number } {
   }
   const span = 100 - PIN_MARGIN_PERCENT * 2;
   return {
-    leftPercent: PIN_MARGIN_PERCENT + (hash % 1000) / 1000 * span,
-    topPercent: PIN_MARGIN_PERCENT + ((hash >> 10) % 1000) / 1000 * span,
+    leftPercent: PIN_MARGIN_PERCENT + ((hash % 1000) / 1000) * span,
+    topPercent: PIN_MARGIN_PERCENT + (((hash >> 10) % 1000) / 1000) * span,
   };
 }
 
@@ -46,13 +42,11 @@ type ExperienceMapViewProps = {
  * Mocked illustrated map (Sprint 6 brief §10): same decorative streets/parks illustration as
  * onboarding's `MapPreview`, scaled to fill its container, with one pin per experience. Tapping a pin
  * opens a small bottom card (image, rating, distance, "Voir" CTA); shared by the standalone `/map`
- * route (`MapPlaceholder`) and Search's inline Liste/Carte toggle — one map surface, not two parallel
+ * route (`MapScreen`, now on `RoamMap`) and Search's inline Liste/Carte toggle — one map surface, not two parallel
  * ones (brief: "ne pas créer un système de carte parallèle"). No real map SDK this sprint.
  */
 export function ExperienceMapView({ experiences, onPressExperience }: ExperienceMapViewProps) {
-  const { t } = useTranslation();
   const { colors, scheme } = useTheme();
-  const insets = useSafeAreaInsets();
   const map = mapColors[scheme];
   const [containerSize, setContainerSize] = useState({ width: 0, height: 0 });
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -134,60 +128,11 @@ export function ExperienceMapView({ experiences, onPressExperience }: Experience
       })}
 
       {selectedExperience ? (
-        <View
-          testID="experience-map-card"
-          className="absolute left-3 right-3 flex-row items-center gap-3 rounded-large border border-border bg-surface p-3"
-          style={{ bottom: insets.bottom + 12 }}
-        >
-          <View style={{ width: 56, height: 56 }} className="overflow-hidden rounded-medium bg-surfaceElevated">
-            {selectedExperience.coverImage ? (
-              <Image
-                source={selectedExperience.coverImage}
-                style={{ flex: 1 }}
-                contentFit="cover"
-                accessibilityIgnoresInvertColors
-              />
-            ) : null}
-          </View>
-
-          <View className="flex-1 gap-0.5">
-            <Text variant="body" numberOfLines={1} className="font-bodyMedium">
-              {selectedExperience.title}
-            </Text>
-            <View className="flex-row items-center gap-1">
-              {selectedExperience.rating ? (
-                <>
-                  <Star size={12} strokeWidth={1.5} color={colors.warning} fill={colors.warning} />
-                  <Text variant="caption" tone="secondary">
-                    {selectedExperience.rating.toFixed(1)}
-                  </Text>
-                </>
-              ) : null}
-              {selectedExperience.distanceLabel ? (
-                <Text variant="caption" tone="secondary">
-                  {selectedExperience.rating
-                    ? `· ${selectedExperience.distanceLabel}`
-                    : selectedExperience.distanceLabel}
-                </Text>
-              ) : null}
-            </View>
-          </View>
-
-          <Button
-            label={t('map.viewPlace')}
-            variant="primary"
-            onPress={() => onPressExperience(selectedExperience)}
-          />
-
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel={t('common.close')}
-            onPress={() => setSelectedId(null)}
-            hitSlop={8}
-          >
-            <X size={16} strokeWidth={1.8} color={colors.textSecondary} />
-          </Pressable>
-        </View>
+        <ExperienceMapCard
+          experience={selectedExperience}
+          onPressView={onPressExperience}
+          onClose={() => setSelectedId(null)}
+        />
       ) : null}
     </View>
   );

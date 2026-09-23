@@ -163,7 +163,7 @@ Prioritize tests for:
 ## Implementation status (updated 2026-09-21)
 
 Only the **mobile foundation** exists. Nothing below the "Frontend → Mobile" level of this document
-is implemented: no web app, no API, no database, no shared `packages/*`, no map provider chosen.
+is implemented: no web app, no API, no database, no shared `packages/*`. Mobile map: `react-native-maps` (sprint 7, `DECISIONS.md` D-70) on mock data only — no Places/Directions API.
 Rationale for every choice: `DECISIONS.md`. Commands and conventions: `DEVELOPMENT.md`.
 
 ### Repository

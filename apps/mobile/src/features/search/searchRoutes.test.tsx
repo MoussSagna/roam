@@ -93,13 +93,15 @@ describe('Search navigation (sprint 6)', () => {
     expect(utils.getPathname()).toBe('/discover');
   });
 
-  it('Discover -> Map placeholder now renders pins instead of "coming soon"', async () => {
+  it('Discover -> Map renders the real map (RoamMap) with pins', async () => {
     const utils = await renderApp();
     await act(() => router.navigate('/discover'));
 
     await fireEvent.press(screen.getByRole('button', { name: 'Voir la carte' }));
 
     expect(utils.getPathname()).toBe('/map');
-    expect(screen.getByTestId('experience-map-view')).toBeOnTheScreen();
+    expect(await screen.findByTestId('roam-map')).toBeOnTheScreen();
+    expect(screen.getByRole('button', { name: 'Balade panoramique' })).toBeOnTheScreen();
+    expect(screen.queryByText(/Unmatched Route/i)).toBeNull();
   });
 });

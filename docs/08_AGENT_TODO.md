@@ -41,9 +41,9 @@ Status for **mobile** (2026-09-22). Web and API foundations are not started.
       recent searches (persisted), trending chips, explore-by-mood, live suggestions, results
       (list/map), and a filters bottom sheet, all over the mock experience pool — no real query
       engine yet, sprint 6 — `DECISIONS.md` D-68
-- [~] Map — `ExperienceMapView` (mocked illustrated map + pins), reached standalone via `/map`
-      (`MapPlaceholder`, Discover's "Voir la carte") and inline from Search's Liste/Carte toggle;
-      still no real map SDK — `DECISIONS.md` D-65, D-68
+- [~] Map — sprint 7 replaces the illustrated maps with `react-native-maps` (`RoamMap`), one screen at a time
+      (`DECISIONS.md` D-70). [x] `/map` (Discover's "Voir la carte"); [ ] Search's Liste/Carte toggle
+      (`ExperienceMapView`); [ ] Experience detail's `MapPreviewRow`; [ ] onboarding location preview
 - [ ] Feedback
 
 Use mock data. The onboarding is complete on the front end (no backend, nothing saved: D-28).
@@ -73,7 +73,7 @@ Use mock data. The onboarding is complete on the front end (no backend, nothing 
 
 - [ ] Place provider
 - [ ] Geolocation
-- [ ] Maps
+- [~] Maps — `react-native-maps` on mock data (sprint 7, D-70); real place/routing data still to do
 - [ ] Routing
 - [ ] Opening hours where available
 

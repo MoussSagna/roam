@@ -11,7 +11,7 @@ import { ThemeProvider } from '@/theme';
 /**
  * Mounts the real `src/app` route tree (see `experienceRoutes.test.tsx` / `tabsRoutes.test.tsx`), so a
  * broken route file would actually fail here. Covers the sprint 6 navigation chain: Discover ->
- * Experience Detail, Discover -> Collection placeholder, Discover -> Map placeholder.
+ * Experience Detail, Discover -> Collection placeholder, Discover -> Map.
  */
 function TestLayout() {
   return (
@@ -65,7 +65,7 @@ describe('Discover navigation (sprint 6)', () => {
     expect(screen.getByText('Cet écran arrive bientôt.')).toBeOnTheScreen();
   });
 
-  it('Discover -> Map placeholder, with no "Unmatched Route"', async () => {
+  it('Discover -> Map, with no "Unmatched Route"', async () => {
     const utils = await renderApp();
     await act(() => router.navigate('/discover'));
 
@@ -74,5 +74,6 @@ describe('Discover navigation (sprint 6)', () => {
     expect(utils.getPathname()).toBe('/map');
     expect(screen.queryByText(/Unmatched Route/i)).toBeNull();
     expect(screen.getByText('Ton parcours')).toBeOnTheScreen();
+    expect(await screen.findByTestId('roam-map')).toBeOnTheScreen();
   });
 });

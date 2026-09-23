@@ -13,8 +13,9 @@ chips, popular/nearby/for-you sections, sprint 5, `DECISIONS.md` D-45). **Discov
 discovery page** (Sélection ROAM, suggestions, an immersive experience block, nearby/trending experiences, editorial
 collections — sprint 6, `DECISIONS.md` D-65); the `/favorites` tab is still the sprint 3 placeholder content.
 **Experience detail and its full-screen gallery are also built** (sprint 5, `DECISIONS.md`
-D-48); the itinerary/journey screen it leads to is still a placeholder, and so is the Map screen Discover's "Voir la
-carte" now links to (`DECISIONS.md` D-65). **Profile is now identity/activity/taste
+D-48); the itinerary/journey screen it leads to is still a placeholder. **The Map screen Discover's "Voir la
+carte" links to is now a real map** (`react-native-maps`, sprint 7, `DECISIONS.md` D-70); the other illustrated maps are being
+replaced one screen at a time. **Profile is now identity/activity/taste
 — header, stats, "Parcours en cours", "Ce que j'aime", favorites/history previews and a yearly activity
 summary — and configuration moved to a new, real Settings screen** (`/profile/settings`: account, préférences,
 langue/thème, aide, confidentialité, déconnexion — all reused routes/rows, sprint 5, `DECISIONS.md` D-63).
@@ -89,7 +90,7 @@ apps/mobile/
     │   ├── experiences/     # Experience detail (route experience/[id]) + gallery/ (route gallery/[id]) — sprint 5
     │   ├── auth/            # Authentication: all 7 screens built (Entry, Login, Register, ForgotPassword, ResetCode, NewPassword, ResetSuccess)
     │   ├── itinerary/       # CreateJourneyPlaceholder (route itinerary/create) — not the real screen yet
-    │   ├── map/             # MapPlaceholder (route /map) — not the real screen yet, sprint 6
+    │   ├── map/             # Map (route /map): RoamMap (react-native-maps) + markers/hook/lib; ExperienceMapView = Search's still-illustrated map — sprint 7, D-70
     │   └── recommendations, outing, feedback
     ├── hooks/               # Cross-feature hooks (useBootstrap, useReduceMotion, useCtaVisibility)
     ├── i18n/                # i18next setup + locales/fr.json, locales/en.json
@@ -194,7 +195,7 @@ repositories) — not a social feed: no profiles, followers, stories, comments o
 | Sélection ROAM                 | `RoamSelectionSection.tsx` + `DiscoverCollectionCard` (`variant="hero"`)      | Featured (`Collection.isFeatured`) editorial collections, `FlatList horizontal`                                                                  |
 | Suggestions pour toi           | `SuggestionsSection.tsx` + `DiscoverMoodCard.tsx` + `data/suggestionMoods.ts` | Ce soir / Entre amis / En couple / Culture / Nature / Activités — presentational only, `FlatList horizontal`                                     |
 | Grande expérience immersive    | `components/ImmersiveExperienceCard.tsx` + `lib/pickImmersiveExperience.ts`   | One fixed card (not a carousel); static editorial copy, links to a picked experience                                                             |
-| Près de toi                    | `NearbySection.tsx` + `lib/pickNearby.ts`                                     | Reuses Home's `ExperienceCard`; "Voir la carte" → `/map` (mocked illustrated map, sprint 6), `FlatList horizontal`                                |
+| Près de toi                    | `NearbySection.tsx` + `lib/pickNearby.ts`                                     | Reuses Home's `ExperienceCard`; "Voir la carte" → `/map` (real `RoamMap`, sprint 7), `FlatList horizontal`                                |
 | Ce qui fait envie en ce moment | `TrendingSection.tsx` + `lib/pickTrending.ts`                                 | Reuses Home's `ExperienceCard`, highest-rated first, `FlatList horizontal`                                                                       |
 | Explorer par envie             | `CollectionsSection.tsx` + `DiscoverCollectionCard` (`variant="compact"`)     | Non-featured collections only (the featured ones already have their own card above), `FlatList horizontal`                                       |
 
@@ -222,11 +223,45 @@ mock experience pool.
 | Results                   | `SearchResultsHeader` + `SearchResultsList` (`FlatList`) or `ExperienceMapView`         | Count, quick filter chips, "Filtres", Liste/Carte toggle; results are `SearchResultCard`, a full-width sibling of `ExperienceCard` sized for a single-column list instead of a carousel |
 | Filters                   | `SearchFiltersSheet`                                                                    | Bottom sheet on `ConfirmationModal`'s `Modal`/`MotiView` plumbing; category (`useCategories`), distance, budget (`context.budget.*`), "Quand ?", options; local draft, live result count |
 | Empty                     | `SearchEmptyState`                                                                       | Relax-distance / clear-filters / see-trending actions (`07_DATA_AND_RECOMMENDATION.md`'s "no perfect match" guidance) plus a `pickTrending` fallback carousel |
-| Map                       | `features/map/ExperienceMapView.tsx`                                                    | Shared with the standalone `/map` (`MapPlaceholder`); mocked illustrated map (reuses onboarding `MapPreview`'s streets/parks), pins positioned by a deterministic hash of the experience id — no real map SDK |
+| Map                       | `features/map/ExperienceMapView.tsx`                                                    | Still the mocked illustrated map (reuses onboarding `MapPreview`'s streets/parks), pins positioned by a deterministic hash of the experience id; shares `ExperienceMapCard` with `/map`. **Next in line to get `RoamMap`** (D-70) |
 
 Favorites reuse Home's `useFavoriteExperienceIds`; a result/suggestion/map-pin tap pushes to
 `experience/[id]` (`ExperienceDetailScreen`) — no separate detail screen. See D-68 for the full
 rationale and trade-offs.
+
+## Map (current state)
+
+Real map (sprint 7, `DECISIONS.md` D-70): **`react-native-maps`**, replacing the illustrated maps **one screen at a
+time**.
+
+> **Rule:** Les MapPlaceholder sont remplacées progressivement, une screen à la fois. Chaque intégration doit être
+> validée avant de passer à la suivante.
+
+| Screen / route                                | Surface                                                              | Status                   |
+| --------------------------------------------- | -------------------------------------------------------------------- | ------------------------ |
+| Map — `/map` (Discover "Voir la carte")       | `features/map/MapScreen.tsx` → `RoamMap`                             | **Real map (sprint 7)**  |
+| Search — Liste/Carte toggle                   | `ExperienceMapView` (illustrated)                                    | Next                     |
+| Experience detail — "Voir sur la carte"       | `MapPreviewRow` → onboarding `MapPreview` (illustrated)              | To do                    |
+| Onboarding location                           | `MapPreview` (illustrated, decorative)                               | To do (may stay static)  |
+
+```text
+Screen → hook (useNearbyMapExperiences) → ExperienceRepository (mock, Experience.coordinates)
+       → RoamMap / ExperienceMarker (features/map/components) → react-native-maps
+```
+
+- `RoamMap` is the **only** component (with `ExperienceMarker`) allowed to import `react-native-maps`; screens pass
+  `MapMarkerData[]` (`features/map/types/map.types.ts`), a selected id and press callbacks. It frames the markers
+  once (`lib/region.ts`), clips to a rounded frame, and follows the theme through `userInterfaceStyle` (iOS).
+- Selection state lives in the screen's hook, not in the map. The bottom card is `ExperienceMapCard`.
+- **Mock data only**: no Google Places / Directions / Geocoding, no network. Coordinates are on the mock
+  experiences (`Experience.coordinates`). Real data (place provider, geolocation, routing) is Phase E of
+  `08_AGENT_TODO.md`; `Polyline`, user location and camera control will be added to `RoamMap` when a screen needs
+  them.
+- **Dark mode**: iOS (Apple Maps) follows the theme; Android (Google Maps) keeps its light native style for now.
+- **Expo Go** works as is, no key in the repo. **Development/production builds** need a Google Maps key for Android
+  (`expo.android.config.googleMaps.apiKey`, provided by EAS secrets, never committed) — see D-70.
+- **Tests**: `react-native-maps` is mocked globally (`jest.setup.ts`, `src/test/reactNativeMapsMock.tsx`); assert on
+  `testID="roam-map"` / `mock-map-view` and on markers by role `button` + title.
 
 ## Experience detail & gallery (current state)
 

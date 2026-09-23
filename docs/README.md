@@ -55,6 +55,7 @@ D-62.
 **Global search is now real** (`/search`), opened identically from both Home's and Discover's search
 bars: recent searches (persisted), trending chips, explore-by-mood, live suggestions, filterable
 results in a list or a mocked illustrated map, and a "no results" state with fallback suggestions — mock
-data only, no real query engine or map SDK — see `DECISIONS.md` D-68.
+data only, no real query engine — see `DECISIONS.md` D-68. The Map screen (`/map`) is now a real
+`react-native-maps` map on mock data (sprint 7, D-70); the other illustrated maps are replaced one screen at a time.
 
 The product is intentionally MVP-first. Do not expand scope without an explicit requirement.

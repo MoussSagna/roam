@@ -1,6 +1,6 @@
 import type { ImageSourcePropType } from 'react-native';
 
-import type { BudgetRange, Mood } from './common';
+import type { BudgetRange, Coordinates, Mood } from './common';
 
 export type ExperienceReview = {
   id: string;
@@ -35,6 +35,8 @@ export type Experience = {
    * of the mock content (`docs/DECISIONS.md` D-09/D-10) — no separate formatting layer for mock data.
    */
   location?: string;
+  /** Where the experience sits on a map (its anchor point). Mock coordinates — no geocoding yet. */
+  coordinates?: Coordinates;
   distanceLabel?: string;
   durationLabel?: string;
   priceLabel?: string;

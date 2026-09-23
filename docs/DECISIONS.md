@@ -2357,3 +2357,65 @@ shared component.
   its existing tests); `HomeScreen.test.tsx` covers pressing the header-docked search bar once
   scrolled past the Hero. The three pre-existing notification-button scroll tests were **not** changed
   and still pass.
+
+## Sprint 7 — real maps
+
+### D-70 — `react-native-maps` is the map solution; `MapPlaceholder`s are replaced one screen at a time; Map screen first
+
+**Rule (do not break):** _Les MapPlaceholder sont remplacées progressivement, une screen à la fois. Chaque
+intégration doit être validée avant de passer à la suivante._ Each integration ends with tests, a commit and a
+stop for visual validation.
+
+**Audit (start of sprint 7).** No real map SDK existed. The surfaces that stood in for a map are:
+
+| # | Screen / route                                    | Surface today                                                       | Status                  |
+| - | ------------------------------------------------- | ------------------------------------------------------------------- | ----------------------- |
+| 1 | Map — `/map` (Discover "Voir la carte")           | `MapScreen` (was named `MapPlaceholder`) → **`RoamMap`**            | **Done (this decision)** |
+| 2 | Search — Liste/Carte toggle (`/search`)           | `ExperienceMapView` (illustrated map + hash-positioned pins)        | Next                    |
+| 3 | Experience detail — "Voir sur la carte"           | `MapPreviewRow` → onboarding `MapPreview` illustration              | To do                   |
+| 4 | Onboarding location — "Où souhaites-tu sortir ?"  | `MapPreview` illustration (a decorative preview, not a real place)  | To do (may stay static) |
+
+There is no itinerary map, outing/live map or place-detail map yet (`features/itinerary`, `outing`,
+`recommendations` are empty or placeholders); they will get `RoamMap` when those screens are built.
+
+**Choices.**
+
+- **`react-native-maps` 1.27.2** (`npx expo install`, SDK 57-compatible), the only map library. No Google Places,
+  Directions or Geocoding API, no backend, no network call: the data is mocked.
+- **Layering** — `Screen → hook → repository (mock) → RoamMap → react-native-maps`. Only
+  `features/map/components/RoamMap.tsx` and `ExperienceMarker.tsx` import the vendor; the rest of the app sees
+  `MapMarkerData` (`features/map/types/map.types.ts`), so switching provider (`04_TECH_STACK.md`: Google Maps or
+  Mapbox) touches those two files. Created and nothing more: `RoamMap`, `ExperienceMarker`,
+  `ExperienceMapCard` (the selection card, extracted from `ExperienceMapView` so the two maps share it while the
+  illustrated one is being phased out), `useNearbyMapExperiences`, `lib/region.ts`, `MapScreen`. Polyline, user
+  location and camera controls are **not** built (nothing needs them yet).
+- **`RoamMap` role**: draws markers, frames them once on mount (`getRegionForCoordinates`; Paris when empty),
+  reports marker/map taps. It does not own selection — the screen does (`useNearbyMapExperiences`). Frame is
+  `overflow-hidden rounded-large`, so the native view is clipped to the same radius as before.
+- **Data** — `Experience` gained an optional `coordinates` (mock Paris coordinates on the 14 mock
+  experiences, `services/mock/data.ts`). This replaced the hash-of-the-id positioning of the illustrated map.
+  No separate `places` repository was added: the existing `ExperienceRepository` already serves the pool, and
+  `Place` (which has coordinates) is not joined to experiences yet. A future API implementation returns real
+  coordinates through the same repository.
+- **Scope of the swap** — only `/map` uses `RoamMap`. `ExperienceMapView` (Search) is untouched apart from using
+  the shared `ExperienceMapCard`. `MapPlaceholder.tsx` was renamed `MapScreen.tsx` (it stopped being a placeholder
+  in sprint 6) — the route file `app/map.tsx` is otherwise unchanged.
+- **Interactions**: pan/zoom (native), tap a pin → selected pin + bottom card, tap it again / tap the map / the
+  card's close button → deselect, "Voir le lieu" → `experience/[id]`. Rotation, pitch, compass and the Android
+  toolbar are off. The back button is the screen's own (`router.back()`); the native swipe-back stays disabled
+  (D-53), and the map's own pan gesture is unaffected. The screen does not scroll (map is `flex-1`), so no
+  ScrollView/gesture conflict exists.
+- **Dark mode**: `userInterfaceStyle` follows the app theme, which Apple Maps (iOS) honors. Google Maps (Android)
+  keeps its native light style: a dark `customMapStyle` would need hex colors outside the theme tokens
+  (`DEVELOPMENT.md` forbids them in components), so it is deferred, documented rather than half-done.
+- **Expo Go vs development build.** Works in Expo Go (iOS: Apple Maps; Android: Google Maps through Expo Go's own
+  key) with no key in the repo. For a **development/production build** the Google Maps SDK needs a key, to be
+  provided through EAS secrets / an untracked config, **never committed**: `expo.android.config.googleMaps.apiKey`
+  (Android, mandatory) and `expo.ios.config.googleMapsApiKey` (iOS, only if `provider="google"` is chosen — Apple
+  Maps needs none). Nothing else is required: no location permission (the user position is not shown).
+- **Tests** — `jest.setup.ts` mocks `react-native-maps` globally with `src/test/reactNativeMapsMock.tsx`
+  (`MapView` → a `View` keeping its props, `Marker` → a pressable named after `accessibilityLabel`).
+  `RoamMap.test.tsx`, `MapScreen.test.tsx`, `region.test.ts`; the Discover → Map route tests now assert `RoamMap`.
+- **Future real data**: real coordinates/routes come with the place provider, geolocation and routing phases
+  (`08_AGENT_TODO.md` Phase E): `Polyline` for itineraries, a user-location marker, camera control — added to
+  `RoamMap` only when a screen needs them.
