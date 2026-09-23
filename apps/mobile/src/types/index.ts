@@ -1,3 +1,4 @@
+export type * from './collection';
 export type * from './common';
 export type * from './experience';
 export type * from './favorite';

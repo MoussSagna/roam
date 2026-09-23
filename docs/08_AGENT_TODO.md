@@ -24,9 +24,12 @@ Status for **mobile** (2026-09-22). Web and API foundations are not started.
 - [x] Onboarding (the 7 mockup screens plus the animated profile-creation simulation; the photos of the last screens are temporary — see `DECISIONS.md` D-19 to D-27)
 - [x] Home — real discovery screen (hero carousel, mood chips, popular/nearby/for-you sections),
       built on the mock experience pool — `DECISIONS.md` D-45
+- [x] Discover — immersive editorial discovery page (Sélection ROAM, suggestions, an immersive
+      experience block, nearby/trending experiences, editorial collections), built on the mock
+      experience and collection pools — `DECISIONS.md` D-65, D-66
 - [x] Main navigation — four tabs (Home, Discover, Favorites, Profile) behind a floating pill/bubble
       tab bar that collapses on scroll and expands on tap; placeholder scrollable content on
-      Discover/Favorites/Profile — `DECISIONS.md` D-38 to D-43
+      Favorites/Profile — `DECISIONS.md` D-38 to D-43
 - [x] Authentication screens — **front-end only, simulated** (Login, Register, Forgot password + their states). All 7 screens done: Entry, Login, Register, Forgot password, Reset code, New password, Reset success — see `DECISIONS.md` D-28, D-29, D-31–D-36 and `docs/SCREEN_INTEGRATION_WORKFLOW.md`. The mockup's post-auth screens (welcome-back, location permission, "Tout est prêt") were never in this sprint's scope and remain undone.
 - [ ] Context flow
 - [~] Recommendation cards — `ExperienceCard` (reusable, `features/home/components/`) built and used
@@ -34,7 +37,8 @@ Status for **mobile** (2026-09-22). Web and API foundations are not started.
 - [x] Experience detail — real screen (`experience/[id]`) plus a dedicated full-screen gallery
       (`gallery/[id]`) with a hero -> gallery Reanimated transition, sprint 5 — `DECISIONS.md` D-48
 - [ ] Itinerary — CTA reached via `itinerary/create`, still a placeholder (`DECISIONS.md` D-48)
-- [ ] Map placeholder
+- [~] Map placeholder — route exists (`/map`, `MapPlaceholder`), reached from Discover's "Voir la
+      carte"; not the real map screen yet — `DECISIONS.md` D-65
 - [ ] Feedback
 
 Use mock data. The onboarding is complete on the front end (no backend, nothing saved: D-28).
