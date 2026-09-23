@@ -1,4 +1,12 @@
-import type { Category, Collection, Experience, Place, User } from '@/types';
+import type {
+  Category,
+  Collection,
+  Experience,
+  Place,
+  SearchFilters,
+  SearchSuggestion,
+  User,
+} from '@/types';
 
 /**
  * Data-access contracts. UI code depends on these interfaces only, never on `fetch`,
@@ -38,6 +46,14 @@ export interface UserRepository {
   getCurrentUser(): Promise<User>;
 }
 
+export interface SearchRepository {
+  /** Short, capped list of query-text and experience suggestions for a partial query (sprint 6 §5). */
+  suggest(query: string): Promise<SearchSuggestion[]>;
+  /** Deterministic text + facet matching over the experience pool (sprint 6 §2: no real query engine
+   * this sprint). */
+  search(query: string, filters?: SearchFilters): Promise<Experience[]>;
+}
+
 export type Repositories = {
   categories: CategoryRepository;
   places: PlaceRepository;
@@ -45,4 +61,5 @@ export type Repositories = {
   collections: CollectionRepository;
   auth: AuthRepository;
   users: UserRepository;
+  search: SearchRepository;
 };

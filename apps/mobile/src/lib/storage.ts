@@ -6,6 +6,8 @@ export const STORAGE_KEYS = {
   language: 'roam.language',
   /** Mocked session (no backend yet), see `docs/DECISIONS.md`. */
   session: 'roam.session.isLoggedIn',
+  /** Search's recent-queries list (sprint 6), see `useRecentSearches`. */
+  recentSearches: 'roam.search.recent',
 } as const;
 
 /** Storage failures must never crash the app: preferences simply fall back to defaults. */

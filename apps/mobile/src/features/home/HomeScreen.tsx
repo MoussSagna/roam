@@ -157,6 +157,10 @@ export function HomeScreen() {
           <SearchBar
             placeholder={t('home.search.placeholder')}
             filterLabel={t('home.search.filters')}
+            onPress={() => router.push({ pathname: '/search', params: { context: 'home' } })}
+            onPressFilter={() =>
+              router.push({ pathname: '/search', params: { context: 'home', openFilters: '1' } })
+            }
           />
 
           <View className="gap-3" testID="home-section-moods">

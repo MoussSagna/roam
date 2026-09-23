@@ -160,7 +160,7 @@ existing `ExperienceRepository`/`CategoryRepository` (`useHomeExperiences`), not
 | Section                             | Component                                                              | Notes                                                                                                     |
 | ----------------------------------- | ---------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------- |
 | Hero carousel                       | `features/home/components/HeroCarousel.tsx`                            | Full-bleed, swipeable, paging `ScrollView`; dots (`CarouselDots`) + prev/next; the 5 `isHero` experiences |
-| Search bar (mocked)                 | `components/ui/SearchBar.tsx`                                          | Reusable primitive; no real query engine yet                                                              |
+| Search bar                          | `components/ui/SearchBar.tsx`                                          | Opens the shared `/search` (`context: 'home'`); see "Search" below                                        |
 | Selon ton humeur                    | `Chip` (icon slot) + `features/home/data/moods.ts`                     | 5 mood chips, single choice, drives "Des idées pour toi"                                                  |
 | Les expériences les plus populaires | `features/home/components/ExperienceCard.tsx`                          | The 3 `isPopular` experiences                                                                             |
 | Lieux proches de toi                | `features/home/components/NearbyCard.tsx` + `data/nearbyCategories.ts` | 5 static category shortcuts (no geolocation)                                                              |
@@ -190,11 +190,11 @@ repositories) — not a social feed: no profiles, followers, stories, comments o
 | Section                        | Component                                                                     | Notes                                                                                                                                            |
 | ------------------------------ | ----------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
 | Secondary nav                  | `features/discover/components/DiscoverTabs.tsx`                               | "Pour toi" / "Tendances" / "À proximité" / "Collections", `FlatList horizontal`; narrows which sections show (`DiscoverScreen`'s `TAB_SECTIONS`) |
-| Search bar (mocked)            | `components/ui/SearchBar.tsx`                                                 | Reused from Home; no real query engine yet                                                                                                       |
+| Search bar                     | `components/ui/SearchBar.tsx`                                                 | Reused from Home; opens the shared `/search` (`context: 'discover'`); see "Search" below                                                        |
 | Sélection ROAM                 | `RoamSelectionSection.tsx` + `DiscoverCollectionCard` (`variant="hero"`)      | Featured (`Collection.isFeatured`) editorial collections, `FlatList horizontal`                                                                  |
 | Suggestions pour toi           | `SuggestionsSection.tsx` + `DiscoverMoodCard.tsx` + `data/suggestionMoods.ts` | Ce soir / Entre amis / En couple / Culture / Nature / Activités — presentational only, `FlatList horizontal`                                     |
 | Grande expérience immersive    | `components/ImmersiveExperienceCard.tsx` + `lib/pickImmersiveExperience.ts`   | One fixed card (not a carousel); static editorial copy, links to a picked experience                                                             |
-| Près de toi                    | `NearbySection.tsx` + `lib/pickNearby.ts`                                     | Reuses Home's `ExperienceCard`; "Voir la carte" → `/map` (placeholder), `FlatList horizontal`                                                    |
+| Près de toi                    | `NearbySection.tsx` + `lib/pickNearby.ts`                                     | Reuses Home's `ExperienceCard`; "Voir la carte" → `/map` (mocked illustrated map, sprint 6), `FlatList horizontal`                                |
 | Ce qui fait envie en ce moment | `TrendingSection.tsx` + `lib/pickTrending.ts`                                 | Reuses Home's `ExperienceCard`, highest-rated first, `FlatList horizontal`                                                                       |
 | Explorer par envie             | `CollectionsSection.tsx` + `DiscoverCollectionCard` (`variant="compact"`)     | Non-featured collections only (the featured ones already have their own card above), `FlatList horizontal`                                       |
 
@@ -205,6 +205,28 @@ plain `FlatList` or `ScrollView` — full-bleed past the page's own padding, sna
 `useFavoriteExperienceIds` (in-memory, no persistence). Discover reuses `useTabBarScrollHandler()` like
 every other tab screen, but has no floating/`StickyRevealHeader` chrome of its own: unlike Experience
 Detail or Profile, it has no full-bleed hero photo at the very top for a header to reveal over.
+
+## Search (current state)
+
+Shared global search (sprint 6, `DECISIONS.md` D-68), reached from both Home's and Discover's
+`SearchBar` (`router.push({ pathname: '/search', params: { context } })`) — one screen, not two: the
+`context` param only changes which existing placeholder copy is shown
+(`home.search.placeholder`/`discover.search.placeholder`). Built on a new `SearchRepository`
+(`services/mock/search.ts`, deterministic text/facet matching, no real query engine) over the existing
+mock experience pool.
+
+| State                    | Component(s)                                                                          | Notes                                                                                                     |
+| ------------------------- | -------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------- |
+| Initial (no query)        | `RecentSearchList` + `TrendingChips` + `ExploreByMoodSection`                          | Recent searches persisted via `lib/storage.ts` (`useRecentSearches`); trending is a static chip grid; explore-by-mood reuses Discover's `SUGGESTION_MOODS`/`DiscoverMoodCard` |
+| Typing                    | `SearchSuggestionsList`                                                                | Debounced `suggest()`; query-text suggestions then up to a few matching experiences                                     |
+| Results                   | `SearchResultsHeader` + `SearchResultsList` (`FlatList`) or `ExperienceMapView`         | Count, quick filter chips, "Filtres", Liste/Carte toggle; results are `SearchResultCard`, a full-width sibling of `ExperienceCard` sized for a single-column list instead of a carousel |
+| Filters                   | `SearchFiltersSheet`                                                                    | Bottom sheet on `ConfirmationModal`'s `Modal`/`MotiView` plumbing; category (`useCategories`), distance, budget (`context.budget.*`), "Quand ?", options; local draft, live result count |
+| Empty                     | `SearchEmptyState`                                                                       | Relax-distance / clear-filters / see-trending actions (`07_DATA_AND_RECOMMENDATION.md`'s "no perfect match" guidance) plus a `pickTrending` fallback carousel |
+| Map                       | `features/map/ExperienceMapView.tsx`                                                    | Shared with the standalone `/map` (`MapPlaceholder`); mocked illustrated map (reuses onboarding `MapPreview`'s streets/parks), pins positioned by a deterministic hash of the experience id — no real map SDK |
+
+Favorites reuse Home's `useFavoriteExperienceIds`; a result/suggestion/map-pin tap pushes to
+`experience/[id]` (`ExperienceDetailScreen`) — no separate detail screen. See D-68 for the full
+rationale and trade-offs.
 
 ## Experience detail & gallery (current state)
 

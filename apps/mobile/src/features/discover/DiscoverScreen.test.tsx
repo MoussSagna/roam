@@ -35,6 +35,28 @@ describe('DiscoverScreen (sprint 6 — immersive discovery)', () => {
     expect(screen.getByText('Que veux-tu découvrir ?')).toBeOnTheScreen();
   });
 
+  it('opens Search (context: discover) when the search bar is pressed', async () => {
+    await renderDiscover();
+
+    await fireEvent.press(screen.getByRole('search'));
+
+    expect(mockPush).toHaveBeenCalledWith({
+      pathname: '/search',
+      params: { context: 'discover' },
+    });
+  });
+
+  it('opens Search with the filter sheet when the filter button is pressed', async () => {
+    await renderDiscover();
+
+    await fireEvent.press(screen.getByRole('button', { name: 'Filtres' }));
+
+    expect(mockPush).toHaveBeenCalledWith({
+      pathname: '/search',
+      params: { context: 'discover', openFilters: '1' },
+    });
+  });
+
   it('shows the four secondary-nav tabs, "Pour toi" selected by default', async () => {
     await renderDiscover();
 

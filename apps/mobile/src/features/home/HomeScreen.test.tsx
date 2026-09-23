@@ -53,6 +53,28 @@ describe('HomeScreen (sprint 5 — discovery)', () => {
     expect(screen.getByRole('button', { name: 'Filtres' })).toBeOnTheScreen();
   });
 
+  it('opens Search (context: home) when the search bar is pressed', async () => {
+    await renderHome();
+
+    await fireEvent.press(screen.getByRole('search'));
+
+    expect(mockPush).toHaveBeenCalledWith({
+      pathname: '/search',
+      params: { context: 'home' },
+    });
+  });
+
+  it('opens Search with the filter sheet when the filter button is pressed', async () => {
+    await renderHome();
+
+    await fireEvent.press(screen.getByRole('button', { name: 'Filtres' }));
+
+    expect(mockPush).toHaveBeenCalledWith({
+      pathname: '/search',
+      params: { context: 'home', openFilters: '1' },
+    });
+  });
+
   it('shows all five mood chips and lets the user pick one', async () => {
     await renderHome();
 

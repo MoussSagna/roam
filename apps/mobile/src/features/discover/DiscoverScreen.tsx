@@ -121,6 +121,10 @@ export function DiscoverScreen() {
       <SearchBar
         placeholder={t('discover.search.placeholder')}
         filterLabel={t('discover.search.filters')}
+        onPress={() => router.push({ pathname: '/search', params: { context: 'discover' } })}
+        onPressFilter={() =>
+          router.push({ pathname: '/search', params: { context: 'discover', openFilters: '1' } })
+        }
       />
 
       <DiscoverTabs selected={selectedTab} onSelect={setSelectedTab} />

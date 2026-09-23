@@ -52,5 +52,9 @@ Settings) before calling the existing mocked `logout()`/navigation-reset flow, a
 is fixed: `AuthTopBar`'s back button no longer renders when there's nothing to go back to (previously
 always rendered, so it could be pressed with no route behind it right after logout) — see `DECISIONS.md`
 D-62.
+**Global search is now real** (`/search`), opened identically from both Home's and Discover's search
+bars: recent searches (persisted), trending chips, explore-by-mood, live suggestions, filterable
+results in a list or a mocked illustrated map, and a "no results" state with fallback suggestions — mock
+data only, no real query engine or map SDK — see `DECISIONS.md` D-68.
 
 The product is intentionally MVP-first. Do not expand scope without an explicit requirement.

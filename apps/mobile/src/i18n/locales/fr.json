@@ -226,6 +226,65 @@
       "description": "Une erreur est survenue pendant le chargement du contenu."
     }
   },
+  "search": {
+    "title": "Recherche",
+    "clearQuery": "Effacer la recherche",
+    "recent": {
+      "title": "Recherches récentes",
+      "remove": "Supprimer « {query} » des recherches récentes"
+    },
+    "trending": {
+      "title": "Tendances",
+      "rooftops": "Rooftops",
+      "restaurants": "Restaurants",
+      "exhibitions": "Expositions",
+      "bars": "Bars"
+    },
+    "explore": {
+      "title": "Explorer par envie"
+    },
+    "suggestions": {
+      "title": "Suggestions",
+      "experiencesTitle": "Expériences"
+    },
+    "results": {
+      "count": "{count} expériences",
+      "quickFilters": {
+        "all": "Tous",
+        "openNow": "Ouvert maintenant",
+        "nearby": "< 2 km"
+      },
+      "filters": "Filtres",
+      "viewList": "Liste",
+      "viewMap": "Carte"
+    },
+    "filters": {
+      "title": "Filtres",
+      "category": "Catégorie",
+      "distance": "Distance",
+      "distanceValue": "{count} km",
+      "budget": "Budget",
+      "when": "Quand ?",
+      "whenValue": {
+        "now": "Maintenant",
+        "today": "Aujourd'hui",
+        "weekend": "Ce week-end"
+      },
+      "options": "Options",
+      "openNow": "Ouvert maintenant",
+      "walkable": "Accessible à pied",
+      "reset": "Réinitialiser",
+      "apply": "Voir {count} résultats"
+    },
+    "empty": {
+      "title": "Aucune sortie trouvée",
+      "description": "Nous n'avons rien trouvé avec cette recherche. Mais on peut essayer autrement.",
+      "expandArea": "Élargir la zone",
+      "clearFilters": "Retirer un filtre",
+      "seeTrending": "Voir les tendances",
+      "fallbackTitle": "Peut-être que ça te plaira"
+    }
+  },
   "context": {
     "mood": {
       "title": "Comment tu te sens aujourd'hui ?",

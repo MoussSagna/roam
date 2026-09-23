@@ -56,6 +56,7 @@ export function AppRoutes() {
         <Stack.Screen name="gallery/[id]" options={{ animation: 'fade', gestureEnabled: false }} />
         <Stack.Screen name="collection/[id]" />
         <Stack.Screen name="map" />
+        <Stack.Screen name="search" />
         <Stack.Screen name="itinerary/create" />
         <Stack.Screen name="profile/edit" />
         <Stack.Screen name="profile/preferences" />

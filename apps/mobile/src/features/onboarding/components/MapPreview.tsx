@@ -6,15 +6,17 @@ import { Text } from '@/components/ui';
 import { mapColors, useTheme } from '@/theme';
 import { derived } from '@/theme/palette';
 
-/** The illustration is drawn on this grid (design points) and scaled to cover the view. */
-const DESIGN_WIDTH = 345;
-const DESIGN_HEIGHT = 256;
-export const MAP_ASPECT = DESIGN_HEIGHT / DESIGN_WIDTH;
+/** The illustration is drawn on this grid (design points) and scaled to cover the view. Exported so
+ * `features/map/ExperienceMapView.tsx` (sprint 6) can draw the same decorative streets/parks at its
+ * own container size, instead of a duplicated copy of this illustration data. */
+export const MAP_DESIGN_WIDTH = 345;
+export const MAP_DESIGN_HEIGHT = 256;
+export const MAP_ASPECT = MAP_DESIGN_HEIGHT / MAP_DESIGN_WIDTH;
 
 /** Below this height the city card would cover the marker, so it is left out. */
 const CITY_CARD_MIN_MAP_HEIGHT = 170;
 
-const STREETS: readonly { d: string; width: number }[] = [
+export const MAP_STREETS: readonly { d: string; width: number }[] = [
   { d: 'M-10 60 L360 -5', width: 2 },
   { d: 'M-10 122 L360 58', width: 2.6 },
   { d: 'M-10 192 L360 130', width: 2 },
@@ -34,7 +36,7 @@ const STREETS: readonly { d: string; width: number }[] = [
   { d: 'M110 270 L300 20', width: 1.4 },
 ];
 
-const PARKS: readonly string[] = [
+export const MAP_PARKS: readonly string[] = [
   '182,56 232,50 236,96 188,100',
   '272,46 328,40 334,100 278,104',
   '92,196 128,190 132,232 96,238',
@@ -66,14 +68,14 @@ export function MapPreview({ width, height, city, country }: MapPreviewProps) {
       <Svg
         width={width}
         height={height}
-        viewBox={`0 0 ${DESIGN_WIDTH} ${DESIGN_HEIGHT}`}
+        viewBox={`0 0 ${MAP_DESIGN_WIDTH} ${MAP_DESIGN_HEIGHT}`}
         preserveAspectRatio="xMidYMid slice"
       >
-        <Rect width={DESIGN_WIDTH} height={DESIGN_HEIGHT} fill={map.base} />
-        {PARKS.map((points) => (
+        <Rect width={MAP_DESIGN_WIDTH} height={MAP_DESIGN_HEIGHT} fill={map.base} />
+        {MAP_PARKS.map((points) => (
           <Polygon key={points} points={points} fill={map.park} />
         ))}
-        {STREETS.map(({ d, width: strokeWidth }) => (
+        {MAP_STREETS.map(({ d, width: strokeWidth }) => (
           <Path key={d} d={d} stroke={map.street} strokeWidth={strokeWidth} fill="none" />
         ))}
         <Circle cx={171} cy={116} r={48} fill="none" stroke={map.street} strokeWidth={1} />
@@ -86,8 +88,8 @@ export function MapPreview({ width, height, city, country }: MapPreviewProps) {
         <View
           className="absolute flex-row items-center rounded-pill bg-surface"
           style={{
-            right: 35 * (width / DESIGN_WIDTH),
-            bottom: 25 * (height / DESIGN_HEIGHT),
+            right: 35 * (width / MAP_DESIGN_WIDTH),
+            bottom: 25 * (height / MAP_DESIGN_HEIGHT),
             height: 70,
             paddingLeft: 20,
             paddingRight: 26,

@@ -2221,3 +2221,74 @@ existing `FlatList`s scroll and are positioned.
   (`screen.getByTestId(...).props`), the only query that can actually see `style`/`snapToInterval`/etc.
   `UNSAFE_getByType` (the more common React Testing Library escape hatch for this) doesn't exist in this
   project's RNTL version (14.0.1) — `getByTestId` reaches the same props on the host node without it.
+
+### D-68 — Sprint 6: one shared `SearchScreen` for Home and Discover; mocked illustrated map with pins
+
+Both `SearchBar`s (Home, Discover) were fully inert since their introduction (D-09/D-45/D-65's own note:
+"a mocked search field — no real query engine in this sprint"). Sprint 6 wires them to a single shared
+search experience rather than building two — the brief was explicit that Home and Discover must open the
+exact same flow, only the entry context (placeholder copy) differs.
+
+- **Route: `app/search.tsx` → `features/search/SearchScreen.tsx`.** A single route, not a nested
+  folder — filters and the map are in-screen state (a bottom sheet / a Liste-Carte toggle), not
+  sub-routes, so there is nothing else to register. Reads `context: 'home' | 'discover'` and
+  `openFilters: '1'` via `useLocalSearchParams` — the first only picks between the two already-existing
+  `home.search.placeholder` / `discover.search.placeholder` i18n keys, the second opens the filter sheet
+  immediately (the trailing filter icon on either `SearchBar`). `SearchBar` itself needed no new props:
+  `onPress` already flowed through via its `...PressableProps` spread; only Home/Discover's own JSX
+  changed, to pass `onPress`/`onPressFilter` that `router.push({ pathname: '/search', params: {...} })`.
+- **Data layer, same `Screen -> hook -> Repository -> mock` layering as the rest of the app.** New
+  `SearchRepository` (`suggest`/`search`) added to `Repositories`, implemented in
+  `services/mock/search.ts`: deterministic, accent/case-insensitive substring matching against title,
+  description, tags, moods and the resolved category slug — explicitly no fuzzy/AI matching (brief §2).
+  `useSearch` owns query/filter/result state (two phases: debounced `suggest()` while typing,
+  `search()` once submitted, re-run whenever `filters` changes afterwards). No new fixtures: filters over
+  the existing experience pool.
+- **`react-hooks/set-state-in-effect` shaped `useSearch`'s two effects**: neither ever calls `setState`
+  synchronously in the effect body (only inside a `.then()`), matching `useDiscoverData`/
+  `useHomeExperiences`'s own discipline. `isLoading` therefore flips to `true` from the *event handlers*
+  that trigger a new search (`submit`/the returned, wrapped `setFilters`), not from inside the effect —
+  the effect's job is only to fetch and then resolve `isLoading` back to `false`.
+- **Recent searches persisted through the existing `lib/storage.ts` `AsyncStorage` wrapper** (`useRecentSearches`,
+  new `STORAGE_KEYS.recentSearches`), same low-risk pattern already used for theme/language — no new
+  storage abstraction. Deduped by normalized query text (newest first, capped at 10); id is the trimmed
+  query itself rather than a generated one, since a search is already unique by that text.
+- **"Explorer par envie" reuses Discover's `SUGGESTION_MOODS`/`DiscoverMoodCard` as-is**, rather than a
+  parallel vocabulary for what is visually the same tile — its **first real wiring**: on Discover
+  selecting one is purely presentational (documented there as "no downstream filtering yet"); here it
+  submits the mood's translated label as the search query.
+- **Filters: `SearchFiltersSheet`, a bottom sheet built on `ConfirmationModal`'s own `Modal` + backdrop +
+  `MotiView` plumbing** (same exit-duration/`reduceMotion` handling), but sliding up from the bottom edge
+  instead of scaling in centered — no dedicated `BottomSheet` primitive existed to reuse, and this is the
+  closest existing modal machinery. Works on a local draft, committed only through "Voir X résultats" (a
+  live count re-queries `search()` as the draft changes); category options come from
+  `repositories.categories.list()` via the already-existing `useCategories`/`getCategoryLabel` (not a new
+  dynamic-key lookup — `react-i18next`'s typed keys reject a template built from an untyped
+  `Category.slug: string`, which is exactly what `getCategoryLabel` was already built to solve);
+  budget options reuse the existing `context.budget.<value>` labels rather than duplicating them. Distance
+  and "Quand ?" are fixed chip rows (1/3/5/10 km, Maintenant/Aujourd'hui/Ce week-end), not the `Slider`
+  primitive — the brief's own mockup shows discrete choices here, unlike Preferences' continuous range.
+- **Map: no real map SDK.** `features/map/ExperienceMapView.tsx` reuses onboarding `MapPreview`'s
+  decorative streets/parks illustration (now exported from there as `MAP_STREETS`/`MAP_PARKS`/
+  `MAP_DESIGN_WIDTH`/`MAP_DESIGN_HEIGHT` instead of duplicated), scaled to fill its container, with one
+  pin per experience positioned by a deterministic hash of its id — explicitly mock positioning, not real
+  geocoding (`Experience` has no `coordinates`, only `Place` does; resolving every place through it would
+  add async complexity with no real payoff for an illustration). One shared component, not two parallel
+  map systems: `MapPlaceholder` (the standalone `/map` route, Discover's "Voir la carte") now renders it
+  over a small `pickNearby` pool instead of "coming soon" text, and `SearchScreen`'s own Liste/Carte
+  toggle renders it **inline** with the current filtered results — inline, not a navigation to `/map`,
+  because that route has no way to receive an arbitrary result set through serializable route params.
+- **Results list: a new `SearchResultCard`, not a reuse of `ExperienceCard`.** Same content/iconography,
+  but stretched to the list's own width — `ExperienceCard`'s `CARD_WIDTH` (260) is tuned for a horizontal
+  carousel, not a single-column `FlatList`; reusing it directly would leave dead space on a full-width
+  vertical list. `SearchResultsList` is a `FlatList`, not a `ScrollView` (brief §8), with `ListEmptyComponent`
+  → `SearchEmptyState` (brief §11's three relax-a-constraint actions mirror
+  `07_DATA_AND_RECOMMENDATION.md`'s "No perfect match" guidance almost verbatim: relax distance, relax a
+  filter, fall back to trending) plus a "Peut-être que ça te plaira" `HorizontalCarousel` reusing
+  `pickTrending`, not a new picking rule.
+- **New test files**: `SearchScreen.test.tsx`, `SearchFiltersSheet.test.tsx`, `SearchResultsHeader.test.tsx`,
+  `SearchSuggestionsList.test.tsx`, `SearchEmptyState.test.tsx`, `useRecentSearches.test.ts`,
+  `services/mock/search.test.ts`, `features/map/ExperienceMapView.test.tsx`, and route-level
+  `searchRoutes.test.tsx` (same `renderRouter`-over-the-real-`src/app` shape as `discoverRoutes.test.tsx`)
+  covering Home → Search, Discover → Search, Search → Experience Detail, and back navigation. Existing
+  `HomeScreen.test.tsx`/`DiscoverScreen.test.tsx` gained the new `onPress`/`onPressFilter` assertions.

@@ -226,6 +226,65 @@
       "description": "Something went wrong while loading this content."
     }
   },
+  "search": {
+    "title": "Search",
+    "clearQuery": "Clear search",
+    "recent": {
+      "title": "Recent searches",
+      "remove": "Remove \"{query}\" from recent searches"
+    },
+    "trending": {
+      "title": "Trending",
+      "rooftops": "Rooftops",
+      "restaurants": "Restaurants",
+      "exhibitions": "Exhibitions",
+      "bars": "Bars"
+    },
+    "explore": {
+      "title": "Explore by mood"
+    },
+    "suggestions": {
+      "title": "Suggestions",
+      "experiencesTitle": "Experiences"
+    },
+    "results": {
+      "count": "{count} experiences",
+      "quickFilters": {
+        "all": "All",
+        "openNow": "Open now",
+        "nearby": "< 2 km"
+      },
+      "filters": "Filters",
+      "viewList": "List",
+      "viewMap": "Map"
+    },
+    "filters": {
+      "title": "Filters",
+      "category": "Category",
+      "distance": "Distance",
+      "distanceValue": "{count} km",
+      "budget": "Budget",
+      "when": "When?",
+      "whenValue": {
+        "now": "Now",
+        "today": "Today",
+        "weekend": "This weekend"
+      },
+      "options": "Options",
+      "openNow": "Open now",
+      "walkable": "Walkable",
+      "reset": "Reset",
+      "apply": "See {count} results"
+    },
+    "empty": {
+      "title": "No outings found",
+      "description": "We couldn't find anything for this search. Let's try something else.",
+      "expandArea": "Expand the area",
+      "clearFilters": "Remove a filter",
+      "seeTrending": "See trending",
+      "fallbackTitle": "You might like this"
+    }
+  },
   "context": {
     "mood": {
       "title": "How are you feeling today?",

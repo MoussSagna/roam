@@ -2,6 +2,7 @@ import type { Repositories } from '../repositories/types';
 
 import { createMockAuthRepository } from './auth';
 import { categories, collections, experiences, places } from './data';
+import { createMockSearchRepository } from './search';
 import { createMockUserRepository } from './user';
 
 /** In-memory implementation used until the backend exists. Returns copies, like a real API would. */
@@ -25,5 +26,6 @@ export function createMockRepositories(): Repositories {
     },
     auth: createMockAuthRepository(),
     users: createMockUserRepository(),
+    search: createMockSearchRepository(experiences, categories),
   };
 }
