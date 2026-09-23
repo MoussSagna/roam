@@ -148,20 +148,20 @@ export function ConfirmationModal({
                 ) : null}
               </View>
 
-              <View className="w-full flex-row gap-3">
-                <Button
-                  label={cancelLabel}
-                  variant="secondary"
-                  onPress={onCancel}
-                  disabled={loading}
-                  className="flex-1 px-0"
-                />
+              <View className="w-full gap-3">
                 <Button
                   label={confirmLabel}
                   variant={isDestructive ? 'destructive' : 'primary'}
                   onPress={onConfirm}
                   loading={loading}
-                  className="flex-1 px-0"
+                  className="w-full"
+                />
+                <Button
+                  label={cancelLabel}
+                  variant="secondary"
+                  onPress={onCancel}
+                  disabled={loading}
+                  className="w-full"
                 />
               </View>
             </MotiView>
