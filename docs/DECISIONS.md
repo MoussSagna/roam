@@ -2045,3 +2045,26 @@ duplicated: every destination this session touches already existed.
   destination already existed); touching `PreferencesScreen`, `FavoritesScreen`, `HistoryScreen`,
   `StatisticsScreen`, `LanguageScreen`, `ThemeScreen` or any other already-validated screen beyond what
   points to them.
+
+### D-64 — `ProfileScreen` adopts `StickyRevealHeader` (follow-up to D-63)
+
+Same-day follow-up: `ProfileScreen` was the one screen this sprint's Profile/Settings refactor left on
+the plain inline title row (`Text` + gear `IconButton` in a `flex-row`); every sub-screen it links to
+already uses `StickyRevealHeader` (D-56 onward). Brought in line, no other change.
+
+- **Same restructure as every other adoption**: the in-content `h2` "Profil" stands in for the title
+  until the floating header's own title crossfades in past `HEADER_REVEAL_OFFSET` (70, the same proxy
+  value used everywhere else this sprint); the settings gear moved from the inline row into the
+  header's `rightSlot` — same icon, same `accessibilityLabel`, same destination, so the existing test
+  asserting `router.push('/profile/settings')` needed no change.
+- **No `leftSlot`**: unlike the pushed `/profile/*` sub-screens (which all show a back button there),
+  Profile is a tab root reached from the tab bar, not pushed — there is nothing to go back to, so the
+  slot is simply omitted (the component already renders nothing when a slot isn't passed, same as
+  `HomeHeader`'s own no-back-button header).
+- **Scroll handling merges two independent concerns in one function**, `handleScroll`: mutating
+  `scrollY.value` for the header's own crossfade, and forwarding the same event to the existing
+  `useTabBarScrollHandler()` for `RoamTabBar`'s collapse — the exact pattern `HomeScreen` already
+  established for combining its own hero-stretch shared value with the tab bar handler, not a new one.
+- **Not done on purpose**: a scroll-driven reveal test at the screen level — same "not meaningfully
+  testable under this setup" category D-49/D-55 already document for this exact crossfade; the
+  mechanism itself stays covered by `StickyRevealHeader.test.tsx`.
