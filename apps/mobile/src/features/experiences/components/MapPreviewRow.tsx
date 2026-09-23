@@ -1,6 +1,6 @@
 import ChevronRight from 'lucide-react-native/icons/chevron-right';
 import MapPin from 'lucide-react-native/icons/map-pin';
-import { useMemo } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Pressable, View } from 'react-native';
 
@@ -10,6 +10,10 @@ import { toMapMarkers } from '@/features/map/lib/markers';
 import { useTheme } from '@/theme';
 import { brand } from '@/theme/palette';
 import type { Experience } from '@/types';
+
+import { useAddressActions } from '../useAddressActions';
+
+import { AddressActionsBubble } from './AddressActionsBubble';
 
 /** Height of the static map preview inside the block. */
 const MAP_HEIGHT = 160;
@@ -21,11 +25,11 @@ type MapPreviewRowProps = {
 };
 
 /**
- * Experience detail's map block (D-73), replacing the illustrated `MapPreview` of sprint 5: a real,
- * static `RoamMap` (`interactive={false}` — no pan/zoom, touches fall through) showing the
- * experience's own pin, a "Voir sur la carte" pill on it, and the address underneath. The whole block
- * is one `Pressable` that opens the full-screen map. Without coordinates there is nothing to draw, so
- * the map part is left out and only the address row remains (nothing to open then).
+ * Experience detail's map block (D-73, D-74): a rounded card made of two independent touch targets.
+ * **The map** — a real, static `RoamMap` (`interactive={false}`: no pan/zoom, the touch falls through)
+ * with the experience's pin and a "Voir sur la carte" pill — opens the full-screen map. **The address
+ * row** underneath opens the address actions bubble (copy address / GPS, open in Plans / Google Maps).
+ * Without `coordinates` there is no map (nothing to open) and the bubble only offers "Copier l'adresse".
  */
 export function MapPreviewRow({ experience, onPress }: MapPreviewRowProps) {
   const { t } = useTranslation();
@@ -34,10 +38,30 @@ export function MapPreviewRow({ experience, onPress }: MapPreviewRowProps) {
   const address = experience.address ?? experience.location;
   const hasMap = markers.length > 0;
 
-  const content = (
-    <>
+  const [bubbleVisible, setBubbleVisible] = useState(false);
+  const closeBubble = useCallback(() => setBubbleVisible(false), []);
+  const actions = useAddressActions({
+    address: address ?? '',
+    placeName: experience.title,
+    coordinates: experience.coordinates,
+    onDone: closeBubble,
+  });
+
+  if (!hasMap && !address) {
+    return null;
+  }
+
+  return (
+    <View className="overflow-hidden rounded-card border border-border bg-surface">
       {hasMap ? (
-        <View style={{ height: MAP_HEIGHT }} testID="experience-map-preview">
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={t('experience.seeOnMap')}
+          onPress={onPress}
+          style={{ height: MAP_HEIGHT }}
+          testID="experience-map-preview"
+          className="active:opacity-90"
+        >
           <RoamMap
             markers={markers}
             selectedMarkerId={experience.id}
@@ -54,39 +78,32 @@ export function MapPreviewRow({ experience, onPress }: MapPreviewRowProps) {
             </Text>
             <ChevronRight size={14} strokeWidth={2} color={brand.white} />
           </View>
-        </View>
+        </Pressable>
       ) : null}
 
       {address ? (
-        <View className="flex-row items-center gap-3 p-4">
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={address}
+          accessibilityHint={t('experience.addressActions.title')}
+          onPress={() => setBubbleVisible(true)}
+          testID="experience-address-row"
+          className="flex-row items-center gap-3 p-4 active:opacity-70"
+        >
           <MapPin size={18} strokeWidth={1.8} color={colors.textSecondary} />
           <Text variant="body" className="flex-1">
             {address}
           </Text>
-          {hasMap ? (
-            <ChevronRight size={18} strokeWidth={1.8} color={colors.textSecondary} />
-          ) : null}
-        </View>
+          <ChevronRight size={18} strokeWidth={1.8} color={colors.textSecondary} />
+        </Pressable>
       ) : null}
-    </>
-  );
 
-  if (!hasMap) {
-    return address ? (
-      <View className="overflow-hidden rounded-card border border-border bg-surface">
-        {content}
-      </View>
-    ) : null;
-  }
-
-  return (
-    <Pressable
-      accessibilityRole="button"
-      accessibilityLabel={t('experience.seeOnMap')}
-      onPress={onPress}
-      className="overflow-hidden rounded-card border border-border bg-surface active:opacity-90"
-    >
-      {content}
-    </Pressable>
+      <AddressActionsBubble
+        visible={bubbleVisible}
+        address={address ?? ''}
+        actions={actions}
+        onClose={closeBubble}
+      />
+    </View>
   );
 }

@@ -2546,3 +2546,38 @@ Places/Directions API.
 - **Tests:** `ExperienceHero` (dots per image, active dot follows scroll, none for one image), `MapPreviewRow`, `ExperienceMapFooter`,
   `ExperienceMapScreen`, `RoamMap` (`interactive`), `ExperienceDetailScreen` (map block, static preview, tap → route) and
   `experienceRoutes` (detail → map → back, footer CTA → detail). No existing test was edited.
+
+### D-74 — Experience map: address action bubble, transparent header, hide/show footer
+
+Follow-up to D-73; only what was asked. Mock data, no backend, no Maps API.
+
+- **Address bubble.** The detail's map block is now two targets: the map still opens the full-screen map; the **address row** opens
+  `AddressActionsBubble` — a small centered rounded card over a dimmed backdrop (the `ConfirmationModal` plumbing: `Modal` +
+  Moti fade/scale, no motion under reduced motion, padded by the safe-area insets; closed by backdrop, ×, or Android back).
+  It takes the *behavior* of the reference (a small action bubble), not its look. Actions (`useAddressActions`): **Copier l'adresse**,
+  **Copier les coordonnées GPS** (`lib/externalMaps.ts` → `48.8566, 2.3522`, ≤ 6 decimals), **Ouvrir dans Plans**, **Ouvrir dans
+  Google Maps**. The bubble closes first, then the toast / app switch happens.
+- **New dependency: `expo-clipboard`** (SDK-matched via `expo install`) — RN core no longer ships a clipboard, so copying can't be
+  done without it. Stubbed globally in `jest.setup.ts`. No other library.
+- **Opening external apps = plain URLs** through `Linking.openURL`, no Maps API, no key, no permission: Plans →
+  `https://maps.apple.com/?ll=lat,lng&q=name` (iOS universal link); Google Maps →
+  `https://www.google.com/maps/search/?api=1&query=lat,lng`, which iOS/Android hand to the Google Maps app when installed and
+  otherwise show in the browser — so there is no fragile `canOpenURL`/`LSApplicationQueriesSchemes` branch. **Fallbacks:** no
+  `coordinates` → only "Copier l'adresse"; **Plans is iOS-only** (Apple Plans doesn't exist on Android — the action is left out
+  there, Google Maps covers it); `openURL`/clipboard failure → an error toast (`experience.addressActions.openError`).
+  Feedback uses the existing `showToast` (D-54): "Adresse copiée" / "Coordonnées copiées".
+- **Transparent header on the map.** `ExperienceMapScreen` now uses the existing `StickyRevealHeader` (no new header system) with an
+  unreachable reveal offset (the screen never scrolls, so its background never fades in): a back button (same `bg-black/25` circle
+  as `ExperienceDetailHeader`) and the experience name in a translucent `bg-surface/85` pill so it reads over any map tile.
+  `RoamMap` is `absoluteFill`, so the map runs behind the header to the top edge. The address left the header (it lives on the detail).
+- **Footer hide/show.** `RoamMap`'s `onPressMap` (fired by `react-native-maps` only for *bare map* — not the marker, not the footer,
+  and pan/zoom are untouched) sets `footerVisible=false`; the footer, in a `MotiView`, animates `translateY` from 0 to its measured
+  height (`onLayout`, 320 px until measured) in 240 ms (0 under reduced motion), and becomes `pointerEvents="none"` +
+  hidden from accessibility. A single `IconButton` (info icon, "Afficher les informations du lieu", bottom-right above the safe
+  area) fades/scales in while hidden; pressing it slides the footer back up and removes the button. It also slides up on first mount
+  (replacing the earlier `FadeInUp`). The marker keeps its existing (no-op) tap.
+- **Still deferred to the next sprint, on purpose:** the floating multi-experience picker on the map — one experience, one marker,
+  one `ExperienceMapFooter`, one show/hide button.
+- **Tests:** `externalMaps` (formatting/URLs), `MapPreviewRow` (bubble open/close, each action, error toast, Android without Plans, no
+  coordinates), `ExperienceDetailScreen` (address opens the bubble, map still navigates), `ExperienceMapScreen` (header/map layout,
+  footer hide → picto → show cycle, marker/footer taps don't hide, pan/zoom enabled).

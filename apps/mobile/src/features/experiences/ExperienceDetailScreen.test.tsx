@@ -208,6 +208,15 @@ describe('ExperienceDetailScreen (sprint 5)', () => {
       expect(mapView.props.zoomEnabled).toBe(false);
     });
 
+    it('tapping the address (not the map) opens the address actions bubble', async () => {
+      await renderDetail();
+
+      await fireEvent.press(screen.getByTestId('experience-address-row'));
+
+      expect(screen.getByTestId('address-actions-bubble')).toBeOnTheScreen();
+      expect(mockPush).not.toHaveBeenCalled();
+    });
+
     it('tapping the block opens the full-screen map of this experience', async () => {
       await renderDetail();
 

@@ -393,6 +393,16 @@
       "culture": "Culture",
       "nature": "Nature",
       "experience": "Expérience"
+    },
+    "addressActions": {
+      "title": "Adresse",
+      "copyAddress": "Copier l'adresse",
+      "copyCoordinates": "Copier les coordonnées GPS",
+      "openPlans": "Ouvrir dans Plans",
+      "openGoogleMaps": "Ouvrir dans Google Maps",
+      "addressCopied": "Adresse copiée",
+      "coordinatesCopied": "Coordonnées copiées",
+      "openError": "Impossible d'ouvrir l'application"
     }
   },
   "itinerary": {
@@ -416,7 +426,8 @@
     "title": "Ton parcours",
     "currentLocation": "Ma position",
     "openNavigation": "Ouvrir l'itinéraire",
-    "viewPlace": "Voir le lieu"
+    "viewPlace": "Voir le lieu",
+    "showInfo": "Afficher les informations du lieu"
   },
   "outing": {
     "step": "Étape",

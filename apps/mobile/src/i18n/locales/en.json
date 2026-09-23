@@ -393,6 +393,16 @@
       "culture": "Culture",
       "nature": "Nature",
       "experience": "Experience"
+    },
+    "addressActions": {
+      "title": "Address",
+      "copyAddress": "Copy address",
+      "copyCoordinates": "Copy GPS coordinates",
+      "openPlans": "Open in Maps",
+      "openGoogleMaps": "Open in Google Maps",
+      "addressCopied": "Address copied",
+      "coordinatesCopied": "Coordinates copied",
+      "openError": "Couldn't open the app"
     }
   },
   "itinerary": {
@@ -416,7 +426,8 @@
     "title": "Your itinerary",
     "currentLocation": "My location",
     "openNavigation": "Open directions",
-    "viewPlace": "View place"
+    "viewPlace": "View place",
+    "showInfo": "Show place information"
   },
   "outing": {
     "step": "Step",

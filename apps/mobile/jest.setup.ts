@@ -9,6 +9,9 @@ jest.mock('react-native-reanimated', () => jest.requireActual('react-native-rean
 // Native map views don't exist under Jest: `RoamMap` tests render a plain-View stand-in instead.
 jest.mock('react-native-maps', () => jest.requireActual('./src/test/reactNativeMapsMock'));
 
+// Clipboard is a native module: stubbed so tests can assert what would be copied.
+jest.mock('expo-clipboard', () => ({ setStringAsync: jest.fn().mockResolvedValue(true) }));
+
 // Same known Moti warning as `src/lib/knownWarnings.ts`, kept out of the test output.
 const originalWarn = console.warn;
 jest.spyOn(console, 'warn').mockImplementation((message?: unknown, ...args: unknown[]) => {
