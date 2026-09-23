@@ -19,5 +19,6 @@ export function toMapMarkers(experiences: readonly Experience[]): MapMarkerData[
     id: experience.id,
     title: experience.title,
     coordinate: experience.coordinates,
+    image: experience.coverImage,
   }));
 }

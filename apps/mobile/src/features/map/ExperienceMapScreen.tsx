@@ -9,16 +9,24 @@ import { Pressable, StyleSheet, View } from 'react-native';
 import { useSharedValue } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { Button, IconButton, StickyRevealHeader, Text } from '@/components/ui';
+import {
+  Button,
+  IconButton,
+  STICKY_REVEAL_HEADER_HEIGHT,
+  StickyRevealHeader,
+  Text,
+} from '@/components/ui';
 import { getCategoryLabel } from '@/features/experiences/lib/categoryLabel';
 import { useExperience } from '@/features/experiences/useExperience';
+import { useHomeExperiences } from '@/features/home/useHomeExperiences';
 import { useCategories } from '@/hooks/useCategories';
 import { useReduceMotion } from '@/hooks/useReduceMotion';
 import { brand } from '@/theme/palette';
+import type { Experience } from '@/types';
 
 import { ExperienceMapFooter } from './components/ExperienceMapFooter';
 import { RoamMap } from './components/RoamMap';
-import { toMapMarkers } from './lib/markers';
+import { isPinnable, toMapMarkers } from './lib/markers';
 
 /** `StickyRevealHeader` reveals its background past this scroll offset. This screen never scrolls, so
  * the offset is unreachable and the header stays transparent over the map, as intended. */
@@ -38,7 +46,13 @@ type ExperienceMapScreenProps = {
  * the bottom edge. **Tapping bare map slides the footer down** (`translateY`, Moti), leaving the map
  * fully visible with one small "info" button to slide it back up; taps on the marker or on the footer
  * itself don't count — `react-native-maps` only reports `onPress` for empty map, and pan/zoom are
- * untouched. One experience, one pin, one footer — the multi-experience picker is a later sprint.
+ * untouched.
+ *
+ * **Several experiences (sprint 9):** the whole pinnable pool is drawn as round photo markers
+ * (`ExperienceMarker`). One state, `selectedExperienceId` (the opened experience at first), drives the
+ * selected marker *and* the footer: tapping a marker selects it, shows the footer if it was hidden,
+ * and `RoamMap` (`focusInsets`) glides the camera so the marker sits centered between the header and
+ * the footer.
  */
 export function ExperienceMapScreen({ experienceId }: ExperienceMapScreenProps) {
   const { t } = useTranslation();
@@ -47,18 +61,28 @@ export function ExperienceMapScreen({ experienceId }: ExperienceMapScreenProps) 
   const reduceMotion = useReduceMotion();
   const categories = useCategories();
   const { experience, isLoading } = useExperience(experienceId);
+  const { experiences: pool, isLoading: isPoolLoading } = useHomeExperiences();
+  const [selectedExperienceId, setSelectedExperienceId] = useState(experienceId ?? null);
   const scrollY = useSharedValue(0);
   const [footerVisible, setFooterVisible] = useState(true);
   const [footerHeight, setFooterHeight] = useState(FOOTER_FALLBACK_HEIGHT);
 
-  const markers = useMemo(() => (experience ? toMapMarkers([experience]) : []), [experience]);
+  // The opened experience plus the rest of the pool, pinnable ones only (the opened one is always in).
+  const mapExperiences = useMemo(() => {
+    if (!experience) return [];
+    const all = pool.some((item) => item.id === experience.id) ? pool : [experience, ...pool];
+    return all.filter(isPinnable);
+  }, [experience, pool]);
+  const markers = useMemo(() => toMapMarkers(mapExperiences), [mapExperiences]);
+  const selectedExperience =
+    mapExperiences.find((item) => item.id === selectedExperienceId) ?? experience;
 
   const subtitle = useMemo(() => {
-    if (!experience) return null;
-    const category = categories.find((item) => experience.categoryIds.includes(item.id));
+    if (!selectedExperience) return null;
+    const category = categories.find((item) => selectedExperience.categoryIds.includes(item.id));
     const categoryLabel = category ? getCategoryLabel(t, category.slug) : null;
-    return [categoryLabel, experience.location].filter(Boolean).join(' · ') || null;
-  }, [categories, experience, t]);
+    return [categoryLabel, selectedExperience.location].filter(Boolean).join(' · ') || null;
+  }, [categories, selectedExperience, t]);
 
   const goBack = useCallback(() => {
     if (router.canGoBack()) {
@@ -68,9 +92,31 @@ export function ExperienceMapScreen({ experienceId }: ExperienceMapScreenProps) 
     }
   }, [router, experienceId]);
 
-  // The footer's CTA leads to the experience — normally the very screen this map was opened from, so
-  // it goes back rather than stacking a second copy of the same detail.
-  const goToExperience = goBack;
+  // The footer's CTA leads to the selected experience. For the opened one that is normally the very
+  // screen this map was opened from, so it goes back rather than stacking a second copy of it.
+  const goToExperience = useCallback(
+    (target: Experience) => {
+      if (target.id === experienceId) {
+        goBack();
+      } else {
+        router.push({ pathname: '/experience/[id]', params: { id: target.id } });
+      }
+    },
+    [goBack, router, experienceId],
+  );
+
+  // A marker tap selects its experience (never deselects: the footer always has one to show) and
+  // brings the footer back if a bare-map tap had hidden it.
+  const selectExperience = useCallback((id: string) => {
+    setSelectedExperienceId(id);
+    setFooterVisible(true);
+  }, []);
+
+  // Recentering keeps the selected marker clear of the transparent header and of the footer.
+  const focusInsets = useMemo(
+    () => ({ top: STICKY_REVEAL_HEADER_HEIGHT + insets.top, bottom: footerHeight }),
+    [insets.top, footerHeight],
+  );
 
   const hideFooter = useCallback(() => setFooterVisible(false), []);
   const showFooter = useCallback(() => setFooterVisible(true), []);
@@ -79,7 +125,7 @@ export function ExperienceMapScreen({ experienceId }: ExperienceMapScreenProps) 
     [],
   );
 
-  if (isLoading) {
+  if (isLoading || isPoolLoading) {
     return (
       <View className="flex-1 items-center justify-center bg-background">
         <Text variant="body" tone="secondary">
@@ -89,7 +135,7 @@ export function ExperienceMapScreen({ experienceId }: ExperienceMapScreenProps) 
     );
   }
 
-  if (!experience || markers.length === 0) {
+  if (!experience || !selectedExperience || !isPinnable(experience)) {
     return (
       <View className="flex-1 items-center justify-center gap-4 bg-background px-6">
         <Text variant="h3" accessibilityRole="header">
@@ -106,8 +152,10 @@ export function ExperienceMapScreen({ experienceId }: ExperienceMapScreenProps) 
     <View className="flex-1 bg-background">
       <RoamMap
         markers={markers}
-        selectedMarkerId={experience.id}
+        selectedMarkerId={selectedExperience.id}
+        onPressMarker={selectExperience}
         onPressMap={hideFooter}
+        focusInsets={focusInsets}
         rounded={false}
         style={StyleSheet.absoluteFill}
       />
@@ -152,7 +200,7 @@ export function ExperienceMapScreen({ experienceId }: ExperienceMapScreenProps) 
         style={{ position: 'absolute', left: 0, right: 0, bottom: 0 }}
       >
         <ExperienceMapFooter
-          experience={experience}
+          experience={selectedExperience}
           subtitle={subtitle}
           onPressView={goToExperience}
         />

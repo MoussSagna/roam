@@ -290,10 +290,16 @@ Screen → hook / derived results (useNearbyMapExperiences · Search's sortedRes
 - `RoamMap` is the **only** component (with `ExperienceMarker`) allowed to import `react-native-maps`; screens pass
   `MapMarkerData[]` (`features/map/types/map.types.ts`), a selected id and press callbacks. It frames the markers
   once (`lib/region.ts`), clips to a rounded frame (or edge to edge with `rounded={false}` and `style={StyleSheet.absoluteFill}`, `SearchMapScreen`), and follows the theme through `userInterfaceStyle` (iOS).
+- **Markers** (`ExperienceMarker`, sprint 9, D-75): a round photo of the experience (`MapMarkerData.image` =
+  its `coverImage`) in a `surface` ring with a shadow; selected = `primary` ring + scale 1.18 (Moti, 200 ms, none
+  under reduced motion), drawn on top. Same marker on every `RoamMap` (Map, Search map, detail preview, experience map).
+- **Camera focus** is opt-in: `RoamMap focusInsets={{ top, bottom }}` opens on the selected marker and glides to each
+  new selection (`animateToRegion`, current zoom kept), centered between those insets (`lib/region.ts`
+  `getFocusedRegion`). Without the prop the map never moves by itself. Only `ExperienceMapScreen` uses it.
 - Selection state lives in the screen (hook or screen state), not in the map. The bottom card is `ExperienceMapCard`; "no `coordinates` → no pin, no crash" is defined once in `lib/markers.ts` (`isPinnable`/`toMapMarkers`).
 - **Mock data only**: no Google Places / Directions / Geocoding, no network. Coordinates are on the mock
   experiences (`Experience.coordinates`). Real data (place provider, geolocation, routing) is Phase E of
-  `08_AGENT_TODO.md`; `Polyline`, user location and camera control will be added to `RoamMap` when a screen needs
+  `08_AGENT_TODO.md`; `Polyline` and user location will be added to `RoamMap` when a screen needs
   them.
 - **Dark mode**: iOS (Apple Maps) follows the theme; Android (Google Maps) keeps its light native style for now.
 - **Expo Go** works as is, no key in the repo. **Development/production builds** need a Google Maps key for Android
@@ -319,7 +325,7 @@ polish D-49), built on `Experience`'s extended fields through the same `Experien
 | Why ROAM              | `features/experiences/lib/whyRecommended.ts` (unit-tested)                  | Reasons derived from the experience's own data, not stored per item                                               |
 | Map block             | `features/experiences/components/MapPreviewRow.tsx`                         | Two touch targets in one card: the static `RoamMap` (`interactive={false}`, pin + "Voir sur la carte" pill) → `experience-map/[id]`; the address row → `AddressActionsBubble` (D-74). Without `coordinates`: address row only, bubble offers just "Copier l'adresse". The address is no longer in `InfoGrid` |
 | Address bubble        | `components/AddressActionsBubble.tsx` + `useAddressActions.ts` + `features/map/lib/externalMaps.ts` | Small centered rounded card over a dimmed backdrop (fade + slight scale, no motion under reduced motion), closed by backdrop / × / Android back. Actions: Copier l'adresse, Copier les coordonnées GPS (`48.8566, 2.3522`) — `expo-clipboard` + `showToast`; Ouvrir dans Plans (iOS only, `https://maps.apple.com/?ll=…`), Ouvrir dans Google Maps (`https://www.google.com/maps/search/?api=1&query=…`) — `Linking.openURL`, plain URLs: no Maps API, no key. Failure → error toast |
-| Full-screen map       | `experience-map/[id]` → `features/map/ExperienceMapScreen.tsx`              | `RoamMap` fills the screen; a **transparent** `StickyRevealHeader` (back + name pill, no background) floats over it; `ExperienceMapFooter` over the bottom edge. **Tap on bare map → footer slides down** (Moti `translateY`), a small "info" `IconButton` appears bottom-right; **tap it → slides back up**. Marker/footer taps and pan/zoom untouched. Footer CTA → back to the detail. **Multi-experience picker: next sprint** |
+| Full-screen map       | `experience-map/[id]` → `features/map/ExperienceMapScreen.tsx`              | `RoamMap` fills the screen; a **transparent** `StickyRevealHeader` (back + name pill, no background) floats over it; `ExperienceMapFooter` over the bottom edge. **Tap on bare map → footer slides down** (Moti `translateY`), a small "info" `IconButton` appears bottom-right; **tap it → slides back up**. Pan/zoom untouched. **Sprint 9 (D-75):** every pinnable experience is pinned (round photo markers); one `selectedExperienceId` (the opened one at first) drives the selected marker *and* the footer; a marker tap selects it, re-shows a hidden footer and recenters the camera between header and footer. Footer CTA → back for the opened experience, `experience/[id]` push for another |
 | Similar experiences   | `features/experiences/components/SimilarExperiencesSection.tsx`             | Reuses Home's `ExperienceCard`                                                                                    |
 | Create-journey CTA    | `itinerary/create` → `features/itinerary/CreateJourneyPlaceholder.tsx`      | Reached only from the sticky footer CTA now — the old inline button and "Envie d'en faire plus ?" are gone (D-49) |
 

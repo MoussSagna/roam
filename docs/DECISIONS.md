@@ -2581,3 +2581,38 @@ Follow-up to D-73; only what was asked. Mock data, no backend, no Maps API.
 - **Tests:** `externalMaps` (formatting/URLs), `MapPreviewRow` (bubble open/close, each action, error toast, Android without Plans, no
   coordinates), `ExperienceDetailScreen` (address opens the bubble, map still navigates), `ExperienceMapScreen` (header/map layout,
   footer hide → picto → show cycle, marker/footer taps don't hide, pan/zoom enabled).
+
+## Sprint 9 — map markers
+
+### D-75 — Round photo markers, one selected experience, camera focused between header and footer
+
+Only what was asked; no new library, mock data, no Maps API.
+
+- **`ExperienceMarker` redesigned, still generic.** A 48 px round photo (`MapMarkerData.image`, filled by `toMapMarkers`
+  from the experience's existing `coverImage` — no new data, no download) in a 3 px `surface` ring with a soft
+  `overlay` shadow; a dot when there is no photo. **Selected:** ring turns `primary`, marker scales to 1.18 (Moti timing,
+  200 ms; 0 under reduced motion), stronger shadow, `zIndex` 1, `accessibilityState.selected`. The native marker box is
+  68 px so the scale and shadow aren't clipped (Android rasterizes the marker). `tracksViewChanges` stays on until the
+  photo has loaded and for 300 ms after each selection flip, then off. Memoized, with a stable `onPress` from
+  `RoamMap`: a selection only re-renders the two markers whose state flips. Being the one marker component, it changes
+  on every `RoamMap` (Map, Search map, the detail's static preview) — intended, their behavior is unchanged.
+- **Camera focus = opt-in `RoamMap` prop `focusInsets: { top, bottom }`.** With it, the map opens on the selected marker
+  (`FOCUS_DELTA` 0.04) and, once laid out, snaps it (0 ms) to the center of the area between the insets; each new
+  selection — or a re-tap of the selected marker after panning — glides there (`animateToRegion`, 350 ms, 0 under
+  reduced motion) keeping the current zoom (tracked with `onRegionChangeComplete`). `getFocusedRegion` (`lib/region.ts`)
+  shifts the latitude by `(top − bottom) / 2` px at the region's degrees-per-pixel, so the marker is in the middle of the
+  *visible* map, not under the header or footer. Without the prop nothing moves (Search/Map screens unchanged). A
+  selection without a marker (no coordinates) is ignored, no crash.
+- **Experience map shows several experiences.** `ExperienceMapScreen` pins the opened experience plus the rest of the
+  pool (`useHomeExperiences`, the same repository; pinnable ones only). **One state, `selectedExperienceId`** (initially
+  the opened experience), derives both the selected marker and the `ExperienceMapFooter` content — no parallel
+  marker/footer state. A marker tap selects (never deselects: the footer always has something to show) and slides a
+  hidden footer back — the only footer change, needed so marker and footer stay in sync; its design, content and
+  hide/show animation are untouched. Insets: header = `STICKY_REVEAL_HEADER_HEIGHT` + safe-area top; footer = its
+  measured height. Footer CTA: `back` for the opened experience (as before), `push experience/[id]` for another. The
+  header keeps the opened experience's name (the header was not to be changed).
+- **Tests:** `region` (`getFocusedRegion`), `markers` (image), `RoamMap` (photo per marker, fallback, selected state,
+  focus on open/selection/re-tap, current zoom kept, none without `focusInsets`, no crash without marker),
+  `ExperienceMapScreen` (several photo markers, initial selection, marker → selection + footer, camera command with the
+  experience's coordinates, hidden footer comes back, bare-map tap keeps selection, CTA per experience). The
+  `react-native-maps` mock's `MapView` now forwards a ref exposing `mockAnimateToRegion`.

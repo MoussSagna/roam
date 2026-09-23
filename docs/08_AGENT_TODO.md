@@ -43,7 +43,7 @@ Status for **mobile** (2026-09-22). Web and API foundations are not started.
       engine yet, sprint 6 — `DECISIONS.md` D-68
 - [~] Map — sprint 7 replaces the illustrated maps with `react-native-maps` (`RoamMap`), one screen at a time
       (`DECISIONS.md` D-70). [x] `/map` (Discover's "Voir la carte"); [x] Search's full-screen map
-      (`/search/map`, sprint 8, D-71/D-72 — `ExperienceMapView` deleted); [x] Experience detail's map block + full-screen `/experience-map/[id]` (D-73; floating picker deferred to next sprint);
+      (`/search/map`, sprint 8, D-71/D-72 — `ExperienceMapView` deleted); [x] Experience detail's map block + full-screen `/experience-map/[id]` (D-73; round photo markers, selection + camera focus on several experiences, sprint 9, D-75);
       [ ] onboarding location preview
 - [ ] Feedback
 

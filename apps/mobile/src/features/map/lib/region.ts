@@ -1,6 +1,6 @@
 import type { Coordinates } from '@/types';
 
-import type { MapRegion } from '../types/map.types';
+import type { MapFocusInsets, MapRegion } from '../types/map.types';
 
 /** Paris, used when there is nothing to frame (empty data). */
 export const DEFAULT_REGION: MapRegion = {
@@ -30,5 +30,32 @@ export function getRegionForCoordinates(coordinates: readonly Coordinates[]): Ma
     longitude: (minLng + maxLng) / 2,
     latitudeDelta: Math.max(MIN_DELTA, (maxLat - minLat) * PADDING_FACTOR),
     longitudeDelta: Math.max(MIN_DELTA, (maxLng - minLng) * PADDING_FACTOR),
+  };
+}
+
+/** Zoom of a map that opens focused on one marker: a neighbourhood, close enough for nearby pins to
+ * be told apart. */
+export const FOCUS_DELTA = 0.04;
+
+/**
+ * Region that puts `coordinate` at the center of the map's *useful* area — between `insets.top` (a
+ * floating header) and `insets.bottom` (a footer) — keeping the zoom of `region`. The latitude is
+ * shifted by the half-difference of the insets, converted from pixels with the region's own
+ * degrees-per-pixel (linear: the Mercator error is negligible at street/neighbourhood zooms).
+ */
+export function getFocusedRegion(
+  coordinate: Coordinates,
+  region: MapRegion,
+  mapHeight: number,
+  insets: MapFocusInsets,
+): MapRegion {
+  const offsetPx = mapHeight > 0 ? (insets.top - insets.bottom) / 2 : 0;
+  const latitudePerPx = mapHeight > 0 ? region.latitudeDelta / mapHeight : 0;
+
+  return {
+    latitude: coordinate.latitude + offsetPx * latitudePerPx,
+    longitude: coordinate.longitude,
+    latitudeDelta: region.latitudeDelta,
+    longitudeDelta: region.longitudeDelta,
   };
 }

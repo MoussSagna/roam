@@ -1,16 +1,18 @@
-import { act, fireEvent, screen } from '@testing-library/react-native';
+import { act, fireEvent, screen, within } from '@testing-library/react-native';
 
 import i18n from '@/i18n';
+import { mockAnimateToRegion } from '@/test/reactNativeMapsMock';
 import { renderWithProviders } from '@/test/renderWithProviders';
 
 import { ExperienceMapScreen } from './ExperienceMapScreen';
 
+const mockPush = jest.fn();
 const mockBack = jest.fn();
 const mockReplace = jest.fn();
 let mockCanGoBack = true;
 jest.mock('expo-router', () => ({
   useRouter: () => ({
-    push: jest.fn(),
+    push: mockPush,
     back: mockBack,
     replace: mockReplace,
     canGoBack: () => mockCanGoBack,
@@ -19,6 +21,7 @@ jest.mock('expo-router', () => ({
 
 describe('ExperienceMapScreen (D-73 — full-screen experience map)', () => {
   beforeEach(async () => {
+    mockPush.mockClear();
     mockBack.mockClear();
     mockReplace.mockClear();
     mockCanGoBack = true;
@@ -30,13 +33,13 @@ describe('ExperienceMapScreen (D-73 — full-screen experience map)', () => {
 
     expect(await screen.findByTestId('roam-map')).toBeOnTheScreen();
     expect(screen.getByRole('header')).toHaveTextContent('Rooftop Sunset');
-    // The single pin is the experience itself.
+    // The opened experience has its own pin (among the others, sprint 9).
     expect(screen.getAllByRole('button', { name: 'Rooftop Sunset' }).length).toBeGreaterThan(0);
     expect(screen.getByTestId('experience-map-footer')).toBeOnTheScreen();
     expect(screen.getByText('Bars & Soirées · Paris')).toBeOnTheScreen();
   });
 
-  it('has no picker: one pin, one footer, no card overlay', async () => {
+  it('has no picker: one map, one footer, no card overlay', async () => {
     await renderWithProviders(<ExperienceMapScreen experienceId="exp-rooftop-sunset" />);
     await screen.findByTestId('roam-map');
 
@@ -144,6 +147,125 @@ describe('ExperienceMapScreen (D-73 — full-screen experience map)', () => {
       const map = await screen.findByTestId('mock-map-view');
       expect(map.props.scrollEnabled).toBe(true);
       expect(map.props.zoomEnabled).toBe(true);
+    });
+  });
+
+  describe('several experiences: photo markers, selection, camera (sprint 9)', () => {
+    const marker = (name: string) => screen.getByRole('button', { name });
+    const footer = () => within(screen.getByTestId('experience-map-footer'));
+    const layout = async () => {
+      await fireEvent(screen.getByTestId('roam-map'), 'layout', {
+        nativeEvent: { layout: { x: 0, y: 0, width: 390, height: 844 } },
+      });
+      await fireEvent(
+        screen.getByTestId('experience-map-footer-slot', { includeHiddenElements: true }),
+        'layout',
+        { nativeEvent: { layout: { x: 0, y: 0, width: 390, height: 260 } } },
+      );
+    };
+
+    beforeEach(() => mockAnimateToRegion.mockClear());
+
+    it('pins the other experiences too, each with its own photo', async () => {
+      await renderWithProviders(<ExperienceMapScreen experienceId="exp-rooftop-sunset" />);
+      await screen.findByTestId('roam-map');
+
+      expect(marker('Rooftop Sunset')).toBeOnTheScreen();
+      expect(marker('Soirée jazz')).toBeOnTheScreen();
+      expect(marker('Dîners avec vue')).toBeOnTheScreen();
+      expect(screen.getByTestId('experience-marker-image-exp-rooftop-sunset')).toBeOnTheScreen();
+      expect(screen.getByTestId('experience-marker-image-exp-jazz-night').props.source).not.toEqual(
+        screen.getByTestId('experience-marker-image-exp-dinner-view').props.source,
+      );
+    });
+
+    it('starts with the opened experience selected, and the footer showing it', async () => {
+      await renderWithProviders(<ExperienceMapScreen experienceId="exp-rooftop-sunset" />);
+      await screen.findByTestId('roam-map');
+
+      expect(marker('Rooftop Sunset')).toBeSelected();
+      expect(marker('Soirée jazz')).not.toBeSelected();
+      expect(footer().getByText('Rooftop Sunset')).toBeOnTheScreen();
+    });
+
+    it('a marker tap selects that experience alone and the footer follows it', async () => {
+      await renderWithProviders(<ExperienceMapScreen experienceId="exp-rooftop-sunset" />);
+      await screen.findByTestId('roam-map');
+
+      await fireEvent.press(marker('Soirée jazz'));
+
+      expect(marker('Soirée jazz')).toBeSelected();
+      expect(marker('Rooftop Sunset')).not.toBeSelected();
+      expect(screen.getAllByRole('button', { selected: true })).toHaveLength(1);
+      expect(footer().getByText('Soirée jazz')).toBeOnTheScreen();
+      expect(footer().queryByText('Rooftop Sunset')).toBeNull();
+      // The header keeps the opened experience's name.
+      expect(screen.getByRole('header')).toHaveTextContent('Rooftop Sunset');
+    });
+
+    it('recenters the camera on the tapped experience, clear of the header and the footer', async () => {
+      await renderWithProviders(<ExperienceMapScreen experienceId="exp-rooftop-sunset" />);
+      await screen.findByTestId('roam-map');
+      await layout();
+      mockAnimateToRegion.mockClear();
+
+      await fireEvent.press(marker('Soirée jazz'));
+
+      expect(mockAnimateToRegion).toHaveBeenCalledTimes(1);
+      const [region, duration] = mockAnimateToRegion.mock.calls[0];
+      // exp-jazz-night's own coordinates (48.854, 2.3339).
+      expect(region.longitude).toBe(2.3339);
+      // Header (47 + 56 px) is shorter than the footer (260 px): the camera center sits below the
+      // marker, so the marker lands in the middle of the visible map, not under the footer.
+      expect(region.latitude).toBeLessThan(48.854);
+      expect(duration).toBeGreaterThan(0);
+    });
+
+    it('a marker tap brings a hidden footer back, for the tapped experience', async () => {
+      await renderWithProviders(<ExperienceMapScreen experienceId="exp-rooftop-sunset" />);
+      await fireEvent.press(await screen.findByTestId('mock-map-view'));
+      expect(
+        screen.getByTestId('experience-map-footer-slot', { includeHiddenElements: true }).props
+          .pointerEvents,
+      ).toBe('none');
+
+      await fireEvent.press(marker('Soirée jazz'));
+
+      expect(screen.getByTestId('experience-map-footer-slot').props.pointerEvents).toBe('auto');
+      expect(footer().getByText('Soirée jazz')).toBeOnTheScreen();
+      expect(
+        screen.queryByRole('button', { name: 'Afficher les informations du lieu' }),
+      ).toBeNull();
+    });
+
+    it('a bare-map tap hides the footer but keeps the selection', async () => {
+      await renderWithProviders(<ExperienceMapScreen experienceId="exp-rooftop-sunset" />);
+      await screen.findByTestId('roam-map');
+      await fireEvent.press(marker('Soirée jazz'));
+
+      await fireEvent.press(screen.getByTestId('mock-map-view'));
+      await fireEvent.press(
+        screen.getByRole('button', { name: 'Afficher les informations du lieu' }),
+      );
+
+      expect(marker('Soirée jazz')).toBeSelected();
+      expect(footer().getByText('Soirée jazz')).toBeOnTheScreen();
+    });
+
+    it('the footer CTA opens the selected experience (back for the opened one)', async () => {
+      await renderWithProviders(<ExperienceMapScreen experienceId="exp-rooftop-sunset" />);
+      await screen.findByTestId('roam-map');
+
+      await fireEvent.press(footer().getByRole('button', { name: /Voir le lieu/ }));
+      expect(mockBack).toHaveBeenCalledTimes(1);
+      expect(mockPush).not.toHaveBeenCalled();
+
+      await fireEvent.press(marker('Soirée jazz'));
+      await fireEvent.press(footer().getByRole('button', { name: /Voir le lieu/ }));
+      expect(mockPush).toHaveBeenCalledWith({
+        pathname: '/experience/[id]',
+        params: { id: 'exp-jazz-night' },
+      });
     });
   });
 });

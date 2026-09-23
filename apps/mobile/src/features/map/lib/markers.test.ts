@@ -34,6 +34,15 @@ describe('toMapMarkers', () => {
     ]);
   });
 
+  it('carries the experience cover photo as the marker image', () => {
+    const photo = { uri: 'https://example.com/a.jpg' };
+    const [marker] = toMapMarkers([
+      makeExperience({ coordinates: { latitude: 1, longitude: 2 }, coverImage: photo }),
+    ]);
+
+    expect(marker.image).toBe(photo);
+  });
+
   it('leaves out experiences without coordinates, without crashing', () => {
     const markers = toMapMarkers([
       makeExperience({ id: 'exp-a', coordinates: { latitude: 1, longitude: 2 } }),
