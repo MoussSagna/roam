@@ -4,6 +4,7 @@ import i18n from '@/i18n';
 import { renderWithProviders } from '@/test/renderWithProviders';
 
 import { SearchScreen } from './SearchScreen';
+import { SearchSessionProvider } from './SearchSessionContext';
 
 const mockPush = jest.fn();
 const mockBack = jest.fn();
@@ -14,7 +15,11 @@ jest.mock('expo-router', () => ({
 }));
 
 async function renderSearch() {
-  return renderWithProviders(<SearchScreen />);
+  return renderWithProviders(
+    <SearchSessionProvider>
+      <SearchScreen />
+    </SearchSessionProvider>,
+  );
 }
 
 async function submitQuery(text: string) {
@@ -291,168 +296,19 @@ describe('SearchScreen (sprint 6 — global search)', () => {
     });
   });
 
-  describe('map mode (sprint 8 — full-screen RoamMap)', () => {
-    async function openMap() {
+  describe('"Carte" (sprint 8 — opens SearchMapScreen)', () => {
+    it('pushes the dedicated /search/map route instead of drawing a map in the list', async () => {
+      await renderSearch();
+      await submitQuery('rooftop');
+
       await fireEvent.press(screen.getByRole('button', { name: 'Carte' }));
-      return screen.findByTestId('roam-map');
-    }
 
-    it('shows RoamMap instead of the list, with one marker per result', async () => {
-      await renderSearch();
-      await submitQuery('rooftop');
-
-      expect(await openMap()).toBeOnTheScreen();
-
-      expect(screen.queryByTestId('search-results-list')).toBeNull();
-      expect(screen.getByRole('button', { name: 'Rooftop Sunset' })).toBeOnTheScreen();
-      expect(screen.getByRole('button', { name: 'Mama Shelter' })).toBeOnTheScreen();
-    });
-
-    it('only keeps "Filtres" under the search bar (no Trier, no Carte, no count)', async () => {
-      await renderSearch();
-      await submitQuery('rooftop');
-      await openMap();
-
-      expect(screen.getByRole('button', { name: 'Filtres' })).toBeOnTheScreen();
-      expect(screen.queryByRole('button', { name: 'Trier' })).toBeNull();
-      expect(screen.queryByRole('button', { name: 'Carte' })).toBeNull();
-      expect(screen.queryByText('2 expériences')).toBeNull();
-      // The search bar itself stays put, not duplicated.
-      expect(screen.getAllByLabelText('Que veux-tu découvrir ?')).toHaveLength(1);
-    });
-
-    it('selecting a marker opens the experience card; "Voir le lieu" opens the detail', async () => {
-      await renderSearch();
-      await submitQuery('rooftop');
-      await openMap();
-
-      expect(screen.queryByTestId('experience-map-card')).toBeNull();
-      await fireEvent.press(screen.getByRole('button', { name: 'Rooftop Sunset' }));
-      expect(screen.getByTestId('experience-map-card')).toBeOnTheScreen();
-
-      await fireEvent.press(screen.getByRole('button', { name: 'Voir le lieu' }));
       expect(mockPush).toHaveBeenCalledWith({
-        pathname: '/experience/[id]',
-        params: { id: 'exp-rooftop-sunset' },
+        pathname: '/search/map',
+        params: { context: 'discover' },
       });
-    });
-
-    it('closes the card from its close button and from a tap on the map', async () => {
-      await renderSearch();
-      await submitQuery('rooftop');
-      await openMap();
-
-      await fireEvent.press(screen.getByRole('button', { name: 'Rooftop Sunset' }));
-      await fireEvent.press(screen.getByRole('button', { name: 'Fermer' }));
-      expect(screen.queryByTestId('experience-map-card')).toBeNull();
-
-      await fireEvent.press(screen.getByRole('button', { name: 'Rooftop Sunset' }));
-      await fireEvent.press(screen.getByTestId('mock-map-view'));
-      expect(screen.queryByTestId('experience-map-card')).toBeNull();
-    });
-
-    it('applying a filter from the map updates the markers to the filtered results', async () => {
-      await renderSearch();
-      await submitQuery('rooftop');
-      await openMap();
-      expect(screen.getByRole('button', { name: 'Mama Shelter' })).toBeOnTheScreen();
-
-      await fireEvent.press(screen.getByRole('button', { name: 'Filtres' }));
-      await fireEvent.press(await screen.findByRole('button', { name: 'Bars & Soirées' }));
-      await fireEvent.press(screen.getByRole('button', { name: /Voir \d+ résultats/ }));
-
-      expect(await screen.findByRole('button', { name: 'Rooftop Sunset' })).toBeOnTheScreen();
-      expect(screen.queryByRole('button', { name: 'Mama Shelter' })).toBeNull();
-      expect(screen.getByRole('button', { name: 'Filtres' })).toBeSelected();
-    });
-
-    it('the floating "Liste" button returns to the list', async () => {
-      await renderSearch();
-      await submitQuery('rooftop');
-      await openMap();
-
-      await fireEvent.press(screen.getByRole('button', { name: 'Liste' }));
-
-      expect(screen.getByTestId('search-results-list')).toBeOnTheScreen();
       expect(screen.queryByTestId('roam-map')).toBeNull();
-      expect(screen.getByRole('button', { name: 'Trier' })).toBeOnTheScreen();
-      expect(screen.getByRole('button', { name: 'Carte' })).toBeOnTheScreen();
-    });
-
-    it('does not crash with no results: the map shows without any marker', async () => {
-      await renderSearch();
-      await submitQuery('zzznotfound');
-      await openMap();
-
-      expect(screen.getByTestId('roam-map')).toBeOnTheScreen();
-      expect(screen.queryByRole('button', { name: 'Rooftop Sunset' })).toBeNull();
-    });
-  });
-
-  describe('list <-> map keep one shared state (sprint 8 §8)', () => {
-    it('keeps the query, filters, sort and results across Liste -> Carte -> Liste', async () => {
-      await renderSearch();
-      await submitQuery('rooftop');
-
-      // Filter (Bars & Soirées -> only Rooftop Sunset) and sort (Plus proche).
-      await fireEvent.press(screen.getByRole('button', { name: 'Filtres' }));
-      await fireEvent.press(await screen.findByRole('button', { name: 'Bars & Soirées' }));
-      await fireEvent.press(screen.getByRole('button', { name: /Voir \d+ résultats/ }));
-      await screen.findByText('1 expériences');
-      await fireEvent.press(screen.getByRole('button', { name: 'Trier' }));
-      await fireEvent.press(await screen.findByRole('radio', { name: 'Plus proche' }));
-
-      await fireEvent.press(screen.getByRole('button', { name: 'Carte' }));
-      expect(await screen.findByTestId('roam-map')).toBeOnTheScreen();
-      expect(screen.getByRole('button', { name: 'Rooftop Sunset' })).toBeOnTheScreen();
-      expect(screen.queryByRole('button', { name: 'Mama Shelter' })).toBeNull();
-      expect(screen.getByLabelText('Que veux-tu découvrir ?').props.value).toBe('rooftop');
-
-      await fireEvent.press(screen.getByRole('button', { name: 'Liste' }));
-
-      expect(listIds()).toEqual(['exp-rooftop-sunset']);
-      expect(screen.getByText('1 expériences')).toBeOnTheScreen();
-      expect(screen.getByRole('button', { name: 'Filtres' })).toBeSelected();
-      expect(screen.getByRole('button', { name: 'Trier' })).toBeSelected();
-      expect(
-        within(screen.getByTestId('search-action-bar')).getByText('Plus proche'),
-      ).toBeOnTheScreen();
-    });
-
-    it('keeps the selected marker across Carte -> Liste -> Carte', async () => {
-      await renderSearch();
-      await submitQuery('rooftop');
-
-      await fireEvent.press(screen.getByRole('button', { name: 'Carte' }));
-      await fireEvent.press(await screen.findByRole('button', { name: 'Rooftop Sunset' }));
-      expect(screen.getByTestId('experience-map-card')).toBeOnTheScreen();
-
-      await fireEvent.press(screen.getByRole('button', { name: 'Liste' }));
-      await fireEvent.press(screen.getByRole('button', { name: 'Carte' }));
-
-      expect(await screen.findByTestId('experience-map-card')).toBeOnTheScreen();
-    });
-
-    it('the map shows the same results as the list, whatever the sort', async () => {
-      await renderSearch();
-      await submitQuery('festive');
-
-      await fireEvent.press(screen.getByRole('button', { name: 'Trier' }));
-      await fireEvent.press(await screen.findByRole('radio', { name: 'Mieux noté' }));
-      await fireEvent.press(screen.getByRole('button', { name: 'Carte' }));
-
-      await screen.findByTestId('roam-map');
-      // Same six pins as the list has results.
-      for (const title of [
-        'Soirée jazz',
-        'Rooftop Sunset',
-        'Concert intimiste',
-        'Le Hasard Ludique',
-        'Mama Shelter',
-        'La Bellevilloise',
-      ]) {
-        expect(screen.getByRole('button', { name: title })).toBeOnTheScreen();
-      }
+      expect(screen.getByTestId('search-results-list')).toBeOnTheScreen();
     });
   });
 

@@ -42,8 +42,8 @@ Status for **mobile** (2026-09-22). Web and API foundations are not started.
       (list/map), a sort sheet (Recommandé/Plus proche/Mieux noté/Prix), and a filters bottom sheet, all over the mock experience pool — no real query
       engine yet, sprint 6 — `DECISIONS.md` D-68
 - [~] Map — sprint 7 replaces the illustrated maps with `react-native-maps` (`RoamMap`), one screen at a time
-      (`DECISIONS.md` D-70). [x] `/map` (Discover's "Voir la carte"); [x] Search's full-screen "Carte" mode
-      (sprint 8, D-71 — `ExperienceMapView` deleted); [ ] Experience detail's `MapPreviewRow`;
+      (`DECISIONS.md` D-70). [x] `/map` (Discover's "Voir la carte"); [x] Search's full-screen map
+      (`/search/map`, sprint 8, D-71/D-72 — `ExperienceMapView` deleted); [ ] Experience detail's `MapPreviewRow`;
       [ ] onboarding location preview
 - [ ] Feedback
 

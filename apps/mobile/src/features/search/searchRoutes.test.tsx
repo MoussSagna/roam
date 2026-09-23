@@ -1,4 +1,4 @@
-import { fireEvent, screen } from '@testing-library/react-native';
+import { fireEvent, screen, waitFor } from '@testing-library/react-native';
 import { router } from 'expo-router';
 import { act, renderRouter } from 'expo-router/testing-library';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
@@ -103,5 +103,87 @@ describe('Search navigation (sprint 6)', () => {
     expect(await screen.findByTestId('roam-map')).toBeOnTheScreen();
     expect(screen.getByRole('button', { name: 'Balade panoramique' })).toBeOnTheScreen();
     expect(screen.queryByText(/Unmatched Route/i)).toBeNull();
+  });
+  describe('Search <-> SearchMapScreen (sprint 8, /search/map)', () => {
+    async function searchRooftop() {
+      const utils = await renderApp();
+      await act(() => router.navigate({ pathname: '/search', params: { context: 'discover' } }));
+      await fireEvent.changeText(screen.getByLabelText('Que veux-tu découvrir ?'), 'rooftop');
+      await fireEvent(screen.getByLabelText('Que veux-tu découvrir ?'), 'submitEditing');
+      await screen.findByTestId('search-results-list');
+      return utils;
+    }
+
+    it('Carte opens the dedicated /search/map screen: full-screen map, search field, one Filtres chip', async () => {
+      const utils = await searchRooftop();
+
+      await fireEvent.press(screen.getByRole('button', { name: 'Carte' }));
+
+      expect(utils.getPathname()).toBe('/search/map');
+      expect(screen.queryByText(/Unmatched Route/i)).toBeNull();
+      expect(await screen.findByTestId('roam-map')).toBeOnTheScreen();
+      expect(screen.getByRole('button', { name: 'Rooftop Sunset' })).toBeOnTheScreen();
+      expect(screen.getByRole('button', { name: 'Mama Shelter' })).toBeOnTheScreen();
+      expect(screen.getByRole('button', { name: 'Filtres' })).toBeOnTheScreen();
+      expect(screen.queryByRole('button', { name: 'Trier' })).toBeNull();
+    });
+
+    it('the map receives the exact search state: same query, filters and sort', async () => {
+      const utils = await searchRooftop();
+
+      await fireEvent.press(screen.getByRole('button', { name: 'Filtres' }));
+      await fireEvent.press(await screen.findByRole('button', { name: 'Bars & Soirées' }));
+      await fireEvent.press(screen.getByRole('button', { name: /Voir \d+ résultats/ }));
+      await screen.findByText('1 expériences');
+
+      await fireEvent.press(screen.getByRole('button', { name: 'Carte' }));
+
+      expect(utils.getPathname()).toBe('/search/map');
+      // Same query in the (single) field, only the filtered result pinned, the filter chip active.
+      const fields = screen.getAllByLabelText('Que veux-tu découvrir ?');
+      expect(fields[fields.length - 1].props.value).toBe('rooftop');
+      expect(await screen.findByRole('button', { name: 'Rooftop Sunset' })).toBeOnTheScreen();
+      expect(screen.queryByRole('button', { name: 'Mama Shelter' })).toBeNull();
+      expect(screen.getAllByRole('button', { name: 'Filtres' }).at(-1)).toBeSelected();
+    });
+
+    it('back returns to the list with the search, filters and sort untouched — and filters changed on the map carry over', async () => {
+      const utils = await searchRooftop();
+      await fireEvent.press(screen.getByRole('button', { name: 'Trier' }));
+      await fireEvent.press(await screen.findByRole('radio', { name: 'Plus proche' }));
+
+      await fireEvent.press(screen.getByRole('button', { name: 'Carte' }));
+      await screen.findByTestId('roam-map');
+
+      // Filter on the map ...
+      await fireEvent.press(screen.getAllByRole('button', { name: 'Filtres' }).at(-1)!);
+      await fireEvent.press(await screen.findByRole('button', { name: 'Bars & Soirées' }));
+      await fireEvent.press(screen.getByRole('button', { name: /Voir \d+ résultats/ }));
+      await waitFor(() => {
+        expect(screen.queryByRole('button', { name: 'Mama Shelter' })).toBeNull();
+      });
+
+      // ... then come back to the list.
+      await fireEvent.press(screen.getAllByRole('button', { name: 'Retour' }).at(-1)!);
+
+      await waitFor(() => expect(utils.getPathname()).toBe('/search'));
+      expect(screen.queryByText(/Unmatched Route/i)).toBeNull();
+      expect(screen.getByLabelText('Que veux-tu découvrir ?').props.value).toBe('rooftop');
+      expect(screen.getByText('1 expériences')).toBeOnTheScreen();
+      expect(screen.getByRole('button', { name: 'Trier' })).toBeSelected();
+      expect(screen.getByRole('button', { name: 'Filtres' })).toBeSelected();
+      expect(screen.getByTestId('search-results-list')).toBeOnTheScreen();
+    });
+
+    it('a pin -> "Voir le lieu" opens Experience Detail', async () => {
+      const utils = await searchRooftop();
+      await fireEvent.press(screen.getByRole('button', { name: 'Carte' }));
+
+      await fireEvent.press(await screen.findByRole('button', { name: 'Rooftop Sunset' }));
+      await fireEvent.press(screen.getByRole('button', { name: 'Voir le lieu' }));
+
+      expect(utils.getPathname()).toBe('/experience/exp-rooftop-sunset');
+      expect(screen.queryByText(/Unmatched Route/i)).toBeNull();
+    });
   });
 });

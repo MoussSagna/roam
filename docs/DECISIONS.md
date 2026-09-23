@@ -2470,3 +2470,44 @@ Front-end only: no backend, no Places/Directions API, no new library.
 - **Tests:** `SearchActionBar`, `SearchSortSheet`, `sortResults`, `searchFilters`, `markers` unit tests; `SearchScreen`
   covers list/map layout, sort reordering, marker selection + "Voir le lieu", filtering from the map, the floating "Liste"
   button, no-results-on-map, and query/filters/sort/selection surviving list ↔ map.
+
+### D-72 — Search's map becomes its own screen: `SearchMapScreen` on `/search/map`, over a shared `SearchSessionProvider`
+
+Fix for D-71. D-71 kept the map inside `SearchScreen` (a `view` flag). Visually that stacked back + title + search field +
+chip above a map that only started below them — not the immersive map the design shows (search bar *floating over* a map that
+runs to the screen edges). The map itself was never inside a scroll view (it was already `flex-1`); the problem was the surrounding
+layout, which a list-oriented screen can't shed. **Superseded from D-71:** the in-screen map mode, its floating "Liste" button,
+the `view` state, and `SearchActionBar`'s map shape. Everything else in D-71 (sort, action row, shared filters, `RoamMap` reuse) stands.
+
+**Why a dedicated screen (and not just a re-styled map mode).** The same picture could be drawn inside `SearchScreen`, but a
+route also gives Android's hardware back a real "map → list" step, keeps the list (and its `FlatList`) out of the way while on
+the map, and lets each screen have exactly the layout it needs. Cost: the search state can no longer live in one screen.
+
+**Decisions.**
+
+- **Route `app/search.tsx` → `app/search/{_layout,index,map}.tsx`.** `/search` still resolves to `index` (every existing
+  `router.push('/search', …)`, the typed route and the tests are unchanged); `/search/map` is new, no conflict with `/map`
+  (the standalone Map screen). `AppRoutes`' `<Stack.Screen name="search" />` stays. The nested `Stack`
+  (`features/search/SearchLayout.tsx`) repeats `headerShown: false, gestureEnabled: false` (D-53 — nested navigators don't inherit
+  the root's `screenOptions`); the map opens with `animation: 'fade'`.
+- **`SearchSessionProvider`** (`SearchSessionContext.tsx`), mounted by that layout, holds the one Search state: `useSearch()`
+  (query, filters, results, loading, submitted), `sort`, recent searches, the selected map pin, plus `runSearch`/`applyFilters`
+  (previously duplicated inline in the screen). `sortedResults` is derived once there. Navigating list ↔ map keeps every bit of it;
+  leaving `/search` unmounts it (fresh start next time, as before). No second search logic, no second filters system — the
+  map screen calls the same `SearchFiltersSheet`.
+- **Map screen layout.** `RoamMap` (`rounded={false}`, `StyleSheet.absoluteFill`, no fixed height) is the surface; a
+  `pointerEvents="box-none"` overlay under `SafeAreaView edges={['top']}` carries the controls, so the map pans anywhere they
+  aren't and reaches every edge (also under the bottom inset — `ExperienceMapCard` adds it for itself).
+- **Header kept light:** two rows only — [‹ back (`IconButton`)] + `SearchInput` (the same component as the list), then the single
+  `SearchFilterChip`. `SearchFilterChip` is the one "Filtres" chip both screens use. The list's `back + title` row isn't repeated:
+  the ‹ button *is* the map's title row.
+- **Search field on the map** is live: editing + submit re-runs the shared search (pins update); clearing it empties the search and
+  goes back to the list's initial state (a map with no search is meaningless); no suggestions panel is shown over the map.
+- **Re-framing.** `RoamMap` frames once on mount, so `SearchMapScreen` keys it by the *set* of pinned ids: a new result set
+  re-frames, selecting a pin or reordering doesn't remount the native map. No loading screen replaces the map any more.
+- **No results:** the map stays, with a small "Aucune sortie trouvée" pill (existing `search.empty.title`) instead of a blank map.
+- **Tab bar:** analysed, not changed. `/search/map` sits in the root `Stack` beside `(tabs)` like `/search`, `/map` and
+  `experience/[id]`, where the floating tab bar isn't rendered — so the map is already immersive without touching `RoamTabBar`.
+- **Tests:** `SearchMapScreen.test.tsx` (layout, pins, selection/card/detail, shared filters, reset, no results, back /
+  deep-link fallback, clear), `searchRoutes.test.tsx` (real navigation: list → `/search/map` → back with query/filters/sort
+  intact, filters changed on the map carried back, pin → detail), `SearchScreen.test.tsx` ("Carte" pushes `/search/map`).

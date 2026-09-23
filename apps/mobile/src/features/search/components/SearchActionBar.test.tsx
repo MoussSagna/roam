@@ -6,7 +6,6 @@ import { SearchActionBar } from './SearchActionBar';
 
 function renderBar(overrides: Partial<Parameters<typeof SearchActionBar>[0]> = {}) {
   const props = {
-    view: 'list' as const,
     resultCount: 4,
     sortLabel: 'Recommandé',
     isSortActive: false,
@@ -19,8 +18,8 @@ function renderBar(overrides: Partial<Parameters<typeof SearchActionBar>[0]> = {
   return { props, render: renderWithProviders(<SearchActionBar {...props} />) };
 }
 
-describe('SearchActionBar (sprint 8 — search redesign)', () => {
-  it('list mode: shows Trier/Filtrer/Carte, the result count and the active sort label', async () => {
+describe('SearchActionBar (sprint 8 — search list)', () => {
+  it('shows Trier/Filtrer/Carte, the result count and the active sort label', async () => {
     const { render } = renderBar({ resultCount: 4, sortLabel: 'Recommandé' });
     await render;
 
@@ -31,7 +30,7 @@ describe('SearchActionBar (sprint 8 — search redesign)', () => {
     expect(screen.getByText('Recommandé')).toBeOnTheScreen();
   });
 
-  it('list mode: neither Trier nor Filtres is selected when nothing is active', async () => {
+  it('neither Trier nor Filtres is selected when nothing is active', async () => {
     const { render } = renderBar();
     await render;
 
@@ -39,7 +38,7 @@ describe('SearchActionBar (sprint 8 — search redesign)', () => {
     expect(screen.getByRole('button', { name: 'Filtres' })).not.toBeSelected();
   });
 
-  it('list mode: reflects an active sort and active filters as selected', async () => {
+  it('reflects an active sort and active filters as selected', async () => {
     const { render } = renderBar({ isSortActive: true, isFiltersActive: true });
     await render;
 
@@ -59,16 +58,5 @@ describe('SearchActionBar (sprint 8 — search redesign)', () => {
 
     await fireEvent.press(screen.getByRole('button', { name: 'Carte' }));
     expect(props.onPressMap).toHaveBeenCalledTimes(1);
-  });
-
-  it('map mode: shows only Filtrer, no Trier/Carte chip and no count row', async () => {
-    const { render } = renderBar({ view: 'map', isFiltersActive: true });
-    await render;
-
-    expect(screen.getByRole('button', { name: 'Filtres' })).toBeOnTheScreen();
-    expect(screen.getByRole('button', { name: 'Filtres' })).toBeSelected();
-    expect(screen.queryByRole('button', { name: 'Trier' })).toBeNull();
-    expect(screen.queryByRole('button', { name: 'Carte' })).toBeNull();
-    expect(screen.queryByText('4 expériences')).toBeNull();
   });
 });

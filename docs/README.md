@@ -54,9 +54,9 @@ always rendered, so it could be pressed with no route behind it right after logo
 D-62.
 **Global search is now real** (`/search`), opened identically from both Home's and Discover's search
 bars: recent searches (persisted), trending chips, explore-by-mood, live suggestions, filterable
-results in a list (Trier / Filtres / Carte) or a full-screen real map (`RoamMap`) over the same sorted/filtered
+results in a list (Trier / Filtres / Carte) or a dedicated full-screen real map (`/search/map`, `RoamMap`) over the same sorted/filtered
 results, and a "no results" state with fallback suggestions — mock data only, no real query engine — see
-`DECISIONS.md` D-68 and D-71. The Map screen (`/map`) is a real `react-native-maps` map on mock data too (sprint 7, D-70);
+`DECISIONS.md` D-68, D-71 and D-72. The Map screen (`/map`) is a real `react-native-maps` map on mock data too (sprint 7, D-70);
 the remaining illustrated maps (experience detail, onboarding) are replaced one screen at a time.
 
 The product is intentionally MVP-first. Do not expand scope without an explicit requirement.
