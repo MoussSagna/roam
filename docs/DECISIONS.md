@@ -1970,3 +1970,254 @@ independently ("Login affiche un bouton retour qui plante").
   at all, a different, already-correct case, D-53); a `getCurrentSession()`-style new auth abstraction
   (the brief's own §7 keeps the mocked session exactly as it is — `AuthProvider`/`useAuth`, D-44 — no
   API, JWT, Prisma or backend introduced).
+
+## Profile / Settings split (2026-09-23)
+
+### D-63 — Profile becomes identity/activity/taste; a new, real Settings screen holds configuration
+
+Refactor, not a new screen from scratch: `ProfileScreen` (sprint 5 écran 1, D-50) is rebuilt around
+"qui je suis, ce que j'aime et ce que je fais sur ROAM"; everything that was account/app configuration
+moves to a new `SettingsScreen`, reached from the existing gear icon (`/profile/settings`, already
+wired to that route since D-50 — a `ProfilePlaceholder` until now). No route was added, renamed or
+duplicated: every destination this session touches already existed.
+
+- **What moved, and why each one qualifies as "configuration" and not "taste/activity"**: Préférences
+  (row removed from Profile's menu, `/profile/preferences` itself untouched — see "two entry points"
+  below), Langue, Thème, Aide & Support, Confidentialité, Se déconnecter (+ its `ConfirmationModal`,
+  D-62, moved verbatim — same `logout()`/`router.replace('/auth/login')` call, no new logic). "Modifier
+  mon profil" also gained a **second** entry point in Settings' "Compte" group (`/profile/edit`,
+  unchanged route) — the brief's own suggested structure asks for it there, alongside the pencil-edit
+  button already on `ProfileHeader`, the same "more than one door to the same room" pattern already
+  established for Preferences (see below).
+- **Two access points to Preferences, one screen — not two.** `PreferencesScreen`/`/profile/preferences`
+  is completely unchanged; both "Profil → Ce que j'aime → Modifier" and "Paramètres → Mes préférences"
+  `router.push` the exact same route. The brief was explicit this must not become two different
+  Preferences screens, and reusing one route from two call sites needed no new code to keep that true.
+- **`SettingsScreen` reuses `ProfileMenuRow` for every row** — the brief's own instruction ("ne crée pas
+  inutilement de nouveaux patterns si un composant SettingsRow/ListItem existe déjà") is satisfied
+  literally: that component already _is_ the settings-row shape (icon, label, optional value/subtitle,
+  chevron), unchanged. Group headers ("Compte", "Préférences ROAM", "Apparence", "Support",
+  "Confidentialité & données", "Session") are a plain `Text variant="caption"` each — not a new
+  component, since a static label above a group needed nothing more.
+- **"Ce que j'aime" shows the current `DEFAULT_EXPERIENCE_TYPES`/`DEFAULT_AMBIANCE` selection
+  (`Chip`, unselected style, non-interactive), not a richer, invented tag list.** `PreferencesScreen`'s
+  own selection state is local to that screen (D-51: "no repository, nothing persisted") — there is no
+  shared, queryable "user's current preferences" to read from anywhere else yet. Reading the exact same
+  default constants `PreferencesScreen` itself seeds from is the only truthful thing Profile can show
+  without inventing a fake selection or building the shared-state layer the brief explicitly scoped out
+  ("ne fais pas un gros refactor global"). Reused as-is: `EXPERIENCE_TYPES`/`AMBIANCE_OPTIONS`
+  (`features/profile/data/`, D-51) for the id/icon/i18n-key list, filtered down to the default ids.
+- **"Parcours en cours" is new UI over a small, purpose-built mock overlay
+  (`data/activeJourney.ts`/`useActiveJourney`), not a new itinerary system.** There is no
+  itinerary-progress feature yet (`itinerary/create` is still `CreateJourneyPlaceholder`,
+  `04_TECH_STACK.md`), so "current step 2 of 5" etc. has nothing real to compute from. Same "extend
+  `Experience`... no, actually don't" call as the statistics screen's breakdowns (D-59): here the
+  progress fields are kept in their own small record (`experienceId` + `currentStep`/`totalSteps`/
+  `nextStep`) rather than added to `Experience` itself, because journey progress is per-user session
+  state conceptually, not a property of the experience — the hook joins the two at read time
+  (`repositories.experiences.getById`) instead. The referenced experience (`exp-live-concert`) was
+  chosen deliberately **not** already seeded as a favorite or history entry (D-57/D-58), so this
+  section reads as its own distinct thing instead of visually overlapping the favorites/history
+  previews directly below it — confirmed the hard way, by an initial pick (`exp-jazz-night`) that _was_
+  also a favorite, producing ambiguous duplicate-text test queries once both sections rendered it.
+  "Continuer mon parcours" pushes the existing `itinerary/create` placeholder (the one registered
+  route this app has for "an itinerary flow", D-48) rather than inventing a new route for a screen that
+  doesn't exist; "Voir sur la carte" from the brief's own mockup was **not** built — no map screen exists
+  yet (`features/map` is an empty `.gitkeep`) and the brief itself marks that action "éventuellement".
+- **New `ExperiencePreviewCard`, not a reuse of Home's `ExperienceCard`.** The favorites/history
+  previews are a fixed 3-column row sized to a third of the screen width; `ExperienceCard` is a fixed
+  260px horizontal-scroll card (Home's carousels) — forcing that width into a 3-up grid would have
+  meant fighting its own sizing, not reusing it. The new card is deliberately smaller and simpler (image,
+  title, one subtitle line, an optional decorative badge slot) — the favorites preview passes a small
+  static heart badge (no toggle: removal stays the full Favorites screen's job, same "preview, not a
+  second full feature" scope as the rest of this section), the history preview passes none.
+- **Both preview rows hide themselves when empty** (`favorites.length > 0` / `history.length > 0`)
+  rather than rendering their own nested empty state — Profile is a preview surface for those lists, and
+  the real empty states already exist on `/profile/favorites`/`/profile/history` (D-57/D-58); duplicating
+  them here would be a second copy of the same UI for a screen this brief didn't ask to touch.
+- **New `ActivitySummaryCard`, reusing `UserStats` (`useCurrentUser`) — same numbers as the top
+  `ProfileStats` row, a second, year-framed presentation of them**, not new data. Same "same data,
+  different shape, so a different component" reasoning the statistics screen's own `StatCard` already
+  used against `ProfileStats` (D-59).
+- **Not done on purpose**: a shared/persisted preferences store (see above — explicitly out of the
+  "no big refactor" scope); a real itinerary-progress system behind "Parcours en cours" (see above); a
+  "Voir sur la carte" action (no map screen exists); deleting or renaming any existing route (every
+  destination already existed); touching `PreferencesScreen`, `FavoritesScreen`, `HistoryScreen`,
+  `StatisticsScreen`, `LanguageScreen`, `ThemeScreen` or any other already-validated screen beyond what
+  points to them.
+
+### D-64 — `ProfileScreen` adopts `StickyRevealHeader` (follow-up to D-63)
+
+Same-day follow-up: `ProfileScreen` was the one screen this sprint's Profile/Settings refactor left on
+the plain inline title row (`Text` + gear `IconButton` in a `flex-row`); every sub-screen it links to
+already uses `StickyRevealHeader` (D-56 onward). Brought in line, no other change.
+
+- **Same restructure as every other adoption**: the in-content `h2` "Profil" stands in for the title
+  until the floating header's own title crossfades in past `HEADER_REVEAL_OFFSET` (70, the same proxy
+  value used everywhere else this sprint); the settings gear moved from the inline row into the
+  header's `rightSlot` — same icon, same `accessibilityLabel`, same destination, so the existing test
+  asserting `router.push('/profile/settings')` needed no change.
+- **No `leftSlot`**: unlike the pushed `/profile/*` sub-screens (which all show a back button there),
+  Profile is a tab root reached from the tab bar, not pushed — there is nothing to go back to, so the
+  slot is simply omitted (the component already renders nothing when a slot isn't passed, same as
+  `HomeHeader`'s own no-back-button header).
+- **Scroll handling merges two independent concerns in one function**, `handleScroll`: mutating
+  `scrollY.value` for the header's own crossfade, and forwarding the same event to the existing
+  `useTabBarScrollHandler()` for `RoamTabBar`'s collapse — the exact pattern `HomeScreen` already
+  established for combining its own hero-stretch shared value with the tab bar handler, not a new one.
+- **Not done on purpose**: a scroll-driven reveal test at the screen level — same "not meaningfully
+  testable under this setup" category D-49/D-55 already document for this exact crossfade; the
+  mechanism itself stays covered by `StickyRevealHeader.test.tsx`.
+
+## Discover (2026-09-23)
+
+### D-65 — Discover 1: immersive editorial discovery (route `/discover`); new `Collection` type/repository
+
+`DiscoverScreen` (`src/features/discover/`) replaces the sprint 3 placeholder. Sprint 6 brief:
+Discover is an editorial "magazine vivant de sorties", explicitly **not** a social feed — no profiles,
+followers, stories, comments or like counts. Built on two mock pools through the same
+`Screen -> hook -> Repository -> mock` pattern as Home (`useDiscoverData`).
+
+- **New domain type and repository: `Collection`** (`src/types/collection.ts`, `CollectionRepository`
+  in `services/repositories/types.ts`). An editorial grouping of experiences around a theme ("Les plus
+  beaux rooftops de Paris", "Quand il pleut"…) — distinct from `Experience` (a composed outing) and from
+  a `Category` (a place taxonomy). Mock fixtures live alongside the existing ones in
+  `services/mock/data.ts` (`collections`), same "plain, already-formatted strings" convention as
+  `Experience` (D-09/D-10); `isFeatured` marks the two shown in "Sélection ROAM", the rest only appear
+  in "Explorer par envie" (no collection is shown under two different cards at once).
+- **No `StickyRevealHeader`.** Unlike Experience Detail or Profile, Discover has no full-bleed hero photo
+  at the very top for a header to reveal over — its own "hero" (Sélection ROAM) is an inset card further
+  down the page. A plain in-flow title (the sprint 3 placeholder's own shape, kept) is the correct fit,
+  not a gap in adopting the pattern.
+- **Secondary-nav tabs actually filter the page**, rather than being cosmetic: "Pour toi" (default) shows
+  the full editorial mix (`RoamSelectionSection`, `SuggestionsSection`, the immersive card, `NearbySection`,
+  `TrendingSection`, `CollectionsSection`); "Tendances"/"À proximité"/"Collections" narrow the page down to
+  the one section they name (`DiscoverScreen`'s `TAB_SECTIONS` map). The mockup only shows "Pour toi", so
+  the other three tabs' content mix was a judgment call, not a documented design.
+- **"Suggestions pour toi" (Ce soir / Entre amis / En couple / Culture / Nature / Activités) is a
+  different, smaller vocabulary than Home's own mood chips** (`HOME_MOODS`): moment/company/category
+  shortcuts to inspire browsing, not a filter on the `Mood` type. Static config (`SUGGESTION_MOODS`,
+  same "no repository for a fixed option list" precedent as `HOME_MOODS`/`NEARBY_CATEGORIES`), purely
+  presentational — selecting a tile only highlights it, same "local state, nothing wired to it yet"
+  precedent as the onboarding mood/interests screens.
+- **The "grande expérience immersive" section's headline/subtitle are static editorial copy**
+  (`discover.immersive.*`, e.g. "Pour une soirée qui change"), deliberately independent from whichever
+  experience is picked underneath it (`pickImmersiveExperience`: first festive-mood experience, or the
+  first one). Reusing the picked experience's own `title`/`description` instead was considered and
+  rejected: the section should read as a standing "night out" invitation, not one specific place's
+  self-description that happens to change every time the mock pool changes.
+- **Reused rather than duplicated:** `ExperienceCard` and `SectionHeader` (from `features/home/components/`,
+  same cross-feature precedent as `SimilarExperiencesSection`) for "Près de toi" and "Ce qui fait envie en
+  ce moment" — the brief's own description of those cards (image, distance, rating, tap-to-open) is
+  exactly `ExperienceCard`'s existing shape. `parseDistanceMeters` (Home's `pickForYou.ts`) is exported and
+  reused by `pickNearby.ts` rather than re-implemented.
+- **One configurable `DiscoverCollectionCard`, not two near-duplicate components**: `variant="hero"` (image
+  then title/subtitle/CTA below it, "Sélection ROAM") and `variant="compact"` (title overlaid on the image,
+  "Explorer par envie") are one component, per the brief's own "évalue s'il peut être rendu configurable"
+  guidance (§7).
+- **New placeholder routes, same pattern as every other one this project has needed**
+  (`CreateJourneyPlaceholder`/`ProfilePlaceholder`, D-45/D-50): `collection/[id]` (`CollectionDetailPlaceholder`,
+  shows the real collection's own title, not a new i18n key) for "tap a collection", and `/map`
+  (`MapPlaceholder`, `features/map/`, reusing the existing `map.title` key) for "Voir la carte" — neither
+  screen is built this sprint (`08_AGENT_TODO.md` still lists Itinerary/Map as not done).
+- **States**: loading/error/empty are real, not just content (`useDiscoverData` tracks `isError` — the mock
+  repositories never reject today, but the hook stays ready for a real API implementation that can, unlike
+  `useHomeExperiences` which only tracks `isLoading`).
+
+### D-66 — Horizontal lists/carousels default to `FlatList`; existing `ScrollView horizontal` carousels audited, not migrated
+
+New project-wide rule, requested for this sprint and meant to outlive it:
+
+> Horizontal lists and carousels of repeating data default to `FlatList horizontal`. `ScrollView
+horizontal` is reserved for a paging pager with its own custom scroll-position tracking (a hero,
+> a gallery) or other genuinely non-repeating/special-cased content — not for a plain list of cards.
+
+Reasons (documented in `DEVELOPMENT.md`'s new "Horizontal lists / carousels" section): virtualization,
+better performance on longer lists, a consistent component shape across the app, and readiness for real
+API data (a `FlatList` doesn't change shape when its `data` stops being a small fixed mock array).
+
+- **Applied to every carousel/list built for Discover this sprint** (`DiscoverTabs`, `RoamSelectionSection`,
+  `SuggestionsSection`, `NearbySection`, `TrendingSection`, `CollectionsSection`) — all `FlatList horizontal`,
+  none of them `ScrollView`. The one exception, `ImmersiveExperienceCard`, is a single fixed card, not a
+  repeating list, so the rule doesn't apply to it (a plain `View`).
+- **Audit of existing screens** (brief §15) found these `ScrollView horizontal` carousels of repeating data,
+  none migrated this sprint (see below for why):
+  - `HomeScreen.tsx`: the mood chips, "Les expériences les plus populaires", "Lieux proches de toi" and
+    "Des idées pour toi" sections (4 carousels).
+  - `SimilarExperiencesSection.tsx` (experience detail): "Suggestions similaires".
+  - `HistoryScreen.tsx` (profile): the category filter chip row.
+- **Not migrated, on purpose** — the brief itself asks for restraint here ("si une migration présente un
+  risque important, ne la fais pas immédiatement; documente-la plutôt") and states the sprint's real goal
+  is putting the strategy in place and applying it to Discover, not retrofitting every existing screen:
+  - Each of the three files above is an already-validated, tested screen (`HomeScreen.test.tsx`,
+    `ExperienceDetailScreen.test.tsx`, `HistoryScreen.test.tsx`, plus the route-tree tests that scroll
+    `home-scroll` by testID) — a mechanical `ScrollView` -> `FlatList` swap is low-risk in isolation, but
+    touching four sections across three screens for no user-visible change, with no code owner asking for
+    it yet, is exactly the kind of scope creep `00_AGENT_INSTRUCTIONS.md` warns against ("avoid
+    overengineering", "prioritize the core user journey").
+  - Migrate each one **the next time that screen is touched for an unrelated reason** (a bug fix, a new
+    section, a design change) — do not do it as a drive-by change, and do not do all of them in one sweep
+    either: one screen, one focused change, same "one screen per session" discipline as
+    `SCREEN_INTEGRATION_WORKFLOW.md`.
+- **Deliberately excluded from the rule** (not carousels of repeating data, kept as `ScrollView`):
+  - `HeroCarousel.tsx` (Home) and `ExperienceHero.tsx` (experience detail): paging `ScrollView`s with their
+    own `ref`-based `scrollTo`, `onScroll`-driven `activeIndex`/shared-value tracking, and (Home) a
+    pull-to-stretch `Animated.View` wrapper — a `FlatList` buys virtualization neither needs (both show at
+    most 5 slides) at the cost of rebuilding that tracking against `FlatList`'s different ref API, for a
+    UI role (a full-bleed hero pager) that isn't "a list of cards" in the first place.
+  - Every vertical page-container `ScrollView` (`ScrollScreen`, the auth screens' own `ScrollView` +
+    `KeyboardAvoidingView`, `ExperienceDetailScreen`'s main scroll) — the rule is about **horizontal**
+    carousels of repeating items; a page's own vertical scroll container is a different thing entirely.
+
+## Discover carousels: full-bleed + snap (2026-09-23)
+
+### D-67 — `HorizontalCarousel` (generic, reusable); Discover's five carousels bleed past the page padding and snap
+
+Follow-up requested after reviewing D-65/D-66 on device: Discover's carousels sat inside the page's own
+`px-6` padding, so "peek" cards were visually boxed in (clipped by that padding instead of bleeding to the
+screen's physical edge) and swiping didn't settle cleanly on a card boundary. Explicitly **not** a
+redesign — no section, card, color, text, navigation or animation changed; this only touches how the five
+existing `FlatList`s scroll and are positioned.
+
+- **New primitive: `components/ui/HorizontalCarousel.tsx`.** A thin `FlatList` wrapper, not a new
+  abstraction over cards/data: it owns exactly two mechanics — full-bleed positioning and snap — and
+  passes everything else (`data`, `renderItem`, `keyExtractor`, …) straight through. Checked first for an
+  existing carousel component to adapt (brief §7); none existed, so this is new, placed in
+  `components/ui/` (not `features/discover/`) since nothing about it is Discover-specific — any future
+  screen with the same "padded page, full-bleed peek-card carousel" shape can reuse it as-is.
+- **Full bleed**: `marginHorizontal: -sidePadding` on the `FlatList` (default 24, matching `px-6`) cancels
+  the parent's padding; a matching `paddingHorizontal: sidePadding` in `contentContainerStyle` keeps the
+  first/last item aligned with the rest of the page's content rather than touching the physical screen
+  edge. A wrapper `View` with negative margin around an untouched `FlatList` was considered and rejected
+  as an unnecessary extra layer — the negation belongs on the scrollable element itself.
+- **Snap**: `snapToInterval={itemWidth + spacing}`, `snapToAlignment="start"`, `decelerationRate="fast"`,
+  exactly as requested. `pagingEnabled` was evaluated for the Sélection ROAM hero cards (brief's own
+  suggestion for "cards occupying exactly one page") and rejected: once full-bleed, the carousel's own
+  frame is the full window width, but the hero card itself is narrower
+  (`windowWidth - 2 * sidePadding`, `DiscoverCollectionCard`'s `getHeroCardWidth`) — paging by the frame's
+  width would drift out of alignment with the card's actual width after a few swipes. `snapToInterval`
+  computed from the card's real width doesn't have that mismatch, so it's used uniformly for all five
+  carousels rather than special-casing the hero one.
+- **One exported width constant per card, not a second hardcoded copy in each section** — the exact
+  failure mode brief §5 warns about ("ne mets pas une valeur arbitraire en dur"): `ExperienceCard` exports
+  `CARD_WIDTH` (used by `NearbySection`/`TrendingSection`), `DiscoverMoodCard` exports `TILE_SIZE`
+  (`SuggestionsSection`), `DiscoverCollectionCard` exports `COMPACT_WIDTH` (`CollectionsSection`) and
+  `getHeroCardWidth(windowWidth)` (`RoamSelectionSection`, which calls `useWindowDimensions()` itself and
+  passes the same number both to the card and to the carousel's `itemWidth`). None of these exports change
+  what the card looks like — purely making an already-fixed value or already-existing formula reusable.
+- **`DiscoverTabs` (the secondary-nav chip row) was deliberately left untouched.** It's a navigation
+  control, not a "peek card" carousel — the reported problem (cards clipped by the page's padding) doesn't
+  really apply to a row of pill-shaped chips, and bleeding the tab selector to the screen edges wasn't
+  asked for; doing it anyway would be exactly the "modifier la navigation" this pass was told not to do.
+- **Existing `ScrollView horizontal` carousels (D-66's audit) are unaffected** — this pass only touches
+  Discover's own `FlatList`s; Home's mood/popular/nearby/for-you sections, experience detail's
+  "Suggestions similaires" and the history screen's category filter still use their original
+  `ScrollView`s, unchanged. `HorizontalCarousel` exists now as the target shape for whenever one of them
+  is migrated later, but adopting it there is still its own, separate change (D-66 still applies: migrate
+  one screen at a time, not as a drive-by of this pass).
+- **New test file `HorizontalCarousel.test.tsx`.** No visible role/text distinguishes a full-bleed,
+  snapping `FlatList` from a plain one, so — unlike the rest of this codebase's component tests — it reads
+  the rendered `FlatList` element's own props via a `testID` passed straight through
+  (`screen.getByTestId(...).props`), the only query that can actually see `style`/`snapToInterval`/etc.
+  `UNSAFE_getByType` (the more common React Testing Library escape hatch for this) doesn't exist in this
+  project's RNTL version (14.0.1) — `getByTestId` reaches the same props on the host node without it.

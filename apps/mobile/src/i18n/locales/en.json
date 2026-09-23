@@ -179,7 +179,52 @@
     "reviewCount": "({count} reviews)"
   },
   "discover": {
-    "title": "Discover"
+    "title": "Discover",
+    "subtitle": "Places, experiences, and ideas for today.",
+    "search": {
+      "placeholder": "What do you want to discover?",
+      "filters": "Filters"
+    },
+    "tabs": {
+      "forYou": "For you",
+      "trends": "Trending",
+      "nearby": "Nearby",
+      "collections": "Collections"
+    },
+    "roamSelection": {
+      "badge": "ROAM Selection",
+      "cta": "Discover the selection",
+      "places": "{count} places"
+    },
+    "sections": {
+      "suggestions": "Suggestions for you",
+      "nearby": "Near you",
+      "seeMap": "See the map",
+      "trending": "Trending right now",
+      "collections": "Explore by mood"
+    },
+    "suggestions": {
+      "tonight": "Tonight",
+      "friends": "With friends",
+      "couple": "As a couple",
+      "culture": "Culture",
+      "nature": "Nature",
+      "activities": "Activities"
+    },
+    "immersive": {
+      "eyebrow": "Immersive experience",
+      "title": "For a night that stands out",
+      "subtitle": "An experience designed to break the routine.",
+      "cta": "Explore"
+    },
+    "empty": {
+      "title": "Nothing to discover yet",
+      "description": "Check back soon, new ideas are added regularly."
+    },
+    "error": {
+      "title": "Couldn't load Discover",
+      "description": "Something went wrong while loading this content."
+    }
   },
   "context": {
     "mood": {
@@ -380,6 +425,24 @@
     "logoutConfirm": {
       "title": "Log out?",
       "description": "You'll be signed out of your account, but your data will stay safe."
+    },
+    "likes": {
+      "title": "What I like",
+      "edit": "Edit"
+    },
+    "journey": {
+      "title": "Ongoing journey",
+      "stepsProgress": "{current} / {total} steps",
+      "nextStep": "Next stop",
+      "continueCta": "Continue my journey",
+      "empty": {
+        "title": "You have no ongoing journey.",
+        "cta": "Discover experiences"
+      }
+    },
+    "activity": {
+      "title": "My activity this year",
+      "outingsThisYear": "outings this year"
     }
   },
   "statistics": {
@@ -460,6 +523,13 @@
     "languages": {
       "fr": "Français",
       "en": "English"
+    },
+    "sections": {
+      "account": "Account",
+      "preferences": "ROAM preferences",
+      "support": "Support",
+      "privacyData": "Privacy & data",
+      "session": "Session"
     }
   },
   "auth": {

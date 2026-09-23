@@ -19,6 +19,15 @@ describe('repositories (mock implementation)', () => {
   it('returns null for unknown ids', async () => {
     expect(await repositories.experiences.getById('nope')).toBeNull();
     expect(await repositories.places.getById('nope')).toBeNull();
+    expect(await repositories.collections.getById('nope')).toBeNull();
+  });
+
+  it('lists collections and resolves one by id', async () => {
+    const collections = await repositories.collections.list();
+    expect(collections.length).toBeGreaterThan(0);
+
+    const [first] = collections;
+    expect(await repositories.collections.getById(first.id)).toEqual(first);
   });
 
   it('returns copies so callers cannot mutate the fixtures', async () => {

@@ -1,4 +1,4 @@
-import type { Category, Experience, ExperienceReview, Place, User } from '@/types';
+import type { Category, Collection, Experience, ExperienceReview, Place, User } from '@/types';
 
 /** Tiny fixture set: just enough to exercise the repository layer. Real mock content comes with the features. */
 
@@ -528,6 +528,74 @@ export const experiences: Experience[] = [
     highlights: ['Concerts et expositions', 'Ancienne coopérative rénovée', 'Brunch le dimanche'],
     reviews: [reviewCulture, reviewRooftop],
     similarExperienceIds: ['exp-night-museum', 'exp-live-concert'],
+  },
+];
+
+/**
+ * Discover's editorial collections (sprint 6): reuses the same 8-photo pool as the experiences above
+ * (`docs/DECISIONS.md` D-45) rather than new assets — same "temporary, reused placeholders" precedent.
+ * `experienceIds` reference the pool above; unresolved ids are simply skipped by the screen.
+ */
+export const collections: Collection[] = [
+  {
+    id: 'col-rooftops',
+    title: 'Les plus beaux rooftops de Paris',
+    subtitle: '5 adresses pour admirer la ville autrement',
+    coverImage: heroTerrace,
+    experienceIds: ['exp-rooftop-sunset', 'exp-dinner-view', 'exp-mama-shelter'],
+    priceFromLabel: 'À partir de 10 €',
+    isFeatured: true,
+  },
+  {
+    id: 'col-night-out',
+    title: 'Une soirée qui sort de l’ordinaire',
+    subtitle: 'Des lieux pour une soirée qui change du quotidien',
+    coverImage: heroNightParis,
+    experienceIds: ['exp-jazz-night', 'exp-live-concert', 'exp-hasard-ludique'],
+    priceFromLabel: 'À partir de 15 €',
+    isFeatured: true,
+  },
+  {
+    id: 'col-date',
+    title: 'Pour un date',
+    subtitle: 'Des adresses pensées pour deux',
+    coverImage: heroCafe,
+    experienceIds: ['exp-dinner-view', 'exp-rooftop-sunset'],
+  },
+  {
+    id: 'col-rainy-day',
+    title: 'Quand il pleut',
+    subtitle: 'Des idées de sortie à l’abri',
+    coverImage: heroDuskCity,
+    experienceIds: ['exp-night-museum', 'exp-modern-art-museum', 'exp-bellevilloise'],
+  },
+  {
+    id: 'col-low-budget',
+    title: 'Petit budget',
+    subtitle: 'Sortir sans se ruiner',
+    coverImage: heroLake,
+    experienceIds: ['exp-nature-getaway', 'exp-lake-hike', 'exp-picnic-park'],
+  },
+  {
+    id: 'col-after-work',
+    title: 'Après le travail',
+    subtitle: 'Décompresser en sortant du bureau',
+    coverImage: heroStreet,
+    experienceIds: ['exp-hasard-ludique', 'exp-rooftop-sunset'],
+  },
+  {
+    id: 'col-lazy-sunday',
+    title: 'Dimanche tranquille',
+    subtitle: 'Un rythme calme pour finir la semaine',
+    coverImage: heroLandscape,
+    experienceIds: ['exp-slow-afternoon', 'exp-picnic-park'],
+  },
+  {
+    id: 'col-friends',
+    title: 'Sortie entre amis',
+    subtitle: 'Des plans qui rassemblent le groupe',
+    coverImage: heroCityscape,
+    experienceIds: ['exp-live-concert', 'exp-bellevilloise', 'exp-mama-shelter'],
   },
 ];
 

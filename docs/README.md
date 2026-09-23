@@ -32,19 +32,25 @@ success) — see `DECISIONS.md` D-28, D-29, D-31–D-36, `08_AGENT_TODO.md` and 
 The main navigation is also built: four tabs (Home, Discover, Favorites, Profile) behind a floating pill/bubble
 tab bar that collapses into a bubble on scroll and expands on tap — see `DECISIONS.md` D-38 to D-43. **Home is
 now the real discovery screen** (hero carousel, mood chips, popular/nearby/for-you sections, mock data only) —
-see `DECISIONS.md` D-45; the `Discover` tab and the `Favorites` tab are still sprint 3 placeholder content.
+see `DECISIONS.md` D-45. **Discover is now a real, immersive editorial discovery page** (Sélection ROAM,
+suggestions, an immersive experience block, nearby/trending experiences, editorial collections; horizontal
+carousels/lists now default to `FlatList`, mock data only) — see `DECISIONS.md` D-65, D-66; the `Favorites`
+tab is still sprint 3 placeholder content.
 **Experience detail and its full-screen photo gallery are built** (hero → gallery transition, reviews, similar
 experiences, mock data only) — see `DECISIONS.md` D-48; the itinerary/journey screen its CTAs lead to is still
-a placeholder. **Profile's main screen, "Mes préférences", "Mes favoris", "Mon historique", "Mes statistiques",
-"Langue" and "Thème" are now real** (header, stats, grouped menu; experience types, ambiance, budget/distance
-sliders; favorited experiences with removal and an empty state; completed experiences grouped by date with a
-category filter; summary cards, a genre/city breakdown and a mood donut chart (`react-native-gifted-charts`); a
-dynamically derived, never-hardcoded language list; Light/Dark/System selection — mock data only except the
-language/theme systems, one screen at a time) — see `DECISIONS.md` D-50, D-51, D-57, D-58, D-59, D-60, D-61;
-the other screens it links to (edit profile, help, privacy, settings) are still placeholders, each built in
-its own session. **Logout now asks for confirmation** (a new, reusable `ConfirmationModal`) before calling
-the existing mocked `logout()`/navigation-reset flow, and a real navigation bug is fixed: `AuthTopBar`'s
-back button no longer renders when there's nothing to go back to (previously always rendered, so it could
-be pressed with no route behind it right after logout) — see `DECISIONS.md` D-62.
+a placeholder. **Profile is now identity/activity/taste** (header, stats, "Parcours en cours", "Ce que
+j'aime", favorites/history previews, a yearly activity summary) **and configuration moved to a new,
+real Settings screen** (`/profile/settings`: account, préférences, langue/thème, aide, confidentialité,
+déconnexion) — "Mes préférences", "Mes favoris", "Mon historique", "Mes statistiques", "Langue" and
+"Thème" are all real, reached from both Profile and Settings where called for; summary cards, a
+genre/city breakdown and a mood donut chart (`react-native-gifted-charts`); a dynamically derived,
+never-hardcoded language list; Light/Dark/System selection — mock data only except the language/theme
+systems, one screen at a time — see `DECISIONS.md` D-50, D-51, D-57, D-58, D-59, D-60, D-61, D-63; the
+other screens Settings links to (edit profile, help, privacy) are still placeholders, each built in its
+own session. **Logout now asks for confirmation** (a reusable `ConfirmationModal`, now living in
+Settings) before calling the existing mocked `logout()`/navigation-reset flow, and a real navigation bug
+is fixed: `AuthTopBar`'s back button no longer renders when there's nothing to go back to (previously
+always rendered, so it could be pressed with no route behind it right after logout) — see `DECISIONS.md`
+D-62.
 
 The product is intentionally MVP-first. Do not expand scope without an explicit requirement.

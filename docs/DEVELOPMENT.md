@@ -9,18 +9,21 @@ forgot-password sub-flow (email → reset code → new password → success) —
 mockup's post-authentication screens (a welcome-back moment, location permission, "Tout est prêt") were never part of that
 sprint's scope and are still not built (`DECISIONS.md` D-29). **Main navigation** (four tabs behind a floating pill/bubble
 tab bar) is built — see `DECISIONS.md` D-38 to D-43. **Home is now the real discovery screen** (hero carousel, mood
-chips, popular/nearby/for-you sections, sprint 5, `DECISIONS.md` D-45); the `/discover` and `/favorites` tabs are still the
-sprint 3 placeholder content. **Experience detail and its full-screen gallery are also built** (sprint 5, `DECISIONS.md`
-D-48); the itinerary/journey screen it leads to is still a placeholder. **Profile's main screen, "Mes préférences",
-"Mes favoris", "Mon historique", "Mes statistiques", "Langue" and "Thème" are now real** (header, stats, grouped
-menu; experience types/ambiance/budget/distance; favorited experiences with removal and an empty state; completed
-experiences grouped by date with a category filter; summary cards, a genre/city breakdown and a mood donut
-chart; a dynamic, i18n-resource-derived language list; Light/Dark/System selection; sprint 5, one screen at a
-time, `DECISIONS.md` D-50, D-51, D-57, D-58, D-59, D-60, D-61); the other four screens it links to (edit
-profile, help, privacy, settings) are still placeholders, built one per session. There is **no backend, no
-database and no API**: nothing is sent or stored, and every answer/interaction is local state, mock repository
-content, or a simulated delay used for the prototype only (`DECISIONS.md` D-28, D-29, D-31 to D-36, D-45, D-50,
-D-51, D-57, D-58, D-59, D-60, D-61).
+chips, popular/nearby/for-you sections, sprint 5, `DECISIONS.md` D-45). **Discover is now a real, immersive editorial
+discovery page** (Sélection ROAM, suggestions, an immersive experience block, nearby/trending experiences, editorial
+collections — sprint 6, `DECISIONS.md` D-65); the `/favorites` tab is still the sprint 3 placeholder content.
+**Experience detail and its full-screen gallery are also built** (sprint 5, `DECISIONS.md`
+D-48); the itinerary/journey screen it leads to is still a placeholder, and so is the Map screen Discover's "Voir la
+carte" now links to (`DECISIONS.md` D-65). **Profile is now identity/activity/taste
+— header, stats, "Parcours en cours", "Ce que j'aime", favorites/history previews and a yearly activity
+summary — and configuration moved to a new, real Settings screen** (`/profile/settings`: account, préférences,
+langue/thème, aide, confidentialité, déconnexion — all reused routes/rows, sprint 5, `DECISIONS.md` D-63).
+"Mes préférences", "Mes favoris", "Mon historique", "Mes statistiques", "Langue" and "Thème" are all real
+screens, reached from both Profile and Settings where the brief calls for it — see `DECISIONS.md` D-50, D-51,
+D-57, D-58, D-59, D-60, D-61, D-63. The other three screens Settings links to (edit profile, help, privacy) are
+still placeholders, built one per session. There is **no backend, no database and no API**: nothing is sent or
+stored, and every answer/interaction is local state, mock repository content, or a simulated delay used for the
+prototype only (`DECISIONS.md` D-28, D-29, D-31 to D-36, D-45, D-50, D-51, D-57, D-58, D-59, D-60, D-61, D-63, D-65).
 
 ## Requirements
 
@@ -80,13 +83,14 @@ apps/mobile/
     │   ├── onboarding/      # Onboarding: the 8 screens, onboardingFlow.ts (routes, order), profileCreation.ts (simulation)
     │   ├── navigation/      # Main navigation: RoamTabBar (floating pill/bubble), TabBarCollapseContext, tabBarConfig
     │   ├── home/            # Home (sprint 5): hero carousel, sections, mock data/lib — see the table below
-    │   ├── discover/        # Still sprint 3 placeholder content
+    │   ├── discover/        # Discover (sprint 6): immersive editorial discovery — see the table below
     │   ├── favorites/       # `/favorites` tab: still sprint 3 placeholder content (distinct from `/profile/favorites`)
-    │   ├── profile/         # Profile (sprint 5): main screen + preferences + favorites + history + statistics + language + theme real, other sub-screens still placeholders
+    │   ├── profile/         # Profile (sprint 5): main screen (identity/activity/taste) + settings + preferences + favorites + history + statistics + language + theme real, other sub-screens still placeholders
     │   ├── experiences/     # Experience detail (route experience/[id]) + gallery/ (route gallery/[id]) — sprint 5
     │   ├── auth/            # Authentication: all 7 screens built (Entry, Login, Register, ForgotPassword, ResetCode, NewPassword, ResetSuccess)
     │   ├── itinerary/       # CreateJourneyPlaceholder (route itinerary/create) — not the real screen yet
-    │   └── recommendations, map, outing, feedback
+    │   ├── map/             # MapPlaceholder (route /map) — not the real screen yet, sprint 6
+    │   └── recommendations, outing, feedback
     ├── hooks/               # Cross-feature hooks (useBootstrap, useReduceMotion, useCtaVisibility)
     ├── i18n/                # i18next setup + locales/fr.json, locales/en.json
     ├── lib/                 # Small framework-agnostic helpers (storage, cx, toast)
@@ -176,6 +180,32 @@ the notification bell moved out of `HeroCarousel` into a new floating `HomeHeade
 (`features/home/components/`) that shows/hides with scroll direction via a new, generic
 `useScrollDirection` hook (`src/hooks/`), fully independent of `TabBarCollapseContext`.
 
+## Discover (current state)
+
+Immersive, editorial discovery page (sprint 6, `DECISIONS.md` D-65), replacing the sprint 3 placeholder.
+Built on the mock experience pool and a new `Collection` pool (`useDiscoverData`, both through their own
+repositories) — not a social feed: no profiles, followers, stories, comments or like counts
+(`03_UX_SCREENS_AND_FLOWS.md` sprint 6 brief).
+
+| Section                        | Component                                                                     | Notes                                                                                                                                            |
+| ------------------------------ | ----------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Secondary nav                  | `features/discover/components/DiscoverTabs.tsx`                               | "Pour toi" / "Tendances" / "À proximité" / "Collections", `FlatList horizontal`; narrows which sections show (`DiscoverScreen`'s `TAB_SECTIONS`) |
+| Search bar (mocked)            | `components/ui/SearchBar.tsx`                                                 | Reused from Home; no real query engine yet                                                                                                       |
+| Sélection ROAM                 | `RoamSelectionSection.tsx` + `DiscoverCollectionCard` (`variant="hero"`)      | Featured (`Collection.isFeatured`) editorial collections, `FlatList horizontal`                                                                  |
+| Suggestions pour toi           | `SuggestionsSection.tsx` + `DiscoverMoodCard.tsx` + `data/suggestionMoods.ts` | Ce soir / Entre amis / En couple / Culture / Nature / Activités — presentational only, `FlatList horizontal`                                     |
+| Grande expérience immersive    | `components/ImmersiveExperienceCard.tsx` + `lib/pickImmersiveExperience.ts`   | One fixed card (not a carousel); static editorial copy, links to a picked experience                                                             |
+| Près de toi                    | `NearbySection.tsx` + `lib/pickNearby.ts`                                     | Reuses Home's `ExperienceCard`; "Voir la carte" → `/map` (placeholder), `FlatList horizontal`                                                    |
+| Ce qui fait envie en ce moment | `TrendingSection.tsx` + `lib/pickTrending.ts`                                 | Reuses Home's `ExperienceCard`, highest-rated first, `FlatList horizontal`                                                                       |
+| Explorer par envie             | `CollectionsSection.tsx` + `DiscoverCollectionCard` (`variant="compact"`)     | Non-featured collections only (the featured ones already have their own card above), `FlatList horizontal`                                       |
+
+Every carousel on this page (all but the secondary nav) is `components/ui/HorizontalCarousel.tsx`, not a
+plain `FlatList` or `ScrollView` — full-bleed past the page's own padding, snaps one card at a time; see
+"Horizontal lists / carousels" below. "Voir l'expérience"/a card tap pushes to `experience/[id]`; a collection tap pushes to
+`collection/[id]` (`CollectionDetailPlaceholder`, not the real screen yet). Favorites reuse Home's own
+`useFavoriteExperienceIds` (in-memory, no persistence). Discover reuses `useTabBarScrollHandler()` like
+every other tab screen, but has no floating/`StickyRevealHeader` chrome of its own: unlike Experience
+Detail or Profile, it has no full-bleed hero photo at the very top for a header to reveal over.
+
 ## Experience detail & gallery (current state)
 
 Real detail screen and full-screen gallery (sprint 5, `DECISIONS.md` D-48; scroll/header/CTA/carousel
@@ -199,24 +229,31 @@ polish D-49), built on `Experience`'s extended fields through the same `Experien
 ## Profile (current state)
 
 Built one screen at a time (`docs/SCREEN_INTEGRATION_WORKFLOW.md`), sprint 5. The main screen
-(`/profile`), "Mes préférences" (`/profile/preferences`), "Mes favoris" (`/profile/favorites`), "Mon
-historique" (`/profile/history`), "Mes statistiques" (`/profile/statistics`), "Langue"
-(`/profile/language`) and "Thème" (`/profile/theme`) are real; every other row is still a
-`ProfilePlaceholder` stub (`docs/DECISIONS.md` D-50) until its own session.
+(`/profile`) is identity/activity/taste; account and app configuration live in `/profile/settings`
+(both new shapes, sprint 5 refactor, `docs/DECISIONS.md` D-63). "Mes préférences"
+(`/profile/preferences`), "Mes favoris" (`/profile/favorites`), "Mon historique" (`/profile/history`),
+"Mes statistiques" (`/profile/statistics`), "Langue" (`/profile/language`) and "Thème"
+(`/profile/theme`) are real, reached from both Profile and Settings where the brief calls for it; every
+other row is still a `ProfilePlaceholder` stub (`docs/DECISIONS.md` D-50) until its own session.
 
-| Piece              | Route / component                                                                        | Notes                                                                                                                                                                                                                                                                                                                                                                                        |
-| ------------------ | ---------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Main screen        | `/profile` (in `(tabs)`) → `features/profile/ProfileScreen.tsx`                          | Header (avatar/name/bio/edit CTA), stats, grouped menu, logout — built on `UserRepository` (`useCurrentUser`)                                                                                                                                                                                                                                                                                |
-| Header/stats       | `features/profile/components/ProfileHeader.tsx`, `ProfileAvatar.tsx`, `ProfileStats.tsx` | Avatar falls back to an initial letter (no photo in the mock content, same precedent as `ReviewCard`)                                                                                                                                                                                                                                                                                        |
-| Menu row           | `features/profile/components/ProfileMenuRow.tsx`                                         | Icon + label (+ optional subtitle or right-aligned value) + chevron; reused for every group                                                                                                                                                                                                                                                                                                  |
-| Preferences        | `/profile/preferences` → `features/profile/PreferencesScreen.tsx`                        | Experience types + ambiance (multi-select tile grids), budget + distance (`Slider`); header is a `StickyRevealHeader`, save CTA is a `StickyActionFooter`, success/error feedback is `showToast` — local state only, `docs/DECISIONS.md` D-51/D-52/D-54/D-56                                                                                                                                 |
-| Favorites          | `/profile/favorites` → `features/profile/FavoritesScreen.tsx`                            | Favorited experiences (`useFavoriteExperiences`, backed by `Experience.isFavorite`), one `FavoriteExperienceRow` per item, heart-tap removal, empty state; header is a `StickyRevealHeader` — local state only, no separate place-favoriting system, `docs/DECISIONS.md` D-57                                                                                                                |
-| History            | `/profile/history` → `features/profile/HistoryScreen.tsx`                                | Completed experiences (`useHistoryExperiences`, backed by `Experience.historyPeriod`), grouped by "Cette semaine/Ce mois-ci/Plus tôt", a dynamic category filter (`Chip` row), one `HistoryEntryRow` per item (read-only, chevron only), empty state; header is a `StickyRevealHeader` — local state only, `docs/DECISIONS.md` D-58                                                          |
-| Statistics         | `/profile/statistics` → `features/profile/StatisticsScreen.tsx`                          | Time-range `Chip`s (local selection only), three `StatCard`s (`UserStats`, same numbers as `ProfileStats`), "Tes genres préférés"/"Villes visitées" (`PercentBarRow`, plain `View` bars), "Ton humeur lors des sorties" (`MoodDonutChart`, `react-native-gifted-charts`' `PieChart`), an insight card; header is a `StickyRevealHeader` — static mock numbers only, `docs/DECISIONS.md` D-59 |
-| Language           | `/profile/language` → `features/profile/LanguageScreen.tsx`                              | `LanguageOptionRow` per language, list from `getAvailableLanguages()` (`src/i18n/index.ts`) — never hardcoded in the screen, see `05_THEME_AND_I18N.md` "Langue screen"; selecting one calls the existing `setLanguage()`; header is a `StickyRevealHeader` — `docs/DECISIONS.md` D-60                                                                                                       |
-| Theme              | `/profile/theme` → `features/profile/ThemeScreen.tsx`                                    | `ThemeOptionRow` per preference, list from the existing `THEME_PREFERENCES` (`theme/tokens.ts`); selecting one calls the existing `useTheme().setPreference`; header is a `StickyRevealHeader` — `docs/DECISIONS.md` D-61                                                                                                                                                                    |
-| Not-yet-built rows | `features/profile/components/ProfilePlaceholder.tsx`                                     | `/profile/{edit,help,privacy,settings}`                                                                                                                                                                                                                                                                                                                                                      |
-| Data               | `UserRepository.getCurrentUser()` (`services/mock/user.ts`)                              | One mocked profile (`services/mock/data.ts` → `currentUser`); `User` gained optional `age/city/bio/stats`                                                                                                                                                                                                                                                                                    |
+| Piece                      | Route / component                                                                        | Notes                                                                                                                                                                                                                                                                                                                                                                                        |
+| -------------------------- | ---------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Main screen                | `/profile` (in `(tabs)`) → `features/profile/ProfileScreen.tsx`                          | Header (avatar/name/bio/edit CTA), stats, "Parcours en cours", "Ce que j'aime", favorites/history previews, yearly activity summary — built on `UserRepository` (`useCurrentUser`) plus the hooks below; header is a `StickyRevealHeader` (no `leftSlot`, it's a tab root), settings gear in `rightSlot`, `docs/DECISIONS.md` D-63/D-64                                                      |
+| Header/stats               | `features/profile/components/ProfileHeader.tsx`, `ProfileAvatar.tsx`, `ProfileStats.tsx` | Avatar falls back to an initial letter (no photo in the mock content, same precedent as `ReviewCard`)                                                                                                                                                                                                                                                                                        |
+| Active journey             | `features/profile/components/ActiveJourneyCard.tsx`, `useActiveJourney.ts`               | Hero/progress/next-step, or an empty state — mock overlay (`data/activeJourney.ts`) joined onto an existing pool experience; "Continuer" pushes `itinerary/create` (no real itinerary-progress screen exists yet), `docs/DECISIONS.md` D-63                                                                                                                                                  |
+| Taste preview              | Inline in `ProfileScreen.tsx` (`Chip` row)                                               | Shows `DEFAULT_EXPERIENCE_TYPES`/`DEFAULT_AMBIANCE` (`data/experienceTypes.ts`/`ambianceOptions.ts`, D-51); "Modifier" pushes `/profile/preferences` — the same route Settings' own "Mes préférences" row uses                                                                                                                                                                               |
+| Favorites/history previews | `features/profile/components/ExperiencePreviewCard.tsx`                                  | Compact 3-up cards (not Home's 260px `ExperienceCard`), fed by `useFavoriteExperiences`/`useHistoryExperiences`; each row hides itself when empty — the real empty states live on the full screens                                                                                                                                                                                           |
+| Activity summary           | `features/profile/components/ActivitySummaryCard.tsx`                                    | Pressable card, same `UserStats` numbers as `ProfileStats` above, → `/profile/statistics`                                                                                                                                                                                                                                                                                                    |
+| Menu row                   | `features/profile/components/ProfileMenuRow.tsx`                                         | Icon + label (+ optional subtitle or right-aligned value) + chevron; reused for every group (now used by Settings, not Profile)                                                                                                                                                                                                                                                              |
+| Settings                   | `/profile/settings` → `features/profile/SettingsScreen.tsx`                              | Grouped `ProfileMenuRow`s (Compte/Préférences ROAM/Apparence/Support/Confidentialité & données/Session); owns the logout `ConfirmationModal` (moved from Profile, same flow, D-62); header is a `StickyRevealHeader`; `docs/DECISIONS.md` D-63                                                                                                                                               |
+| Preferences                | `/profile/preferences` → `features/profile/PreferencesScreen.tsx`                        | Experience types + ambiance (multi-select tile grids), budget + distance (`Slider`); header is a `StickyRevealHeader`, save CTA is a `StickyActionFooter`, success/error feedback is `showToast` — local state only, `docs/DECISIONS.md` D-51/D-52/D-54/D-56                                                                                                                                 |
+| Favorites                  | `/profile/favorites` → `features/profile/FavoritesScreen.tsx`                            | Favorited experiences (`useFavoriteExperiences`, backed by `Experience.isFavorite`), one `FavoriteExperienceRow` per item, heart-tap removal, empty state; header is a `StickyRevealHeader` — local state only, no separate place-favoriting system, `docs/DECISIONS.md` D-57                                                                                                                |
+| History                    | `/profile/history` → `features/profile/HistoryScreen.tsx`                                | Completed experiences (`useHistoryExperiences`, backed by `Experience.historyPeriod`), grouped by "Cette semaine/Ce mois-ci/Plus tôt", a dynamic category filter (`Chip` row), one `HistoryEntryRow` per item (read-only, chevron only), empty state; header is a `StickyRevealHeader` — local state only, `docs/DECISIONS.md` D-58                                                          |
+| Statistics                 | `/profile/statistics` → `features/profile/StatisticsScreen.tsx`                          | Time-range `Chip`s (local selection only), three `StatCard`s (`UserStats`, same numbers as `ProfileStats`), "Tes genres préférés"/"Villes visitées" (`PercentBarRow`, plain `View` bars), "Ton humeur lors des sorties" (`MoodDonutChart`, `react-native-gifted-charts`' `PieChart`), an insight card; header is a `StickyRevealHeader` — static mock numbers only, `docs/DECISIONS.md` D-59 |
+| Language                   | `/profile/language` → `features/profile/LanguageScreen.tsx`                              | `LanguageOptionRow` per language, list from `getAvailableLanguages()` (`src/i18n/index.ts`) — never hardcoded in the screen, see `05_THEME_AND_I18N.md` "Langue screen"; selecting one calls the existing `setLanguage()`; header is a `StickyRevealHeader` — `docs/DECISIONS.md` D-60                                                                                                       |
+| Theme                      | `/profile/theme` → `features/profile/ThemeScreen.tsx`                                    | `ThemeOptionRow` per preference, list from the existing `THEME_PREFERENCES` (`theme/tokens.ts`); selecting one calls the existing `useTheme().setPreference`; header is a `StickyRevealHeader` — `docs/DECISIONS.md` D-61                                                                                                                                                                    |
+| Not-yet-built rows         | `features/profile/components/ProfilePlaceholder.tsx`                                     | `/profile/{edit,help,privacy}`                                                                                                                                                                                                                                                                                                                                                               |
+| Data                       | `UserRepository.getCurrentUser()` (`services/mock/user.ts`)                              | One mocked profile (`services/mock/data.ts` → `currentUser`); `User` gained optional `age/city/bio/stats`                                                                                                                                                                                                                                                                                    |
 
 ## Authentication (current state)
 
@@ -302,6 +339,61 @@ other domain logic itself.
   Tailwind only generates classes it can find literally in `src/`.
 - NativeWind ignores class order for conflicts: don't try to "override" a class with a later one.
   Use a variant/prop instead.
+
+### Horizontal lists / carousels (sprint 6, `docs/DECISIONS.md` D-66)
+
+**Horizontal lists and carousels of repeating data default to `FlatList horizontal`.** `ScrollView
+horizontal` is reserved for a paging pager with its own custom scroll-position tracking (a hero, a
+gallery) or other genuinely non-repeating/special-cased content — not for a plain list of cards.
+
+- **Why**: virtualization and better performance on longer lists, one consistent component shape across
+  the app, and readiness for real API data — a `FlatList` doesn't change shape once its `data` stops
+  being a small fixed mock array.
+- **Good practices**: a stable `keyExtractor` (the item's own id, not its index, once one exists);
+  `renderItem` stays a plain function unless a card is expensive enough to be worth `React.memo`; don't
+  reshape/recreate the `data` array on every render (memoize it if it's derived); consider a loading/empty
+  state once a section's data can genuinely be empty (Discover's sections return `null` when their pool
+  is empty, rather than rendering an empty `FlatList`). Don't reach for `getItemLayout`, `windowSize` or
+  other virtualization tuning prematurely — only when a real performance problem shows up.
+- **Not a carousel**: a single, non-repeating block (Discover's `ImmersiveExperienceCard`) or a paging
+  pager with its own `ref`/shared-value scroll tracking (Home's `HeroCarousel`, experience detail's
+  `ExperienceHero`) stay a plain `View` or `ScrollView` respectively — the rule is about lists of
+  repeating items, not every horizontally-laid-out thing.
+- **Existing `ScrollView horizontal` carousels were audited, not migrated** (Home's mood/popular/nearby/
+  for-you sections, experience detail's "Suggestions similaires", the history screen's category filter):
+  each is an already-validated, tested screen, and the sprints that introduced this rule focused on
+  putting the strategy in place and applying it to Discover, not retrofitting every existing screen in
+  one sweep. Migrate one of them the next time it's touched for an unrelated reason — see
+  `docs/DECISIONS.md` D-66.
+
+#### Full-bleed carousels and snapping (`docs/DECISIONS.md` D-67)
+
+A carousel of partial-width "peek" cards sitting inside a page's own horizontal padding (`px-6`) gets
+visually boxed in: cards near either edge are clipped by that padding instead of bleeding to the screen's
+physical edge, and nothing about `ScrollView`/`FlatList` prevents that on its own. `components/ui/`'s
+`HorizontalCarousel` (all of Discover's own carousels use it, `RoamSelectionSection` /
+`SuggestionsSection` / `NearbySection` / `TrendingSection` / `CollectionsSection`) is the reusable fix:
+
+- **Full bleed**: `marginHorizontal: -sidePadding` on the `FlatList` itself cancels the parent's padding
+  (`sidePadding` defaults to 24, matching `px-6`), while `contentContainerStyle`'s matching
+  `paddingHorizontal: sidePadding` keeps the first/last item aligned with the rest of the page's content
+  instead of touching the physical screen edge. Reach for this whenever a horizontal carousel sits inside
+  a padded page and should visually escape that padding — not just in Discover.
+- **Snap**: `snapToInterval={itemWidth + spacing}`, `snapToAlignment="start"`,
+  `decelerationRate="fast"`. `itemWidth` must be the exact value the card renders at — a fixed constant
+  (`ExperienceCard`'s `CARD_WIDTH`, `DiscoverMoodCard`'s `TILE_SIZE`, `DiscoverCollectionCard`'s
+  `COMPACT_WIDTH`) or a value derived from `useWindowDimensions()` the same way the card derives it
+  (`DiscoverCollectionCard`'s `getHeroCardWidth`) — **exported by the card itself and imported by the
+  section**, not a second hardcoded copy that can silently drift out of sync with what actually renders.
+  `pagingEnabled` was considered instead for the hero cards (near-full-width) and rejected: the carousel's
+  own frame is full window width once it's full-bleed, but the hero card's width is
+  `windowWidth - 2 * sidePadding` — narrower than the frame — so paging (which pages by the scroll view's
+  own frame width) would drift out of alignment after a few swipes; `snapToInterval` computed from the
+  card's real width doesn't have that problem.
+- **Not every horizontal list needs this**: `HorizontalCarousel` takes `snapEnabled` (default `true`) for
+  a future non-snapping full-bleed use, and `DiscoverTabs` (the secondary-nav chip row) was deliberately
+  left as a plain, padded `FlatList` — it's a navigation control, not a "peek card" carousel, and bleeding
+  it to the edges wasn't asked for.
 
 ### Theme (Light / Dark / System)
 

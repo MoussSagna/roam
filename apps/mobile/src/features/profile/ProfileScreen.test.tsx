@@ -1,4 +1,4 @@
-import { act, fireEvent, screen, waitFor } from '@testing-library/react-native';
+import { act, fireEvent, screen } from '@testing-library/react-native';
 
 import { TabBarCollapseProvider } from '@/features/navigation/TabBarCollapseContext';
 import i18n from '@/i18n';
@@ -28,7 +28,7 @@ describe('ProfileScreen', () => {
     await act(() => i18n.changeLanguage('fr'));
   });
 
-  it('shows the user profile, stats and menu', async () => {
+  it('shows identity: header, avatar/name/bio and stats', async () => {
     await renderProfile();
 
     expect(screen.getByRole('header')).toHaveTextContent('Profil');
@@ -37,97 +37,100 @@ describe('ProfileScreen', () => {
     expect(
       screen.getByText('Toujours partant pour découvrir de nouveaux lieux ✨'),
     ).toBeOnTheScreen();
-
-    expect(screen.getByText('12')).toBeOnTheScreen();
-    expect(screen.getByText('36')).toBeOnTheScreen();
+    // "12" and "36" each appear twice: the top stats row and the yearly activity summary below.
+    expect(screen.getAllByText('12').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('36').length).toBeGreaterThan(0);
     expect(screen.getByText('8')).toBeOnTheScreen();
-
-    expect(screen.getByRole('button', { name: 'Mes préférences' })).toBeOnTheScreen();
-    expect(screen.getByRole('button', { name: 'Mes favoris' })).toBeOnTheScreen();
-    expect(screen.getByRole('button', { name: 'Mon historique' })).toBeOnTheScreen();
-    expect(screen.getByRole('button', { name: 'Mes statistiques' })).toBeOnTheScreen();
-    expect(screen.getByText('Français')).toBeOnTheScreen();
-    expect(screen.getByText('Système')).toBeOnTheScreen();
-    expect(screen.getByRole('button', { name: 'Aide & Support' })).toBeOnTheScreen();
-    expect(screen.getByRole('button', { name: 'Confidentialité' })).toBeOnTheScreen();
-    expect(screen.getByRole('button', { name: 'Se déconnecter' })).toBeOnTheScreen();
   });
 
-  it('pressing "Éditer mon profil" pushes to the edit route', async () => {
-    await renderProfile();
-
-    await fireEvent.press(screen.getByRole('button', { name: 'Éditer mon profil' }));
-
-    expect(mockPush).toHaveBeenCalledWith('/profile/edit');
-  });
-
-  it('pressing a menu row pushes to its route', async () => {
-    await renderProfile();
-
-    await fireEvent.press(screen.getByRole('button', { name: 'Mes préférences' }));
-    expect(mockPush).toHaveBeenCalledWith('/profile/preferences');
-
-    await fireEvent.press(screen.getByRole('button', { name: 'Mes favoris' }));
-    expect(mockPush).toHaveBeenCalledWith('/profile/favorites');
-
-    await fireEvent.press(screen.getByRole('button', { name: 'Mon historique' }));
-    expect(mockPush).toHaveBeenCalledWith('/profile/history');
-
-    await fireEvent.press(screen.getByRole('button', { name: 'Mes statistiques' }));
-    expect(mockPush).toHaveBeenCalledWith('/profile/statistics');
-
-    await fireEvent.press(screen.getByRole('button', { name: 'Langue' }));
-    expect(mockPush).toHaveBeenCalledWith('/profile/language');
-
-    await fireEvent.press(screen.getByRole('button', { name: 'Thème' }));
-    expect(mockPush).toHaveBeenCalledWith('/profile/theme');
-
-    await fireEvent.press(screen.getByRole('button', { name: 'Aide & Support' }));
-    expect(mockPush).toHaveBeenCalledWith('/profile/help');
-
-    await fireEvent.press(screen.getByRole('button', { name: 'Confidentialité' }));
-    expect(mockPush).toHaveBeenCalledWith('/profile/privacy');
-  });
-
-  it('pressing the settings icon pushes to the settings placeholder', async () => {
+  it('the settings icon pushes to /profile/settings', async () => {
     await renderProfile();
 
     await fireEvent.press(screen.getByRole('button', { name: 'Paramètres' }));
-
     expect(mockPush).toHaveBeenCalledWith('/profile/settings');
   });
 
-  it('pressing "Se déconnecter" opens a confirmation modal without logging out yet', async () => {
+  it('shows the active journey with progress and next step, and "Continuer" pushes to itinerary/create', async () => {
     await renderProfile();
 
-    await fireEvent.press(screen.getByRole('button', { name: 'Se déconnecter' }));
+    expect(await screen.findByText('Parcours en cours')).toBeOnTheScreen();
+    expect(screen.getByText('Concert intimiste')).toBeOnTheScreen();
+    expect(screen.getByText('2 / 5 étapes')).toBeOnTheScreen();
+    expect(screen.getByText('Le Hasard Ludique')).toBeOnTheScreen();
 
-    expect(screen.getByText('Se déconnecter ?')).toBeOnTheScreen();
-    expect(
-      screen.getByText(
-        'Tu seras déconnecté de ton compte, mais tes données resteront en sécurité.',
-      ),
-    ).toBeOnTheScreen();
-    expect(mockReplace).not.toHaveBeenCalled();
+    await fireEvent.press(screen.getByRole('button', { name: 'Continuer mon parcours' }));
+    expect(mockPush).toHaveBeenCalledWith('/itinerary/create');
   });
 
-  it('confirming the logout modal logs out and replaces with the login route', async () => {
+  it('shows "Ce que j\'aime" tags and "Modifier" pushes to Preferences', async () => {
     await renderProfile();
 
-    await fireEvent.press(screen.getByRole('button', { name: 'Se déconnecter' }));
-    const confirmButtons = screen.getAllByRole('button', { name: 'Se déconnecter' });
-    await fireEvent.press(confirmButtons[confirmButtons.length - 1]);
+    expect(screen.getByText("Ce que j'aime")).toBeOnTheScreen();
+    expect(screen.getByText('Bars & Soirées')).toBeOnTheScreen();
+    expect(screen.getByText('Culture')).toBeOnTheScreen();
+    expect(screen.getByText('Bien-être')).toBeOnTheScreen();
+    expect(screen.getByText('Calme')).toBeOnTheScreen();
+    expect(screen.getByText('Entre amis')).toBeOnTheScreen();
 
-    expect(mockReplace).toHaveBeenCalledWith('/auth/login');
+    await fireEvent.press(screen.getByRole('button', { name: 'Modifier' }));
+    expect(mockPush).toHaveBeenCalledWith('/profile/preferences');
   });
 
-  it('cancelling the logout modal keeps the user on Profile', async () => {
+  it('shows a favorites preview and "Voir tout" pushes to /profile/favorites', async () => {
     await renderProfile();
 
-    await fireEvent.press(screen.getByRole('button', { name: 'Se déconnecter' }));
-    await fireEvent.press(screen.getByRole('button', { name: 'Annuler' }));
+    expect(await screen.findByText('Dîners avec vue')).toBeOnTheScreen();
+    expect(screen.getByText('Escapade nature')).toBeOnTheScreen();
+    expect(screen.getByText('Soirée jazz')).toBeOnTheScreen();
 
-    await waitFor(() => expect(screen.queryByText('Se déconnecter ?')).toBeNull());
-    expect(mockReplace).not.toHaveBeenCalled();
+    const favoritesHeading = screen.getByText('Mes favoris');
+    const seeAllButtons = screen.getAllByRole('button', { name: 'Voir tout' });
+    expect(favoritesHeading).toBeOnTheScreen();
+
+    await fireEvent.press(seeAllButtons[0]);
+    expect(mockPush).toHaveBeenCalledWith('/profile/favorites');
+  });
+
+  it('shows a history preview and "Voir tout" pushes to /profile/history', async () => {
+    await renderProfile();
+
+    expect(await screen.findByText('Après-midi lente')).toBeOnTheScreen();
+    expect(screen.getByText('Balade panoramique')).toBeOnTheScreen();
+    expect(screen.getByText('Rooftop Sunset')).toBeOnTheScreen();
+
+    const seeAllButtons = screen.getAllByRole('button', { name: 'Voir tout' });
+    await fireEvent.press(seeAllButtons[seeAllButtons.length - 1]);
+    expect(mockPush).toHaveBeenCalledWith('/profile/history');
+  });
+
+  it('tapping a preview card navigates to the experience detail', async () => {
+    await renderProfile();
+
+    await fireEvent.press(await screen.findByRole('button', { name: 'Dîners avec vue' }));
+    expect(mockPush).toHaveBeenCalledWith({
+      pathname: '/experience/[id]',
+      params: { id: 'exp-dinner-view' },
+    });
+  });
+
+  it('shows the yearly activity summary and navigates to statistics on press', async () => {
+    await renderProfile();
+
+    const activityCard = screen.getByRole('button', { name: 'Mon activité cette année' });
+    expect(activityCard).toBeOnTheScreen();
+    expect(screen.getByText('sorties cette année')).toBeOnTheScreen();
+
+    await fireEvent.press(activityCard);
+    expect(mockPush).toHaveBeenCalledWith('/profile/statistics');
+  });
+
+  it('no longer shows the settings/session rows that moved to Settings', async () => {
+    await renderProfile();
+
+    expect(screen.queryByRole('button', { name: 'Se déconnecter' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Langue' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Thème' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Aide & Support' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Confidentialité' })).toBeNull();
   });
 });

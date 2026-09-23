@@ -1,4 +1,4 @@
-import type { Category, Experience, Place, User } from '@/types';
+import type { Category, Collection, Experience, Place, User } from '@/types';
 
 /**
  * Data-access contracts. UI code depends on these interfaces only, never on `fetch`,
@@ -22,6 +22,11 @@ export interface ExperienceRepository {
   getById(id: string): Promise<Experience | null>;
 }
 
+export interface CollectionRepository {
+  list(): Promise<Collection[]>;
+  getById(id: string): Promise<Collection | null>;
+}
+
 export interface AuthRepository {
   /** Simulates a login request (no backend yet): always succeeds after a short delay. */
   login(): Promise<void>;
@@ -37,6 +42,7 @@ export type Repositories = {
   categories: CategoryRepository;
   places: PlaceRepository;
   experiences: ExperienceRepository;
+  collections: CollectionRepository;
   auth: AuthRepository;
   users: UserRepository;
 };

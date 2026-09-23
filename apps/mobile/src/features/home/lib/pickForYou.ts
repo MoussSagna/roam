@@ -3,8 +3,10 @@ import type { Experience, Mood } from '@/types';
 /** Category preferred when nothing else determines the "matches your interests" pick. */
 const PREFERRED_CATEGORY_ID = 'cat-culture';
 
-/** Parses the leading number of a mock distance label ("900 m", "1,2 km") for a rough sort. */
-function parseDistanceMeters(distanceLabel: string | undefined): number {
+/** Parses the leading number of a mock distance label ("900 m", "1,2 km") for a rough sort. Exported
+ * for Discover's own "Près de toi" sort (`features/discover/lib/pickNearby.ts`) — reused rather than
+ * duplicated. */
+export function parseDistanceMeters(distanceLabel: string | undefined): number {
   if (!distanceLabel) return Number.POSITIVE_INFINITY;
   const value = parseFloat(distanceLabel.replace(',', '.'));
   if (Number.isNaN(value)) return Number.POSITIVE_INFINITY;

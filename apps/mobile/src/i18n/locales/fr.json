@@ -179,7 +179,52 @@
     "reviewCount": "({count} avis)"
   },
   "discover": {
-    "title": "Découvrir"
+    "title": "Découvrir",
+    "subtitle": "Des lieux, des expériences, des idées pour aujourd'hui.",
+    "search": {
+      "placeholder": "Que veux-tu découvrir ?",
+      "filters": "Filtres"
+    },
+    "tabs": {
+      "forYou": "Pour toi",
+      "trends": "Tendances",
+      "nearby": "À proximité",
+      "collections": "Collections"
+    },
+    "roamSelection": {
+      "badge": "Sélection ROAM",
+      "cta": "Découvrir la sélection",
+      "places": "{count} lieux"
+    },
+    "sections": {
+      "suggestions": "Suggestions pour toi",
+      "nearby": "Près de toi",
+      "seeMap": "Voir la carte",
+      "trending": "Ce qui fait envie en ce moment",
+      "collections": "Explorer par envie"
+    },
+    "suggestions": {
+      "tonight": "Ce soir",
+      "friends": "Entre amis",
+      "couple": "En couple",
+      "culture": "Culture",
+      "nature": "Nature",
+      "activities": "Activités"
+    },
+    "immersive": {
+      "eyebrow": "Expérience immersive",
+      "title": "Pour une soirée qui change",
+      "subtitle": "Une expérience pensée pour sortir de la routine.",
+      "cta": "Explorer"
+    },
+    "empty": {
+      "title": "Rien à découvrir pour l'instant",
+      "description": "Reviens un peu plus tard, de nouvelles idées arrivent régulièrement."
+    },
+    "error": {
+      "title": "Impossible de charger Discover",
+      "description": "Une erreur est survenue pendant le chargement du contenu."
+    }
   },
   "context": {
     "mood": {
@@ -380,6 +425,24 @@
     "logoutConfirm": {
       "title": "Se déconnecter ?",
       "description": "Tu seras déconnecté de ton compte, mais tes données resteront en sécurité."
+    },
+    "likes": {
+      "title": "Ce que j'aime",
+      "edit": "Modifier"
+    },
+    "journey": {
+      "title": "Parcours en cours",
+      "stepsProgress": "{current} / {total} étapes",
+      "nextStep": "Prochaine étape",
+      "continueCta": "Continuer mon parcours",
+      "empty": {
+        "title": "Tu n'as aucun parcours en cours.",
+        "cta": "Découvrir des expériences"
+      }
+    },
+    "activity": {
+      "title": "Mon activité cette année",
+      "outingsThisYear": "sorties cette année"
     }
   },
   "statistics": {
@@ -460,6 +523,13 @@
     "languages": {
       "fr": "Français",
       "en": "English"
+    },
+    "sections": {
+      "account": "Compte",
+      "preferences": "Préférences ROAM",
+      "support": "Support",
+      "privacyData": "Confidentialité & données",
+      "session": "Session"
     }
   },
   "auth": {
