@@ -31,7 +31,7 @@ describe('ProfileScreen', () => {
   it('shows identity: header, avatar/name/bio and stats', async () => {
     await renderProfile();
 
-    expect(screen.getByRole('header')).toHaveTextContent('Profil');
+    expect(screen.queryByRole('header')).toBeNull();
     expect(screen.getByText('Moussa')).toBeOnTheScreen();
     expect(screen.getByText('33 ans · Paris')).toBeOnTheScreen();
     expect(
