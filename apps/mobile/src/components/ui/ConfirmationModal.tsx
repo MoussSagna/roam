@@ -90,20 +90,26 @@ export function ConfirmationModal({
   useLayoutEffect(() => {
     onExitedRef.current = onExited;
   });
-  const wasRenderedRef = useRef(shouldRender);
-  useEffect(() => {
-    if (wasRenderedRef.current && !shouldRender) onExitedRef.current?.();
-    wasRenderedRef.current = shouldRender;
-  }, [shouldRender]);
+  // Opening is driven by the `visible` prop itself, never by internal state: the dialog mounts in
+  // the very render that receives `visible === true`. `shouldRender` only keeps it mounted after
+  // `visible` turns false, for the exit animation (D-79 — on device it could be reset to false
+  // while visible, so the dialog never appeared).
+  const mounted = visible || shouldRender;
 
-  if (!shouldRender) {
+  const wasMountedRef = useRef(mounted);
+  useEffect(() => {
+    if (wasMountedRef.current && !mounted) onExitedRef.current?.();
+    wasMountedRef.current = mounted;
+  }, [mounted]);
+
+  if (!mounted) {
     return null;
   }
 
   return (
     <Modal
       transparent
-      visible={shouldRender}
+      visible={mounted}
       animationType="none"
       onRequestClose={onCancel}
       statusBarTranslucent

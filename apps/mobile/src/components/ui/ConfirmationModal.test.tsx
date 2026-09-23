@@ -133,6 +133,19 @@ describe('ConfirmationModal', () => {
       );
     }
 
+    it('stays open when reopened while the previous exit timer is still pending (D-79)', async () => {
+      const onExited = jest.fn();
+      await renderWithProviders(<Harness onExited={onExited} />);
+      await fireEvent.press(screen.getByTestId('open'));
+      await fireEvent.press(screen.getByRole('button', { name: 'Annuler' }));
+
+      // Reopened within the 180 ms exit window, then well past it.
+      await fireEvent.press(screen.getByTestId('open'));
+      await new Promise((resolve) => setTimeout(resolve, 400));
+
+      expect(screen.getByText('Se déconnecter ?')).toBeOnTheScreen();
+    });
+
     it('is not called while hidden from the start, nor on opening', async () => {
       const onExited = jest.fn();
       await renderWithProviders(<Harness onExited={onExited} />);

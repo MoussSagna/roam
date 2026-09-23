@@ -2667,3 +2667,19 @@ Only what was asked; no new library, mock data, no Maps API.
   logs out. Rule for any confirm that tears its own screen down: run it in `onExited`, not `onConfirm`.
 - **Tests:** `ConfirmationModal` (`onExited` timing), `SettingsScreen` (no logout while the dialog is up, then Login);
   the two `AppRoutes` logout scenarios flush the post-exit logout.
+
+### D-79 — `ConfirmationModal` mounts from its `visible` prop, not from internal state (dialog never appeared on iOS)
+
+- **Symptom (iPhone, Expo Go):** "Se déconnecter" in Settings showed nothing at all. The real cause of the report behind
+  D-78 — D-78 stays (logging out while the dialog is presented is still unsafe), but it was not this bug.
+- **Diagnosis, from on-device logs:** the row press arrived and `logoutModalVisible` became `true`; inside the dialog
+  the internal `shouldRender` went `true`, then back to `false` on the next render while `visible` was still `true`. The
+  component returned `null`, so no native `Modal` was ever presented. Opening depended on a render-phase state update
+  plus the exit timer (`setShouldRender(false)`), and on device that state was reset. Neither StrictMode nor the React
+  Compiler (off: `experiments.reactCompiler` is unset) reproduce it; Jest never did.
+- **Fix:** `mounted = visible || shouldRender`. The dialog mounts in the very render that receives `visible === true`,
+  whatever the internal state; `shouldRender` now only keeps it mounted during the 180 ms exit animation. `onExited`
+  (D-78) follows `mounted`. Validated on the user's iPhone. Nothing else changed; `AddressActionsBubble` and the search
+  sheets use the older pattern and work today — to be aligned only if they show the same symptom.
+- **Tests:** a reopen-during-exit guard in `ConfirmationModal.test.tsx`. It passes on the old code too: the on-device
+  reset is not reproducible under Jest, so the guard documents the behavior rather than proving the fix.
