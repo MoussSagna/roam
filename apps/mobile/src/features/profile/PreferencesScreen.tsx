@@ -35,7 +35,7 @@ const SCREEN_HORIZONTAL_PADDING = 48;
 /** Roughly the height of the in-content title below — where the header's own title should be fully
  * revealed (same "proxy, not a pixel-exact measurement" approach as experience detail's own
  * `revealOffset`, D-49). */
-const HEADER_REVEAL_OFFSET = 56;
+const HEADER_REVEAL_OFFSET = 90;
 
 function wait(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
