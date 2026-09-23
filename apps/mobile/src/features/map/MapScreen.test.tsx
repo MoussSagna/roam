@@ -2,6 +2,7 @@ import { act, fireEvent, screen } from '@testing-library/react-native';
 
 import i18n from '@/i18n';
 import { repositories } from '@/services';
+import { pressBareMap } from '@/test/reactNativeMapsMock';
 import { renderWithProviders } from '@/test/renderWithProviders';
 
 import { MapScreen } from './MapScreen';
@@ -67,7 +68,7 @@ describe('MapScreen (sprint 7 — first real map)', () => {
     expect(screen.queryByTestId('experience-map-card')).toBeNull();
 
     await fireEvent.press(pin);
-    await fireEvent.press(screen.getByTestId('mock-map-view'));
+    await pressBareMap(screen.getByTestId('mock-map-view'));
     expect(screen.queryByTestId('experience-map-card')).toBeNull();
   });
 

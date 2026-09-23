@@ -2616,3 +2616,25 @@ Only what was asked; no new library, mock data, no Maps API.
   `ExperienceMapScreen` (several photo markers, initial selection, marker → selection + footer, camera command with the
   experience's coordinates, hidden footer comes back, bare-map tap keeps selection, CTA per experience). The
   `react-native-maps` mock's `MapView` now forwards a ref exposing `mockAnimateToRegion`.
+
+### D-76 — Map fixes: no title beside the back button; a marker tap is no longer also a map tap (iOS)
+
+- **Title beside the back button.** Not a native/Expo Router header (`AppRoutes` sets `headerShown: false` for every
+  screen, `experience-map/[id]` included): it was `ExperienceMapScreen`'s own `StickyRevealHeader` `leftSlot`, which
+  rendered the back button *and* a pill with the opened experience's name (D-74). The pill is removed; the back button
+  is unchanged. Since D-75 that pill could even name another experience than the footer.
+- **Marker → wrong/no card.** Cause in `react-native-maps` 1.27 (iOS, Apple Maps): `AIRMapManager.handleMapTap` has no
+  marker hit-test and recognizes simultaneously with `AIRMapMarker`'s tap recognizer, and it waits for the map's
+  double-tap recognizer to fail — so every marker tap emits the marker's `onPress` **and then, ~300 ms later, the map's
+  `onPress`** (no `action` field). Screens treat `onPressMap` as "bare map": `ExperienceMapScreen` hid the footer it
+  had just filled (the "info" button appeared instead of the card), `MapScreen`/`SearchMapScreen` cleared the selection
+  just made. The Jest mock never sent that echo, so tests did not see it. Selection itself was sound: one
+  `selectedExperienceId`, markers keyed by `experience.id` (unique), footer derived from it, camera from the same id.
+- **Fix, at the vendor boundary (`RoamMap`), not per screen:** the map press following a marker press within 600 ms
+  (consumed once) — or any map press flagged `action: 'marker-press'` — is ignored. No screen changed for this.
+  Tests reproduce the real sequence (`pressMapEcho`) and use `pressBareMap` for a genuinely new bare-map tap; the three
+  existing tests that tapped the map right after a marker now use it.
+- **Mock data:** experiences had mostly `location: 'Paris'`, so the footer subtitle looked the same for every marker.
+  Each now has its own neighbourhood (`Oberkampf, Paris 11e`, `Pigalle, Paris 9e`…); coordinates of six experiences
+  were moved to their existing address (they sat elsewhere), and the two Île-de-France ones got distinct addresses.
+  `Montmartre, Paris` / `Saint-Germain, Paris` unchanged (asserted by the Profile tests).

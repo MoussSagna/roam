@@ -2,7 +2,7 @@ import { fireEvent, screen } from '@testing-library/react-native';
 import { useState } from 'react';
 import { Pressable } from 'react-native';
 
-import { mockAnimateToRegion } from '@/test/reactNativeMapsMock';
+import { mockAnimateToRegion, pressBareMap, pressMapEcho } from '@/test/reactNativeMapsMock';
 import { renderWithProviders } from '@/test/renderWithProviders';
 
 import type { MapFocusInsets, MapMarkerData } from '../types/map.types';
@@ -74,7 +74,38 @@ describe('RoamMap', () => {
     expect(onPressMarker).toHaveBeenCalledWith('b');
     expect(onPressMap).not.toHaveBeenCalled();
 
-    await fireEvent.press(screen.getByTestId('mock-map-view'));
+    await pressBareMap(screen.getByTestId('mock-map-view'));
+    expect(onPressMap).toHaveBeenCalledTimes(1);
+  });
+
+  it('ignores the map press that echoes a marker tap (Apple Maps sends both)', async () => {
+    const onPressMarker = jest.fn();
+    const onPressMap = jest.fn();
+    await renderWithProviders(
+      <RoamMap markers={MARKERS} onPressMarker={onPressMarker} onPressMap={onPressMap} />,
+    );
+    const map = screen.getByTestId('mock-map-view');
+
+    await fireEvent.press(screen.getByRole('button', { name: 'Le Perchoir' }));
+    await pressMapEcho(map);
+    expect(onPressMarker).toHaveBeenCalledWith('a');
+    expect(onPressMap).not.toHaveBeenCalled();
+
+    // Only that one echo is swallowed: the next bare-map tap counts.
+    await pressMapEcho(map);
+    expect(onPressMap).toHaveBeenCalledTimes(1);
+  });
+
+  it('ignores a map press flagged as a marker press, and a bare-map tap long after a marker tap counts', async () => {
+    const onPressMap = jest.fn();
+    await renderWithProviders(<RoamMap markers={MARKERS} onPressMap={onPressMap} />);
+    const map = screen.getByTestId('mock-map-view');
+
+    await fireEvent.press(map, { nativeEvent: { action: 'marker-press' } });
+    expect(onPressMap).not.toHaveBeenCalled();
+
+    await fireEvent.press(screen.getByRole('button', { name: 'Le Perchoir' }));
+    await pressBareMap(map);
     expect(onPressMap).toHaveBeenCalledTimes(1);
   });
 

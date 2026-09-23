@@ -1,7 +1,7 @@
 import { act, fireEvent, screen, within } from '@testing-library/react-native';
 
 import i18n from '@/i18n';
-import { mockAnimateToRegion } from '@/test/reactNativeMapsMock';
+import { mockAnimateToRegion, pressBareMap, pressMapEcho } from '@/test/reactNativeMapsMock';
 import { renderWithProviders } from '@/test/renderWithProviders';
 
 import { ExperienceMapScreen } from './ExperienceMapScreen';
@@ -28,15 +28,18 @@ describe('ExperienceMapScreen (D-73 — full-screen experience map)', () => {
     await act(() => i18n.changeLanguage('fr'));
   });
 
-  it('renders the transparent header (back + name), a RoamMap with the experience pin, and the footer', async () => {
+  it('renders the transparent header (back button only, no title), a RoamMap with the experience pin, and the footer', async () => {
     await renderWithProviders(<ExperienceMapScreen experienceId="exp-rooftop-sunset" />);
 
     expect(await screen.findByTestId('roam-map')).toBeOnTheScreen();
-    expect(screen.getByRole('header')).toHaveTextContent('Rooftop Sunset');
+    expect(screen.getByRole('button', { name: 'Retour' })).toBeOnTheScreen();
+    expect(screen.queryByRole('header')).toBeNull();
+    // The name only appears once, in the footer — not next to the back button.
+    expect(screen.getAllByText('Rooftop Sunset')).toHaveLength(1);
     // The opened experience has its own pin (among the others, sprint 9).
     expect(screen.getAllByRole('button', { name: 'Rooftop Sunset' }).length).toBeGreaterThan(0);
     expect(screen.getByTestId('experience-map-footer')).toBeOnTheScreen();
-    expect(screen.getByText('Bars & Soirées · Paris')).toBeOnTheScreen();
+    expect(screen.getByText('Bars & Soirées · Oberkampf, Paris 11e')).toBeOnTheScreen();
   });
 
   it('has no picker: one map, one footer, no card overlay', async () => {
@@ -199,8 +202,8 @@ describe('ExperienceMapScreen (D-73 — full-screen experience map)', () => {
       expect(screen.getAllByRole('button', { selected: true })).toHaveLength(1);
       expect(footer().getByText('Soirée jazz')).toBeOnTheScreen();
       expect(footer().queryByText('Rooftop Sunset')).toBeNull();
-      // The header keeps the opened experience's name.
-      expect(screen.getByRole('header')).toHaveTextContent('Rooftop Sunset');
+      // No title next to the back button that could name another experience.
+      expect(screen.queryByRole('header')).toBeNull();
     });
 
     it('recenters the camera on the tapped experience, clear of the header and the footer', async () => {
@@ -243,7 +246,7 @@ describe('ExperienceMapScreen (D-73 — full-screen experience map)', () => {
       await screen.findByTestId('roam-map');
       await fireEvent.press(marker('Soirée jazz'));
 
-      await fireEvent.press(screen.getByTestId('mock-map-view'));
+      await pressBareMap(screen.getByTestId('mock-map-view'));
       await fireEvent.press(
         screen.getByRole('button', { name: 'Afficher les informations du lieu' }),
       );
@@ -265,6 +268,83 @@ describe('ExperienceMapScreen (D-73 — full-screen experience map)', () => {
       expect(mockPush).toHaveBeenCalledWith({
         pathname: '/experience/[id]',
         params: { id: 'exp-jazz-night' },
+      });
+    });
+  });
+
+  describe('picker A → B → C with the real iOS tap sequence (marker press, then map echo)', () => {
+    const marker = (name: string) => screen.getByRole('button', { name });
+    const footerSlot = () =>
+      screen.getByTestId('experience-map-footer-slot', { includeHiddenElements: true });
+    const footer = () => within(screen.getByTestId('experience-map-footer'));
+
+    /** Taps a marker the way Apple Maps reports it: marker `onPress`, then the map's `onPress`. */
+    const tapMarker = async (name: string) => {
+      await fireEvent.press(marker(name));
+      await pressMapEcho(screen.getByTestId('mock-map-view'));
+    };
+
+    const STEPS = [
+      {
+        name: 'Soirée jazz',
+        subtitle: /Saint-Germain, Paris/,
+        longitude: 2.3339,
+      },
+      {
+        name: 'Dîners avec vue',
+        subtitle: /Île Saint-Louis, Paris 4e/,
+        longitude: 2.3563,
+      },
+      {
+        name: 'Concert intimiste',
+        subtitle: /Pigalle, Paris 9e/,
+        longitude: 2.3378,
+      },
+    ];
+
+    beforeEach(() => mockAnimateToRegion.mockClear());
+
+    it('each tap selects that experience, keeps the footer up with its data only, and recenters on it', async () => {
+      await renderWithProviders(<ExperienceMapScreen experienceId="exp-rooftop-sunset" />);
+      await screen.findByTestId('roam-map');
+      await fireEvent(screen.getByTestId('roam-map'), 'layout', {
+        nativeEvent: { layout: { x: 0, y: 0, width: 390, height: 844 } },
+      });
+
+      const seen = ['Rooftop Sunset'];
+      for (const step of STEPS) {
+        mockAnimateToRegion.mockClear();
+        await tapMarker(step.name);
+
+        // Selected alone.
+        expect(marker(step.name)).toBeSelected();
+        expect(screen.getAllByRole('button', { selected: true })).toHaveLength(1);
+        // Footer still up (the echo did not hide it), no "show" button.
+        expect(footerSlot().props.pointerEvents).toBe('auto');
+        expect(
+          screen.queryByRole('button', { name: 'Afficher les informations du lieu' }),
+        ).toBeNull();
+        // Footer shows this experience, and nothing of the previous ones.
+        expect(footer().getByText(step.name)).toBeOnTheScreen();
+        expect(footer().getByText(step.subtitle)).toBeOnTheScreen();
+        for (const previous of seen) expect(footer().queryByText(previous)).toBeNull();
+        // Camera on this experience.
+        expect(mockAnimateToRegion).toHaveBeenCalledTimes(1);
+        expect(mockAnimateToRegion.mock.calls[0][0].longitude).toBe(step.longitude);
+
+        seen.push(step.name);
+      }
+    });
+
+    it('the footer CTA then opens the last tapped experience', async () => {
+      await renderWithProviders(<ExperienceMapScreen experienceId="exp-rooftop-sunset" />);
+      await screen.findByTestId('roam-map');
+      for (const step of STEPS) await tapMarker(step.name);
+
+      await fireEvent.press(footer().getByRole('button', { name: /Voir le lieu/ }));
+      expect(mockPush).toHaveBeenCalledWith({
+        pathname: '/experience/[id]',
+        params: { id: 'exp-live-concert' },
       });
     });
   });

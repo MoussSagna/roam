@@ -2,6 +2,7 @@ import { act, fireEvent, screen, waitFor } from '@testing-library/react-native';
 import { useEffect } from 'react';
 
 import i18n from '@/i18n';
+import { pressBareMap } from '@/test/reactNativeMapsMock';
 import { renderWithProviders } from '@/test/renderWithProviders';
 import type { SearchFilters, SearchSortOption } from '@/types';
 
@@ -130,7 +131,7 @@ describe('SearchMapScreen (sprint 8 — full-screen search map)', () => {
     expect(screen.queryByTestId('experience-map-card')).toBeNull();
 
     await fireEvent.press(pin);
-    await fireEvent.press(screen.getByTestId('mock-map-view'));
+    await pressBareMap(screen.getByTestId('mock-map-view'));
     expect(screen.queryByTestId('experience-map-card')).toBeNull();
   });
 

@@ -42,7 +42,7 @@ type ExperienceMapScreenProps = {
 /**
  * Full-screen map of one experience (`/experience-map/[id]`, D-73, D-74), opened by tapping Experience
  * detail's map block. The map (`RoamMap`) fills the whole screen; a **transparent**
- * `StickyRevealHeader` (back + name, no background) floats over it, and `ExperienceMapFooter` sits over
+ * `StickyRevealHeader` (back button only, no title, no background) floats over it, and `ExperienceMapFooter` sits over
  * the bottom edge. **Tapping bare map slides the footer down** (`translateY`, Moti), leaving the map
  * fully visible with one small "info" button to slide it back up; taps on the marker or on the footer
  * itself don't count — `react-native-maps` only reports `onPress` for empty map, and pan/zoom are
@@ -164,27 +164,15 @@ export function ExperienceMapScreen({ experienceId }: ExperienceMapScreenProps) 
         scrollY={scrollY}
         revealOffset={NEVER_REVEAL_OFFSET}
         leftSlot={
-          <View style={{ flexShrink: 1, flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel={t('common.back')}
-              onPress={goBack}
-              hitSlop={8}
-              className="h-11 w-11 items-center justify-center rounded-pill bg-black/25 active:opacity-80"
-            >
-              <ChevronLeft size={22} strokeWidth={2} color={brand.white} />
-            </Pressable>
-            <View style={{ flexShrink: 1 }} className="rounded-pill bg-surface/85 px-4 py-2">
-              <Text
-                variant="body"
-                numberOfLines={1}
-                className="font-bodyMedium"
-                accessibilityRole="header"
-              >
-                {experience.title}
-              </Text>
-            </View>
-          </View>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={t('common.back')}
+            onPress={goBack}
+            hitSlop={8}
+            className="h-11 w-11 items-center justify-center rounded-pill bg-black/25 active:opacity-80"
+          >
+            <ChevronLeft size={22} strokeWidth={2} color={brand.white} />
+          </Pressable>
         }
       />
 

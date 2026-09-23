@@ -1,3 +1,4 @@
+import { fireEvent, type screen } from '@testing-library/react-native';
 import type { ReactNode } from 'react';
 import { forwardRef, useImperativeHandle } from 'react';
 import { Pressable, View } from 'react-native';
@@ -11,6 +12,8 @@ import type { ViewProps } from 'react-native';
  * commands sent through the map's ref land in `mockAnimateToRegion` (clear it in `beforeEach`).
  */
 export const mockAnimateToRegion = jest.fn();
+
+type Element = ReturnType<typeof screen.getByTestId>;
 
 type MockMarkerProps = ViewProps & { onPress?: () => void; children?: ReactNode };
 
@@ -36,3 +39,21 @@ const MapView = forwardRef<unknown, ViewProps & { children?: ReactNode }>(functi
 });
 
 export default MapView;
+
+/** Simulates the tap that Apple Maps sends to the map right after a marker tap (see `RoamMap`'s
+ * `MARKER_TAP_ECHO_MS`): same shape as a bare-map press, no `action`. */
+export async function pressMapEcho(map: Element) {
+  await fireEvent.press(map, { nativeEvent: {} });
+}
+
+/** A *new* tap on bare map: moves the clock past `RoamMap`'s marker-tap echo window first, so it is
+ * not mistaken for the echo of a marker tap made just before in the test. */
+export async function pressBareMap(map: Element) {
+  const now = Date.now();
+  const clock = jest.spyOn(Date, 'now').mockReturnValue(now + 10_000);
+  try {
+    await fireEvent.press(map, { nativeEvent: {} });
+  } finally {
+    clock.mockRestore();
+  }
+}

@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import type { LayoutChangeEvent, StyleProp, ViewStyle } from 'react-native';
 import { View } from 'react-native';
-import MapView from 'react-native-maps';
+import MapView, { type MapPressEvent } from 'react-native-maps';
 
 import { useReduceMotion } from '@/hooks/useReduceMotion';
 import { cx } from '@/lib/cx';
@@ -11,6 +11,15 @@ import { FOCUS_DELTA, getFocusedRegion, getRegionForCoordinates } from '../lib/r
 import type { MapFocusInsets, MapMarkerData, MapRegion } from '../types/map.types';
 
 import { ExperienceMarker } from './ExperienceMarker';
+
+/**
+ * Apple Maps (iOS) reports one tap on a marker **twice**: the marker's `onPress`, then the map's
+ * `onPress` as if bare map had been tapped. `react-native-maps`' map tap recognizer
+ * (`AIRMapManager.handleMapTap`) has no marker hit-test and recognizes simultaneously with the
+ * marker's; it also waits for its double-tap recognizer to fail, so this echo always comes *after*
+ * the marker press (~300 ms). A map press this soon after a marker press is that echo, not a new tap.
+ */
+const MARKER_TAP_ECHO_MS = 600;
 
 /** Camera glide to a newly selected marker: short, like the marker's own selection pop. */
 const FOCUS_MS = 350;
@@ -74,10 +83,25 @@ export function RoamMap({
   const hasFocusedRef = useRef(false);
 
   // Latest values for the (stable) press handler and the focus effect, without re-rendering markers.
-  const latest = useRef({ markers, selectedMarkerId, onPressMarker, focusInsets, mapHeight });
-  useLayoutEffect(() => {
-    latest.current = { markers, selectedMarkerId, onPressMarker, focusInsets, mapHeight };
+  const latest = useRef({
+    markers,
+    selectedMarkerId,
+    onPressMarker,
+    onPressMap,
+    focusInsets,
+    mapHeight,
   });
+  useLayoutEffect(() => {
+    latest.current = {
+      markers,
+      selectedMarkerId,
+      onPressMarker,
+      onPressMap,
+      focusInsets,
+      mapHeight,
+    };
+  });
+  const lastMarkerPressAt = useRef<number | null>(null);
 
   const focusOn = useCallback(
     (id: string | null) => {
@@ -106,11 +130,22 @@ export function RoamMap({
   const handlePressMarker = useCallback(
     (id: string) => {
       // Re-tapping the selected marker (after panning away) brings it back to the center.
+      lastMarkerPressAt.current = Date.now();
       if (id === latest.current.selectedMarkerId) focusOn(id);
       latest.current.onPressMarker?.(id);
     },
     [focusOn],
   );
+
+  // Only a genuine tap on bare map reaches the screen: without this guard, on iOS every marker tap
+  // was followed by `onPressMap` — hiding the footer / clearing the selection just made.
+  const handlePressMap = useCallback((event: MapPressEvent) => {
+    const markerPressAt = lastMarkerPressAt.current;
+    lastMarkerPressAt.current = null;
+    if (event.nativeEvent.action === 'marker-press') return;
+    if (markerPressAt !== null && Date.now() - markerPressAt < MARKER_TAP_ECHO_MS) return;
+    latest.current.onPressMap?.();
+  }, []);
 
   const handleLayout = useCallback(
     (event: LayoutChangeEvent) => setMapHeight(event.nativeEvent.layout.height),
@@ -134,7 +169,7 @@ export function RoamMap({
         initialRegion={initialRegion}
         // Apple Maps follows this; Google Maps (Android) keeps its native light style — see D-70.
         userInterfaceStyle={scheme}
-        onPress={onPressMap}
+        onPress={handlePressMap}
         onRegionChangeComplete={handleRegionChangeComplete}
         toolbarEnabled={false}
         showsCompass={false}
