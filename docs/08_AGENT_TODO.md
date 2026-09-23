@@ -10,7 +10,8 @@ Status for **mobile** (2026-09-22). Web and API foundations are not started.
 - [ ] Environment variables
 - [ ] CI basics
 - [x] Theme system (Light / Dark / System, semantic tokens, persisted)
-- [x] i18n system (FR/EN, persisted, typed keys)
+- [x] i18n system (FR/EN, persisted, typed keys); `/profile/language` (sprint 5) exposes it with a
+      dynamically derived language list, `DECISIONS.md` D-60
 - [~] Shared UI primitives (mobile primitives exist in `apps/mobile/src/components/ui`; no shared `packages/ui` yet)
 - [x] Mock/repository architecture (interfaces + mock, no API)
 - [x] Unit test setup (Jest + RNTL)
@@ -72,8 +73,8 @@ Use mock data. The onboarding is complete on the front end (no backend, nothing 
       state), sprint 5; the separate `/favorites` tab is still sprint-3 placeholder content
 - [~] History — "Mon historique" (`/profile/history`) built (completed experiences grouped by date,
       category filter, empty state), sprint 5
-- [~] Profile — main screen built (header, stats, menu); preferences, favorites, history and
-      statistics built, other sub-screens still placeholders, sprint 5
+- [~] Profile — main screen built (header, stats, menu); preferences, favorites, history, statistics
+      and language built, other sub-screens still placeholders, sprint 5
 - [~] Preference editing — "Mes préférences" built (experience types, ambiance, budget/distance
       sliders), sprint 5
 - [~] Statistics — "Mes statistiques" (`/profile/statistics`) built (summary cards, genre/city

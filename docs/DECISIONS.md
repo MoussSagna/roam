@@ -1763,3 +1763,63 @@ interop` already documents for this project's ESM handling.
 - **Not done on purpose**: computing any figure from real data (see above); a fourth chart type beyond the
   donut (nothing else in the mockup needs one); wiring the time-range chips to change numbers (see above);
   a route-tree test (standalone component test, same convention as Favorites/History/Preferences).
+
+### D-60 — Profile 7 "Langue" (route `/profile/language`); languages are derived, never hardcoded in the screen
+
+Sprint 5, one screen at a time, explicit brief: build the language list from the i18n layer's own
+source of truth, not a list authored in `LanguageScreen`. `LanguageScreen` (`features/profile/`)
+replaces the `ProfilePlaceholder` that `/profile/language` rendered since D-50.
+
+- **`getAvailableLanguages()` (`src/i18n/index.ts`) is the single new abstraction, not a bigger one.**
+  The brief's own suggested shape (`getAvailableLanguages`/`getCurrentLanguage`/`changeLanguage`/
+  `persistLanguage`) already exists in three quarters: reading the current language is already the
+  one-line `isLanguage(i18n.language) ? i18n.language : DEFAULT_LANGUAGE` pattern `ProfileScreen`
+  itself uses (D-50) — no wrapper needed; `setLanguage()` already changes **and** persists in one call
+  (D-08). Only "the selectable list" had no home yet, so only that one function was added — adding the
+  other three would have been the "unnecessary abstraction" the brief explicitly warns against.
+- **Each language's native name is read from its own resource bundle, not the active one.**
+  `getAvailableLanguages()` calls `i18n.getResource(code, 'translation', \`settings.languages.${code}\`)`for every`code`in`SUPPORTED_LANGUAGES`— a self-referential lookup (French's own bundle is asked
+for French's own name), not`t()`(which always resolves against whatever language is *currently
+active*). This matters concretely: switching the UI to English must still show "Français", not a
+translation of it — verified by a test that flips the active language first. The existing`settings.languages.*` keys already exist in **every** locale file (`ProfileScreen`'s own
+`LANGUAGE_LABEL_KEYS`/D-50 already reused them for the menu row's value), and because `t()`in that
+call site always resolves against the active language too, every existing cross-entry (fr.json's own`settings.languages.en`, en.json's own `settings.languages.fr`) turns out to be dead weight — nothing
+reads them. Left in place rather than pruned: removing unused JSON values isn't this screen's job, and
+churning a shared, already-validated file for a cleanup unrelated to the brief isn't worth the risk.
+**A new locale only needs to add its own `settings.languages.<code>` key to its own file** — not
+  every other file's.
+- **Flags are a small, separate, purely decorative map (`LANGUAGE_FLAGS`), not part of the translation
+  resources.** A flag isn't translatable text, so it has no natural home in `fr.json`/`en.json`; kept as
+  its own `Partial<Record<Language, string>>` in `i18n/index.ts` so a language missing a flag still
+  renders (just without one) instead of the whole list breaking. Plain Unicode emoji (🇫🇷/🇬🇧), not a new
+  icon library or asset: the brief explicitly asks not to add a dependency for "quelques drapeaux", and
+  nothing in this codebase renders flag icons anywhere yet.
+- **Adding a language: add its resource file + register it in `SUPPORTED_LANGUAGES`/`resources`
+  (`i18n/index.ts`) + give that file its own `settings.languages.<code>` key + optionally add it to
+  `LANGUAGE_FLAGS`.** Nothing in `LanguageScreen` changes — verified by a test that mocks
+  `getAvailableLanguages()` to return a third, fake language (`es`) and asserts it renders correctly,
+  which is the only way to exercise "a language was added" without actually shipping a new locale file
+  just for a test. The `SUPPORTED_LANGUAGES` array/`resources` object remain the one unavoidable,
+  explicit-import step Metro requires (no `require.context`-style dynamic glob import exists for Expo/
+  Metro the way it does for webpack) — documented as a deliberate, accepted technical constraint, not
+  something this screen works around.
+- **New `LanguageOptionRow`** (`features/profile/components/`): flag, native name, a checkmark
+  (`colors.primary`) when active — plain rows, no border/card treatment, same list density as
+  `FavoriteExperienceRow`/`HistoryEntryRow` (D-57/D-58). `accessibilityRole="radiogroup"`/`"radio"` +
+  `accessibilityState={{ checked }}`, the exact same single-choice pattern the onboarding `MoodScreen`
+  already established (D-21) — reused, not reinvented.
+- **Selecting a row applies immediately and stays on the screen** — no save button, no navigation away:
+  the brief's own point 6 ("mettre à jour... immédiatement") and the existing `setLanguage()` behavior
+  (already fire-and-persist, no confirmation step anywhere else it's used) both point the same way. No
+  `StickyActionFooter` needed, unlike Preferences (D-52), which has several fields to commit at once.
+- **Header follows the same restructure as every other profile sub-screen this sprint**
+  (`StickyRevealHeader`, in-content `h2` title, D-56/D-57/D-58/D-59). `settings.language` ("Langue") is
+  reused directly for both the menu row and this screen's own title, same "already matches, nothing to
+  fix" case as `profile.statistics` (D-59), unlike `history.title` (D-58).
+- **Animation**: `FadeInUp` staggers the rows on mount (unguarded, same precedent as every other list
+  this sprint); the checkmark itself has no separate animation (no loop, no scale) — appearing/
+  disappearing with the row's own re-render is enough, nothing to gate behind `useReduceMotion()`.
+- **Not done on purpose**: pruning the now-confirmed-unused cross-language `settings.languages.*`
+  entries in `fr.json`/`en.json` (see above — out of scope, no functional effect); a `getCurrentLanguage()`/
+  `persistLanguage()` wrapper (see above, already covered); a route-tree test (standalone component test,
+  same convention as every other profile sub-screen this sprint).

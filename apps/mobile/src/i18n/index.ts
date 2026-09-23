@@ -41,4 +41,38 @@ export async function setLanguage(language: Language): Promise<void> {
   await writeStorage(STORAGE_KEYS.language, language);
 }
 
+export type LanguageOption = {
+  code: Language;
+  /** Native name (e.g. "Français", "English"), never the currently active UI language's translation
+   * of it — read from that language's own `settings.languages.<code>` resource key via
+   * `i18n.getResource`, so each locale file only ever has to describe itself. */
+  nativeName: string;
+  /** Purely decorative — `code` remains the real source of truth (`docs/DECISIONS.md`). */
+  flag?: string;
+};
+
+/** One flag emoji per supported language — the one piece of language metadata a translation
+ * resource has no natural home for (a flag isn't translatable text, unlike `nativeName`). Kept
+ * separate from `SUPPORTED_LANGUAGES`/`resources`: a language missing from this map still appears in
+ * `getAvailableLanguages()`, just without a flag. */
+const LANGUAGE_FLAGS: Partial<Record<Language, string>> = {
+  fr: '🇫🇷',
+  en: '🇬🇧',
+};
+
+/**
+ * The selectable language list for "Langue" (`LanguageScreen`) — derived from the i18n resources
+ * themselves, never hardcoded in a screen (`docs/DECISIONS.md`). Adding a language: add its resource
+ * file, add it to `SUPPORTED_LANGUAGES` and `resources` above (Metro needs a static import per
+ * locale file — the one unavoidable step), give that file its own `settings.languages.<code>` key,
+ * and optionally add it to `LANGUAGE_FLAGS`. Nothing else, and nothing in `LanguageScreen`, changes.
+ */
+export function getAvailableLanguages(): LanguageOption[] {
+  return SUPPORTED_LANGUAGES.map((code) => ({
+    code,
+    nativeName: i18n.getResource(code, 'translation', `settings.languages.${code}`) as string,
+    flag: LANGUAGE_FLAGS[code],
+  }));
+}
+
 export default i18n;

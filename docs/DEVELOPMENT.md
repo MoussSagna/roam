@@ -12,14 +12,15 @@ tab bar) is built — see `DECISIONS.md` D-38 to D-43. **Home is now the real di
 chips, popular/nearby/for-you sections, sprint 5, `DECISIONS.md` D-45); the `/discover` and `/favorites` tabs are still the
 sprint 3 placeholder content. **Experience detail and its full-screen gallery are also built** (sprint 5, `DECISIONS.md`
 D-48); the itinerary/journey screen it leads to is still a placeholder. **Profile's main screen, "Mes préférences",
-"Mes favoris", "Mon historique" and "Mes statistiques" are now real** (header, stats, grouped menu; experience
-types/ambiance/budget/distance; favorited experiences with removal and an empty state; completed experiences
-grouped by date with a category filter; summary cards, a genre/city breakdown and a mood donut chart; sprint 5,
-one screen at a time, `DECISIONS.md` D-50, D-51, D-57, D-58, D-59); the other six screens it links to (edit
-profile, language, theme, help, privacy, settings) are still placeholders, built one per session. There is
-**no backend, no database and no API**: nothing is sent or stored, and every answer/interaction is local state,
-mock repository content, or a simulated delay used for the prototype only (`DECISIONS.md` D-28, D-29, D-31 to
-D-36, D-45, D-50, D-51, D-57, D-58, D-59).
+"Mes favoris", "Mon historique", "Mes statistiques" and "Langue" are now real** (header, stats, grouped menu;
+experience types/ambiance/budget/distance; favorited experiences with removal and an empty state; completed
+experiences grouped by date with a category filter; summary cards, a genre/city breakdown and a mood donut
+chart; a dynamic, i18n-resource-derived language list; sprint 5, one screen at a time, `DECISIONS.md` D-50,
+D-51, D-57, D-58, D-59, D-60); the other five screens it links to (edit profile, theme, help, privacy,
+settings) are still placeholders, built one per session. There is **no backend, no database and no API**:
+nothing is sent or stored, and every answer/interaction is local state, mock repository content, or a
+simulated delay used for the prototype only (`DECISIONS.md` D-28, D-29, D-31 to D-36, D-45, D-50, D-51, D-57,
+D-58, D-59, D-60).
 
 ## Requirements
 
@@ -81,7 +82,7 @@ apps/mobile/
     │   ├── home/            # Home (sprint 5): hero carousel, sections, mock data/lib — see the table below
     │   ├── discover/        # Still sprint 3 placeholder content
     │   ├── favorites/       # `/favorites` tab: still sprint 3 placeholder content (distinct from `/profile/favorites`)
-    │   ├── profile/         # Profile (sprint 5): main screen + preferences + favorites + history + statistics real, other sub-screens still placeholders
+    │   ├── profile/         # Profile (sprint 5): main screen + preferences + favorites + history + statistics + language real, other sub-screens still placeholders
     │   ├── experiences/     # Experience detail (route experience/[id]) + gallery/ (route gallery/[id]) — sprint 5
     │   ├── auth/            # Authentication: all 7 screens built (Entry, Login, Register, ForgotPassword, ResetCode, NewPassword, ResetSuccess)
     │   ├── itinerary/       # CreateJourneyPlaceholder (route itinerary/create) — not the real screen yet
@@ -199,8 +200,9 @@ polish D-49), built on `Experience`'s extended fields through the same `Experien
 
 Built one screen at a time (`docs/SCREEN_INTEGRATION_WORKFLOW.md`), sprint 5. The main screen
 (`/profile`), "Mes préférences" (`/profile/preferences`), "Mes favoris" (`/profile/favorites`), "Mon
-historique" (`/profile/history`) and "Mes statistiques" (`/profile/statistics`) are real; every other row
-is still a `ProfilePlaceholder` stub (`docs/DECISIONS.md` D-50) until its own session.
+historique" (`/profile/history`), "Mes statistiques" (`/profile/statistics`) and "Langue"
+(`/profile/language`) are real; every other row is still a `ProfilePlaceholder` stub
+(`docs/DECISIONS.md` D-50) until its own session.
 
 | Piece              | Route / component                                                                        | Notes                                                                                                                                                                                                                                                                                                                                                                                        |
 | ------------------ | ---------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -211,7 +213,8 @@ is still a `ProfilePlaceholder` stub (`docs/DECISIONS.md` D-50) until its own se
 | Favorites          | `/profile/favorites` → `features/profile/FavoritesScreen.tsx`                            | Favorited experiences (`useFavoriteExperiences`, backed by `Experience.isFavorite`), one `FavoriteExperienceRow` per item, heart-tap removal, empty state; header is a `StickyRevealHeader` — local state only, no separate place-favoriting system, `docs/DECISIONS.md` D-57                                                                                                                |
 | History            | `/profile/history` → `features/profile/HistoryScreen.tsx`                                | Completed experiences (`useHistoryExperiences`, backed by `Experience.historyPeriod`), grouped by "Cette semaine/Ce mois-ci/Plus tôt", a dynamic category filter (`Chip` row), one `HistoryEntryRow` per item (read-only, chevron only), empty state; header is a `StickyRevealHeader` — local state only, `docs/DECISIONS.md` D-58                                                          |
 | Statistics         | `/profile/statistics` → `features/profile/StatisticsScreen.tsx`                          | Time-range `Chip`s (local selection only), three `StatCard`s (`UserStats`, same numbers as `ProfileStats`), "Tes genres préférés"/"Villes visitées" (`PercentBarRow`, plain `View` bars), "Ton humeur lors des sorties" (`MoodDonutChart`, `react-native-gifted-charts`' `PieChart`), an insight card; header is a `StickyRevealHeader` — static mock numbers only, `docs/DECISIONS.md` D-59 |
-| Not-yet-built rows | `features/profile/components/ProfilePlaceholder.tsx`                                     | `/profile/{edit,language,theme,help,privacy,settings}`                                                                                                                                                                                                                                                                                                                                       |
+| Language           | `/profile/language` → `features/profile/LanguageScreen.tsx`                              | `LanguageOptionRow` per language, list from `getAvailableLanguages()` (`src/i18n/index.ts`) — never hardcoded in the screen, see `05_THEME_AND_I18N.md` "Langue screen"; selecting one calls the existing `setLanguage()`; header is a `StickyRevealHeader` — `docs/DECISIONS.md` D-60                                                                                                       |
+| Not-yet-built rows | `features/profile/components/ProfilePlaceholder.tsx`                                     | `/profile/{edit,theme,help,privacy,settings}`                                                                                                                                                                                                                                                                                                                                                |
 | Data               | `UserRepository.getCurrentUser()` (`services/mock/user.ts`)                              | One mocked profile (`services/mock/data.ts` → `currentUser`); `User` gained optional `age/city/bio/stats`                                                                                                                                                                                                                                                                                    |
 
 ## Authentication (current state)
