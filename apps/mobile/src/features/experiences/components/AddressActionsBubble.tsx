@@ -5,7 +5,7 @@ import { useTranslation } from 'react-i18next';
 import { Modal, Pressable, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { Button, Text } from '@/components/ui';
+import { Text } from '@/components/ui';
 import { useReduceMotion } from '@/hooks/useReduceMotion';
 import { useTheme } from '@/theme';
 
@@ -24,7 +24,7 @@ type AddressActionsBubbleProps = {
 
 /**
  * The small action bubble opened by tapping the address (D-74): a centered rounded card over a dimmed
- * backdrop, listing the actions as full-width pills. Same `Modal` + backdrop + `MotiView` plumbing as
+ * backdrop, listing the actions as full-width, left-aligned single-line pills (small type so the longest label fits); the title and address are centered. Same `Modal` + backdrop + `MotiView` plumbing as
  * `ConfirmationModal`/the search sheets (fade + slight scale, no motion under reduced motion), padded
  * by the safe-area insets, closed by the backdrop, the "×" or Android back. It owns no behavior of its
  * own — the actions come from `useAddressActions`.
@@ -98,35 +98,41 @@ export function AddressActionsBubble({
               style={{ width: 320 }}
               className="gap-3 rounded-hero border border-border bg-surface p-4"
             >
-              <View className="flex-row items-start gap-3">
-                <View className="flex-1 gap-1">
-                  <Text variant="h4" accessibilityRole="header">
-                    {t('experience.addressActions.title')}
-                  </Text>
-                  <Text variant="small" tone="secondary" numberOfLines={2}>
-                    {address}
-                  </Text>
-                </View>
+              <View className="items-center gap-1 px-8 pt-1">
+                <Text variant="h4" accessibilityRole="header" className="text-center">
+                  {t('experience.addressActions.title')}
+                </Text>
+                <Text variant="small" tone="secondary" numberOfLines={2} className="text-center">
+                  {address}
+                </Text>
                 <Pressable
                   accessibilityRole="button"
                   accessibilityLabel={t('common.close')}
                   onPress={onClose}
                   hitSlop={8}
-                  className="h-8 w-8 items-center justify-center active:opacity-60"
+                  className="absolute right-0 top-0 h-8 w-8 items-center justify-center active:opacity-60"
                 >
                   <X size={18} strokeWidth={1.8} color={colors.textSecondary} />
                 </Pressable>
               </View>
 
               {actions.map((action) => (
-                <Button
+                <Pressable
                   key={action.key}
-                  label={action.label}
-                  variant="secondary"
-                  leadingIcon={<action.icon size={18} strokeWidth={1.8} color={colors.text} />}
+                  accessibilityRole="button"
+                  accessibilityLabel={action.label}
                   onPress={action.onPress}
-                  className="w-full"
-                />
+                  className="min-h-12 flex-row items-center gap-3 rounded-pill border border-border bg-surface px-4 active:opacity-70"
+                >
+                  <action.icon size={18} strokeWidth={1.8} color={colors.text} />
+                  <Text
+                    variant="small"
+                    numberOfLines={1}
+                    className="flex-1 text-left font-bodyMedium"
+                  >
+                    {action.label}
+                  </Text>
+                </Pressable>
               ))}
             </MotiView>
           </Pressable>
