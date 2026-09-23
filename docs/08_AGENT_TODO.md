@@ -39,11 +39,12 @@ Status for **mobile** (2026-09-22). Web and API foundations are not started.
 - [ ] Itinerary — CTA reached via `itinerary/create`, still a placeholder (`DECISIONS.md` D-48)
 - [x] Search — shared `SearchScreen` (`/search`) opened from both Home's and Discover's `SearchBar`;
       recent searches (persisted), trending chips, explore-by-mood, live suggestions, results
-      (list/map), and a filters bottom sheet, all over the mock experience pool — no real query
+      (list/map), a sort sheet (Recommandé/Plus proche/Mieux noté/Prix), and a filters bottom sheet, all over the mock experience pool — no real query
       engine yet, sprint 6 — `DECISIONS.md` D-68
 - [~] Map — sprint 7 replaces the illustrated maps with `react-native-maps` (`RoamMap`), one screen at a time
-      (`DECISIONS.md` D-70). [x] `/map` (Discover's "Voir la carte"); [ ] Search's Liste/Carte toggle
-      (`ExperienceMapView`); [ ] Experience detail's `MapPreviewRow`; [ ] onboarding location preview
+      (`DECISIONS.md` D-70). [x] `/map` (Discover's "Voir la carte"); [x] Search's full-screen "Carte" mode
+      (sprint 8, D-71 — `ExperienceMapView` deleted); [ ] Experience detail's `MapPreviewRow`;
+      [ ] onboarding location preview
 - [ ] Feedback
 
 Use mock data. The onboarding is complete on the front end (no backend, nothing saved: D-28).

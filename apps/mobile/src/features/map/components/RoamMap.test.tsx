@@ -62,4 +62,11 @@ describe('RoamMap', () => {
     await fireEvent.press(screen.getByRole('button', { name: 'Le Perchoir' }));
     expect(screen.getByTestId('roam-map')).toBeOnTheScreen();
   });
+
+  it('drops its rounded corners for an edge-to-edge map (rounded=false)', async () => {
+    await renderWithProviders(<RoamMap markers={MARKERS} rounded={false} />);
+
+    const classes = screen.getByTestId('roam-map').props.className as string;
+    expect(classes).not.toMatch(/rounded-large/);
+  });
 });

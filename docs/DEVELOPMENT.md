@@ -90,7 +90,7 @@ apps/mobile/
     │   ├── experiences/     # Experience detail (route experience/[id]) + gallery/ (route gallery/[id]) — sprint 5
     │   ├── auth/            # Authentication: all 7 screens built (Entry, Login, Register, ForgotPassword, ResetCode, NewPassword, ResetSuccess)
     │   ├── itinerary/       # CreateJourneyPlaceholder (route itinerary/create) — not the real screen yet
-    │   ├── map/             # Map (route /map): RoamMap (react-native-maps) + markers/hook/lib; ExperienceMapView = Search's still-illustrated map — sprint 7, D-70
+    │   ├── map/             # RoamMap (react-native-maps) + ExperienceMarker/ExperienceMapCard/markers lib; Map screen (route /map) — sprint 7, D-70; also Search's map mode — sprint 8, D-71
     │   └── recommendations, outing, feedback
     ├── hooks/               # Cross-feature hooks (useBootstrap, useReduceMotion, useCtaVisibility)
     ├── i18n/                # i18next setup + locales/fr.json, locales/en.json
@@ -209,24 +209,56 @@ Detail or Profile, it has no full-bleed hero photo at the very top for a header 
 
 ## Search (current state)
 
-Shared global search (sprint 6, `DECISIONS.md` D-68), reached from both Home's and Discover's
-`SearchBar` (`router.push({ pathname: '/search', params: { context } })`) — one screen, not two: the
+Shared global search (sprint 6, `DECISIONS.md` D-68; flow redesigned in sprint 8, D-71), reached from both Home's and
+Discover's `SearchBar` (`router.push({ pathname: '/search', params: { context } })`) — one screen, not two: the
 `context` param only changes which existing placeholder copy is shown
-(`home.search.placeholder`/`discover.search.placeholder`). Built on a new `SearchRepository`
+(`home.search.placeholder`/`discover.search.placeholder`). Built on a `SearchRepository`
 (`services/mock/search.ts`, deterministic text/facet matching, no real query engine) over the existing
-mock experience pool.
+mock experience pool. **No backend**: search, filters and sort are all local/mocked.
+
+**LIST mode** (the default once a query is submitted):
+
+```text
+SearchInput (back + title above it)
+  ↓
+[ Trier ] [ Filtres ] [ Carte ]     ← SearchActionBar (shared Chip)
+  ↓
+"N expériences"            <active sort>
+  ↓
+SearchResultsList → SearchResultCard …
+```
+
+**MAP mode** (after "Carte" — same screen, same state, no new route):
+
+```text
+SearchInput (same instance, not duplicated)
+  ↓
+[ Filtres ]                          ← SearchActionBar, map shape: only Filtrer
+  ↓
+Full-screen RoamMap (edge to edge)   + floating "Liste" button (way back)
+  ↓
+ExperienceMapCard (selected pin)  →  "Voir le lieu" → experience/[id]
+```
 
 | State                    | Component(s)                                                                          | Notes                                                                                                     |
 | ------------------------- | -------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------- |
 | Initial (no query)        | `RecentSearchList` + `TrendingChips` + `ExploreByMoodSection`                          | Recent searches persisted via `lib/storage.ts` (`useRecentSearches`); trending is a static chip grid; explore-by-mood reuses Discover's `SUGGESTION_MOODS`/`DiscoverMoodCard` |
 | Typing                    | `SearchSuggestionsList`                                                                | Debounced `suggest()`; query-text suggestions then up to a few matching experiences                                     |
-| Results                   | `SearchResultsHeader` + `SearchResultsList` (`FlatList`) or `ExperienceMapView`         | Count, quick filter chips, "Filtres", Liste/Carte toggle; results are `SearchResultCard`, a full-width sibling of `ExperienceCard` sized for a single-column list instead of a carousel |
-| Filters                   | `SearchFiltersSheet`                                                                    | Bottom sheet on `ConfirmationModal`'s `Modal`/`MotiView` plumbing; category (`useCategories`), distance, budget (`context.budget.*`), "Quand ?", options; local draft, live result count |
+| Results — list            | `SearchActionBar` + `SearchResultsList` (`FlatList`)                                    | Trier/Filtres/Carte `Chip`s (`selected` = an active sort/filter), result count + active sort label; results are `SearchResultCard`, a full-width sibling of `ExperienceCard` |
+| Results — map             | `SearchActionBar` (map shape) + `RoamMap` (`rounded={false}`) + `ExperienceMapCard`     | Markers = `toMapMarkers(sortedResults)`; the map never searches/filters itself; results without `coordinates` stay in the list but get no pin |
+| Sort                      | `SearchSortSheet` + `SortOptionRow` + `lib/sortResults.ts`                              | Bottom sheet (same chrome as the filters sheet), picking a row applies + closes; Recommandé / Plus proche / Mieux noté / Prix croissant / Prix décroissant — a pure client-side reorder of the repository's results |
+| Filters                   | `SearchFiltersSheet`                                                                    | **One** bottom sheet opened from both list and map mode; category (`useCategories`), distance, budget (`context.budget.*`), "Quand ?", options; local draft, live result count |
 | Empty                     | `SearchEmptyState`                                                                       | Relax-distance / clear-filters / see-trending actions (`07_DATA_AND_RECOMMENDATION.md`'s "no perfect match" guidance) plus a `pickTrending` fallback carousel |
-| Map                       | `features/map/ExperienceMapView.tsx`                                                    | Still the mocked illustrated map (reuses onboarding `MapPreview`'s streets/parks), pins positioned by a deterministic hash of the experience id; shares `ExperienceMapCard` with `/map`. **Next in line to get `RoamMap`** (D-70) |
+
+**Single source of truth.** `useSearch()` → `results` → `sortResults(results, sort)` → `sortedResults`, which feeds the
+list, the count *and* the map markers. Query, filters, sort and the selected map pin all live in `SearchScreen`, above
+both views, so toggling Liste ↔ Carte loses none of them. **Tab bar**: `/search` is a root `Stack` screen next to
+`(tabs)`, so the floating tab bar is not shown in either mode (nothing to hide, nothing to change in `RoamTabBar`).
+**Sticky search**: the `SearchInput` sits outside the scrolling list, so it stays reachable in list mode, and is the same
+single instance above the map.
 
 Favorites reuse Home's `useFavoriteExperienceIds`; a result/suggestion/map-pin tap pushes to
-`experience/[id]` (`ExperienceDetailScreen`) — no separate detail screen. See D-68 for the full
+`experience/[id]` (`ExperienceDetailScreen`) — no separate detail screen. See D-68 and D-71 for the full
 rationale and trade-offs.
 
 ## Map (current state)
@@ -240,19 +272,20 @@ time**.
 | Screen / route                                | Surface                                                              | Status                   |
 | --------------------------------------------- | -------------------------------------------------------------------- | ------------------------ |
 | Map — `/map` (Discover "Voir la carte")       | `features/map/MapScreen.tsx` → `RoamMap`                             | **Real map (sprint 7)**  |
-| Search — Liste/Carte toggle                   | `ExperienceMapView` (illustrated)                                    | Next                     |
-| Experience detail — "Voir sur la carte"       | `MapPreviewRow` → onboarding `MapPreview` (illustrated)              | To do                    |
+| Search — "Carte" mode (`/search`)             | `features/search/SearchScreen.tsx` → full-screen `RoamMap`            | **Real map (sprint 8)**  |
+| Experience detail — "Voir sur la carte"       | `MapPreviewRow` → onboarding `MapPreview` (illustrated)              | **Next**                 |
 | Onboarding location                           | `MapPreview` (illustrated, decorative)                               | To do (may stay static)  |
 
 ```text
-Screen → hook (useNearbyMapExperiences) → ExperienceRepository (mock, Experience.coordinates)
-       → RoamMap / ExperienceMarker (features/map/components) → react-native-maps
+Screen → hook / derived results (useNearbyMapExperiences · Search's sortedResults)
+       → ExperienceRepository / SearchRepository (mock, Experience.coordinates)
+       → toMapMarkers → RoamMap / ExperienceMarker (features/map) → react-native-maps
 ```
 
 - `RoamMap` is the **only** component (with `ExperienceMarker`) allowed to import `react-native-maps`; screens pass
   `MapMarkerData[]` (`features/map/types/map.types.ts`), a selected id and press callbacks. It frames the markers
-  once (`lib/region.ts`), clips to a rounded frame, and follows the theme through `userInterfaceStyle` (iOS).
-- Selection state lives in the screen's hook, not in the map. The bottom card is `ExperienceMapCard`.
+  once (`lib/region.ts`), clips to a rounded frame (or edge to edge with `rounded={false}`, Search's map mode), and follows the theme through `userInterfaceStyle` (iOS).
+- Selection state lives in the screen (hook or screen state), not in the map. The bottom card is `ExperienceMapCard`; "no `coordinates` → no pin, no crash" is defined once in `lib/markers.ts` (`isPinnable`/`toMapMarkers`).
 - **Mock data only**: no Google Places / Directions / Geocoding, no network. Coordinates are on the mock
   experiences (`Experience.coordinates`). Real data (place provider, geolocation, routing) is Phase E of
   `08_AGENT_TODO.md`; `Polyline`, user location and camera control will be added to `RoamMap` when a screen needs

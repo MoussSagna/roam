@@ -249,11 +249,7 @@
     },
     "results": {
       "count": "{count} expériences",
-      "quickFilters": {
-        "all": "Tous",
-        "openNow": "Ouvert maintenant",
-        "nearby": "< 2 km"
-      },
+      "sort": "Trier",
       "filters": "Filtres",
       "viewList": "Liste",
       "viewMap": "Carte"
@@ -283,6 +279,15 @@
       "clearFilters": "Retirer un filtre",
       "seeTrending": "Voir les tendances",
       "fallbackTitle": "Peut-être que ça te plaira"
+    },
+    "sort": {
+      "options": {
+        "recommended": "Recommandé",
+        "nearest": "Plus proche",
+        "topRated": "Mieux noté",
+        "priceAsc": "Prix croissant",
+        "priceDesc": "Prix décroissant"
+      }
     }
   },
   "context": {

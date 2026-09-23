@@ -16,9 +16,9 @@ type ExperienceMapCardProps = {
 };
 
 /**
- * Bottom card shown over a map once a pin is selected (image, rating, distance, "Voir" CTA). Shared by
- * `ExperienceMapView` (Search's illustrated map) and `MapScreen` (real map) so the selection UI
- * doesn't fork between the two while the illustrated map is still being phased out (D-70).
+ * Bottom card shown over a `RoamMap` once a pin is selected (image, rating, distance, "Voir" CTA).
+ * Shared by `MapScreen` and `SearchScreen`'s map mode (D-70, D-71) so the selection UI is one
+ * implementation, not two.
  */
 export function ExperienceMapCard({ experience, onPressView, onClose }: ExperienceMapCardProps) {
   const { t } = useTranslation();

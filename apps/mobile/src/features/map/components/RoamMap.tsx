@@ -3,6 +3,7 @@ import type { StyleProp, ViewStyle } from 'react-native';
 import { View } from 'react-native';
 import MapView from 'react-native-maps';
 
+import { cx } from '@/lib/cx';
 import { useTheme } from '@/theme';
 
 import { getRegionForCoordinates } from '../lib/region';
@@ -16,6 +17,10 @@ type RoamMapProps = {
   onPressMarker?: (id: string) => void;
   /** A tap on the bare map (not a marker) — screens use it to clear the selection. */
   onPressMap?: () => void;
+  /** `false` for an edge-to-edge map with no rounded corners (Search's full-screen map mode, sprint 8)
+   * — a prop rather than an overriding `className`, since NativeWind doesn't resolve class conflicts
+   * by order (`docs/DEVELOPMENT.md`). Default `true` (the standalone Map screen's card look). */
+  rounded?: boolean;
   style?: StyleProp<ViewStyle>;
   testID?: string;
 };
@@ -32,6 +37,7 @@ export function RoamMap({
   selectedMarkerId = null,
   onPressMarker,
   onPressMap,
+  rounded = true,
   style,
   testID = 'roam-map',
 }: RoamMapProps) {
@@ -42,7 +48,11 @@ export function RoamMap({
   );
 
   return (
-    <View testID={testID} className="flex-1 overflow-hidden rounded-large" style={style}>
+    <View
+      testID={testID}
+      className={cx('flex-1 overflow-hidden', rounded && 'rounded-large')}
+      style={style}
+    >
       <MapView
         style={{ flex: 1 }}
         initialRegion={initialRegion}

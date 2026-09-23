@@ -12,6 +12,11 @@ export type SearchFilters = {
   walkable?: boolean;
 };
 
+/** Client-side result ordering (sprint 8 §4): entirely local/mocked, applied to whatever the
+ * repository already returned — no backend sort. `recommended` is the repository's own order
+ * (unchanged). */
+export type SearchSortOption = 'recommended' | 'nearest' | 'topRated' | 'priceAsc' | 'priceDesc';
+
 export type SearchSuggestion = {
   id: string;
   label: string;

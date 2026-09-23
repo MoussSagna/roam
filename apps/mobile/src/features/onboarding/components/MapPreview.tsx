@@ -6,9 +6,8 @@ import { Text } from '@/components/ui';
 import { mapColors, useTheme } from '@/theme';
 import { derived } from '@/theme/palette';
 
-/** The illustration is drawn on this grid (design points) and scaled to cover the view. Exported so
- * `features/map/ExperienceMapView.tsx` (sprint 6) can draw the same decorative streets/parks at its
- * own container size, instead of a duplicated copy of this illustration data. */
+/** The illustration is drawn on this grid (design points) and scaled to cover the view. `MAP_ASPECT`
+ * is reused by `MapPreviewRow`/`LocationScreen` to size their own container to the same ratio. */
 export const MAP_DESIGN_WIDTH = 345;
 export const MAP_DESIGN_HEIGHT = 256;
 export const MAP_ASPECT = MAP_DESIGN_HEIGHT / MAP_DESIGN_WIDTH;
@@ -16,7 +15,7 @@ export const MAP_ASPECT = MAP_DESIGN_HEIGHT / MAP_DESIGN_WIDTH;
 /** Below this height the city card would cover the marker, so it is left out. */
 const CITY_CARD_MIN_MAP_HEIGHT = 170;
 
-export const MAP_STREETS: readonly { d: string; width: number }[] = [
+const MAP_STREETS: readonly { d: string; width: number }[] = [
   { d: 'M-10 60 L360 -5', width: 2 },
   { d: 'M-10 122 L360 58', width: 2.6 },
   { d: 'M-10 192 L360 130', width: 2 },
@@ -36,7 +35,7 @@ export const MAP_STREETS: readonly { d: string; width: number }[] = [
   { d: 'M110 270 L300 20', width: 1.4 },
 ];
 
-export const MAP_PARKS: readonly string[] = [
+const MAP_PARKS: readonly string[] = [
   '182,56 232,50 236,96 188,100',
   '272,46 328,40 334,100 278,104',
   '92,196 128,190 132,232 96,238',

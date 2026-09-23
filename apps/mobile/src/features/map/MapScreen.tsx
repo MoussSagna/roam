@@ -16,8 +16,8 @@ import { useNearbyMapExperiences } from './hooks/useNearbyMapExperiences';
  * The Map screen (`03_UX_SCREENS_AND_FLOWS.md` §12, `08_AGENT_TODO.md` Phase B), reached from Discover's
  * "Voir la carte". First real map of the sprint 7 replacement (D-70): `RoamMap` (`react-native-maps`)
  * over the mocked "Près de toi" pool. Tapping a pin opens the shared bottom card, whose "Voir le lieu"
- * pushes the experience detail. Search's own Liste/Carte toggle still renders the illustrated
- * `ExperienceMapView` until its own turn — one screen at a time, each validated before the next.
+ * pushes the experience detail. Search now has its own full-screen `RoamMap` too (sprint 8, D-71), over
+ * its own filtered/sorted results instead of this screen's fixed "Près de toi" pool.
  */
 export function MapScreen() {
   const { t } = useTranslation();

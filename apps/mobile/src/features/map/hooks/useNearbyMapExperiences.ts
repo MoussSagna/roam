@@ -2,16 +2,8 @@ import { useCallback, useMemo, useState } from 'react';
 
 import { pickNearby } from '@/features/discover/lib/pickNearby';
 import { useHomeExperiences } from '@/features/home/useHomeExperiences';
-import type { Experience } from '@/types';
 
-import type { MapMarkerData } from '../types/map.types';
-
-/** An experience that can actually be pinned: `coordinates` is optional on the domain type. */
-function isPinnable(
-  experience: Experience,
-): experience is Experience & { coordinates: NonNullable<Experience['coordinates']> } {
-  return experience.coordinates !== undefined;
-}
+import { isPinnable, toMapMarkers } from '../lib/markers';
 
 /**
  * Data + selection for the standalone Map screen: the same "Près de toi" pool as Discover
@@ -23,15 +15,7 @@ export function useNearbyMapExperiences() {
   const [selectedId, setSelectedId] = useState<string | null>(null);
 
   const mapExperiences = useMemo(() => pickNearby(experiences).filter(isPinnable), [experiences]);
-  const markers = useMemo<MapMarkerData[]>(
-    () =>
-      mapExperiences.map((experience) => ({
-        id: experience.id,
-        title: experience.title,
-        coordinate: experience.coordinates,
-      })),
-    [mapExperiences],
-  );
+  const markers = useMemo(() => toMapMarkers(mapExperiences), [mapExperiences]);
   const selectedExperience =
     mapExperiences.find((experience) => experience.id === selectedId) ?? null;
 

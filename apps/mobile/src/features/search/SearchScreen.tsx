@@ -1,5 +1,6 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import ChevronLeft from 'lucide-react-native/icons/chevron-left';
+import ListIcon from 'lucide-react-native/icons/list';
 import { useCallback, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Pressable, ScrollView, View } from 'react-native';
@@ -9,20 +10,25 @@ import { Text } from '@/components/ui';
 import { pickTrending } from '@/features/discover/lib/pickTrending';
 import { useFavoriteExperienceIds } from '@/features/home/useFavoriteExperienceIds';
 import { useHomeExperiences } from '@/features/home/useHomeExperiences';
-import { ExperienceMapView } from '@/features/map/ExperienceMapView';
+import { ExperienceMapCard } from '@/features/map/components/ExperienceMapCard';
+import { RoamMap } from '@/features/map/components/RoamMap';
+import { toMapMarkers } from '@/features/map/lib/markers';
 import { useTheme } from '@/theme';
-import type { Experience } from '@/types';
+import type { Experience, SearchSortOption } from '@/types';
 
 import { ExploreByMoodSection } from './components/ExploreByMoodSection';
 import { RecentSearchList } from './components/RecentSearchList';
+import { SearchActionBar, type SearchResultsView } from './components/SearchActionBar';
 import { SearchEmptyState } from './components/SearchEmptyState';
 import { SearchFiltersSheet } from './components/SearchFiltersSheet';
 import { SearchInput } from './components/SearchInput';
-import { SearchResultsHeader, type SearchResultsView } from './components/SearchResultsHeader';
 import { SearchResultsList } from './components/SearchResultsList';
+import { SearchSortSheet } from './components/SearchSortSheet';
 import { SearchSuggestionsList } from './components/SearchSuggestionsList';
 import { TrendingChips } from './components/TrendingChips';
 import { TRENDING_CHIPS } from './data/trendingChips';
+import { hasActiveFilters } from './lib/searchFilters';
+import { sortResults } from './lib/sortResults';
 import { useRecentSearches } from './useRecentSearches';
 import { useSearch } from './useSearch';
 
@@ -35,10 +41,12 @@ type SearchScreenParams = {
 };
 
 /**
- * Global search (Sprint 6): the single screen both Home's and Discover's search bars open. Four
- * states driven by `useSearch`: **initial** (no query yet — recent/trending/explore-by-mood),
- * **typing** (live suggestions), **results** (list or the mocked map), and results' own **empty**
- * state. `Screen -> hook -> Repository -> mock`, same layering as the rest of the app.
+ * Global search (sprint 6, redesigned sprint 8 — `docs/DECISIONS.md` D-71). States driven by
+ * `useSearch`: **initial** (no query yet — recent/trending/explore-by-mood), **typing** (live
+ * suggestions), **results**, itself either the **list** view (`SearchActionBar` + `SearchResultsList`,
+ * results' own **empty** state) or the **map** view (a full-screen `RoamMap` over the exact same
+ * results). `Screen -> hook -> Repository -> mock`, same layering as the rest of the app; sort/filters
+ * are a pure client-side transform of whatever the repository already returned (sprint 8 §4/§18).
  */
 export function SearchScreen() {
   const { t } = useTranslation();
@@ -63,12 +71,22 @@ export function SearchScreen() {
   } = useSearch();
 
   const [view, setView] = useState<SearchResultsView>('list');
+  const [sort, setSort] = useState<SearchSortOption>('recommended');
+  const [sortSheetVisible, setSortSheetVisible] = useState(false);
   const [filtersVisible, setFiltersVisible] = useState(params.openFilters === '1');
+  // Lifted above the map (not local to it) so a selected pin survives a Carte -> Liste -> Carte
+  // round trip (sprint 8 §8: "conserver... sélection éventuelle").
+  const [selectedMapId, setSelectedMapId] = useState<string | null>(null);
 
   const placeholder =
     params.context === 'discover' ? t('discover.search.placeholder') : t('home.search.placeholder');
 
   const fallbackExperiences = useMemo(() => pickTrending(experiences, 6), [experiences]);
+  // The single source of truth for both views (sprint 8 §7): the map never runs its own search or
+  // filtering, it only draws pins for whatever `sortedResults` already is.
+  const sortedResults = useMemo(() => sortResults(results, sort), [results, sort]);
+  const mapMarkers = useMemo(() => toMapMarkers(sortedResults), [sortedResults]);
+  const selectedMapExperience = sortedResults.find((exp) => exp.id === selectedMapId) ?? null;
 
   const goToExperience = useCallback(
     (experience: Experience) => {
@@ -90,14 +108,33 @@ export function SearchScreen() {
   const handleClear = useCallback(() => {
     reset();
     setView('list');
+    setSelectedMapId(null);
   }, [reset]);
 
   const handleSeeTrending = useCallback(() => {
     runSearch(t(TRENDING_CHIPS[0].labelKey));
   }, [runSearch, t]);
 
+  const toggleMapMarker = useCallback((id: string) => {
+    setSelectedMapId((current) => (current === id ? null : id));
+  }, []);
+  const clearMapSelection = useCallback(() => setSelectedMapId(null), []);
+
   const isInitial = !hasSubmitted && queryText.trim().length === 0;
   const isTyping = !hasSubmitted && queryText.trim().length > 0;
+
+  const actionBar = (
+    <SearchActionBar
+      view={view}
+      resultCount={sortedResults.length}
+      sortLabel={t(`search.sort.options.${sort}`)}
+      isSortActive={sort !== 'recommended'}
+      isFiltersActive={hasActiveFilters(filters)}
+      onOpenSort={() => setSortSheetVisible(true)}
+      onOpenFilters={() => setFiltersVisible(true)}
+      onPressMap={() => setView('map')}
+    />
+  );
 
   return (
     <View className="flex-1 bg-background">
@@ -155,16 +192,9 @@ export function SearchScreen() {
               onSelectExperience={goToExperience}
             />
           </ScrollView>
-        ) : (
+        ) : view === 'list' ? (
           <View className="flex-1 px-6">
-            <SearchResultsHeader
-              resultCount={results.length}
-              filters={filters}
-              onChangeFilters={setFilters}
-              onOpenFilters={() => setFiltersVisible(true)}
-              view={view}
-              onChangeView={setView}
-            />
+            {actionBar}
 
             {isLoading ? (
               <View className="flex-1 items-center justify-center">
@@ -172,13 +202,9 @@ export function SearchScreen() {
                   {t('common.loading')}
                 </Text>
               </View>
-            ) : view === 'map' ? (
-              <View className="flex-1 pt-4">
-                <ExperienceMapView experiences={results} onPressExperience={goToExperience} />
-              </View>
             ) : (
               <SearchResultsList
-                results={results}
+                results={sortedResults}
                 favoriteIds={favoriteIds}
                 onToggleFavorite={toggleFavorite}
                 onPressExperience={goToExperience}
@@ -196,6 +222,54 @@ export function SearchScreen() {
               />
             )}
           </View>
+        ) : (
+          // Map mode (sprint 8 §6): near edge-to-edge — only the action row (Filtrer alone) keeps the
+          // page's own side padding, the map itself bleeds to the screen edges (`RoamMap`'s
+          // `rounded={false}`).
+          <View className="flex-1">
+            <View className="px-6 pb-3">{actionBar}</View>
+
+            {isLoading ? (
+              <View className="flex-1 items-center justify-center">
+                <Text variant="body" tone="secondary">
+                  {t('common.loading')}
+                </Text>
+              </View>
+            ) : (
+              <View className="flex-1">
+                <RoamMap
+                  markers={mapMarkers}
+                  selectedMarkerId={selectedMapExperience?.id ?? null}
+                  onPressMarker={toggleMapMarker}
+                  onPressMap={clearMapSelection}
+                  rounded={false}
+                />
+
+                {/* The way back to the list (sprint 8 §12) — the action row above only ever shows
+                    "Filtrer" in map mode, so the return control lives on the map itself instead. */}
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel={t('search.results.viewList')}
+                  onPress={() => setView('list')}
+                  hitSlop={8}
+                  className="absolute right-4 top-4 flex-row items-center gap-1.5 rounded-pill border border-border bg-surface px-4 py-2.5 active:opacity-80"
+                >
+                  <ListIcon size={16} strokeWidth={1.8} color={colors.text} />
+                  <Text variant="small" className="font-bodyMedium">
+                    {t('search.results.viewList')}
+                  </Text>
+                </Pressable>
+
+                {selectedMapExperience ? (
+                  <ExperienceMapCard
+                    experience={selectedMapExperience}
+                    onPressView={goToExperience}
+                    onClose={clearMapSelection}
+                  />
+                ) : null}
+              </View>
+            )}
+          </View>
         )}
       </SafeAreaView>
 
@@ -210,6 +284,13 @@ export function SearchScreen() {
           }
         }}
         onClose={() => setFiltersVisible(false)}
+      />
+
+      <SearchSortSheet
+        visible={sortSheetVisible}
+        sort={sort}
+        onSelect={setSort}
+        onClose={() => setSortSheetVisible(false)}
       />
     </View>
   );

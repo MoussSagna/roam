@@ -2371,7 +2371,7 @@ stop for visual validation.
 | # | Screen / route                                    | Surface today                                                       | Status                  |
 | - | ------------------------------------------------- | ------------------------------------------------------------------- | ----------------------- |
 | 1 | Map — `/map` (Discover "Voir la carte")           | `MapScreen` (was named `MapPlaceholder`) → **`RoamMap`**            | **Done (this decision)** |
-| 2 | Search — Liste/Carte toggle (`/search`)           | `ExperienceMapView` (illustrated map + hash-positioned pins)        | Next                    |
+| 2 | Search — Liste/Carte toggle (`/search`)           | `ExperienceMapView` (illustrated map + hash-positioned pins)        | **Done in sprint 8 (D-71)** |
 | 3 | Experience detail — "Voir sur la carte"           | `MapPreviewRow` → onboarding `MapPreview` illustration              | To do                   |
 | 4 | Onboarding location — "Où souhaites-tu sortir ?"  | `MapPreview` illustration (a decorative preview, not a real place)  | To do (may stay static) |
 
@@ -2419,3 +2419,54 @@ There is no itinerary map, outing/live map or place-detail map yet (`features/it
 - **Future real data**: real coordinates/routes come with the place provider, geolocation and routing phases
   (`08_AGENT_TODO.md` Phase E): `Polyline` for itineraries, a user-location marker, camera control — added to
   `RoamMap` only when a screen needs them.
+
+### D-71 — Sprint 8: Search redesigned (Trier / Filtrer / Carte); Search's map becomes a full-screen `RoamMap`
+
+Second surface of the D-70 replacement ("une screen à la fois"), together with a rework of Search's results flow.
+Front-end only: no backend, no Places/Directions API, no new library.
+
+**Flow.** LIST = `SearchInput` → `[Trier] [Filtres] [Carte]` → result count + active sort → results. MAP = `SearchInput`
+→ `[Filtres]` alone → full-screen `RoamMap` → `ExperienceMapCard` for the selected pin. One `SearchScreen`, one
+`view: 'list' | 'map'` state — no new route.
+
+**Decisions.**
+
+- **One shared action row, not two.** `SearchActionBar` (replaces `SearchResultsHeader`) renders both shapes from a
+  `view` prop, built from the existing `Chip` (icon + label; `selected` = "a non-default sort / any filter is active").
+  No new button primitive.
+- **Removed on purpose, to follow the new (simpler) brief:** the "Tous / Ouvert maintenant / < 2 km" quick-filter chips
+  and the Liste/Carte segmented toggle. "Ouvert maintenant" and distance remain reachable in the filters sheet (1/3/5/10 km —
+  the 2 km shortcut is gone), so nothing is lost but a shortcut; keeping a quick-chip row would have duplicated the filter
+  system the brief forbids duplicating. Their i18n keys (`search.results.quickFilters.*`) were deleted with them.
+- **Wording:** the button says "Filtres" (the app's existing string, also the sheet's title) rather than the mockup's verb
+  "Filtrer"; "Trier" is new (`search.results.sort`), and also titles the sort sheet, mirroring Filtres.
+- **Sort is client-side.** `SearchSortOption` (`types/search.ts`) = recommended / nearest / topRated / priceAsc / priceDesc;
+  `features/search/lib/sortResults.ts` is a pure, stable transform of what `SearchRepository.search()` returned
+  (`recommended` = the repository's order). Distance reuses `parseDistanceMeters`; price sorts by the budget bracket
+  (`BudgetRange` order) because the mock has no numeric price. `SearchSortSheet` copies `SearchFiltersSheet`'s `Modal` +
+  `MotiView` slide-up chrome; rows are `SortOptionRow` (the `LanguageOptionRow` shape); picking a row applies and closes —
+  a single choice needs no draft/"apply" step. The active sort is echoed next to the count (mockup's "Recommandées").
+- **Single source of truth.** `results → sortResults → sortedResults` feeds the list, the count and the map. The map has no
+  search/filter logic (`toMapMarkers(sortedResults)` only). Filters are the one `SearchFiltersSheet`, opened from either
+  mode; applying re-runs the search, so the map re-mounts framed on the new markers. Query, filters, sort and the selected
+  pin live in `SearchScreen`, above both views, so a Liste ↔ Carte round trip loses none of them (the pin stays selected
+  as long as it is still among the results).
+- **Reuse.** `RoamMap`, `ExperienceMarker`, `ExperienceMapCard` unchanged in behavior; `RoamMap` gained `rounded`
+  (default `true`) so Search's map can bleed to the screen edges — a prop, since NativeWind can't override a class by order.
+  `isPinnable`/`toMapMarkers` moved to `features/map/lib/markers.ts` (Map screen and Search share them; an experience
+  without `coordinates` stays in the list, gets no pin, crashes nothing).
+- **Way back to the list.** The action row must only show "Filtrer" in map mode, so the return control is a floating
+  "Liste" pill on the map itself (top right), not a repurposed "Carte" chip. Obvious, one tap, no new route.
+- **Header and safe area.** The back chevron + "Recherche" title stay above the search field in every state: the app has no
+  swipe-back (D-53) and Search must always be leavable. The `SearchInput` is a real text field outside the scrolling
+  area, which already makes it "sticky" in list mode and the same single instance above the map (no duplicate, no double
+  header). `SafeAreaView edges={['top']}` is unchanged; the map bleeds under the bottom inset, and the selected-pin card adds it.
+- **Tab bar.** Nothing to do: `/search` is a root `Stack` screen beside `(tabs)`, so the floating tab bar is not rendered in
+  list or map mode — the map is immersive without touching `RoamTabBar`.
+- **Deleted:** `ExperienceMapView` (+ test) — nothing used it any more (the same "delete a stand-in once unreferenced"
+  precedent as the placeholders); `MapPreview` no longer exports `MAP_STREETS`/`MAP_PARKS`, which only it had needed.
+- **Not done / visual checks left to the user:** Android stays on Google Maps' light style in dark mode (D-70);
+  the camera re-frames whenever the result set changes (filters) rather than preserving pan/zoom; carousels are untouched.
+- **Tests:** `SearchActionBar`, `SearchSortSheet`, `sortResults`, `searchFilters`, `markers` unit tests; `SearchScreen`
+  covers list/map layout, sort reordering, marker selection + "Voir le lieu", filtering from the map, the floating "Liste"
+  button, no-results-on-map, and query/filters/sort/selection surviving list ↔ map.
