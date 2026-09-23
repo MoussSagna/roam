@@ -278,8 +278,8 @@ time**.
 | --------------------------------------------- | -------------------------------------------------------------------- | ------------------------ |
 | Map — `/map` (Discover "Voir la carte")       | `features/map/MapScreen.tsx` → `RoamMap`                             | **Real map (sprint 7)**  |
 | Search — "Carte" (`/search/map`)              | `features/search/SearchMapScreen.tsx` → full-screen `RoamMap`         | **Real map (sprint 8)**  |
-| Experience detail — "Voir sur la carte"       | `MapPreviewRow` → onboarding `MapPreview` (illustrated)              | **Next**                 |
-| Onboarding location                           | `MapPreview` (illustrated, decorative)                               | To do (may stay static)  |
+| Experience detail — map block + `/experience-map/[id]` | `MapPreviewRow` → static `RoamMap`; full screen: `ExperienceMapScreen` | **Real map (sprint 8)**  |
+| Onboarding location                           | `MapPreview` (illustrated, decorative)                               | **Next** (may stay static) |
 
 ```text
 Screen → hook / derived results (useNearbyMapExperiences · Search's sortedResults)
@@ -310,14 +310,15 @@ polish D-49), built on `Experience`'s extended fields through the same `Experien
 | Piece                 | Route / component                                                           | Notes                                                                                                             |
 | --------------------- | --------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------- |
 | Detail screen         | `experience/[id]` → `features/experiences/ExperienceDetailScreen.tsx`       | Hero, info grid, map preview, why-ROAM, reviews, highlights, similar                                              |
-| Hero                  | `features/experiences/components/ExperienceHero.tsx`                        | Paging pager + counter; one `Pressable` per slide (not wrapping the `ScrollView`, D-49); tap opens the gallery    |
+| Hero                  | `features/experiences/components/ExperienceHero.tsx`                        | Paging pager + counter; one `Pressable` per slide (not wrapping the `ScrollView`, D-49); tap opens the gallery Pagination dots (`CarouselDots` reused from Home) bottom-left, same `activeIndex` as the counter, D-73 |
 | Sticky header         | `features/experiences/components/ExperienceDetailHeader.tsx`                | Back/share/favorite (moved out of the hero, D-49); title/blur crossfade in past the hero — always visible         |
 | Sticky CTA footer     | `components/ui/StickyActionFooter.tsx` (shared, D-52)                       | "Créer mon parcours"; hides on scroll down, returns on scroll end/up (`hooks/useCtaVisibility`, D-49/D-52)        |
 | Gallery screen        | `gallery/[id]` → `features/experiences/gallery/ExperienceGalleryScreen.tsx` | Full-screen; a flat route (not nested under `experience/[id]/`), see D-48                                         |
 | Gallery sync          | Two `FlatList`s (main pager + thumbnail strip) sharing one `activeIndex`    | `getItemLayout` on both; thumbnail press scrolls the main list, main-list scroll re-centers the thumbnail strip   |
 | Hero → gallery motion | `progress` shared value (`useSharedValue`/`withTiming`/`interpolate`)       | Reanimated rect-morph, not a shared-element library (none in the stack) — see D-48 for the full rationale         |
 | Why ROAM              | `features/experiences/lib/whyRecommended.ts` (unit-tested)                  | Reasons derived from the experience's own data, not stored per item                                               |
-| Map preview           | `features/experiences/components/MapPreviewRow.tsx`                         | Reuses onboarding's `MapPreview` illustration; not yet navigable (no map screen)                                  |
+| Map block             | `features/experiences/components/MapPreviewRow.tsx`                         | Static `RoamMap` (`interactive={false}`) with the experience pin + "Voir sur la carte" pill, address underneath; the whole block is one `Pressable` → `experience-map/[id]` (D-73). Without `coordinates`: address only. The address is no longer in `InfoGrid` |
+| Full-screen map       | `experience-map/[id]` → `features/map/ExperienceMapScreen.tsx`              | Header (back, name, address) + `RoamMap` filling the rest + `ExperienceMapFooter` (photo, name, category · place, rating, "Voir le lieu" → back to the detail). Flat route like `gallery/[id]`. **No floating picker yet — next sprint** |
 | Similar experiences   | `features/experiences/components/SimilarExperiencesSection.tsx`             | Reuses Home's `ExperienceCard`                                                                                    |
 | Create-journey CTA    | `itinerary/create` → `features/itinerary/CreateJourneyPlaceholder.tsx`      | Reached only from the sticky footer CTA now — the old inline button and "Envie d'en faire plus ?" are gone (D-49) |
 

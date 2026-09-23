@@ -1,52 +1,92 @@
-import ArrowRight from 'lucide-react-native/icons/arrow-right';
+import ChevronRight from 'lucide-react-native/icons/chevron-right';
+import MapPin from 'lucide-react-native/icons/map-pin';
+import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Pressable, useWindowDimensions, View } from 'react-native';
+import { Pressable, View } from 'react-native';
 
 import { Text } from '@/components/ui';
-import { MAP_ASPECT, MapPreview } from '@/features/onboarding/components/MapPreview';
+import { RoamMap } from '@/features/map/components/RoamMap';
+import { toMapMarkers } from '@/features/map/lib/markers';
 import { useTheme } from '@/theme';
+import { brand } from '@/theme/palette';
+import type { Experience } from '@/types';
 
-/** Outer `Screen` padding (`px-6` = 24) + this row's own card padding (`p-4` = 16), each side. */
-const HORIZONTAL_INSET = (24 + 16) * 2;
-const MAP_MAX_HEIGHT = 160;
+/** Height of the static map preview inside the block. */
+const MAP_HEIGHT = 160;
 
 type MapPreviewRowProps = {
-  location: string;
-  address?: string;
+  experience: Experience;
+  /** Opens the full-screen map (`experience-map/[id]`). */
+  onPress: () => void;
 };
 
 /**
- * "Voir sur la carte" (sprint 5 §18): reuses the onboarding `MapPreview` illustration rather than a
- * new placeholder — no real map provider chosen yet (`04_TECH_STACK.md`), and the brief explicitly
- * asks not to wire one up this sprint. Not yet navigable: there is no map screen to open (D-48).
+ * Experience detail's map block (D-73), replacing the illustrated `MapPreview` of sprint 5: a real,
+ * static `RoamMap` (`interactive={false}` — no pan/zoom, touches fall through) showing the
+ * experience's own pin, a "Voir sur la carte" pill on it, and the address underneath. The whole block
+ * is one `Pressable` that opens the full-screen map. Without coordinates there is nothing to draw, so
+ * the map part is left out and only the address row remains (nothing to open then).
  */
-export function MapPreviewRow({ location, address }: MapPreviewRowProps) {
+export function MapPreviewRow({ experience, onPress }: MapPreviewRowProps) {
   const { t } = useTranslation();
   const { colors } = useTheme();
-  const { width: screenWidth } = useWindowDimensions();
-  const mapWidth = screenWidth - HORIZONTAL_INSET;
-  const mapHeight = Math.min(MAP_MAX_HEIGHT, Math.round(mapWidth * MAP_ASPECT));
+  const markers = useMemo(() => toMapMarkers([experience]), [experience]);
+  const address = experience.address ?? experience.location;
+  const hasMap = markers.length > 0;
+
+  const content = (
+    <>
+      {hasMap ? (
+        <View style={{ height: MAP_HEIGHT }} testID="experience-map-preview">
+          <RoamMap
+            markers={markers}
+            selectedMarkerId={experience.id}
+            rounded={false}
+            interactive={false}
+            testID="experience-detail-map"
+          />
+          <View
+            pointerEvents="none"
+            className="absolute bottom-3 right-3 flex-row items-center gap-1 rounded-pill bg-overlay/70 py-2 pl-4 pr-3"
+          >
+            <Text variant="small" className="font-bodyMedium text-white">
+              {t('experience.seeOnMap')}
+            </Text>
+            <ChevronRight size={14} strokeWidth={2} color={brand.white} />
+          </View>
+        </View>
+      ) : null}
+
+      {address ? (
+        <View className="flex-row items-center gap-3 p-4">
+          <MapPin size={18} strokeWidth={1.8} color={colors.textSecondary} />
+          <Text variant="body" className="flex-1">
+            {address}
+          </Text>
+          {hasMap ? (
+            <ChevronRight size={18} strokeWidth={1.8} color={colors.textSecondary} />
+          ) : null}
+        </View>
+      ) : null}
+    </>
+  );
+
+  if (!hasMap) {
+    return address ? (
+      <View className="overflow-hidden rounded-card border border-border bg-surface">
+        {content}
+      </View>
+    ) : null;
+  }
 
   return (
     <Pressable
       accessibilityRole="button"
       accessibilityLabel={t('experience.seeOnMap')}
-      className="gap-3 overflow-hidden rounded-card border border-border bg-surface p-4 active:opacity-90"
+      onPress={onPress}
+      className="overflow-hidden rounded-card border border-border bg-surface active:opacity-90"
     >
-      <View style={{ height: mapHeight, borderRadius: 16, overflow: 'hidden' }}>
-        <MapPreview
-          width={mapWidth}
-          height={mapHeight}
-          city={location}
-          country={address ?? location}
-        />
-      </View>
-      <View className="flex-row items-center justify-between">
-        <Text variant="body" className="font-bodyMedium">
-          {t('experience.seeOnMap')}
-        </Text>
-        <ArrowRight size={16} strokeWidth={2} color={colors.primary} />
-      </View>
+      {content}
     </Pressable>
   );
 }

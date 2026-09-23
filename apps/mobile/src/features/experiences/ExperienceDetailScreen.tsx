@@ -88,6 +88,11 @@ export function ExperienceDetailScreen({ experienceId }: ExperienceDetailScreenP
     router.push({ pathname: '/itinerary/create', params: { experienceId: experience.id } });
   }, [experience, router]);
 
+  const goToMap = useCallback(() => {
+    if (!experience) return;
+    router.push({ pathname: '/experience-map/[id]', params: { id: experience.id } });
+  }, [experience, router]);
+
   const handleShare = useCallback(() => {
     if (!experience) return;
     void Share.share({ message: experience.title, title: experience.title }).catch(() => {});
@@ -122,14 +127,7 @@ export function ExperienceDetailScreen({ experienceId }: ExperienceDetailScreenP
   const infoItems: InfoItemData[] = useMemo(() => {
     if (!experience) return [];
     const items: InfoItemData[] = [];
-    if (experience.address) {
-      items.push({
-        key: 'address',
-        icon: MapPin,
-        label: t('experience.info.address'),
-        value: experience.address,
-      });
-    }
+    // The address lives under the map block now (`MapPreviewRow`, D-73), not in this grid.
     if (experience.openingHoursLabel) {
       items.push({
         key: 'today',
@@ -244,10 +242,7 @@ export function ExperienceDetailScreen({ experienceId }: ExperienceDetailScreenP
 
           <InfoGrid items={infoItems} />
 
-          <MapPreviewRow
-            location={experience.location ?? experience.title}
-            address={experience.address}
-          />
+          <MapPreviewRow experience={experience} onPress={goToMap} />
 
           <WhyRoamSection experience={experience} />
 

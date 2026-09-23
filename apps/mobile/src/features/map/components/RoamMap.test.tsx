@@ -69,4 +69,17 @@ describe('RoamMap', () => {
     const classes = screen.getByTestId('roam-map').props.className as string;
     expect(classes).not.toMatch(/rounded-large/);
   });
+
+  it('is interactive by default, and a static preview when interactive=false', async () => {
+    const { unmount } = await renderWithProviders(<RoamMap markers={MARKERS} />);
+    expect(screen.getByTestId('roam-map').props.pointerEvents).toBe('auto');
+    expect(screen.getByTestId('mock-map-view').props.scrollEnabled).toBe(true);
+    expect(screen.getByTestId('mock-map-view').props.zoomEnabled).toBe(true);
+    await unmount();
+
+    await renderWithProviders(<RoamMap markers={MARKERS} interactive={false} />);
+    expect(screen.getByTestId('roam-map').props.pointerEvents).toBe('none');
+    expect(screen.getByTestId('mock-map-view').props.scrollEnabled).toBe(false);
+    expect(screen.getByTestId('mock-map-view').props.zoomEnabled).toBe(false);
+  });
 });

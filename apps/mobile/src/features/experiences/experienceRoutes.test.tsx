@@ -95,4 +95,32 @@ describe('experience detail & gallery navigation (sprint 5)', () => {
     expect(screen.getByText('Ta sortie est prête')).toBeOnTheScreen();
     expect(screen.getByText('Cet écran arrive bientôt.')).toBeOnTheScreen();
   });
+
+  it('Experience Detail -> map block -> full-screen map -> back to the detail', async () => {
+    const utils = await renderApp();
+    await act(() => router.navigate('/experience/exp-rooftop-sunset'));
+
+    await fireEvent.press(screen.getByRole('button', { name: 'Voir sur la carte' }));
+
+    expect(utils.getPathname()).toBe('/experience-map/exp-rooftop-sunset');
+    expect(screen.queryByText(/Unmatched Route/i)).toBeNull();
+    expect(await screen.findByTestId('experience-map-footer')).toBeOnTheScreen();
+    expect(screen.getByTestId('roam-map')).toBeOnTheScreen();
+
+    await fireEvent.press(screen.getAllByRole('button', { name: 'Retour' }).at(-1)!);
+
+    expect(utils.getPathname()).toBe('/experience/exp-rooftop-sunset');
+    expect(screen.queryByText(/Unmatched Route/i)).toBeNull();
+  });
+
+  it('full-screen map footer: "Voir le lieu" returns to the detail instead of stacking a second one', async () => {
+    const utils = await renderApp();
+    await act(() => router.navigate('/experience/exp-rooftop-sunset'));
+    await fireEvent.press(screen.getByRole('button', { name: 'Voir sur la carte' }));
+    await screen.findByTestId('experience-map-footer');
+
+    await fireEvent.press(screen.getByRole('button', { name: 'Voir le lieu' }));
+
+    expect(utils.getPathname()).toBe('/experience/exp-rooftop-sunset');
+  });
 });

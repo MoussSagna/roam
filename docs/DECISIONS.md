@@ -2511,3 +2511,38 @@ the map, and lets each screen have exactly the layout it needs. Cost: the search
 - **Tests:** `SearchMapScreen.test.tsx` (layout, pins, selection/card/detail, shared filters, reset, no results, back /
   deep-link fallback, clear), `searchRoutes.test.tsx` (real navigation: list → `/search/map` → back with query/filters/sort
   intact, filters changed on the map carried back, pin → detail), `SearchScreen.test.tsx` ("Carte" pushes `/search/map`).
+
+### D-73 — Experience detail: hero dots, real map block, full-screen `ExperienceMapScreen` + `ExperienceMapFooter`
+
+Only what was asked, on Experience detail (`experience/[id]`); reference mockup supplied. Front-end only, mock data, no
+Places/Directions API.
+
+- **Hero dots.** `ExperienceHero` renders Home's existing `CarouselDots` (active dot widens, others dim, Moti, reduced motion
+  respected) from the same `activeIndex` as the "n / total" counter, so they follow every swipe. Bottom-left, raised to 34 px so
+  they clear the 24 px the content sheet overlaps the hero by (`-mt-6`). White dots (the component's own photo-safe default) read
+  in light and dark. Not shown for a single image. Pager, images, counter, gallery tap: untouched.
+- **Map block.** `MapPreviewRow` no longer draws onboarding's illustrated `MapPreview`: it renders a real `RoamMap` in a rounded
+  card, `interactive={false}` (new `RoamMap` prop: pan/zoom off and `pointerEvents="none"`, so the touch reaches the wrapper —
+  a native map inside a vertical `ScrollView` would otherwise swallow it), with the experience's own pin
+  (`toMapMarkers([experience])`, selected style), a "Voir sur la carte" pill, and the address under it. The block is one
+  `Pressable` → `router.push('/experience-map/[id]')`. Without `coordinates` only the address row remains (nothing to open);
+  with neither, nothing renders. Same reuse as everywhere: `RoamMap`, `ExperienceMarker`, `lib/markers`; no second map system.
+- **Address moved out of the info grid.** The address was an `InfoGrid` cell; it now lives once, under the map (as in the mockup),
+  so the grid's `address` item and its `experience.info.address` key were removed to avoid showing it twice. Price / hours /
+  transport are unchanged.
+- **Full-screen map.** `ExperienceMapScreen` (`features/map/`), route `experience-map/[id]` (flat, like `gallery/[id]`,
+  D-48 — not nested under `experience/[id]/`; registered in `AppRoutes`, no gesture override, so no swipe-back): a header
+  (back, name, address) then `RoamMap` (`rounded={false}`, interactive) filling the rest, and `ExperienceMapFooter` anchored
+  over its bottom edge with `FadeInUp` (skipped under reduced motion). The map has no logic of its own; loading / unknown
+  experience get a back button, no crash.
+- **`ExperienceMapFooter`** (`features/map/components/`): a separate, reusable component (photo, name, "category · place",
+  rating + review count, full-width "Voir le lieu"). Distinct from `ExperienceMapCard` (compact, dismissible overlay for choosing
+  among many pins): this one is the permanent footer of a single-experience map. Its CTA leads to the experience, which is
+  normally the screen the map was opened from, so the screen does `router.back()` (or `replace` to the experience when there is
+  nothing behind, e.g. a deep link) instead of stacking a duplicate detail.
+- **Not built, on purpose:** the mockup's "Itinéraire" and locate buttons (they need Directions / geolocation — later phases;
+  `RoamMap` has no such controls yet) and, as asked, **the floating picker over the map, place carousel, multi-selection and
+  advanced bottom sheet — all deferred to the next sprint.**
+- **Tests:** `ExperienceHero` (dots per image, active dot follows scroll, none for one image), `MapPreviewRow`, `ExperienceMapFooter`,
+  `ExperienceMapScreen`, `RoamMap` (`interactive`), `ExperienceDetailScreen` (map block, static preview, tap → route) and
+  `experienceRoutes` (detail → map → back, footer CTA → detail). No existing test was edited.

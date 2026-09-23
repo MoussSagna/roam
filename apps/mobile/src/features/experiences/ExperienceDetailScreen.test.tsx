@@ -189,4 +189,34 @@ describe('ExperienceDetailScreen (sprint 5)', () => {
 
     expect(screen.getByText('Cet écran arrive bientôt.')).toBeOnTheScreen();
   });
+
+  describe('map block (D-73)', () => {
+    it('shows a real map with the experience pin and its address underneath', async () => {
+      await renderDetail();
+
+      expect(screen.getByTestId('experience-detail-map')).toBeOnTheScreen();
+      expect(screen.getByRole('button', { name: 'Rooftop Sunset' })).toBeOnTheScreen();
+      expect(screen.getByText('14 rue Crespin du Gast, 75011 Paris')).toBeOnTheScreen();
+    });
+
+    it('is a static preview: the map itself takes no touches, the block does', async () => {
+      await renderDetail();
+
+      expect(screen.getByTestId('experience-detail-map').props.pointerEvents).toBe('none');
+      const mapView = screen.getByTestId('mock-map-view');
+      expect(mapView.props.scrollEnabled).toBe(false);
+      expect(mapView.props.zoomEnabled).toBe(false);
+    });
+
+    it('tapping the block opens the full-screen map of this experience', async () => {
+      await renderDetail();
+
+      await fireEvent.press(screen.getByRole('button', { name: 'Voir sur la carte' }));
+
+      expect(mockPush).toHaveBeenCalledWith({
+        pathname: '/experience-map/[id]',
+        params: { id: 'exp-rooftop-sunset' },
+      });
+    });
+  });
 });

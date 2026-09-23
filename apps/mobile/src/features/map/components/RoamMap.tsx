@@ -21,6 +21,9 @@ type RoamMapProps = {
    * — a prop rather than an overriding `className`, since NativeWind doesn't resolve class conflicts
    * by order (`docs/DEVELOPMENT.md`). Default `true` (the standalone Map screen's card look). */
   rounded?: boolean;
+  /** `false` for a static preview (Experience detail's map block): pan/zoom off and touches pass
+   * through to whatever wraps the map (a `Pressable` that opens the full-screen map). Default `true`. */
+  interactive?: boolean;
   style?: StyleProp<ViewStyle>;
   testID?: string;
 };
@@ -38,6 +41,7 @@ export function RoamMap({
   onPressMarker,
   onPressMap,
   rounded = true,
+  interactive = true,
   style,
   testID = 'roam-map',
 }: RoamMapProps) {
@@ -52,6 +56,7 @@ export function RoamMap({
       testID={testID}
       className={cx('flex-1 overflow-hidden', rounded && 'rounded-large')}
       style={style}
+      pointerEvents={interactive ? 'auto' : 'none'}
     >
       <MapView
         style={{ flex: 1 }}
@@ -63,6 +68,8 @@ export function RoamMap({
         showsCompass={false}
         rotateEnabled={false}
         pitchEnabled={false}
+        scrollEnabled={interactive}
+        zoomEnabled={interactive}
       >
         {markers.map((marker) => (
           <ExperienceMarker

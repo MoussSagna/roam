@@ -371,7 +371,6 @@
       "counter": "{current} / {total}"
     },
     "info": {
-      "address": "Adresse",
       "today": "Aujourd’hui",
       "price": "Prix",
       "transport": "Transport"

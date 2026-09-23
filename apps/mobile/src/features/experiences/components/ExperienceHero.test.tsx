@@ -65,4 +65,43 @@ describe('ExperienceHero', () => {
 
     expect(onOpenGallery).toHaveBeenCalledWith(0, { x: 10, y: 20, width: 300, height: 400 });
   });
+
+  /** Widths of the dots in order (the active one is the wide, fully opaque pill). */
+  function dotWidths(): number[] {
+    const dots = screen.getByTestId('experience-hero-dots', { includeHiddenElements: true });
+    const row = dots.children[0] as unknown as { children: { props: { style: unknown } }[] };
+    return row.children.map((dot) => {
+      const flat = Object.assign({}, ...[dot.props.style].flat(Infinity).filter(Boolean));
+      return flat.width as number;
+    });
+  }
+
+  it('shows one pagination dot per image, the first one active', async () => {
+    await renderHero({ images: [1, 2, 3, 4] });
+
+    expect(dotWidths()).toEqual([18, 6, 6, 6]);
+  });
+
+  it('moves the active dot as the pager scrolls, in step with the counter', async () => {
+    await renderHero({ images: [1, 2, 3] });
+    const { width: screenWidth } = Dimensions.get('window');
+
+    await fireEvent.scroll(screen.getByTestId('experience-hero-scroll'), {
+      nativeEvent: {
+        contentOffset: { x: screenWidth },
+        layoutMeasurement: { width: screenWidth },
+      },
+    });
+
+    expect(dotWidths()).toEqual([6, 18, 6]);
+    expect(screen.getByText('2 / 3')).toBeOnTheScreen();
+  });
+
+  it('shows no dots for a single image', async () => {
+    await renderHero({ images: [1] });
+
+    expect(
+      screen.queryByTestId('experience-hero-dots', { includeHiddenElements: true }),
+    ).toBeNull();
+  });
 });
