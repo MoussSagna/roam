@@ -2221,3 +2221,139 @@ existing `FlatList`s scroll and are positioned.
   (`screen.getByTestId(...).props`), the only query that can actually see `style`/`snapToInterval`/etc.
   `UNSAFE_getByType` (the more common React Testing Library escape hatch for this) doesn't exist in this
   project's RNTL version (14.0.1) — `getByTestId` reaches the same props on the host node without it.
+
+### D-68 — Sprint 6: one shared `SearchScreen` for Home and Discover; mocked illustrated map with pins
+
+Both `SearchBar`s (Home, Discover) were fully inert since their introduction (D-09/D-45/D-65's own note:
+"a mocked search field — no real query engine in this sprint"). Sprint 6 wires them to a single shared
+search experience rather than building two — the brief was explicit that Home and Discover must open the
+exact same flow, only the entry context (placeholder copy) differs.
+
+- **Route: `app/search.tsx` → `features/search/SearchScreen.tsx`.** A single route, not a nested
+  folder — filters and the map are in-screen state (a bottom sheet / a Liste-Carte toggle), not
+  sub-routes, so there is nothing else to register. Reads `context: 'home' | 'discover'` and
+  `openFilters: '1'` via `useLocalSearchParams` — the first only picks between the two already-existing
+  `home.search.placeholder` / `discover.search.placeholder` i18n keys, the second opens the filter sheet
+  immediately (the trailing filter icon on either `SearchBar`). `SearchBar` itself needed no new props:
+  `onPress` already flowed through via its `...PressableProps` spread; only Home/Discover's own JSX
+  changed, to pass `onPress`/`onPressFilter` that `router.push({ pathname: '/search', params: {...} })`.
+- **Data layer, same `Screen -> hook -> Repository -> mock` layering as the rest of the app.** New
+  `SearchRepository` (`suggest`/`search`) added to `Repositories`, implemented in
+  `services/mock/search.ts`: deterministic, accent/case-insensitive substring matching against title,
+  description, tags, moods and the resolved category slug — explicitly no fuzzy/AI matching (brief §2).
+  `useSearch` owns query/filter/result state (two phases: debounced `suggest()` while typing,
+  `search()` once submitted, re-run whenever `filters` changes afterwards). No new fixtures: filters over
+  the existing experience pool.
+- **`react-hooks/set-state-in-effect` shaped `useSearch`'s two effects**: neither ever calls `setState`
+  synchronously in the effect body (only inside a `.then()`), matching `useDiscoverData`/
+  `useHomeExperiences`'s own discipline. `isLoading` therefore flips to `true` from the *event handlers*
+  that trigger a new search (`submit`/the returned, wrapped `setFilters`), not from inside the effect —
+  the effect's job is only to fetch and then resolve `isLoading` back to `false`.
+- **Recent searches persisted through the existing `lib/storage.ts` `AsyncStorage` wrapper** (`useRecentSearches`,
+  new `STORAGE_KEYS.recentSearches`), same low-risk pattern already used for theme/language — no new
+  storage abstraction. Deduped by normalized query text (newest first, capped at 10); id is the trimmed
+  query itself rather than a generated one, since a search is already unique by that text.
+- **"Explorer par envie" reuses Discover's `SUGGESTION_MOODS`/`DiscoverMoodCard` as-is**, rather than a
+  parallel vocabulary for what is visually the same tile — its **first real wiring**: on Discover
+  selecting one is purely presentational (documented there as "no downstream filtering yet"); here it
+  submits the mood's translated label as the search query.
+- **Filters: `SearchFiltersSheet`, a bottom sheet built on `ConfirmationModal`'s own `Modal` + backdrop +
+  `MotiView` plumbing** (same exit-duration/`reduceMotion` handling), but sliding up from the bottom edge
+  instead of scaling in centered — no dedicated `BottomSheet` primitive existed to reuse, and this is the
+  closest existing modal machinery. Works on a local draft, committed only through "Voir X résultats" (a
+  live count re-queries `search()` as the draft changes); category options come from
+  `repositories.categories.list()` via the already-existing `useCategories`/`getCategoryLabel` (not a new
+  dynamic-key lookup — `react-i18next`'s typed keys reject a template built from an untyped
+  `Category.slug: string`, which is exactly what `getCategoryLabel` was already built to solve);
+  budget options reuse the existing `context.budget.<value>` labels rather than duplicating them. Distance
+  and "Quand ?" are fixed chip rows (1/3/5/10 km, Maintenant/Aujourd'hui/Ce week-end), not the `Slider`
+  primitive — the brief's own mockup shows discrete choices here, unlike Preferences' continuous range.
+- **Map: no real map SDK.** `features/map/ExperienceMapView.tsx` reuses onboarding `MapPreview`'s
+  decorative streets/parks illustration (now exported from there as `MAP_STREETS`/`MAP_PARKS`/
+  `MAP_DESIGN_WIDTH`/`MAP_DESIGN_HEIGHT` instead of duplicated), scaled to fill its container, with one
+  pin per experience positioned by a deterministic hash of its id — explicitly mock positioning, not real
+  geocoding (`Experience` has no `coordinates`, only `Place` does; resolving every place through it would
+  add async complexity with no real payoff for an illustration). One shared component, not two parallel
+  map systems: `MapPlaceholder` (the standalone `/map` route, Discover's "Voir la carte") now renders it
+  over a small `pickNearby` pool instead of "coming soon" text, and `SearchScreen`'s own Liste/Carte
+  toggle renders it **inline** with the current filtered results — inline, not a navigation to `/map`,
+  because that route has no way to receive an arbitrary result set through serializable route params.
+- **Results list: a new `SearchResultCard`, not a reuse of `ExperienceCard`.** Same content/iconography,
+  but stretched to the list's own width — `ExperienceCard`'s `CARD_WIDTH` (260) is tuned for a horizontal
+  carousel, not a single-column `FlatList`; reusing it directly would leave dead space on a full-width
+  vertical list. `SearchResultsList` is a `FlatList`, not a `ScrollView` (brief §8), with `ListEmptyComponent`
+  → `SearchEmptyState` (brief §11's three relax-a-constraint actions mirror
+  `07_DATA_AND_RECOMMENDATION.md`'s "No perfect match" guidance almost verbatim: relax distance, relax a
+  filter, fall back to trending) plus a "Peut-être que ça te plaira" `HorizontalCarousel` reusing
+  `pickTrending`, not a new picking rule.
+- **New test files**: `SearchScreen.test.tsx`, `SearchFiltersSheet.test.tsx`, `SearchResultsHeader.test.tsx`,
+  `SearchSuggestionsList.test.tsx`, `SearchEmptyState.test.tsx`, `useRecentSearches.test.ts`,
+  `services/mock/search.test.ts`, `features/map/ExperienceMapView.test.tsx`, and route-level
+  `searchRoutes.test.tsx` (same `renderRouter`-over-the-real-`src/app` shape as `discoverRoutes.test.tsx`)
+  covering Home → Search, Discover → Search, Search → Experience Detail, and back navigation. Existing
+  `HomeScreen.test.tsx`/`DiscoverScreen.test.tsx` gained the new `onPress`/`onPressFilter` assertions.
+
+### D-69 — Sticky search on Home and Discover: two mechanisms, one shared idiom, no forced unification
+
+Follow-up requested right after D-68: neither `SearchBar` was reachable while scrolling. Home
+complicated this further — it already has a floating sticky header (`HomeHeader`, the notification
+bell); a second, independent sticky search bar would have been exactly the "two overlapping sticky
+zones" the brief ruled out.
+
+**The decision that shaped everything else**: `HomeHeader`'s bell has three existing, deliberate tests
+(`HomeScreen.test.tsx`) asserting it hides on a sustained scroll down and reveals on scroll up
+(`useScrollDirection`, D-46/D-47). Nothing in this task asked to change that interaction, so it was
+treated as a hard constraint, not a detail to redesign around — the whole solution was built to
+preserve it exactly rather than switch Home to a different sticky mechanism for the sake of a single
+shared component.
+
+- **Discover** — no existing sticky header, so it gets `StickyRevealHeader` directly, via a new
+  `centerSlot?: ReactNode` prop (`components/ui/StickyRevealHeader.tsx`), mutually exclusive with
+  `title`. It renders inside the exact same crossfading `Animated.View` the title already used (same
+  `revealStyle`/`interpolate`, untouched) — the only difference is `pointerEvents`: `"none"` for a
+  title (decorative), `"box-none"` for `centerSlot` (must stay tappable once revealed — a `SearchBar`,
+  unlike a title, is the whole point of showing it). All 7 `title`-only callers (Profile, Settings,
+  Preferences, Favorites, History, Statistics, Language, Theme) are byte-for-byte unaffected — the new
+  branch only activates when `centerSlot` is passed. `DiscoverScreen.tsx` adds one
+  `useSharedValue(0)` `scrollY`, folded into its existing `onScroll` (same "one handler, several
+  consumers" composition `HomeScreen`/`ProfileScreen` already use), and a `SEARCH_REVEAL_OFFSET = 120`
+  local constant — the same kind of round, unmeasured proxy the 7 `HEADER_REVEAL_OFFSET` screens
+  already use, sized a bit larger for Discover's taller two-line title block above the bar.
+- **Home** — `HomeHeader` (`features/home/components/`) is extended in place, not migrated to
+  `StickyRevealHeader`: a new `searchSlot?: ReactNode` + `showSearch?: boolean` prop pair adds a second
+  row below the existing (untouched) bell row, inside its own `MotiView` animating `height`/`opacity`
+  between `0` and a fixed row height as `showSearch` toggles — a smooth grow/fade, never an instant
+  snap. The whole zone's `visible`/`atTop`-driven translateY/opacity/wash — what the three existing
+  tests assert on — is untouched; the search row rides along with it, so it hides when the bell hides
+  and reappears when it reappears. This *is* "one zone, not two": literally the same floating element,
+  not two components kept in sync. `showSearch` is a new, independent signal (scrolled past the Hero),
+  computed in `HomeScreen.tsx` from a new `features/home/lib/heroHeight.ts` (`HERO_HEIGHT_RATIO`,
+  `HERO_MIN_HEIGHT`, `getHeroHeight`) — Home's own hero-height constants relocated out of
+  `HeroCarousel.tsx` (same numbers, zero visual change) so `HomeScreen` can compute
+  `getHeroHeight(windowHeight) - HEADER_HEIGHT` (now exported from `HomeHeader.tsx`) without
+  duplicating them, mirroring `features/experiences/lib/heroHeight.ts`'s existing shape rather than a
+  hardcoded guess — Home's Hero varies far more by device than Discover's title block does, so a
+  measured formula was worth it here where a round constant wasn't.
+- **Why two mechanisms, not one shared component**: `StickyRevealHeader`'s "always pinned, wash
+  crossfades" model and `HomeHeader`'s "hides on sustained scroll down" model are genuinely different
+  UX contracts, and Home's is the one with three tests already codifying it as intentional. Forcing
+  Home onto `StickyRevealHeader` would have been a real, unrequested behavior change (the bell would
+  stop hiding on scroll-down) disguised as a refactor. What *is* shared: the visual language (Moti,
+  blur + `surface`-tinted wash, safe-area handling, `useReduceMotion`) and the underlying idiom (an
+  in-flow element untouched, a floating twin that reveals past an offset) — applied through whichever
+  existing, already-tested mechanism actually fits each screen.
+- **No visual duplicate, and no new accessibility-hiding either**: both the in-flow and the floating
+  `SearchBar` always trigger the identical `router.push('/search', ...)`, so a brief overlap during the
+  crossfade window is inconsequential — tapping "the search bar" does the right thing regardless of
+  which instance intercepts the touch. This is exactly the level of care the existing title-reveal
+  pattern already has (the in-flow title on 7 screens is never hidden from accessibility once the
+  sticky one crossfades in, either) — matching it was a deliberate choice to avoid a new inconsistency
+  and scope creep, not an oversight.
+- **Tests updated for the new second instance**: `DiscoverScreen.test.tsx`/`HomeScreen.test.tsx`/
+  `searchRoutes.test.tsx`/`onboardingRoutes.test.tsx` (Home is reached at the end of onboarding) now use
+  `getAllByRole('search')`/`getAllByText(...)` where a query used to assume a single `SearchBar`, plus
+  new tests: `StickyRevealHeader.test.tsx` covers `centerSlot` (renders instead of `title`, stays
+  interactive — same "no crossfade assertion, the Jest Reanimated mock stubs `interpolate`" scope as
+  its existing tests); `HomeScreen.test.tsx` covers pressing the header-docked search bar once
+  scrolled past the Hero. The three pre-existing notification-button scroll tests were **not** changed
+  and still pass.

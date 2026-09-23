@@ -37,8 +37,13 @@ Status for **mobile** (2026-09-22). Web and API foundations are not started.
 - [x] Experience detail — real screen (`experience/[id]`) plus a dedicated full-screen gallery
       (`gallery/[id]`) with a hero -> gallery Reanimated transition, sprint 5 — `DECISIONS.md` D-48
 - [ ] Itinerary — CTA reached via `itinerary/create`, still a placeholder (`DECISIONS.md` D-48)
-- [~] Map placeholder — route exists (`/map`, `MapPlaceholder`), reached from Discover's "Voir la
-      carte"; not the real map screen yet — `DECISIONS.md` D-65
+- [x] Search — shared `SearchScreen` (`/search`) opened from both Home's and Discover's `SearchBar`;
+      recent searches (persisted), trending chips, explore-by-mood, live suggestions, results
+      (list/map), and a filters bottom sheet, all over the mock experience pool — no real query
+      engine yet, sprint 6 — `DECISIONS.md` D-68
+- [~] Map — `ExperienceMapView` (mocked illustrated map + pins), reached standalone via `/map`
+      (`MapPlaceholder`, Discover's "Voir la carte") and inline from Search's Liste/Carte toggle;
+      still no real map SDK — `DECISIONS.md` D-65, D-68
 - [ ] Feedback
 
 Use mock data. The onboarding is complete on the front end (no backend, nothing saved: D-28).

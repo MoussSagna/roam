@@ -1,10 +1,12 @@
 import { useRouter } from 'expo-router';
 import { useCallback, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import type { NativeScrollEvent, NativeSyntheticEvent } from 'react-native';
 import { View } from 'react-native';
+import { useSharedValue } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { ScrollScreen, SearchBar, Text } from '@/components/ui';
+import { ScrollScreen, SearchBar, StickyRevealHeader, Text } from '@/components/ui';
 import { useFavoriteExperienceIds } from '@/features/home/useFavoriteExperienceIds';
 import { TAB_BAR_CLEARANCE } from '@/features/navigation/tabBarConfig';
 import { useTabBarScrollHandler } from '@/features/navigation/TabBarCollapseContext';
@@ -27,6 +29,12 @@ import { useDiscoverData } from './useDiscoverData';
 type SectionId =
   'roamSelection' | 'suggestions' | 'immersive' | 'nearby' | 'trending' | 'collections';
 
+/** Scroll offset (px) past which the sticky search bar is fully revealed — a round proxy value, same
+ * "not measured, just a reasonable constant" convention as the profile sub-screens' own
+ * `HEADER_REVEAL_OFFSET` (`docs/DECISIONS.md` D-49 lineage), sized a bit larger than their `70` for
+ * Discover's taller two-line title block above the bar. */
+const SEARCH_REVEAL_OFFSET = 120;
+
 /**
  * Which sections a secondary-nav tab shows. "Pour toi" is the full editorial mix (the default, and
  * the only tab the sprint 6 mockup actually shows); the other three narrow the page down to the one
@@ -45,16 +53,19 @@ const TAB_SECTIONS: Record<DiscoverTabId, readonly SectionId[]> = {
  * counts). Built on the mock experience/collection pools (`useDiscoverData`), replacing the sprint 3
  * placeholder. See `docs/DECISIONS.md` for this sprint's entry.
  *
- * No floating/sticky header (`StickyRevealHeader`) here, unlike Experience Detail or Profile: those
- * screens reveal a header over a full-bleed hero photo at the very top; Discover's own hero ("Sélection
- * ROAM") is an inset card further down the page, so a plain in-flow title (like the sprint 3 placeholder
- * already had) is the simpler, correct fit.
+ * The page title stays a plain in-flow heading (no floating title reveal, unlike Experience Detail or
+ * Profile): Discover's own hero ("Sélection ROAM") is an inset card further down the page, not a
+ * full-bleed photo at the very top. The search bar is different — it does get a floating sticky
+ * instance (`StickyRevealHeader`'s `centerSlot`, sprint 6 "sticky search", D-69): the in-flow
+ * `SearchBar` below is untouched, and a second one fades in past `SEARCH_REVEAL_OFFSET` once it has
+ * scrolled out of the sticky zone.
  */
 export function DiscoverScreen() {
   const { t } = useTranslation();
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const onScroll = useTabBarScrollHandler();
+  const scrollY = useSharedValue(0);
 
   const { experiences, collections, isLoading, isError } = useDiscoverData();
   const { favoriteIds, toggleFavorite } = useFavoriteExperienceIds(experiences);
@@ -92,6 +103,22 @@ export function DiscoverScreen() {
     router.push('/map');
   }, [router]);
 
+  const goToSearch = useCallback(() => {
+    router.push({ pathname: '/search', params: { context: 'discover' } });
+  }, [router]);
+
+  const goToSearchFilters = useCallback(() => {
+    router.push({ pathname: '/search', params: { context: 'discover', openFilters: '1' } });
+  }, [router]);
+
+  // Not `useCallback`: mutating a shared value's `.value` inside a memoized callback trips the
+  // `react-hooks/immutability` rule (same reasoning as `HomeScreen`'s own `handleScroll`). A fresh
+  // function per render is harmless here — `ScrollScreen.onScroll` isn't a memoization-sensitive prop.
+  const handleScroll = (event: NativeSyntheticEvent<NativeScrollEvent>) => {
+    scrollY.value = event.nativeEvent.contentOffset.y;
+    onScroll(event);
+  };
+
   const handleSelectMood = useCallback((mood: SuggestionMood) => {
     setSelectedMood((current) => (current === mood.id ? null : mood.id));
   }, []);
@@ -100,87 +127,104 @@ export function DiscoverScreen() {
   const isEmpty = !isLoading && !isError && experiences.length === 0 && collections.length === 0;
 
   return (
-    <ScrollScreen
-      testID="discover-scroll"
-      onScroll={onScroll}
-      contentContainerStyle={{
-        paddingTop: 24,
-        paddingBottom: insets.bottom + TAB_BAR_CLEARANCE,
-        gap: 24,
-      }}
-    >
-      <View className="gap-1">
-        <Text variant="h2" accessibilityRole="header">
-          {t('discover.title')}
-        </Text>
-        <Text variant="body" tone="secondary">
-          {t('discover.subtitle')}
-        </Text>
-      </View>
-
-      <SearchBar
-        placeholder={t('discover.search.placeholder')}
-        filterLabel={t('discover.search.filters')}
+    <>
+      <StickyRevealHeader
+        centerSlot={
+          <SearchBar
+            placeholder={t('discover.search.placeholder')}
+            filterLabel={t('discover.search.filters')}
+            onPress={goToSearch}
+            onPressFilter={goToSearchFilters}
+          />
+        }
+        scrollY={scrollY}
+        revealOffset={SEARCH_REVEAL_OFFSET}
       />
 
-      <DiscoverTabs selected={selectedTab} onSelect={setSelectedTab} />
-
-      {isLoading ? (
-        <Text variant="body" tone="secondary">
-          {t('common.loading')}
-        </Text>
-      ) : isError ? (
-        <View className="gap-2">
-          <Text variant="h4">{t('discover.error.title')}</Text>
+      <ScrollScreen
+        testID="discover-scroll"
+        onScroll={handleScroll}
+        contentContainerStyle={{
+          paddingTop: 24,
+          paddingBottom: insets.bottom + TAB_BAR_CLEARANCE,
+          gap: 24,
+        }}
+      >
+        <View className="gap-1">
+          <Text variant="h2" accessibilityRole="header">
+            {t('discover.title')}
+          </Text>
           <Text variant="body" tone="secondary">
-            {t('discover.error.description')}
+            {t('discover.subtitle')}
           </Text>
         </View>
-      ) : isEmpty ? (
-        <View className="gap-2">
-          <Text variant="h4">{t('discover.empty.title')}</Text>
+
+        <SearchBar
+          placeholder={t('discover.search.placeholder')}
+          filterLabel={t('discover.search.filters')}
+          onPress={goToSearch}
+          onPressFilter={goToSearchFilters}
+        />
+
+        <DiscoverTabs selected={selectedTab} onSelect={setSelectedTab} />
+
+        {isLoading ? (
           <Text variant="body" tone="secondary">
-            {t('discover.empty.description')}
+            {t('common.loading')}
           </Text>
-        </View>
-      ) : (
-        <>
-          {visibleSections.has('roamSelection') ? (
-            <RoamSelectionSection collections={featuredCollections} onPress={goToCollection} />
-          ) : null}
+        ) : isError ? (
+          <View className="gap-2">
+            <Text variant="h4">{t('discover.error.title')}</Text>
+            <Text variant="body" tone="secondary">
+              {t('discover.error.description')}
+            </Text>
+          </View>
+        ) : isEmpty ? (
+          <View className="gap-2">
+            <Text variant="h4">{t('discover.empty.title')}</Text>
+            <Text variant="body" tone="secondary">
+              {t('discover.empty.description')}
+            </Text>
+          </View>
+        ) : (
+          <>
+            {visibleSections.has('roamSelection') ? (
+              <RoamSelectionSection collections={featuredCollections} onPress={goToCollection} />
+            ) : null}
 
-          {visibleSections.has('suggestions') ? (
-            <SuggestionsSection selected={selectedMood} onSelect={handleSelectMood} />
-          ) : null}
+            {visibleSections.has('suggestions') ? (
+              <SuggestionsSection selected={selectedMood} onSelect={handleSelectMood} />
+            ) : null}
 
-          {visibleSections.has('immersive') && immersiveExperience ? (
-            <ImmersiveExperienceCard experience={immersiveExperience} onPress={goToExperience} />
-          ) : null}
+            {visibleSections.has('immersive') && immersiveExperience ? (
+              <ImmersiveExperienceCard experience={immersiveExperience} onPress={goToExperience} />
+            ) : null}
 
-          {visibleSections.has('nearby') ? (
-            <NearbySection
-              experiences={nearbyExperiences}
-              favoriteIds={favoriteIds}
-              onToggleFavorite={toggleFavorite}
-              onPress={goToExperience}
-              onSeeMap={goToMap}
-            />
-          ) : null}
+            {visibleSections.has('nearby') ? (
+              <NearbySection
+                experiences={nearbyExperiences}
+                favoriteIds={favoriteIds}
+                onToggleFavorite={toggleFavorite}
+                onPress={goToExperience}
+                onSeeMap={goToMap}
+              />
+            ) : null}
 
-          {visibleSections.has('trending') ? (
-            <TrendingSection
-              experiences={trendingExperiences}
-              favoriteIds={favoriteIds}
-              onToggleFavorite={toggleFavorite}
-              onPress={goToExperience}
-            />
-          ) : null}
+            {visibleSections.has('trending') ? (
+              <TrendingSection
+                experiences={trendingExperiences}
+                favoriteIds={favoriteIds}
+                onToggleFavorite={toggleFavorite}
+                onPress={goToExperience}
+              />
+            ) : null}
 
-          {visibleSections.has('collections') ? (
-            <CollectionsSection collections={exploreCollections} onPress={goToCollection} />
-          ) : null}
-        </>
-      )}
-    </ScrollScreen>
+            {visibleSections.has('collections') ? (
+              <CollectionsSection collections={exploreCollections} onPress={goToCollection} />
+            ) : null}
+          </>
+        )}
+      </ScrollScreen>
+    </>
   );
 }

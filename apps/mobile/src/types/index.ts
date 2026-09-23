@@ -6,4 +6,5 @@ export type * from './feedback';
 export type * from './geometry';
 export type * from './itinerary';
 export type * from './place';
+export type * from './search';
 export type * from './user';

@@ -41,7 +41,8 @@ const TABS = [
   { label: 'Accueil', path: '/home', title: 'Dîners avec vue' },
   { label: 'Découvrir', path: '/discover', title: 'Découvrir' },
   { label: 'Favoris', path: '/favorites', title: 'Mes favoris' },
-  { label: 'Profil', path: '/profile', title: 'Profil' },
+  // Profile has no static page title in the body (only the sticky reveal header's, off-screen at rest).
+  { label: 'Profil', path: '/profile', title: null },
 ] as const;
 
 function scrollTo(testID: string, y: number) {
@@ -69,7 +70,11 @@ describe('main navigation (tabs)', () => {
     for (const tab of TABS) {
       await act(() => router.navigate(tab.path));
       expect(utils.getPathname()).toBe(tab.path);
-      expect(screen.getByRole('header')).toHaveTextContent(tab.title);
+      if (tab.title) {
+        expect(screen.getByRole('header')).toHaveTextContent(tab.title);
+      } else {
+        expect(screen.queryByRole('header')).toBeNull();
+      }
       expect(screen.getByRole('button', { name: tab.label })).toBeSelected();
     }
   });

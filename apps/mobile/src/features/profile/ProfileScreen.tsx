@@ -15,7 +15,6 @@ import {
   STICKY_REVEAL_HEADER_HEIGHT,
   ScrollScreen,
   StickyRevealHeader,
-  Text,
 } from '@/components/ui';
 import { getCategoryLabel } from '@/features/experiences/lib/categoryLabel';
 import { TAB_BAR_CLEARANCE } from '@/features/navigation/tabBarConfig';
@@ -107,10 +106,6 @@ export function ProfileScreen() {
           gap: 28,
         }}
       >
-        <Text variant="h2" accessibilityRole="header">
-          {t('profile.title')}
-        </Text>
-
         {user ? (
           <>
             <FadeInUp>
