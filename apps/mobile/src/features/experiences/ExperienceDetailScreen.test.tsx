@@ -108,13 +108,13 @@ describe('ExperienceDetailScreen (sprint 5)', () => {
     expect(screen.queryByRole('button', { name: 'Créer un parcours personnalisé' })).toBeNull();
   });
 
-  it('navigates to the create-journey placeholder from the sticky CTA', async () => {
+  it('without an active journey, the sticky CTA starts the journey creation with this experience', async () => {
     await renderDetail();
 
-    await fireEvent.press(screen.getByRole('button', { name: 'Créer mon parcours' }));
+    await fireEvent.press(await screen.findByRole('button', { name: 'Créer mon parcours' }));
 
     expect(mockPush).toHaveBeenCalledWith({
-      pathname: '/itinerary/create',
+      pathname: '/journey/create',
       params: { experienceId: 'exp-rooftop-sunset' },
     });
   });

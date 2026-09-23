@@ -8,6 +8,8 @@ export const STORAGE_KEYS = {
   session: 'roam.session.isLoggedIn',
   /** Search's recent-queries list (sprint 6), see `useRecentSearches`. */
   recentSearches: 'roam.search.recent',
+  /** The current journey (sprint 10, mock repository — no backend yet). */
+  journey: 'roam.journey.current',
 } as const;
 
 /** Storage failures must never crash the app: preferences simply fall back to defaults. */
@@ -22,6 +24,14 @@ export async function readStorage(key: string): Promise<string | null> {
 export async function writeStorage(key: string, value: string): Promise<void> {
   try {
     await AsyncStorage.setItem(key, value);
+  } catch {
+    // Ignored on purpose: see above.
+  }
+}
+
+export async function removeStorage(key: string): Promise<void> {
+  try {
+    await AsyncStorage.removeItem(key);
   } catch {
     // Ignored on purpose: see above.
   }

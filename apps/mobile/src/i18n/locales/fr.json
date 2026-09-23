@@ -403,7 +403,8 @@
       "addressCopied": "Adresse copiée",
       "coordinatesCopied": "Coordonnées copiées",
       "openError": "Impossible d'ouvrir l'application"
-    }
+    },
+    "addToJourney": "Ajouter au parcours"
   },
   "itinerary": {
     "title": "Ta sortie est prête",
@@ -503,16 +504,6 @@
     "likes": {
       "title": "Ce que j'aime",
       "edit": "Modifier"
-    },
-    "journey": {
-      "title": "Parcours en cours",
-      "stepsProgress": "{current} / {total} étapes",
-      "nextStep": "Prochaine étape",
-      "continueCta": "Continuer mon parcours",
-      "empty": {
-        "title": "Tu n'as aucun parcours en cours.",
-        "cta": "Découvrir des expériences"
-      }
     },
     "activity": {
       "title": "Mon activité cette année",
@@ -686,5 +677,157 @@
     "location": "Nous n'avons pas pu récupérer ta position.",
     "recommendations": "Impossible de charger les recommandations.",
     "feedback": "Impossible d'envoyer ton feedback."
+  },
+  "journey": {
+    "defaultTitle": "Sortie {mood}",
+    "close": "Quitter la création",
+    "continue": "Continuer",
+    "stepOf": "Étape {current} sur {total}",
+    "intro": {
+      "eyebrow": "Ton parcours ROAM",
+      "title": "Créons ton parcours",
+      "subtitle": "Dis-nous ce que tu veux vivre et ROAM t'aide à construire une sortie qui te ressemble.",
+      "start": "Commencer",
+      "cancel": "Annuler"
+    },
+    "quit": {
+      "title": "Quitter la création ?",
+      "description": "Ton parcours n'est pas encore créé.",
+      "stay": "Continuer",
+      "leave": "Quitter"
+    },
+    "context": {
+      "moodTitle": "Quelle ambiance tu veux aujourd'hui ?",
+      "durationTitle": "Combien de temps tu as ?",
+      "budgetTitle": "Quel budget ?"
+    },
+    "moods": {
+      "calm": "Chill",
+      "discover": "Découverte",
+      "food": "Gourmand",
+      "culture": "Culture",
+      "energetic": "Sport",
+      "romantic": "Romantique",
+      "festive": "Festif"
+    },
+    "moodAdjectives": {
+      "calm": "chill",
+      "discover": "nouveau",
+      "food": "gourmand",
+      "culture": "culturel",
+      "energetic": "sportif",
+      "romantic": "romantique",
+      "festive": "festif"
+    },
+    "durations": {
+      "1h": "1 h",
+      "2h": "2 h",
+      "3h": "3 h",
+      "halfDay": "Demi-journée",
+      "day": "Journée"
+    },
+    "budgets": {
+      "free": "Gratuit",
+      "low": "€",
+      "medium": "€€",
+      "high": "€€€"
+    },
+    "budgetNames": {
+      "free": "Gratuit",
+      "low": "Petit budget",
+      "medium": "Budget moyen",
+      "high": "Budget confortable"
+    },
+    "location": {
+      "title": "On part d'où ?",
+      "subtitle": "ROAM organise ton parcours autour de ce point de départ.",
+      "current": "Ma position actuelle",
+      "currentLabel": "Ma position",
+      "currentHint": "Position approximative, sans géolocalisation pour l'instant.",
+      "place": "Choisir un lieu",
+      "address": "Choisir une adresse",
+      "addressLabel": "Adresse de départ",
+      "addressPlaceholder": "12 rue de la Paix, Paris",
+      "startPoint": "Point de départ"
+    },
+    "suggestions": {
+      "title": "Voici ce qu'on a imaginé pour toi",
+      "subtitleOne": "Un parcours d'une expérience autour de toi",
+      "subtitleMany": "Un parcours de {count} expériences autour de toi",
+      "subtitleNone": "Choisis les expériences de ton parcours",
+      "relaxed": "Pas de correspondance parfaite : voici les idées les plus proches de ton envie.",
+      "reasonMood": "Parce que tu as envie de quelque chose de {mood}",
+      "reasonNearby": "Tout près de ton point de départ",
+      "reasonBudget": "Dans ton budget",
+      "add": "Ajouter",
+      "added": "Ajoutée",
+      "addLabel": "Ajouter {title} au parcours",
+      "removeLabel": "Retirer {title} du parcours",
+      "details": "Voir le détail",
+      "build": "Construire mon parcours",
+      "explore": "Explorer d'autres idées",
+      "emptyTitle": "Aucune expérience disponible",
+      "emptySubtitle": "Essaie une autre ambiance ou un autre budget.",
+      "error": "Impossible de charger les idées."
+    },
+    "builder": {
+      "title": "Ton parcours",
+      "addExperience": "Ajouter une expérience",
+      "viewJourney": "Voir mon parcours",
+      "emptyTitle": "Ton parcours est vide",
+      "emptySubtitle": "Ajoute au moins une expérience pour continuer."
+    },
+    "step": {
+      "moveUp": "Monter {title}",
+      "moveDown": "Descendre {title}",
+      "remove": "Retirer {title}",
+      "open": "Ouvrir {title}"
+    },
+    "travel": {
+      "walk": "{duration} à pied",
+      "metro": "{duration} en métro"
+    },
+    "stats": {
+      "experiences": "Expériences",
+      "duration": "Durée totale",
+      "budget": "Budget estimé",
+      "distance": "Distance",
+      "start": "Départ",
+      "end": "Fin"
+    },
+    "summary": {
+      "title": "Ton parcours est prêt",
+      "encouragementTitle": "Un itinéraire pensé pour toi",
+      "encouragement": "Basé sur tes envies, ton budget et ton temps disponible. Profite pleinement !",
+      "create": "Créer mon parcours",
+      "createError": "Impossible de créer ton parcours. Réessaie.",
+      "alreadyActive": "Tu as déjà un parcours en cours.",
+      "viewActive": "Voir mon parcours"
+    },
+    "active": {
+      "title": "Mon parcours",
+      "progress": "Étape {current} sur {total}",
+      "ready": "Prêt à partir",
+      "current": "En ce moment",
+      "start": "Commencer",
+      "continue": "Continuer mon parcours",
+      "finish": "Terminer mon parcours",
+      "addExperience": "Ajouter une expérience",
+      "completedTitle": "Parcours terminé",
+      "completedSubtitle": "Bravo, tu as vécu toute ta sortie.",
+      "createNew": "Créer un nouveau parcours",
+      "emptyTitle": "Ton parcours est vide",
+      "emptySubtitle": "Ajoute des expériences depuis Découvrir.",
+      "notFound": "Ce parcours n'existe plus.",
+      "error": "Impossible de charger ton parcours."
+    },
+    "added": {
+      "title": "Ajouté à ton parcours ✓",
+      "description": "« {title} » fait maintenant partie de ton parcours.",
+      "alreadyTitle": "Déjà dans ton parcours",
+      "alreadyDescription": "« {title} » fait déjà partie de ton parcours.",
+      "view": "Voir mon parcours",
+      "error": "Impossible d'ajouter cette expérience."
+    }
   }
 }

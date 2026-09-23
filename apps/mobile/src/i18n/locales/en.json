@@ -403,7 +403,8 @@
       "addressCopied": "Address copied",
       "coordinatesCopied": "Coordinates copied",
       "openError": "Couldn't open the app"
-    }
+    },
+    "addToJourney": "Add to journey"
   },
   "itinerary": {
     "title": "Your outing is ready",
@@ -503,16 +504,6 @@
     "likes": {
       "title": "What I like",
       "edit": "Edit"
-    },
-    "journey": {
-      "title": "Ongoing journey",
-      "stepsProgress": "{current} / {total} steps",
-      "nextStep": "Next stop",
-      "continueCta": "Continue my journey",
-      "empty": {
-        "title": "You have no ongoing journey.",
-        "cta": "Discover experiences"
-      }
     },
     "activity": {
       "title": "My activity this year",
@@ -686,5 +677,157 @@
     "location": "We couldn't get your location.",
     "recommendations": "We couldn't load recommendations.",
     "feedback": "We couldn't send your feedback."
+  },
+  "journey": {
+    "defaultTitle": "{mood} outing",
+    "close": "Leave journey creation",
+    "continue": "Continue",
+    "stepOf": "Step {current} of {total}",
+    "intro": {
+      "eyebrow": "Your ROAM journey",
+      "title": "Let's build your journey",
+      "subtitle": "Tell us what you feel like doing and ROAM helps you put together an outing that feels like you.",
+      "start": "Get started",
+      "cancel": "Cancel"
+    },
+    "quit": {
+      "title": "Leave journey creation?",
+      "description": "Your journey hasn't been created yet.",
+      "stay": "Keep going",
+      "leave": "Leave"
+    },
+    "context": {
+      "moodTitle": "What kind of vibe today?",
+      "durationTitle": "How much time do you have?",
+      "budgetTitle": "What's your budget?"
+    },
+    "moods": {
+      "calm": "Chill",
+      "discover": "Discovery",
+      "food": "Foodie",
+      "culture": "Culture",
+      "energetic": "Sport",
+      "romantic": "Romantic",
+      "festive": "Party"
+    },
+    "moodAdjectives": {
+      "calm": "chill",
+      "discover": "new",
+      "food": "tasty",
+      "culture": "cultural",
+      "energetic": "sporty",
+      "romantic": "romantic",
+      "festive": "festive"
+    },
+    "durations": {
+      "1h": "1 h",
+      "2h": "2 h",
+      "3h": "3 h",
+      "halfDay": "Half a day",
+      "day": "All day"
+    },
+    "budgets": {
+      "free": "Free",
+      "low": "€",
+      "medium": "€€",
+      "high": "€€€"
+    },
+    "budgetNames": {
+      "free": "Free",
+      "low": "Small budget",
+      "medium": "Mid budget",
+      "high": "Comfortable budget"
+    },
+    "location": {
+      "title": "Where are we starting?",
+      "subtitle": "ROAM plans your journey around this starting point.",
+      "current": "My current location",
+      "currentLabel": "My location",
+      "currentHint": "Approximate location — no geolocation yet.",
+      "place": "Pick a place",
+      "address": "Enter an address",
+      "addressLabel": "Starting address",
+      "addressPlaceholder": "12 rue de la Paix, Paris",
+      "startPoint": "Starting point"
+    },
+    "suggestions": {
+      "title": "Here's what we came up with",
+      "subtitleOne": "A one-experience journey near you",
+      "subtitleMany": "A {count}-experience journey near you",
+      "subtitleNone": "Pick the experiences for your journey",
+      "relaxed": "No perfect match: here are the ideas closest to what you want.",
+      "reasonMood": "Because you're in the mood for something {mood}",
+      "reasonNearby": "Right next to your starting point",
+      "reasonBudget": "Within your budget",
+      "add": "Add",
+      "added": "Added",
+      "addLabel": "Add {title} to the journey",
+      "removeLabel": "Remove {title} from the journey",
+      "details": "See details",
+      "build": "Build my journey",
+      "explore": "Explore other ideas",
+      "emptyTitle": "No experience available",
+      "emptySubtitle": "Try another vibe or budget.",
+      "error": "Couldn't load the ideas."
+    },
+    "builder": {
+      "title": "Your journey",
+      "addExperience": "Add an experience",
+      "viewJourney": "See my journey",
+      "emptyTitle": "Your journey is empty",
+      "emptySubtitle": "Add at least one experience to continue."
+    },
+    "step": {
+      "moveUp": "Move {title} up",
+      "moveDown": "Move {title} down",
+      "remove": "Remove {title}",
+      "open": "Open {title}"
+    },
+    "travel": {
+      "walk": "{duration} on foot",
+      "metro": "{duration} by metro"
+    },
+    "stats": {
+      "experiences": "Experiences",
+      "duration": "Total time",
+      "budget": "Estimated budget",
+      "distance": "Distance",
+      "start": "Start",
+      "end": "End"
+    },
+    "summary": {
+      "title": "Your journey is ready",
+      "encouragementTitle": "A route made for you",
+      "encouragement": "Based on what you want, your budget and your time. Enjoy it!",
+      "create": "Create my journey",
+      "createError": "Couldn't create your journey. Try again.",
+      "alreadyActive": "You already have a journey in progress.",
+      "viewActive": "See my journey"
+    },
+    "active": {
+      "title": "My journey",
+      "progress": "Step {current} of {total}",
+      "ready": "Ready to go",
+      "current": "Right now",
+      "start": "Start",
+      "continue": "Continue my journey",
+      "finish": "Finish my journey",
+      "addExperience": "Add an experience",
+      "completedTitle": "Journey complete",
+      "completedSubtitle": "Well done, you lived your whole outing.",
+      "createNew": "Create a new journey",
+      "emptyTitle": "Your journey is empty",
+      "emptySubtitle": "Add experiences from Discover.",
+      "notFound": "This journey no longer exists.",
+      "error": "Couldn't load your journey."
+    },
+    "added": {
+      "title": "Added to your journey ✓",
+      "description": "“{title}” is now part of your journey.",
+      "alreadyTitle": "Already in your journey",
+      "alreadyDescription": "“{title}” is already part of your journey.",
+      "view": "See my journey",
+      "error": "Couldn't add this experience."
+    }
   }
 }

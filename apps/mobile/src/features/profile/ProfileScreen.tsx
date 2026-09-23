@@ -23,7 +23,6 @@ import { useCategories } from '@/hooks/useCategories';
 import { useTheme } from '@/theme';
 import type { Experience } from '@/types';
 
-import { ActiveJourneyCard } from './components/ActiveJourneyCard';
 import { ActivitySummaryCard } from './components/ActivitySummaryCard';
 import { ExperiencePreviewCard } from './components/ExperiencePreviewCard';
 import { ProfileHeader } from './components/ProfileHeader';
@@ -31,7 +30,6 @@ import { ProfileStats } from './components/ProfileStats';
 import { SectionHeader } from '../home/components/SectionHeader';
 import { AMBIANCE_OPTIONS, DEFAULT_AMBIANCE } from './data/ambianceOptions';
 import { DEFAULT_EXPERIENCE_TYPES, EXPERIENCE_TYPES } from './data/experienceTypes';
-import { useActiveJourney } from './useActiveJourney';
 import { useCurrentUser } from './useCurrentUser';
 import { useFavoriteExperiences } from './useFavoriteExperiences';
 import { useHistoryExperiences } from './useHistoryExperiences';
@@ -62,7 +60,6 @@ export function ProfileScreen() {
   const tabBarOnScroll = useTabBarScrollHandler();
   const scrollY = useSharedValue(0);
   const { user } = useCurrentUser();
-  const { journey, isLoading: journeyLoading } = useActiveJourney();
   const { favorites } = useFavoriteExperiences();
   const { history } = useHistoryExperiences();
   const categories = useCategories();
@@ -114,14 +111,6 @@ export function ProfileScreen() {
                 <ProfileStats stats={user.stats ?? DEFAULT_STATS} />
               </View>
             </FadeInUp>
-
-            {!journeyLoading ? (
-              <ActiveJourneyCard
-                journey={journey}
-                onContinue={() => router.push('/itinerary/create')}
-                onDiscover={() => router.push('/discover')}
-              />
-            ) : null}
 
             <View className="gap-3">
               <SectionHeader

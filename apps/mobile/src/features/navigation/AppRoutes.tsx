@@ -58,7 +58,8 @@ export function AppRoutes() {
         <Stack.Screen name="collection/[id]" />
         <Stack.Screen name="map" />
         <Stack.Screen name="search" />
-        <Stack.Screen name="itinerary/create" />
+        <Stack.Screen name="journey/create" />
+        <Stack.Screen name="journey/[id]" />
         <Stack.Screen name="profile/edit" />
         <Stack.Screen name="profile/preferences" />
         <Stack.Screen name="profile/favorites" />

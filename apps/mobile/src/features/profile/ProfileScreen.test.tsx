@@ -50,16 +50,13 @@ describe('ProfileScreen', () => {
     expect(mockPush).toHaveBeenCalledWith('/profile/settings');
   });
 
-  it('shows the active journey with progress and next step, and "Continuer" pushes to itinerary/create', async () => {
+  it('no longer shows any journey ("Parcours en cours" moved out of the Profile, sprint 10)', async () => {
     await renderProfile();
+    await screen.findByText("Ce que j'aime");
 
-    expect(await screen.findByText('Parcours en cours')).toBeOnTheScreen();
-    expect(screen.getByText('Concert intimiste')).toBeOnTheScreen();
-    expect(screen.getByText('2 / 5 étapes')).toBeOnTheScreen();
-    expect(screen.getByText('Le Hasard Ludique')).toBeOnTheScreen();
-
-    await fireEvent.press(screen.getByRole('button', { name: 'Continuer mon parcours' }));
-    expect(mockPush).toHaveBeenCalledWith('/itinerary/create');
+    expect(screen.queryByText('Parcours en cours')).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Continuer mon parcours' })).toBeNull();
+    expect(screen.queryByText('Mon parcours')).toBeNull();
   });
 
   it('shows "Ce que j\'aime" tags and "Modifier" pushes to Preferences', async () => {

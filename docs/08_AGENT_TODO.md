@@ -36,7 +36,8 @@ Status for **mobile** (2026-09-22). Web and API foundations are not started.
       on Home; the dedicated Recommendations screen (`03_UX_SCREENS_AND_FLOWS.md` §09) is not built
 - [x] Experience detail — real screen (`experience/[id]`) plus a dedicated full-screen gallery
       (`gallery/[id]`) with a hero -> gallery Reanimated transition, sprint 5 — `DECISIONS.md` D-48
-- [ ] Itinerary — CTA reached via `itinerary/create`, still a placeholder (`DECISIONS.md` D-48)
+- [x] Journey ("parcours") — creation flow `/journey/create/*` (intro, context, start, suggestions, builder,
+      summary) and active journey `/journey/[id]`; add from Experience detail — sprint 10, `DECISIONS.md` D-80
 - [x] Search — shared `SearchScreen` (`/search`) opened from both Home's and Discover's `SearchBar`;
       recent searches (persisted), trending chips, explore-by-mood, live suggestions, results
       (list/map), a sort sheet (Recommandé/Plus proche/Mieux noté/Prix), and a filters bottom sheet, all over the mock experience pool — no real query
@@ -84,7 +85,7 @@ Use mock data. The onboarding is complete on the front end (no backend, nothing 
       state), sprint 5; the separate `/favorites` tab is still sprint-3 placeholder content
 - [~] History — "Mon historique" (`/profile/history`) built (completed experiences grouped by date,
       category filter, empty state), sprint 5
-- [~] Profile — refactored into identity/activity/taste (header, stats, active journey, likes,
+- [~] Profile — refactored into identity/activity/taste (header, stats, likes — the active journey left the Profile in sprint 10, D-80 —
       favorites/history previews, yearly activity) plus a new Settings screen for configuration
       (`/profile/settings`); preferences, favorites, history, statistics, language and theme built,
       other Settings sub-screens still placeholders, sprint 5

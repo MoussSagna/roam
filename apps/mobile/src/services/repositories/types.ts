@@ -2,6 +2,7 @@ import type {
   Category,
   Collection,
   Experience,
+  Journey,
   Place,
   SearchFilters,
   SearchSuggestion,
@@ -54,6 +55,19 @@ export interface SearchRepository {
   search(query: string, filters?: SearchFilters): Promise<Experience[]>;
 }
 
+/**
+ * The user's journey (sprint 10). MVP: a single current journey — active or completed — is kept; a
+ * draft is never saved (it lives in the creation flow until "Créer mon parcours"). Planning (travel,
+ * times, totals) is domain logic in `features/journey`, so a backend implementation only stores.
+ */
+export interface JourneyRepository {
+  /** The current journey (active or completed), or `null` when there is none. */
+  getCurrent(): Promise<Journey | null>;
+  /** Creates or replaces the current journey. */
+  save(journey: Journey): Promise<Journey>;
+  clear(): Promise<void>;
+}
+
 export type Repositories = {
   categories: CategoryRepository;
   places: PlaceRepository;
@@ -62,4 +76,5 @@ export type Repositories = {
   auth: AuthRepository;
   users: UserRepository;
   search: SearchRepository;
+  journeys: JourneyRepository;
 };

@@ -37,8 +37,8 @@ suggestions, an immersive experience block, nearby/trending experiences, editori
 carousels/lists now default to `FlatList`, mock data only) — see `DECISIONS.md` D-65, D-66; the `Favorites`
 tab is still sprint 3 placeholder content.
 **Experience detail and its full-screen photo gallery are built** (hero → gallery transition, reviews, similar
-experiences, mock data only) — see `DECISIONS.md` D-48; the itinerary/journey screen its CTAs lead to is still
-a placeholder. **Profile is now identity/activity/taste** (header, stats, "Parcours en cours", "Ce que
+experiences, mock data only) — see `DECISIONS.md` D-48; its CTA now opens the journey ("parcours")
+creation flow — sprint 10, `DECISIONS.md` D-80. **Profile is now identity/activity/taste** (header, stats, "Ce que
 j'aime", favorites/history previews, a yearly activity summary) **and configuration moved to a new,
 real Settings screen** (`/profile/settings`: account, préférences, langue/thème, aide, confidentialité,
 déconnexion) — "Mes préférences", "Mes favoris", "Mon historique", "Mes statistiques", "Langue" and

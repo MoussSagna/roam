@@ -13,10 +13,10 @@ chips, popular/nearby/for-you sections, sprint 5, `DECISIONS.md` D-45). **Discov
 discovery page** (Sélection ROAM, suggestions, an immersive experience block, nearby/trending experiences, editorial
 collections — sprint 6, `DECISIONS.md` D-65); the `/favorites` tab is still the sprint 3 placeholder content.
 **Experience detail and its full-screen gallery are also built** (sprint 5, `DECISIONS.md`
-D-48); the itinerary/journey screen it leads to is still a placeholder. **The Map screen Discover's "Voir la
+D-48); its CTA now opens the real journey ("parcours") creation flow, sprint 10, D-80. **The Map screen Discover's "Voir la
 carte" links to is now a real map** (`react-native-maps`, sprint 7, `DECISIONS.md` D-70); the other illustrated maps are being
 replaced one screen at a time. **Profile is now identity/activity/taste
-— header, stats, "Parcours en cours", "Ce que j'aime", favorites/history previews and a yearly activity
+— header, stats, "Ce que j'aime", favorites/history previews and a yearly activity
 summary — and configuration moved to a new, real Settings screen** (`/profile/settings`: account, préférences,
 langue/thème, aide, confidentialité, déconnexion — all reused routes/rows, sprint 5, `DECISIONS.md` D-63).
 "Mes préférences", "Mes favoris", "Mon historique", "Mes statistiques", "Langue" and "Thème" are all real
@@ -89,7 +89,7 @@ apps/mobile/
     │   ├── profile/         # Profile (sprint 5): main screen (identity/activity/taste) + settings + preferences + favorites + history + statistics + language + theme real, other sub-screens still placeholders
     │   ├── experiences/     # Experience detail (route experience/[id]) + gallery/ (route gallery/[id]) — sprint 5
     │   ├── auth/            # Authentication: all 7 screens built (Entry, Login, Register, ForgotPassword, ResetCode, NewPassword, ResetSuccess)
-    │   ├── itinerary/       # CreateJourneyPlaceholder (route itinerary/create) — not the real screen yet
+    │   ├── journey/         # Journey ("parcours", sprint 10, D-80): creation flow /journey/create/*, active /journey/[id], journeyStore, lib (plan, suggest)
     │   ├── map/             # RoamMap (react-native-maps) + ExperienceMarker/ExperienceMapCard/markers lib; Map screen (route /map) — sprint 7, D-70; Search's `SearchMapScreen` lives in `features/search/` — sprints 8, D-71/D-72
     │   └── recommendations, outing, feedback
     ├── hooks/               # Cross-feature hooks (useBootstrap, useReduceMotion, useCtaVisibility)
@@ -330,7 +330,7 @@ polish D-49), built on `Experience`'s extended fields through the same `Experien
 | Address bubble        | `components/AddressActionsBubble.tsx` + `useAddressActions.ts` + `features/map/lib/externalMaps.ts` | Small centered rounded card over a dimmed backdrop (fade + slight scale, no motion under reduced motion), closed by backdrop / × / Android back. Actions: Copier l'adresse, Copier les coordonnées GPS (`48.8566, 2.3522`) — `expo-clipboard` + `showToast`; Ouvrir dans Plans (iOS only, `https://maps.apple.com/?ll=…`), Ouvrir dans Google Maps (`https://www.google.com/maps/search/?api=1&query=…`) — `Linking.openURL`, plain URLs: no Maps API, no key. Failure → error toast |
 | Full-screen map       | `experience-map/[id]` → `features/map/ExperienceMapScreen.tsx`              | `RoamMap` fills the screen; a **transparent** `StickyRevealHeader` (back button only — no title since D-76, no background) floats over it; `ExperienceMapFooter` over the bottom edge. **Tap on bare map → footer slides down** (Moti `translateY`), a small "info" `IconButton` appears bottom-right; **tap it → slides back up**. Pan/zoom untouched. **Sprint 9 (D-75):** every pinnable experience is pinned (round photo markers); one `selectedExperienceId` (the opened one at first) drives the selected marker *and* the footer; a marker tap selects it, re-shows a hidden footer and recenters the camera between header and footer. Footer CTA → back for the opened experience, `experience/[id]` push for another |
 | Similar experiences   | `features/experiences/components/SimilarExperiencesSection.tsx`             | Reuses Home's `ExperienceCard`                                                                                    |
-| Create-journey CTA    | `itinerary/create` → `features/itinerary/CreateJourneyPlaceholder.tsx`      | Reached only from the sticky footer CTA now — the old inline button and "Envie d'en faire plus ?" are gone (D-49) |
+| Journey CTA           | sticky footer → `features/journey/hooks/useJourneyCta.tsx`                  | "Créer mon parcours" → `/journey/create?experienceId=…` (no active journey); "Ajouter au parcours" → adds to the active journey, "Ajouté à ton parcours ✓" dialog with "Voir mon parcours" (D-80) |
 
 ## Profile (current state)
 
@@ -344,9 +344,8 @@ other row is still a `ProfilePlaceholder` stub (`docs/DECISIONS.md` D-50) until 
 
 | Piece                      | Route / component                                                                        | Notes                                                                                                                                                                                                                                                                                                                                                                                        |
 | -------------------------- | ---------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Main screen                | `/profile` (in `(tabs)`) → `features/profile/ProfileScreen.tsx`                          | Header (avatar/name/bio/edit CTA), stats, "Parcours en cours", "Ce que j'aime", favorites/history previews, yearly activity summary — built on `UserRepository` (`useCurrentUser`) plus the hooks below; header is a `StickyRevealHeader` (no `leftSlot`, it's a tab root), settings gear in `rightSlot`, `docs/DECISIONS.md` D-63/D-64                                                      |
+| Main screen                | `/profile` (in `(tabs)`) → `features/profile/ProfileScreen.tsx`                          | Header (avatar/name/bio/edit CTA), stats, "Ce que j'aime", favorites/history previews, yearly activity summary — built on `UserRepository` (`useCurrentUser`) plus the hooks below; header is a `StickyRevealHeader` (no `leftSlot`, it's a tab root), settings gear in `rightSlot`, `docs/DECISIONS.md` D-63/D-64                                                      |
 | Header/stats               | `features/profile/components/ProfileHeader.tsx`, `ProfileAvatar.tsx`, `ProfileStats.tsx` | Avatar falls back to an initial letter (no photo in the mock content, same precedent as `ReviewCard`)                                                                                                                                                                                                                                                                                        |
-| Active journey             | `features/profile/components/ActiveJourneyCard.tsx`, `useActiveJourney.ts`               | Hero/progress/next-step, or an empty state — mock overlay (`data/activeJourney.ts`) joined onto an existing pool experience; "Continuer" pushes `itinerary/create` (no real itinerary-progress screen exists yet), `docs/DECISIONS.md` D-63                                                                                                                                                  |
 | Taste preview              | Inline in `ProfileScreen.tsx` (`Chip` row)                                               | Shows `DEFAULT_EXPERIENCE_TYPES`/`DEFAULT_AMBIANCE` (`data/experienceTypes.ts`/`ambianceOptions.ts`, D-51); "Modifier" pushes `/profile/preferences` — the same route Settings' own "Mes préférences" row uses                                                                                                                                                                               |
 | Favorites/history previews | `features/profile/components/ExperiencePreviewCard.tsx`                                  | Compact 3-up cards (not Home's 260px `ExperienceCard`), fed by `useFavoriteExperiences`/`useHistoryExperiences`; each row hides itself when empty — the real empty states live on the full screens                                                                                                                                                                                           |
 | Activity summary           | `features/profile/components/ActivitySummaryCard.tsx`                                    | Pressable card, same `UserStats` numbers as `ProfileStats` above, → `/profile/statistics`                                                                                                                                                                                                                                                                                                    |
@@ -360,6 +359,25 @@ other row is still a `ProfilePlaceholder` stub (`docs/DECISIONS.md` D-50) until 
 | Theme                      | `/profile/theme` → `features/profile/ThemeScreen.tsx`                                    | `ThemeOptionRow` per preference, list from the existing `THEME_PREFERENCES` (`theme/tokens.ts`); selecting one calls the existing `useTheme().setPreference`; header is a `StickyRevealHeader` — `docs/DECISIONS.md` D-61                                                                                                                                                                    |
 | Not-yet-built rows         | `features/profile/components/ProfilePlaceholder.tsx`                                     | `/profile/{edit,help,privacy}`                                                                                                                                                                                                                                                                                                                                                               |
 | Data                       | `UserRepository.getCurrentUser()` (`services/mock/user.ts`)                              | One mocked profile (`services/mock/data.ts` → `currentUser`); `User` gained optional `age/city/bio/stats`                                                                                                                                                                                                                                                                                    |
+
+## Journey (current state, sprint 10, `docs/DECISIONS.md` D-80)
+
+| Step | Route | Screen | Notes |
+| ---- | ----- | ------ | ----- |
+| Intro | `/journey/create` | `CreateJourneyIntroScreen` | Photo collage from the pool, "Commencer" / "Annuler" |
+| Context | `/journey/create/context` | `JourneyContextScreen` | Ambiance → temps → budget, one question at a time (`MoodTile`, `ChoiceRow`, `ProgressBars` from onboarding) |
+| Start | `/journey/create/location` | `JourneyLocationScreen` | Ma position (approximate — no geolocation yet) / a spot (`data/startSpots.ts`) / an address; static `RoamMap` |
+| Suggestions | `/journey/create/suggestions` | `JourneySuggestionsScreen` | `suggestForJourney` (filter then score, doc 07), pre-selection, add/remove/details, "Explorer d'autres idées" → `/search` |
+| Builder | `/journey/create/builder` | `JourneyBuilderScreen` | Timeline (`JourneyStepCard` + `TravelConnector`), move up/down, remove |
+| Summary | `/journey/create/summary` | `JourneySummaryScreen` | Totals, map, timeline; "Créer mon parcours" = DRAFT → ACTIVE, then `replace` → `/journey/[id]` |
+| Active | `/journey/[id]` | `ActiveJourneyScreen` | Progress, map, timeline (done/current/upcoming), Commencer → Continuer → Terminer; the only place a journey is shown |
+
+- **Layers:** `Screen → journeyStore (useJourney + operations) → JourneyRepository → mock` (persisted, `roam.journey.current`).
+  Planning (travel, arrivals, totals) and suggestions are pure functions in `features/journey/lib/`.
+- **Draft vs active:** the draft lives in `JourneyDraftProvider`, mounted by `app/journey/create/_layout.tsx`; leaving the
+  flow discards it. Nothing is saved before "Créer mon parcours". One active journey at a time (`ActiveJourneyExistsError`).
+- **Leaving:** the flow's × (and Intro's "Annuler") leaves at once without input, otherwise "Quitter la création ?".
+- **Tests:** `journeyStore.test.ts`, `lib/*.test.ts`, `journeyRoutes.test.tsx` (full flow on the real route tree).
 
 ## Authentication (current state)
 

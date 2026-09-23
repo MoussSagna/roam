@@ -3,7 +3,6 @@ import { StatusBar } from 'expo-status-bar';
 import Clock from 'lucide-react-native/icons/clock';
 import Euro from 'lucide-react-native/icons/euro';
 import MapPin from 'lucide-react-native/icons/map-pin';
-import Sparkles from 'lucide-react-native/icons/sparkles';
 import Star from 'lucide-react-native/icons/star';
 import TrainFront from 'lucide-react-native/icons/train-front';
 import { useCallback, useMemo } from 'react';
@@ -15,6 +14,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Button, STICKY_FOOTER_CLEARANCE, StickyActionFooter, Text } from '@/components/ui';
 import { useFavoriteExperienceIds } from '@/features/home/useFavoriteExperienceIds';
+import { useJourneyCta } from '@/features/journey/hooks/useJourneyCta';
 import { useCategories } from '@/hooks/useCategories';
 import { useCtaVisibility } from '@/hooks/useCtaVisibility';
 import type { Experience, GalleryOpenRect } from '@/types';
@@ -83,10 +83,8 @@ export function ExperienceDetailScreen({ experienceId }: ExperienceDetailScreenP
     [router],
   );
 
-  const goToCreateJourney = useCallback(() => {
-    if (!experience) return;
-    router.push({ pathname: '/itinerary/create', params: { experienceId: experience.id } });
-  }, [experience, router]);
+  // "Créer mon parcours" / "Ajouter au parcours", depending on the journey state (sprint 10).
+  const journeyCta = useJourneyCta(experience);
 
   const goToMap = useCallback(() => {
     if (!experience) return;
@@ -276,10 +274,12 @@ export function ExperienceDetailScreen({ experienceId }: ExperienceDetailScreenP
 
       <StickyActionFooter
         visible={ctaVisible}
-        label={t('experience.createItinerary')}
-        onPress={goToCreateJourney}
-        icon={Sparkles}
+        label={journeyCta.label}
+        onPress={journeyCta.onPress}
+        icon={journeyCta.icon}
+        loading={journeyCta.loading}
       />
+      {journeyCta.modal}
     </View>
   );
 }

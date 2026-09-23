@@ -2683,3 +2683,57 @@ Only what was asked; no new library, mock data, no Maps API.
   sheets use the older pattern and work today — to be aligned only if they show the same symptom.
 - **Tests:** a reopen-during-exit guard in `ConfirmationModal.test.tsx`. It passes on the old code too: the on-device
   reset is not reproducible under Jest, so the guard documents the behavior rather than proving the fix.
+
+## Sprint 10 — journeys ("parcours")
+
+### D-80 — Journey creation flow, one active journey, a store over a repository; the Profile no longer shows it
+
+- **Found before building:** no journey domain. `itinerary/create` was a placeholder, and the Profile's "Parcours en
+  cours" was a static mock overlay (`data/activeJourney.ts`). `ItineraryStep` / `TravelConnector` were only names in
+  `06_DESIGN_SYSTEM.md`. `types/itinerary.ts` (place-based) is left untouched: a journey is made of *experiences*.
+- **Domain (`types/journey.ts`):** `JourneyStatus` = `draft | active | completed`; screens read `JourneyState` =
+  `none | active | completed` (the brief's NO_ACTIVE / ACTIVE / COMPLETED). `Journey` holds context, start location,
+  start/end time, totals and ordered `JourneyStep`s (experienceId, order, arrival, duration, travel duration/distance/mode),
+  `currentStep`, `startedAt`, `completedAt`.
+- **Layers:** `JourneyRepository` (`getCurrent` / `save` / `clear`) — the mock keeps one current journey, persisted with the
+  storage helper (`roam.journey.current`). Planning and suggestions are pure functions (`features/journey/lib/plan.ts`,
+  `suggest.ts`), so a backend repository only stores. `journeyStore.ts` is a small external store
+  (`useSyncExternalStore`) shared by Experience detail, the summary and the active screen; every mutation saves through
+  the repository first. No provider was added to the root layout.
+- **Draft ≠ active:** the draft lives in `JourneyDraftProvider`, mounted by the `/journey/create` layout (the Search layout
+  pattern, D-72). Leaving the flow drops it; the active journey only changes on "Créer mon parcours". A second active
+  journey is refused (`ActiveJourneyExistsError`, shown with "Voir mon parcours"); a completed one is replaced.
+- **Suggestions reuse the existing approach, not a new system:** the mock experience pool and doc 07's "filter impossible
+  candidates, then explainable score". Budget, duration and distance from the start filter; ambiance (existing `Mood`
+  values), proximity and rating rank. One human reason per card (mood / nearby / budget); constraints are relaxed with a
+  notice rather than returning nothing. Up to 3 are pre-selected while they fit the time available.
+- **Travel without a routing API:** straight-line distance; on foot up to 1.5 km (4.8 km/h), otherwise métro (24 km/h + 6 min).
+  Budget = sum of each experience's bracket midpoint ("≈ 26 €"), since the mock has brackets, not prices.
+- **Starting point:** there is no geolocation in the app (no `expo-location`, no permission), so none was added. "Ma
+  position" and a typed address resolve to central Paris (`DEFAULT_REGION`), and the screen says it is approximate.
+  "Choisir un lieu" offers a short list of Paris spots (`data/startSpots.ts`).
+- **Ambiances:** Chill, Découverte, Gourmand, Culture, Sport, Romantique, Festif — existing `Mood` values that the mock
+  experiences actually carry. The brief's "Aventure" has no matching data, so it is not offered.
+- **Reused:** `MoodTile`, `ChoiceRow`, `ProgressBars` (onboarding), `Button`, `Chip`, `TextField`, `FadeInUp`,
+  `StickyActionFooter`, `ConfirmationModal` (quit / added dialogs, navigating in `onExited`, D-78), `RoamMap` +
+  `toMapMarkers` (photo markers), `getCategoryLabel`, `showToast`. New components live in `features/journey/components`:
+  `JourneyStepCard` (the design system's ItineraryStep), `TravelConnector`, `JourneyTimeline`, `JourneyStats`,
+  `SuggestionCard`, `JourneyMapPreview`, `JourneyFlowHeader`.
+- **Reorder:** move up / move down buttons, not drag-and-drop (no gesture/list library; accessible). Drag can come later.
+- **Experience detail:** `useJourneyCta` — "Créer mon parcours" → the flow with that experience pre-selected; with an active
+  journey, "Ajouter au parcours" → added (never a new journey, never twice: "Déjà dans ton parcours") → "Ajouté à ton
+  parcours ✓" with "Voir mon parcours" / "Fermer".
+- **Active journey (`/journey/[id]`):** "Commencer" sets `startedAt`; "Continuer mon parcours" marks the current step done
+  and moves on; "Terminer mon parcours" completes it. "+ Ajouter une expérience" goes to Discover. The screen created from
+  the summary *replaces* the creation flow, so back returns to where the flow was opened.
+- **Profile:** the "Parcours en cours" section is removed, with `ActiveJourneyCard`, `useActiveJourney`,
+  `data/activeJourney.ts` and the `profile.journey.*` keys. Nothing else in the Profile changed. The `itinerary/create`
+  route and `CreateJourneyPlaceholder` are deleted (the route becomes `journey/create`).
+- **Open points:** entry point to an active journey besides Experience detail (a tab or Home card is a product call);
+  real geolocation/geocoding and routing; drag-and-drop reordering; opening "Créer mon parcours" from an experience shown
+  *inside* the flow pushes a second flow on top.
+- **Tests:** `lib/plan`, `lib/suggest`, `journeyStore` (DRAFT→ACTIVE, one active, no duplicates, reorder/remove,
+  progression, load error), `journeyRoutes` (full flow on the real route tree, seeded experience, reorder/remove, leave
+  with/without input, add from detail once + "Voir mon parcours", progression to completed, error/empty states, Search
+  round trip keeps the draft, empty and unknown journeys). Updated: the detail CTA and route tests (placeholder → flow)
+  and the Profile test (section gone).
