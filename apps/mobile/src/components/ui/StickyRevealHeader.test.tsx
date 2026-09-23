@@ -31,6 +31,22 @@ function Wrapper({ title, onBack }: { title?: string; onBack?: () => void }) {
   );
 }
 
+function CenterSlotWrapper({ onPressSearch }: { onPressSearch: () => void }) {
+  const scrollY = useSharedValue(0);
+  return (
+    <StickyRevealHeader
+      title="Ignored when centerSlot is given"
+      centerSlot={
+        <Pressable accessibilityRole="search" onPress={onPressSearch}>
+          <RNText>Search bar</RNText>
+        </Pressable>
+      }
+      scrollY={scrollY}
+      revealOffset={120}
+    />
+  );
+}
+
 describe('StickyRevealHeader', () => {
   it('renders the title when given one', async () => {
     await renderWithProviders(<Wrapper title="Rooftop Sunset" />);
@@ -49,5 +65,21 @@ describe('StickyRevealHeader', () => {
 
     await fireEvent.press(screen.getByRole('button', { name: 'Retour' }));
     expect(onBack).toHaveBeenCalledTimes(1);
+  });
+
+  it('renders centerSlot instead of title when both are given (sprint 6 "sticky search", D-69)', async () => {
+    await renderWithProviders(<CenterSlotWrapper onPressSearch={jest.fn()} />);
+
+    expect(screen.queryByText('Ignored when centerSlot is given')).toBeNull();
+    expect(screen.getByRole('search')).toBeOnTheScreen();
+  });
+
+  it('keeps centerSlot content interactive regardless of scroll position', async () => {
+    const onPressSearch = jest.fn();
+    await renderWithProviders(<CenterSlotWrapper onPressSearch={onPressSearch} />);
+
+    await fireEvent.press(screen.getByRole('search'));
+
+    expect(onPressSearch).toHaveBeenCalledTimes(1);
   });
 });

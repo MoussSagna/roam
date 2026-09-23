@@ -160,7 +160,7 @@ existing `ExperienceRepository`/`CategoryRepository` (`useHomeExperiences`), not
 | Section                             | Component                                                              | Notes                                                                                                     |
 | ----------------------------------- | ---------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------- |
 | Hero carousel                       | `features/home/components/HeroCarousel.tsx`                            | Full-bleed, swipeable, paging `ScrollView`; dots (`CarouselDots`) + prev/next; the 5 `isHero` experiences |
-| Search bar                          | `components/ui/SearchBar.tsx`                                          | Opens the shared `/search` (`context: 'home'`); see "Search" below                                        |
+| Search bar                          | `components/ui/SearchBar.tsx`                                          | Opens the shared `/search` (`context: 'home'`); sticky — see "Sticky headers" (D-69)/"Search" below       |
 | Selon ton humeur                    | `Chip` (icon slot) + `features/home/data/moods.ts`                     | 5 mood chips, single choice, drives "Des idées pour toi"                                                  |
 | Les expériences les plus populaires | `features/home/components/ExperienceCard.tsx`                          | The 3 `isPopular` experiences                                                                             |
 | Lieux proches de toi                | `features/home/components/NearbyCard.tsx` + `data/nearbyCategories.ts` | 5 static category shortcuts (no geolocation)                                                              |
@@ -190,7 +190,7 @@ repositories) — not a social feed: no profiles, followers, stories, comments o
 | Section                        | Component                                                                     | Notes                                                                                                                                            |
 | ------------------------------ | ----------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
 | Secondary nav                  | `features/discover/components/DiscoverTabs.tsx`                               | "Pour toi" / "Tendances" / "À proximité" / "Collections", `FlatList horizontal`; narrows which sections show (`DiscoverScreen`'s `TAB_SECTIONS`) |
-| Search bar                     | `components/ui/SearchBar.tsx`                                                 | Reused from Home; opens the shared `/search` (`context: 'discover'`); see "Search" below                                                        |
+| Search bar                     | `components/ui/SearchBar.tsx`                                                 | Reused from Home; opens the shared `/search` (`context: 'discover'`); sticky — see "Sticky headers" (D-69)/"Search" below                        |
 | Sélection ROAM                 | `RoamSelectionSection.tsx` + `DiscoverCollectionCard` (`variant="hero"`)      | Featured (`Collection.isFeatured`) editorial collections, `FlatList horizontal`                                                                  |
 | Suggestions pour toi           | `SuggestionsSection.tsx` + `DiscoverMoodCard.tsx` + `data/suggestionMoods.ts` | Ce soir / Entre amis / En couple / Culture / Nature / Activités — presentational only, `FlatList horizontal`                                     |
 | Grande expérience immersive    | `components/ImmersiveExperienceCard.tsx` + `lib/pickImmersiveExperience.ts`   | One fixed card (not a carousel); static editorial copy, links to a picked experience                                                             |
@@ -472,6 +472,28 @@ generalized from experience detail's own header for **future screens with the sa
 - Not reduced-motion gated (see the component's own doc comment): the crossfade is a direct function
   of scroll position, not a timed animation, so there's nothing to suppress — same as
   `ExperienceDetailHeader`.
+
+**Sticky search (sprint 6, `docs/DECISIONS.md` D-69):** Home's and Discover's `SearchBar`s are now
+reachable while scrolling. The in-flow `SearchBar` on each screen is untouched (same position, same
+"at load" behavior); a second, floating instance of the same `SearchBar` fades in once the in-flow one
+has scrolled past the sticky zone — the exact reveal-past-`revealOffset` idiom above, just with a
+`SearchBar` instead of a title. Two different mechanisms, chosen per screen rather than forced into one:
+
+- **Discover** has no existing sticky header, so it uses `StickyRevealHeader` directly, via its new
+  `centerSlot?: ReactNode` prop (additive, `title`-only callers unaffected) — content that must stay
+  tappable once revealed, unlike a title (`pointerEvents="box-none"` instead of `"none"`).
+- **Home already has one** (`HomeHeader`, the notification bell) with its own tested, direction-based
+  hide/show contract (`useScrollDirection` — hides on a sustained scroll down, reveals on any scroll
+  up). Changing that contract wasn't asked for, so `HomeHeader` was extended in place instead of
+  switched to `StickyRevealHeader`: a new `searchSlot`/`showSearch` prop pair adds a second row that
+  rides along with the existing bell row's visibility — one zone, not two overlapping ones. `showSearch`
+  is its own signal (scrolled past the Hero, via the new `features/home/lib/heroHeight.ts`, mirroring
+  `features/experiences/lib/heroHeight.ts`), independent of the bell's `visible`/`atTop`.
+- A momentary overlap between the in-flow and the floating instance during the crossfade is expected
+  and harmless (both trigger the identical navigation) — the same characteristic the title-reveal
+  pattern above already has, unaddressed, across every `StickyRevealHeader` screen; no extra
+  accessibility-hiding was added for search either, to stay consistent rather than introduce a new
+  inconsistency.
 
 ### Toasts
 

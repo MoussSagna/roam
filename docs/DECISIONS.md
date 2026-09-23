@@ -2292,3 +2292,68 @@ exact same flow, only the entry context (placeholder copy) differs.
   `searchRoutes.test.tsx` (same `renderRouter`-over-the-real-`src/app` shape as `discoverRoutes.test.tsx`)
   covering Home → Search, Discover → Search, Search → Experience Detail, and back navigation. Existing
   `HomeScreen.test.tsx`/`DiscoverScreen.test.tsx` gained the new `onPress`/`onPressFilter` assertions.
+
+### D-69 — Sticky search on Home and Discover: two mechanisms, one shared idiom, no forced unification
+
+Follow-up requested right after D-68: neither `SearchBar` was reachable while scrolling. Home
+complicated this further — it already has a floating sticky header (`HomeHeader`, the notification
+bell); a second, independent sticky search bar would have been exactly the "two overlapping sticky
+zones" the brief ruled out.
+
+**The decision that shaped everything else**: `HomeHeader`'s bell has three existing, deliberate tests
+(`HomeScreen.test.tsx`) asserting it hides on a sustained scroll down and reveals on scroll up
+(`useScrollDirection`, D-46/D-47). Nothing in this task asked to change that interaction, so it was
+treated as a hard constraint, not a detail to redesign around — the whole solution was built to
+preserve it exactly rather than switch Home to a different sticky mechanism for the sake of a single
+shared component.
+
+- **Discover** — no existing sticky header, so it gets `StickyRevealHeader` directly, via a new
+  `centerSlot?: ReactNode` prop (`components/ui/StickyRevealHeader.tsx`), mutually exclusive with
+  `title`. It renders inside the exact same crossfading `Animated.View` the title already used (same
+  `revealStyle`/`interpolate`, untouched) — the only difference is `pointerEvents`: `"none"` for a
+  title (decorative), `"box-none"` for `centerSlot` (must stay tappable once revealed — a `SearchBar`,
+  unlike a title, is the whole point of showing it). All 7 `title`-only callers (Profile, Settings,
+  Preferences, Favorites, History, Statistics, Language, Theme) are byte-for-byte unaffected — the new
+  branch only activates when `centerSlot` is passed. `DiscoverScreen.tsx` adds one
+  `useSharedValue(0)` `scrollY`, folded into its existing `onScroll` (same "one handler, several
+  consumers" composition `HomeScreen`/`ProfileScreen` already use), and a `SEARCH_REVEAL_OFFSET = 120`
+  local constant — the same kind of round, unmeasured proxy the 7 `HEADER_REVEAL_OFFSET` screens
+  already use, sized a bit larger for Discover's taller two-line title block above the bar.
+- **Home** — `HomeHeader` (`features/home/components/`) is extended in place, not migrated to
+  `StickyRevealHeader`: a new `searchSlot?: ReactNode` + `showSearch?: boolean` prop pair adds a second
+  row below the existing (untouched) bell row, inside its own `MotiView` animating `height`/`opacity`
+  between `0` and a fixed row height as `showSearch` toggles — a smooth grow/fade, never an instant
+  snap. The whole zone's `visible`/`atTop`-driven translateY/opacity/wash — what the three existing
+  tests assert on — is untouched; the search row rides along with it, so it hides when the bell hides
+  and reappears when it reappears. This *is* "one zone, not two": literally the same floating element,
+  not two components kept in sync. `showSearch` is a new, independent signal (scrolled past the Hero),
+  computed in `HomeScreen.tsx` from a new `features/home/lib/heroHeight.ts` (`HERO_HEIGHT_RATIO`,
+  `HERO_MIN_HEIGHT`, `getHeroHeight`) — Home's own hero-height constants relocated out of
+  `HeroCarousel.tsx` (same numbers, zero visual change) so `HomeScreen` can compute
+  `getHeroHeight(windowHeight) - HEADER_HEIGHT` (now exported from `HomeHeader.tsx`) without
+  duplicating them, mirroring `features/experiences/lib/heroHeight.ts`'s existing shape rather than a
+  hardcoded guess — Home's Hero varies far more by device than Discover's title block does, so a
+  measured formula was worth it here where a round constant wasn't.
+- **Why two mechanisms, not one shared component**: `StickyRevealHeader`'s "always pinned, wash
+  crossfades" model and `HomeHeader`'s "hides on sustained scroll down" model are genuinely different
+  UX contracts, and Home's is the one with three tests already codifying it as intentional. Forcing
+  Home onto `StickyRevealHeader` would have been a real, unrequested behavior change (the bell would
+  stop hiding on scroll-down) disguised as a refactor. What *is* shared: the visual language (Moti,
+  blur + `surface`-tinted wash, safe-area handling, `useReduceMotion`) and the underlying idiom (an
+  in-flow element untouched, a floating twin that reveals past an offset) — applied through whichever
+  existing, already-tested mechanism actually fits each screen.
+- **No visual duplicate, and no new accessibility-hiding either**: both the in-flow and the floating
+  `SearchBar` always trigger the identical `router.push('/search', ...)`, so a brief overlap during the
+  crossfade window is inconsequential — tapping "the search bar" does the right thing regardless of
+  which instance intercepts the touch. This is exactly the level of care the existing title-reveal
+  pattern already has (the in-flow title on 7 screens is never hidden from accessibility once the
+  sticky one crossfades in, either) — matching it was a deliberate choice to avoid a new inconsistency
+  and scope creep, not an oversight.
+- **Tests updated for the new second instance**: `DiscoverScreen.test.tsx`/`HomeScreen.test.tsx`/
+  `searchRoutes.test.tsx`/`onboardingRoutes.test.tsx` (Home is reached at the end of onboarding) now use
+  `getAllByRole('search')`/`getAllByText(...)` where a query used to assume a single `SearchBar`, plus
+  new tests: `StickyRevealHeader.test.tsx` covers `centerSlot` (renders instead of `title`, stays
+  interactive — same "no crossfade assertion, the Jest Reanimated mock stubs `interpolate`" scope as
+  its existing tests); `HomeScreen.test.tsx` covers pressing the header-docked search bar once
+  scrolled past the Hero. The three pre-existing notification-button scroll tests were **not** changed
+  and still pass.

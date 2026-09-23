@@ -155,7 +155,8 @@ describe('onboarding routes', () => {
     });
 
     expect(utils.getPathname()).toBe('/home');
-    expect(screen.getByText('Explorer un lieu, une activité…')).toBeOnTheScreen();
+    // Two live `SearchBar`s on Home since sticky search (D-69) — in-flow + `HomeHeader`'s docked one.
+    expect(screen.getAllByText('Explorer un lieu, une activité…').length).toBeGreaterThan(0);
     // The onboarding is replaced, not stacked: back does not return to it.
     expect(router.canGoBack()).toBe(false);
   });

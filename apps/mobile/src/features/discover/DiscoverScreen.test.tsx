@@ -32,13 +32,16 @@ describe('DiscoverScreen (sprint 6 — immersive discovery)', () => {
     expect(
       screen.getByText("Des lieux, des expériences, des idées pour aujourd'hui."),
     ).toBeOnTheScreen();
-    expect(screen.getByText('Que veux-tu découvrir ?')).toBeOnTheScreen();
+    // Two live instances (in-flow + the sticky one from `StickyRevealHeader`'s `centerSlot`,
+    // sprint 6 "sticky search", D-69) — both render the same placeholder.
+    expect(screen.getAllByText('Que veux-tu découvrir ?').length).toBeGreaterThan(0);
   });
 
   it('opens Search (context: discover) when the search bar is pressed', async () => {
     await renderDiscover();
 
-    await fireEvent.press(screen.getByRole('search'));
+    const [firstSearchBar] = screen.getAllByRole('search');
+    await fireEvent.press(firstSearchBar);
 
     expect(mockPush).toHaveBeenCalledWith({
       pathname: '/search',
@@ -49,11 +52,28 @@ describe('DiscoverScreen (sprint 6 — immersive discovery)', () => {
   it('opens Search with the filter sheet when the filter button is pressed', async () => {
     await renderDiscover();
 
-    await fireEvent.press(screen.getByRole('button', { name: 'Filtres' }));
+    const [firstFilterButton] = screen.getAllByRole('button', { name: 'Filtres' });
+    await fireEvent.press(firstFilterButton);
 
     expect(mockPush).toHaveBeenCalledWith({
       pathname: '/search',
       params: { context: 'discover', openFilters: '1' },
+    });
+  });
+
+  it('opens Search identically from both the in-flow and the sticky search bar (D-69)', async () => {
+    await renderDiscover();
+
+    // Two live instances: the in-flow `SearchBar` and the floating one from `StickyRevealHeader`'s
+    // `centerSlot` — both must trigger the exact same navigation.
+    const searchBars = screen.getAllByRole('search');
+    expect(searchBars.length).toBe(2);
+
+    await fireEvent.press(searchBars[1]);
+
+    expect(mockPush).toHaveBeenCalledWith({
+      pathname: '/search',
+      params: { context: 'discover' },
     });
   });
 

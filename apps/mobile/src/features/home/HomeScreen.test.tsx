@@ -49,14 +49,17 @@ describe('HomeScreen (sprint 5 — discovery)', () => {
   it('shows the search bar and the filter button', async () => {
     await renderHome();
 
-    expect(screen.getByText('Explorer un lieu, une activité…')).toBeOnTheScreen();
-    expect(screen.getByRole('button', { name: 'Filtres' })).toBeOnTheScreen();
+    // Two live instances (in-flow + `HomeHeader`'s docked `searchSlot`, sprint 6 "sticky search",
+    // D-69) — both render the same placeholder.
+    expect(screen.getAllByText('Explorer un lieu, une activité…').length).toBeGreaterThan(0);
+    expect(screen.getAllByRole('button', { name: 'Filtres' }).length).toBeGreaterThan(0);
   });
 
   it('opens Search (context: home) when the search bar is pressed', async () => {
     await renderHome();
 
-    await fireEvent.press(screen.getByRole('search'));
+    const [firstSearchBar] = screen.getAllByRole('search');
+    await fireEvent.press(firstSearchBar);
 
     expect(mockPush).toHaveBeenCalledWith({
       pathname: '/search',
@@ -67,11 +70,33 @@ describe('HomeScreen (sprint 5 — discovery)', () => {
   it('opens Search with the filter sheet when the filter button is pressed', async () => {
     await renderHome();
 
-    await fireEvent.press(screen.getByRole('button', { name: 'Filtres' }));
+    const [firstFilterButton] = screen.getAllByRole('button', { name: 'Filtres' });
+    await fireEvent.press(firstFilterButton);
 
     expect(mockPush).toHaveBeenCalledWith({
       pathname: '/search',
       params: { context: 'home', openFilters: '1' },
+    });
+  });
+
+  it('opens Search identically from the header-docked search bar once scrolled past the Hero (D-69)', async () => {
+    await renderHome();
+
+    const searchBars = screen.getAllByRole('search');
+    expect(searchBars.length).toBe(2);
+
+    const homeScroll = screen.getByTestId('home-scroll');
+    // Past the Hero (docks the search row) then a small scroll up — same "sustained down hides,
+    // any up reveals immediately" contract the notification-button tests above rely on
+    // (`useScrollDirection`), so the header (bell + docked search) is visible again to press.
+    await fireEvent.scroll(homeScroll, { nativeEvent: { contentOffset: { y: 900 } } });
+    await fireEvent.scroll(homeScroll, { nativeEvent: { contentOffset: { y: 870 } } });
+
+    await fireEvent.press(searchBars[1]);
+
+    expect(mockPush).toHaveBeenCalledWith({
+      pathname: '/search',
+      params: { context: 'home' },
     });
   });
 

@@ -12,6 +12,7 @@ import { Button, Text } from '@/components/ui';
 import { useTheme } from '@/theme';
 import type { Experience } from '@/types';
 
+import { getHeroHeight } from '../lib/heroHeight';
 import { CarouselDots } from './CarouselDots';
 
 type HeroCarouselProps = {
@@ -22,9 +23,6 @@ type HeroCarouselProps = {
   topInset: number;
 };
 
-const HERO_HEIGHT_RATIO = 0.56;
-const HERO_MIN_HEIGHT = 420;
-
 /**
  * Home's hero — the "sortie du moment" carousel (sprint 5 §4-§5): full-bleed, swipeable, paginated
  * with dots. Slides are plain paging `ScrollView` pages (no new dependency): position is tracked from
@@ -34,7 +32,7 @@ export function HeroCarousel({ experiences, onPressExperience, topInset }: HeroC
   const { t } = useTranslation();
   const { isDark } = useTheme();
   const { width, height } = useWindowDimensions();
-  const heroHeight = Math.max(HERO_MIN_HEIGHT, Math.round(height * HERO_HEIGHT_RATIO));
+  const heroHeight = getHeroHeight(height);
   const [activeIndex, setActiveIndex] = useState(0);
   const scrollRef = useRef<ScrollView>(null);
 

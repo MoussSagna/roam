@@ -21,8 +21,13 @@ const DEFAULT_FADE_RANGE = 60;
 
 export type StickyRevealHeaderProps = {
   /** Optional: rendered centered, crossfading in with the background. Omit for a header that only
-   * reveals its background (no title to show). */
+   * reveals its background (no title to show). Mutually exclusive with `centerSlot` — if both are
+   * given, `centerSlot` wins. */
   title?: string;
+  /** Alternative to `title` for content that must stay tappable once revealed (e.g. a `SearchBar`) —
+   * a title is decorative-only (`pointerEvents="none"`), so this renders in the same crossfading slot
+   * without that restriction (`pointerEvents="box-none"` instead). Sprint 6 "sticky search". */
+  centerSlot?: ReactNode;
   /** Left slot (typically a back button) — the header renders none itself; compose whatever the
    * screen needs (e.g. an existing `IconButton`), same "component owns chrome, screen owns content"
    * split as `StickyActionFooter`. */
@@ -39,11 +44,12 @@ export type StickyRevealHeaderProps = {
 };
 
 /**
- * Sticky header whose background and (optional) title crossfade in once the screen has scrolled past
- * `revealOffset` — starts transparent, so it reads as part of the content (a hero photo, typically)
- * until the content's own title scrolls out of view. Generalizes experience detail's
+ * Sticky header whose background and (optional) title/`centerSlot` crossfade in once the screen has
+ * scrolled past `revealOffset` — starts transparent, so it reads as part of the content (a hero photo,
+ * typically) until the content's own title/bar scrolls out of view. Generalizes experience detail's
  * `ExperienceDetailHeader` (`docs/DECISIONS.md` D-49) for future screens with the same shape; that
- * screen's header is untouched (D-55) — see the decision log for why.
+ * screen's header is untouched (D-55) — see the decision log for why. `centerSlot` (sprint 6 "sticky
+ * search", D-69) reuses this exact mechanism for Discover's floating `SearchBar` instead of a title.
  *
  * The reveal background is `BlurView` + a `surface`-tinted wash (the same glass recipe `RoamTabBar`
  * already uses, D-41), not just a blur: a blur alone only reads over a photo, and this header may sit
@@ -55,6 +61,7 @@ export type StickyRevealHeaderProps = {
  */
 export function StickyRevealHeader({
   title,
+  centerSlot,
   leftSlot,
   rightSlot,
   scrollY,
@@ -99,7 +106,14 @@ export function StickyRevealHeader({
       >
         {leftSlot}
 
-        {title ? (
+        {centerSlot ? (
+          <Animated.View
+            style={[{ flex: 1, marginHorizontal: 12 }, revealStyle]}
+            pointerEvents="box-none"
+          >
+            {centerSlot}
+          </Animated.View>
+        ) : title ? (
           <Animated.View
             style={[{ flex: 1, marginHorizontal: 12 }, revealStyle]}
             pointerEvents="none"

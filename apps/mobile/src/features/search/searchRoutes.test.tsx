@@ -45,7 +45,10 @@ describe('Search navigation (sprint 6)', () => {
     const utils = await renderApp();
     await act(() => router.navigate('/home'));
 
-    await fireEvent.press(screen.getByRole('search'));
+    // Two live `SearchBar`s once sticky search (D-69) is in place — in-flow + `HomeHeader`'s docked
+    // one — either must land on the same `/search` route.
+    const [firstSearchBar] = screen.getAllByRole('search');
+    await fireEvent.press(firstSearchBar);
 
     expect(utils.getPathname()).toBe('/search');
     expect(screen.queryByText(/Unmatched Route/i)).toBeNull();
@@ -56,7 +59,9 @@ describe('Search navigation (sprint 6)', () => {
     const utils = await renderApp();
     await act(() => router.navigate('/discover'));
 
-    await fireEvent.press(screen.getByRole('search'));
+    // Two live `SearchBar`s (in-flow + `StickyRevealHeader`'s `centerSlot`, D-69).
+    const [firstSearchBar] = screen.getAllByRole('search');
+    await fireEvent.press(firstSearchBar);
 
     expect(utils.getPathname()).toBe('/search');
     expect(screen.queryByText(/Unmatched Route/i)).toBeNull();
@@ -79,7 +84,8 @@ describe('Search navigation (sprint 6)', () => {
   it('Search back button returns to the screen it was opened from', async () => {
     const utils = await renderApp();
     await act(() => router.navigate('/discover'));
-    await fireEvent.press(screen.getByRole('search'));
+    const [firstSearchBar] = screen.getAllByRole('search');
+    await fireEvent.press(firstSearchBar);
     expect(utils.getPathname()).toBe('/search');
 
     await fireEvent.press(screen.getByRole('button', { name: 'Retour' }));
