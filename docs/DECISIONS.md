@@ -1865,3 +1865,108 @@ Dark, System — used to resolve the one point of genuine uncertainty (see below
 - **Not done on purpose**: verifying the exact row order/spacing against the real mockup image (see
   above, flagged for human review); a route-tree test (standalone component test, same convention as
   every other profile sub-screen this sprint).
+
+## Logout confirmation, navigation fix, general audit (2026-09-23)
+
+### D-62 — `ConfirmationModal` (generic, reusable); logout confirmation; `AuthTopBar`'s dead back button fixed at the source
+
+End-of-sprint stabilization pass, from a provided reference image (a centered dialog, "Se déconnecter ?" /
+reassurance copy / Annuler + Se déconnecter). Three things, in dependency order: a reusable confirmation
+dialog, wiring it into logout, and fixing a real, pre-existing navigation bug the brief flagged
+independently ("Login affiche un bouton retour qui plante").
+
+- **`ConfirmationModal` (`components/ui/`) is a centered card, not a bottom sheet.** The reference image
+  shows visible margins on every side (not flush to the bottom edge), so a bottom sheet would have been
+  copying the wrong pattern despite the decorative handle bar at the top (kept anyway — it's in the
+  image, and it's harmless on a centered card). Built on RN's own `Modal` (`transparent`,
+  `onRequestClose` wired to `onCancel` — the Android hardware-back handler, for free) since no
+  modal/bottom-sheet library exists anywhere in this codebase yet (grepped first) — no new dependency.
+- **Exit animation needed a small, deliberate state pattern, not a naïve `useEffect` + `setState`.** RN's
+  `Modal` disappears the instant `visible` goes `false`, with no chance for an exit fade/scale to play.
+  Fix: an internal `shouldRender` state that mirrors `visible` immediately when it turns `true` (adjusted
+  **during render**, not inside an effect — React's own documented "adjusting state when a prop changes"
+  recipe, which avoids both an extra blank frame and this project's `react-hooks/set-state-in-effect`
+  lint rule, which flags a synchronous `setState` inside an effect body but not one inside a `setTimeout`
+  callback), and only flips back to `false` after `EXIT_DURATION_MS` (180 ms) once `visible` turns
+  `false`, via a timeout in a `useEffect` — the legitimate "subscribe to a timer, update state in its
+  callback" shape the same lint rule's own message describes as fine.
+- **`variant: 'default' | 'destructive'` tints the icon and picks the confirm button's variant** —
+  logout itself uses `default` (the reference image's confirm button is ROAM's ordinary primary green,
+  not red; "tes données resteront en sécurité" is reassurance copy, not a scare warning), but the prop is
+  real and wired for a future confirmation that does need it (e.g. delete account).
+- **`Button` gained a third variant, `destructive` (`bg-error`), to make that prop actually do
+  something** — additive, every existing call site unaffected, same "extending an existing primitive
+  beats a one-off style override" precedent as `loading`/`leadingIcon` (D-29) and `Chip`'s `icon` (D-45).
+  This was necessary, not optional: NativeWind "ignores class order for conflicts" (`DEVELOPMENT.md`'s
+  own styling convention) — passing a `bg-error` override via `className` to the existing `primary`
+  variant would silently not have worked, only a real variant does.
+- **The component owns display/animation/interaction only — no logout logic inside it.** `ProfileScreen`
+  still owns `handleLogout` (`logout()` then `router.replace('/auth/login')`, unchanged from before this
+  session) and now also a `logoutModalVisible` boolean; the row opens the modal instead of calling
+  `handleLogout` directly, `onCancel` closes it, `onConfirm` calls the existing handler. New
+  `profile.logoutConfirm.title`/`description` i18n keys; `confirmLabel`/`cancelLabel` reuse the existing
+  `profile.logout`/`common.cancel` keys rather than duplicating that text under a new key.
+- **The actual back-button bug, found by reading `AuthTopBar.tsx`, not by guessing**: its `Pressable`
+  rendered unconditionally and called `router.back()` unconditionally. On the _normal_ auth flow (Login
+  reached by `push` from `auth/index`, D-44's own "going back to the entry screen from Login is existing,
+  tested behavior... the brief never asked to change") that's correct and was already working —
+  `AppRoutes.test.tsx` Scenario 4 already asserted `router.canGoBack() === false` right after logout, which
+  meant `Stack.Protected`'s guard-swap history purge (D-44) was already doing its job at the navigator
+  level. The bug was purely presentational: a back button rendered and pressable even though there was
+  provably nothing behind it, which is what "une erreur apparaît" on press describes (a `GO_BACK` action
+  with no handler). **Fix, entirely inside `AuthTopBar`**: `const canGoBack = router.canGoBack();` gates
+  whether the `Pressable` renders at all (a same-size empty `View` keeps the wordmark's position
+  unchanged either way) — one check, in the one component responsible for rendering that button, not
+  `canGoBack()` guards scattered across call sites (the brief explicitly warned against that shape of
+  patch). Every other screen using `AuthTopBar` (Register, ForgotPassword, ResetCode, NewPassword) is
+  always reached by `push`, so `canGoBack()` is always `true` for them today — zero behavior change,
+  confirmed by their existing test suites passing unmodified once their `useRouter` mocks gained
+  `canGoBack: () => true` (see below).
+- **No navigation-reset mechanism was changed.** `router.replace('/auth/login')` (not `push`) was already
+  the call in `ProfileScreen`, and `Stack.Protected`'s guard swap was already correctly purging history —
+  both pre-dated this session and are exactly what the brief asked for ("supprimer l'historique
+  permettant de revenir dans l'application authentifiée"), already true, already tested. Fixing the
+  presentational bug was the actual missing piece, not a deeper navigation-architecture problem.
+- **Five existing auth-screen test files needed a one-line mock update, not a rewrite**: `LoginScreen`,
+  `RegisterScreen`, `ForgotPasswordScreen`, `ResetCodeScreen`, `NewPasswordScreen` each mock `useRouter`
+  without a `canGoBack`, which `AuthTopBar` now calls unconditionally — every one of them failed with
+  "canGoBack is not a function" until their mock gained `canGoBack: () => true` (matching their real,
+  unchanged behavior: back is always available on these screens' own tests). Found by running the full
+  suite after the fix, not by inspection — the right way to catch this class of change.
+- **Two more existing tests broke on contact, both expected**: `ProfileScreen.test.tsx`'s old "pressing
+  'Se déconnecter' logs out" test (logout is no longer immediate — split into three tests: opens the
+  modal without logging out, confirming logs out, cancelling doesn't) and `AppRoutes.test.tsx` Scenario 4
+  (same reason; rewritten to press through the modal, plus a new Scenario 4b that exercises the
+  cancel path and asserts — at the real, unmocked router level this time — that Login shows no "Retour"
+  button after logout, the end-to-end proof of the fix). Disambiguating "Se déconnecter" queries once
+  both the menu row and the modal's confirm button can be on screen at once needed `getAllByRole` (row is
+  always index `0`, confirm is always the last) rather than the usual single `getByRole` — a just-cancelled
+  modal can still be mid exit-animation (still mounted, `EXIT_DURATION_MS` not yet elapsed) when a test
+  presses the row again, so an assertion that it had already fully unmounted proved unreliable under this
+  suite's fake-timer setup and was dropped in favor of asserting the behavior that actually matters
+  (no premature navigation).
+- **Animation**: backdrop + card both fade in (card also scales/translates in slightly), `useReduceMotion()`
+  drops the scale/translate and shortens the duration to `0` — same "shorten/simplify, don't fully
+  redesign" compromise as every other reduce-motion screen this sprint. Respects the project's Moti/
+  Reanimated-only rule; no new animation dependency.
+- **Audit findings** (ran full `pnpm check` + coverage after the fix, not just the new code): no other
+  screen renders an unconditional back button the same way `AuthTopBar` did (grepped every
+  `router.back()` call site); no other test file's `useRouter` mock was missing a method a component now
+  calls; coverage sits at 91.8% statements / 75.5% branches / 92.97% lines project-wide (see
+  `08_AGENT_TODO.md` Phase G for the standing "not done on purpose" list this doesn't change) — the
+  weakest spots remain framework bootstrap code with no meaningful branches to test
+  (`app/_layout.tsx`, `hooks/useBootstrap.ts`, `theme/navigationTheme.ts`, all pre-existing, all 0%
+  branches, none touched this session) and a handful of single-path decorative icon components
+  (`GoogleIcon`, `AppleIcon`, `LotusIcon`, `RunnerIcon`, `EuroGlyph` — one SVG path each, no real branch
+  to exercise). Every file touched this session individually sits at 100% statements
+  (`AuthTopBar`/`AppRoutes` are additionally 100% branches too); `ConfirmationModal`'s remaining branch
+  gaps are the `reduceMotion === true` paths and the unused-by-logout `destructive` variant, neither
+  exercised by `ProfileScreen`'s own tests since logout doesn't use them — not artificially padded with
+  tests that don't reflect a real call site.
+- **Not done on purpose**: a bottom-sheet variant of `ConfirmationModal` (the reference image reads as
+  centered, not a sheet — see above); wiring `variant="destructive"` anywhere yet (nothing in this sprint
+  needs it); adding `canGoBack`-based guards to any _other_ back button in the app (grepped, none share
+  `AuthTopBar`'s bug — each existing gesture exception in `AppRoutes.tsx` is a screen with no back button
+  at all, a different, already-correct case, D-53); a `getCurrentSession()`-style new auth abstraction
+  (the brief's own §7 keeps the mocked session exactly as it is — `AuthProvider`/`useAuth`, D-44 — no
+  API, JWT, Prisma or backend introduced).

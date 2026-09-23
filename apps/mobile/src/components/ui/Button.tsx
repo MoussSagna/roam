@@ -7,11 +7,20 @@ import { useTheme } from '@/theme';
 
 import { Text } from './Text';
 
-type ButtonVariant = 'primary' | 'secondary';
+type ButtonVariant = 'primary' | 'secondary' | 'destructive';
 
 const containerClasses: Record<ButtonVariant, string> = {
   primary: 'bg-primary',
   secondary: 'bg-surface border border-border',
+  destructive: 'bg-error',
+};
+
+/** `primary` and `destructive` both sit on a saturated background and need the same light label/icon
+ * color; only `secondary` reads with the default text tone. */
+const NEEDS_LIGHT_CONTENT: Record<ButtonVariant, boolean> = {
+  primary: true,
+  secondary: false,
+  destructive: true,
 };
 
 export type ButtonProps = Omit<PressableProps, 'children'> & {
@@ -37,7 +46,7 @@ export function Button({
   ...props
 }: ButtonProps) {
   const { colors } = useTheme();
-  const isPrimary = variant === 'primary';
+  const needsLightContent = NEEDS_LIGHT_CONTENT[variant];
   const isDisabled = !!disabled || loading;
 
   return (
@@ -56,18 +65,18 @@ export function Button({
       {...props}
     >
       {loading ? (
-        <ActivityIndicator color={isPrimary ? colors.primaryForeground : colors.text} />
+        <ActivityIndicator color={needsLightContent ? colors.primaryForeground : colors.text} />
       ) : (
         <>
           {leadingIcon}
-          <Text variant="cta" tone={isPrimary ? 'onPrimary' : 'default'}>
+          <Text variant="cta" tone={needsLightContent ? 'onPrimary' : 'default'}>
             {label}
           </Text>
           {TrailingIcon ? (
             <TrailingIcon
               size={28}
               strokeWidth={1.5}
-              color={isPrimary ? colors.primaryForeground : colors.text}
+              color={needsLightContent ? colors.primaryForeground : colors.text}
             />
           ) : null}
         </>

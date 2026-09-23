@@ -376,7 +376,11 @@
       "outings": "Sorties",
       "favorites": "Favoris"
     },
-    "logout": "Se déconnecter"
+    "logout": "Se déconnecter",
+    "logoutConfirm": {
+      "title": "Se déconnecter ?",
+      "description": "Tu seras déconnecté de ton compte, mais tes données resteront en sécurité."
+    }
   },
   "statistics": {
     "ranges": {

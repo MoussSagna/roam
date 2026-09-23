@@ -1,6 +1,11 @@
 export { AppToast } from './AppToast';
 export { Button, type ButtonProps } from './Button';
 export { Chip, type ChipProps } from './Chip';
+export {
+  ConfirmationModal,
+  type ConfirmationModalProps,
+  type ConfirmationModalVariant,
+} from './ConfirmationModal';
 export { FadeInUp } from './FadeInUp';
 export { IconButton, type IconButtonProps } from './IconButton';
 export { PlaceholderCard } from './PlaceholderCard';

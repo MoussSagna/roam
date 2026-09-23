@@ -15,7 +15,7 @@ import { View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useAuth } from '@/auth';
-import { FadeInUp, IconButton, ScrollScreen, Text } from '@/components/ui';
+import { ConfirmationModal, FadeInUp, IconButton, ScrollScreen, Text } from '@/components/ui';
 import { TAB_BAR_CLEARANCE } from '@/features/navigation/tabBarConfig';
 import { useTabBarScrollHandler } from '@/features/navigation/TabBarCollapseContext';
 import { isLanguage, type Language } from '@/i18n';
@@ -57,6 +57,7 @@ export function ProfileScreen() {
   const onScroll = useTabBarScrollHandler();
   const { user } = useCurrentUser();
   const [loggingOut, setLoggingOut] = useState(false);
+  const [logoutModalVisible, setLogoutModalVisible] = useState(false);
 
   const language: Language = isLanguage(i18n.language) ? i18n.language : 'fr';
 
@@ -156,10 +157,22 @@ export function ProfileScreen() {
             icon={LogOut}
             label={t('profile.logout')}
             tone="error"
-            onPress={() => void handleLogout()}
+            onPress={() => setLogoutModalVisible(true)}
           />
         </>
       ) : null}
+
+      <ConfirmationModal
+        visible={logoutModalVisible}
+        title={t('profile.logoutConfirm.title')}
+        description={t('profile.logoutConfirm.description')}
+        confirmLabel={t('profile.logout')}
+        cancelLabel={t('common.cancel')}
+        icon={LogOut}
+        loading={loggingOut}
+        onCancel={() => setLogoutModalVisible(false)}
+        onConfirm={() => void handleLogout()}
+      />
     </ScrollScreen>
   );
 }

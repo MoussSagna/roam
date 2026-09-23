@@ -376,7 +376,11 @@
       "outings": "Outings",
       "favorites": "Favorites"
     },
-    "logout": "Log out"
+    "logout": "Log out",
+    "logoutConfirm": {
+      "title": "Log out?",
+      "description": "You'll be signed out of your account, but your data will stay safe."
+    }
   },
   "statistics": {
     "ranges": {

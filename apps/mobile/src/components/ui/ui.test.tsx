@@ -31,6 +31,16 @@ describe('NativeWind UI components', () => {
     expect(onPress).not.toHaveBeenCalled();
   });
 
+  it('renders the destructive variant and still handles presses', async () => {
+    const onPress = jest.fn();
+    await renderWithProviders(
+      <Button label="Se déconnecter" variant="destructive" onPress={onPress} />,
+    );
+
+    await fireEvent.press(screen.getByRole('button', { name: 'Se déconnecter' }));
+    expect(onPress).toHaveBeenCalledTimes(1);
+  });
+
   it('exposes the selected state of a Chip to assistive technologies', async () => {
     await renderWithProviders(<Chip label="Clair" selected />);
     expect(screen.getByRole('button', { name: 'Clair', selected: true })).toBeOnTheScreen();

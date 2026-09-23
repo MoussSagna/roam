@@ -42,6 +42,9 @@ category filter; summary cards, a genre/city breakdown and a mood donut chart (`
 dynamically derived, never-hardcoded language list; Light/Dark/System selection — mock data only except the
 language/theme systems, one screen at a time) — see `DECISIONS.md` D-50, D-51, D-57, D-58, D-59, D-60, D-61;
 the other screens it links to (edit profile, help, privacy, settings) are still placeholders, each built in
-its own session.
+its own session. **Logout now asks for confirmation** (a new, reusable `ConfirmationModal`) before calling
+the existing mocked `logout()`/navigation-reset flow, and a real navigation bug is fixed: `AuthTopBar`'s
+back button no longer renders when there's nothing to go back to (previously always rendered, so it could
+be pressed with no route behind it right after logout) — see `DECISIONS.md` D-62.
 
 The product is intentionally MVP-first. Do not expand scope without an explicit requirement.

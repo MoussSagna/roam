@@ -1,4 +1,4 @@
-import { act, fireEvent, screen } from '@testing-library/react-native';
+import { act, fireEvent, screen, waitFor } from '@testing-library/react-native';
 
 import { TabBarCollapseProvider } from '@/features/navigation/TabBarCollapseContext';
 import i18n from '@/i18n';
@@ -97,11 +97,37 @@ describe('ProfileScreen', () => {
     expect(mockPush).toHaveBeenCalledWith('/profile/settings');
   });
 
-  it('pressing "Se déconnecter" logs out and replaces with the login route', async () => {
+  it('pressing "Se déconnecter" opens a confirmation modal without logging out yet', async () => {
     await renderProfile();
 
     await fireEvent.press(screen.getByRole('button', { name: 'Se déconnecter' }));
 
+    expect(screen.getByText('Se déconnecter ?')).toBeOnTheScreen();
+    expect(
+      screen.getByText(
+        'Tu seras déconnecté de ton compte, mais tes données resteront en sécurité.',
+      ),
+    ).toBeOnTheScreen();
+    expect(mockReplace).not.toHaveBeenCalled();
+  });
+
+  it('confirming the logout modal logs out and replaces with the login route', async () => {
+    await renderProfile();
+
+    await fireEvent.press(screen.getByRole('button', { name: 'Se déconnecter' }));
+    const confirmButtons = screen.getAllByRole('button', { name: 'Se déconnecter' });
+    await fireEvent.press(confirmButtons[confirmButtons.length - 1]);
+
     expect(mockReplace).toHaveBeenCalledWith('/auth/login');
+  });
+
+  it('cancelling the logout modal keeps the user on Profile', async () => {
+    await renderProfile();
+
+    await fireEvent.press(screen.getByRole('button', { name: 'Se déconnecter' }));
+    await fireEvent.press(screen.getByRole('button', { name: 'Annuler' }));
+
+    await waitFor(() => expect(screen.queryByText('Se déconnecter ?')).toBeNull());
+    expect(mockReplace).not.toHaveBeenCalled();
   });
 });

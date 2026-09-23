@@ -73,7 +73,7 @@ apps/mobile/
     │   ├── (tabs)/          # Main navigation group: home, discover, favorites, profile + _layout.tsx (no path segment)
     │   └── /, /welcome, /onboarding/*, /auth/*
     ├── components/
-    │   ├── ui/              # Text, Button, IconButton, Chip, SearchBar, Slider, StickyActionFooter, StickyRevealHeader, AppToast, Screen, ScrollScreen, PlaceholderCard, FadeInUp, TextField
+    │   ├── ui/              # Text, Button, IconButton, Chip, ConfirmationModal, SearchBar, Slider, StickyActionFooter, StickyRevealHeader, AppToast, Screen, ScrollScreen, PlaceholderCard, FadeInUp, TextField
     │   └── brand/           # Logo (light / dark / icon variants)
     ├── features/            # One folder per feature (empty until its sprint)
     │   ├── splash/          # In-app splash screen (route /) + its measured layout
@@ -233,10 +233,24 @@ Built one screen per session (`docs/SCREEN_INTEGRATION_WORKFLOW.md`); front-end 
 | `/auth/reset-success`   | Reset success   | Success badge (`SuccessCheckmark`) + landscape; "Se connecter" replaces → `/auth/login` |
 
 Reached from `WelcomeScreen`'s "Se connecter" link (`t('welcome.signIn')`, `router.push('/auth')`). Shared
-pieces in `features/auth/components/`: `AuthTopBar` (back + small wordmark), `OrDivider`, `SocialButtons`,
+pieces in `features/auth/components/`: `AuthTopBar` (back + small wordmark — its back button only renders
+when `router.canGoBack()`, sprint 5, `docs/DECISIONS.md` D-62), `OrDivider`, `SocialButtons`,
 `AuthFooterLink`, `PasswordRequirements` (Register's live checklist), `OtpInput` (Reset code's 6-digit
 entry), `SuccessCheckmark`/`SuccessLandscape` (Reset success's animated badge and illustration). Generic
 form field: `components/ui/TextField`.
+
+### Logout (current state, `docs/DECISIONS.md` D-62)
+
+`ProfileScreen`'s "Se déconnecter" row opens a `ConfirmationModal` (`components/ui/`) instead of logging
+out directly — "Annuler" closes it with the session untouched, "Se déconnecter" (inside the modal) calls
+the existing `useAuth().logout()` then `router.replace('/auth/login')`. `Stack.Protected`'s guard swap
+(D-44) removes the whole authenticated group from navigation history the moment `isLoggedIn` flips, so
+`/auth/login` ends up with nothing behind it (`router.canGoBack() === false`) — `AuthTopBar` reads exactly
+that to decide whether to render its own back button, which is what actually fixes "Login shows a dead
+back button after logout" (D-62). `ConfirmationModal` is a generic, reusable primitive (`visible`,
+`title`, `description`, `confirmLabel`/`cancelLabel`, `onConfirm`/`onCancel`, `variant: 'default' |
+'destructive'`, `loading`, `icon`) — it owns display/animation/interaction only, never logout or any
+other domain logic itself.
 
 ## Conventions
 
@@ -254,6 +268,12 @@ form field: `components/ui/TextField`.
   navigation is button-only: every screen that needs one renders its own back control (a `Pressable`
   - `ChevronLeft` calling `router.back()`, the pattern `AuthTopBar`/`ProfilePlaceholder`/
     `CreateJourneyPlaceholder` already use) — do not rely on the system gesture for a new screen.
+- **A rendered back button must only exist when `router.canGoBack()` is actually true** (D-62):
+  `AuthTopBar` checks this before rendering its `Pressable` at all (a same-size empty `View` keeps the
+  wordmark's position stable either way) rather than rendering a button that calls `router.back()` with
+  nowhere to go — the exact bug that showed up on `/auth/login` reached via logout, where
+  `Stack.Protected`'s guard swap already leaves nothing behind it. Apply the same check in any new
+  shared back-button component; don't reintroduce an always-rendered one.
 - **Exception, not a pattern to extend**: a handful of pre-existing screens have no back button at all
   (the mockup doesn't show one) and rely on the gesture — or, on Android, the hardware back button,
   which this setting never affects either way — as their only way back. Each keeps

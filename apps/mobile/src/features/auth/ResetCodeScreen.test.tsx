@@ -10,7 +10,12 @@ const mockReplace = jest.fn();
 const mockBack = jest.fn();
 let mockParams: { email?: string } = {};
 jest.mock('expo-router', () => ({
-  useRouter: () => ({ push: mockPush, replace: mockReplace, back: mockBack }),
+  useRouter: () => ({
+    push: mockPush,
+    replace: mockReplace,
+    back: mockBack,
+    canGoBack: () => true,
+  }),
   useLocalSearchParams: () => mockParams,
 }));
 

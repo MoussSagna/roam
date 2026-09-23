@@ -100,17 +100,62 @@ describe('AppRoutes (mocked session route protection)', () => {
   });
 
   // Scenario 4
-  it('Home → Profil → logout → Login, and back cannot return to Home', async () => {
+  it('Home → Profil → logout confirmation → Login, and back cannot return to Home', async () => {
     const utils = await renderApp(true);
     await act(() => router.navigate('/profile'));
 
+    // Tapping "Se déconnecter" only opens the confirmation modal — no navigation yet.
     await act(async () => {
       fireEvent.press(screen.getByRole('button', { name: 'Se déconnecter' }));
+    });
+    expect(utils.getPathname()).toBe('/profile');
+    expect(screen.getByText('Se déconnecter ?')).toBeOnTheScreen();
+
+    // Confirming inside the modal is what actually logs out and navigates.
+    await act(async () => {
+      const confirmButtons = screen.getAllByRole('button', { name: 'Se déconnecter' });
+      fireEvent.press(confirmButtons[confirmButtons.length - 1]);
       await jest.advanceTimersByTimeAsync(1000);
     });
 
     expect(utils.getPathname()).toBe('/auth/login');
     expect(router.canGoBack()).toBe(false);
+  });
+
+  // Scenario 4b
+  it('Login reached via logout shows no back button, and cancelling the modal never logs out', async () => {
+    const utils = await renderApp(true);
+    await act(() => router.navigate('/profile'));
+
+    // The menu row is always the first "Se déconnecter" match; once the modal is open, the
+    // confirm button is the last one — using `getAllByRole` throughout avoids ambiguity between
+    // the two, including while a just-cancelled modal is still mid exit-animation.
+    const logoutButtons = () => screen.getAllByRole('button', { name: 'Se déconnecter' });
+
+    await act(async () => {
+      fireEvent.press(logoutButtons()[0]);
+    });
+    // Cancel: the session stays active, no navigation happens.
+    await act(async () => {
+      fireEvent.press(screen.getByRole('button', { name: 'Annuler' }));
+    });
+    expect(utils.getPathname()).toBe('/profile');
+
+    // Reopen and confirm this time.
+    await act(async () => {
+      fireEvent.press(logoutButtons()[0]);
+    });
+    await act(async () => {
+      const buttons = logoutButtons();
+      fireEvent.press(buttons[buttons.length - 1]);
+      await jest.advanceTimersByTimeAsync(1000);
+    });
+    expect(utils.getPathname()).toBe('/auth/login');
+
+    // The bug this fixes: Login's `AuthTopBar` used to always render a back button, even though
+    // `router.canGoBack()` is already `false` here — pressing it called `router.back()` with
+    // nowhere to go. It must not render at all in this state.
+    expect(screen.queryByRole('button', { name: 'Retour' })).toBeNull();
   });
 
   // Scenario 5
