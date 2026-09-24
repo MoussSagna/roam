@@ -786,9 +786,12 @@
     "builder": {
       "title": "Ton parcours",
       "addExperience": "Ajouter une expérience",
-      "viewJourney": "Voir mon parcours",
       "emptyTitle": "Ton parcours est vide",
-      "emptySubtitle": "Ajoute au moins une expérience pour continuer."
+      "emptySubtitle": "Ajoute au moins une expérience pour continuer.",
+      "create": "Créer mon parcours",
+      "createError": "Impossible de créer ton parcours. Réessaie.",
+      "alreadyActive": "Tu as déjà un parcours en cours.",
+      "viewActive": "Voir mon parcours"
     },
     "step": {
       "moveUp": "Monter {title}",
@@ -801,21 +804,9 @@
       "metro": "{duration} en métro"
     },
     "stats": {
-      "experiences": "Expériences",
       "duration": "Durée totale",
       "budget": "Budget estimé",
-      "distance": "Distance",
-      "start": "Départ",
-      "end": "Fin"
-    },
-    "summary": {
-      "title": "Ton parcours est prêt",
-      "encouragementTitle": "Un itinéraire pensé pour toi",
-      "encouragement": "Basé sur tes envies, ton budget et ton temps disponible. Profite pleinement !",
-      "create": "Créer mon parcours",
-      "createError": "Impossible de créer ton parcours. Réessaie.",
-      "alreadyActive": "Tu as déjà un parcours en cours.",
-      "viewActive": "Voir mon parcours"
+      "distance": "Distance"
     },
     "active": {
       "title": "Mon parcours",
@@ -824,7 +815,7 @@
       "current": "En ce moment",
       "start": "Commencer",
       "continue": "Continuer mon parcours",
-      "finish": "Terminer mon parcours",
+      "finish": "Terminer le parcours",
       "addExperience": "Ajouter une expérience",
       "completedTitle": "Parcours terminé",
       "completedSubtitle": "Bravo, tu as vécu toute ta sortie.",
@@ -833,6 +824,21 @@
       "emptySubtitle": "Ajoute des expériences depuis Découvrir.",
       "notFound": "Ce parcours n'existe plus.",
       "error": "Impossible de charger ton parcours."
+    },
+    "edit": {
+      "action": "Modifier",
+      "title": "Modifier le parcours",
+      "subtitle": "Réorganise tes étapes, ajoute ou retire des expériences.",
+      "save": "Enregistrer",
+      "suggestionsTitle": "Ajouter une expérience",
+      "noSuggestions": "Aucune autre idée pour l'instant.",
+      "savedTitle": "Parcours mis à jour",
+      "savedMessage": "Tes modifications ont bien été prises en compte.",
+      "saveError": "Impossible d'enregistrer tes modifications.",
+      "quitTitle": "Quitter sans enregistrer ?",
+      "quitDescription": "Tes modifications seront perdues.",
+      "quitStay": "Continuer l'édition",
+      "quitLeave": "Quitter"
     },
     "added": {
       "title": "Ajouté à ton parcours ✓",

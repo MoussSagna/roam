@@ -2866,3 +2866,29 @@ Only what was asked; no new library, mock data, no Maps API.
 - **Not done:** the user's position (no geolocation in the app, D-80), the references' "⋮" menu and status dropdown
   (nothing to put in them yet), the step-list bottom sheet of the second reference.
 - **Not verified on a device in this session** (no iOS simulator on the build machine).
+
+### D-86 — Journey flow: start from the source experience, "Ton parcours" creates, progress from creation, editing
+
+- **Starting point from an experience.** Opened from Experience detail, the draft (`JourneyDraftProvider`) fetches that
+  experience and, when it has coordinates, pre-fills the start with a new kind, `experience` (label = its name, `detail` = its
+  address). A pre-fill, not an input (leaving still needs no confirmation). "On part d'où ?" lists it first, pre-selected, with
+  its name and address and its own photo marker, the map centred on it. Any other choice (position, place, address) replaces it
+  through the same `setStartLocation`: one starting point, never two; the user can come back to it.
+- **"Ton parcours" (the builder) is the last step.** Its CTA "Créer mon parcours" does what the summary did (DRAFT → ACTIVE
+  through `createJourney`, `replace` → `/journey/[id]`, the "already active"/error states); the summary screen, its route and
+  its keys are removed, and the flow's progress bars count 6 steps.
+- **A journey starts when it is created** (`startedAt` set by `createJourney`): step 1 is current at once and each
+  "Continuer mon parcours" moves one step on (persisted by `completeCurrentStep`, unchanged). "Commencer" only remains for a
+  journey saved before this change. The last step reads "Terminer le parcours" and still leads to the feedback (D-83).
+- **Editing (`/journey/[id]/edit`, "Modifier" on the journey).** No second builder: the same `JourneyTimeline`
+  (`JourneyStepCard` + `TravelConnector`, move up/down, remove) and `JourneyStats` (live `buildPlan`), over a *local* copy of
+  the step ids — the journey itself only changes on "Enregistrer". Adding uses ROAM's suggestions for the journey's own context
+  in the screen (`suggestForJourney` + `SuggestionCard`): the suggestions screen needs the creation draft. The CTA is
+  "Continuer mon parcours" (back) until the ids differ from the saved ones, then "Enregistrer" (`updateJourneySteps`,
+  `showToast('success')`, back); back with changes asks "Quitter sans enregistrer ?" (`ConfirmationModal`). Android's hardware
+  back is not intercepted (button-only navigation, D-53).
+- **Progress through edits** — one rule, `currentStepAfterEdit` (`lib/progress.ts`), used by the store and shown live by the
+  editor: the current experience stays current wherever it moved; if it was removed, as many steps as were done and remain are
+  done, the next is current; always within the new steps (`replan` clamps too). `updateJourneySteps` keeps the same journey
+  and its `active` status, drops duplicate ids and refuses an empty journey or another journey.
+- **Not verified on a device in this session** (no iOS simulator on the build machine).

@@ -101,7 +101,6 @@ async function createThroughFlow() {
   await continueThroughBuilding();
   await screen.findByTestId('journey-suggestions-list');
   await press('Construire mon parcours');
-  await press('Voir mon parcours');
   await press('Créer mon parcours');
 }
 

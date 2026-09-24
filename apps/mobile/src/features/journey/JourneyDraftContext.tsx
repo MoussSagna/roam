@@ -1,6 +1,17 @@
-import { createContext, useCallback, useContext, useMemo, useState, type ReactNode } from 'react';
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+  type ReactNode,
+} from 'react';
+
+import { repositories } from '@/services';
 
 import type {
+  Experience,
   JourneyBudget,
   JourneyContext,
   JourneyDraft,
@@ -16,6 +27,11 @@ type JourneyDraftValue = {
   duration: JourneyDuration | null;
   budget: JourneyBudget | null;
   startLocation: JourneyStartLocation | null;
+  /** The experience the flow was opened from, as a starting point (when it has coordinates): the
+   * pre-filled choice of "On part d'où ?", kept so the user can come back to it after trying another. */
+  experienceStart: JourneyStartLocation | null;
+  /** The experience the flow was opened from, once loaded (its photo marks the start on the map). */
+  seedExperience: Experience | null;
   /** Ordered experience ids of the journey being built. */
   experienceIds: string[];
   /** Whether the suggestions screen already filled the selection (so going back to it keeps edits). */
@@ -55,6 +71,8 @@ export function JourneyDraftProvider({ children, seedExperienceId }: JourneyDraf
   const [duration, setDurationState] = useState<JourneyDuration | null>(null);
   const [budget, setBudgetState] = useState<JourneyBudget | null>(null);
   const [startLocation, setStartLocationState] = useState<JourneyStartLocation | null>(null);
+  const [experienceStart, setExperienceStart] = useState<JourneyStartLocation | null>(null);
+  const [seedExperience, setSeedExperience] = useState<Experience | null>(null);
   const [experienceIds, setExperienceIds] = useState<string[]>(
     seedExperienceId ? [seedExperienceId] : [],
   );
@@ -63,6 +81,33 @@ export function JourneyDraftProvider({ children, seedExperienceId }: JourneyDraf
   const [startTime] = useState(() => nextQuarterHour(new Date()));
 
   const touch = useCallback(() => setHasInput(true), []);
+
+  // Opened from an experience: it is also the starting point, until the user picks another one (a
+  // pre-fill, not an input: leaving still needs no confirmation). One starting point, never two.
+  useEffect(() => {
+    if (!seedExperienceId) return;
+    let active = true;
+    repositories.experiences
+      .getById(seedExperienceId)
+      .then((experience) => {
+        if (!active || !experience?.coordinates) return;
+        setSeedExperience(experience);
+        const start: JourneyStartLocation = {
+          kind: 'experience',
+          label: experience.title,
+          detail: experience.address ?? experience.location,
+          coordinates: experience.coordinates,
+        };
+        setExperienceStart(start);
+        setStartLocationState((current) => current ?? start);
+      })
+      .catch(() => {
+        // No pre-fill: the user chooses a starting point as usual.
+      });
+    return () => {
+      active = false;
+    };
+  }, [seedExperienceId]);
 
   const setMood = useCallback(
     (value: JourneyMood) => {
@@ -149,6 +194,8 @@ export function JourneyDraftProvider({ children, seedExperienceId }: JourneyDraf
       duration,
       budget,
       startLocation,
+      experienceStart,
+      seedExperience,
       experienceIds,
       selectionInitialized,
       startTime,
@@ -169,6 +216,8 @@ export function JourneyDraftProvider({ children, seedExperienceId }: JourneyDraf
       duration,
       budget,
       startLocation,
+      experienceStart,
+      seedExperience,
       experienceIds,
       selectionInitialized,
       startTime,

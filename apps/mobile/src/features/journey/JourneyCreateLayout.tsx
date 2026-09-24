@@ -22,7 +22,6 @@ export function JourneyCreateLayout() {
         <Stack.Screen name="building" options={{ animation: 'fade' }} />
         <Stack.Screen name="suggestions" />
         <Stack.Screen name="builder" />
-        <Stack.Screen name="summary" />
       </Stack>
     </JourneyDraftProvider>
   );

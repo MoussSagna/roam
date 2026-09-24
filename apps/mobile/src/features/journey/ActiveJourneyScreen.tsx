@@ -3,6 +3,7 @@ import ChevronLeft from 'lucide-react-native/icons/chevron-left';
 import Clock from 'lucide-react-native/icons/clock';
 import Coins from 'lucide-react-native/icons/coins';
 import MapIcon from 'lucide-react-native/icons/map';
+import Pencil from 'lucide-react-native/icons/pencil';
 import Plus from 'lucide-react-native/icons/plus';
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -150,7 +151,25 @@ export function ActiveJourneyScreen({ journeyId }: ActiveJourneyScreenProps) {
           }}
           showsVerticalScrollIndicator={false}
         >
-          <View className="h-14 justify-center">{backButton}</View>
+          <View className="h-14 flex-row items-center justify-between">
+            {backButton}
+            {!completed ? (
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel={t('journey.edit.action')}
+                onPress={() =>
+                  router.push({ pathname: '/journey/[id]/edit', params: { id: journey.id } })
+                }
+                hitSlop={8}
+                className="flex-row items-center gap-1.5 rounded-pill bg-primary/10 px-4 py-2 active:opacity-70"
+              >
+                <Pencil size={15} strokeWidth={2} color={colors.primary} />
+                <Text variant="label" tone="primary">
+                  {t('journey.edit.action')}
+                </Text>
+              </Pressable>
+            ) : null}
+          </View>
 
           <FadeInUp style={{ gap: 8 }}>
             <Text

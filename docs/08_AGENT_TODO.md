@@ -36,8 +36,7 @@ Status for **mobile** (2026-09-22). Web and API foundations are not started.
       on Home; the dedicated Recommendations screen (`03_UX_SCREENS_AND_FLOWS.md` §09) is not built
 - [x] Experience detail — real screen (`experience/[id]`) plus a dedicated full-screen gallery
       (`gallery/[id]`) with a hero -> gallery Reanimated transition, sprint 5 — `DECISIONS.md` D-48
-- [x] Journey ("parcours") — creation flow `/journey/create/*` (intro, context, start, building — sprint 12, D-84 —, suggestions, builder,
-      summary) and active journey `/journey/[id]`; add from Experience detail — sprint 10, `DECISIONS.md` D-80
+- [x] Journey ("parcours") — creation flow `/journey/create/*` (intro, context, start, building — sprint 12, D-84 —, suggestions, builder — the last step since D-86) and active journey `/journey/[id]`; add from Experience detail — sprint 10, `DECISIONS.md` D-80
 - [x] Parcours tab — journey hub `/journey` (in progress / history / empty), replaces Favoris in the tab bar
       (the `/favorites` route is kept) — sprint 11, `DECISIONS.md` D-81
 - [x] Search — shared `SearchScreen` (`/search`) opened from both Home's and Discover's `SearchBar`;

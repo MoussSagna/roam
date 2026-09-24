@@ -2,6 +2,7 @@ import type { Journey, JourneyStep } from '@/types';
 
 import {
   completedStepCount,
+  currentStepAfterEdit,
   remainingDistanceM,
   remainingDurationMin,
   remainingSteps,
@@ -84,5 +85,25 @@ describe('journey progress', () => {
     expect(remainingSteps(journey)).toEqual([]);
     expect(remainingDurationMin(journey)).toBe(0);
     expect(completedStepCount(journey)).toBe(3);
+  });
+});
+
+describe('currentStepAfterEdit', () => {
+  const started = { ...JOURNEY, startedAt: '2026-09-12T16:05:00.000Z', currentStep: 1 };
+
+  it('keeps the current experience current, wherever it moved', () => {
+    expect(currentStepAfterEdit(started, ['b', 'a', 'c'])).toBe(0);
+    expect(currentStepAfterEdit(started, ['a', 'c', 'x', 'b'])).toBe(3);
+  });
+
+  it('current removed: as many done steps as remain, clamped to the new length', () => {
+    expect(currentStepAfterEdit(started, ['a', 'c'])).toBe(1);
+    expect(currentStepAfterEdit(started, ['c'])).toBe(0);
+    expect(currentStepAfterEdit({ ...started, currentStep: 2 }, ['a'])).toBe(0);
+  });
+
+  it('0 when not started or empty', () => {
+    expect(currentStepAfterEdit(JOURNEY, ['c', 'b'])).toBe(0);
+    expect(currentStepAfterEdit(started, [])).toBe(0);
   });
 });

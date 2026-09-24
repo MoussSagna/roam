@@ -101,7 +101,7 @@ describe('Journey feedback (sprint 12)', () => {
     await act(() => router.navigate('/journey'));
     await act(() => router.push({ pathname: '/journey/[id]', params: { id: journey.id } }));
 
-    await press('Terminer mon parcours');
+    await press('Terminer le parcours');
 
     await waitFor(() => expect(utils.getPathname()).toBe(`/journey/${journey.id}/feedback`));
     expect(await screen.findByText("Alors, comment c'était ?")).toBeOnTheScreen();

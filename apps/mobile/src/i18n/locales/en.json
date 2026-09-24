@@ -786,9 +786,12 @@
     "builder": {
       "title": "Your journey",
       "addExperience": "Add an experience",
-      "viewJourney": "See my journey",
       "emptyTitle": "Your journey is empty",
-      "emptySubtitle": "Add at least one experience to continue."
+      "emptySubtitle": "Add at least one experience to continue.",
+      "create": "Create my journey",
+      "createError": "Couldn't create your journey. Try again.",
+      "alreadyActive": "You already have a journey in progress.",
+      "viewActive": "See my journey"
     },
     "step": {
       "moveUp": "Move {title} up",
@@ -801,21 +804,9 @@
       "metro": "{duration} by metro"
     },
     "stats": {
-      "experiences": "Experiences",
       "duration": "Total time",
       "budget": "Estimated budget",
-      "distance": "Distance",
-      "start": "Start",
-      "end": "End"
-    },
-    "summary": {
-      "title": "Your journey is ready",
-      "encouragementTitle": "A route made for you",
-      "encouragement": "Based on what you want, your budget and your time. Enjoy it!",
-      "create": "Create my journey",
-      "createError": "Couldn't create your journey. Try again.",
-      "alreadyActive": "You already have a journey in progress.",
-      "viewActive": "See my journey"
+      "distance": "Distance"
     },
     "active": {
       "title": "My journey",
@@ -824,7 +815,7 @@
       "current": "Right now",
       "start": "Start",
       "continue": "Continue my journey",
-      "finish": "Finish my journey",
+      "finish": "Finish the journey",
       "addExperience": "Add an experience",
       "completedTitle": "Journey complete",
       "completedSubtitle": "Well done, you lived your whole outing.",
@@ -833,6 +824,21 @@
       "emptySubtitle": "Add experiences from Discover.",
       "notFound": "This journey no longer exists.",
       "error": "Couldn't load your journey."
+    },
+    "edit": {
+      "action": "Edit",
+      "title": "Edit the journey",
+      "subtitle": "Reorder your stops, add or remove experiences.",
+      "save": "Save",
+      "suggestionsTitle": "Add an experience",
+      "noSuggestions": "No other ideas for now.",
+      "savedTitle": "Journey updated",
+      "savedMessage": "Your changes have been saved.",
+      "saveError": "Couldn't save your changes.",
+      "quitTitle": "Leave without saving?",
+      "quitDescription": "Your changes will be lost.",
+      "quitStay": "Keep editing",
+      "quitLeave": "Leave"
     },
     "added": {
       "title": "Added to your journey ✓",

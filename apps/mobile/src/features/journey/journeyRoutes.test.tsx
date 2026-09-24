@@ -141,11 +141,9 @@ describe('Journey creation flow (sprint 10)', () => {
       preselected + 1,
     );
 
-    await press('Voir mon parcours');
-    expect(utils.getPathname()).toBe('/journey/create/summary');
-    expect(screen.getByText('Ton parcours est prêt')).toBeOnTheScreen();
-    expect(screen.getByTestId('journey-map')).toBeOnTheScreen();
-
+    // Sprint 12 (D-86): "Ton parcours" is the last step — its CTA creates the journey.
+    expect(screen.getByText('Ton parcours')).toBeOnTheScreen();
+    expect(screen.queryByRole('button', { name: 'Voir mon parcours' })).toBeNull();
     await press('Créer mon parcours');
 
     await waitFor(() => expect(utils.getPathname()).toMatch(/^\/journey\/journey-/));
@@ -155,9 +153,12 @@ describe('Journey creation flow (sprint 10)', () => {
     expect(saved?.startLocation.label).toBe('République');
     expect(saved?.context).toEqual({ mood: 'calm', duration: 'halfDay', budget: 'medium' });
     expect(await screen.findByText('Mon parcours')).toBeOnTheScreen();
-    expect(screen.getByRole('button', { name: 'Commencer' })).toBeOnTheScreen();
+    // Started at creation: step 1 is current, no "Commencer".
+    expect(screen.getByText(`Étape 1 sur ${preselected + 1}`)).toBeOnTheScreen();
+    expect(screen.queryByRole('button', { name: 'Commencer' })).toBeNull();
+    expect(screen.getByRole('button', { name: 'Continuer mon parcours' })).toBeOnTheScreen();
 
-    // The creation flow is gone from history: back returns to Home, not to the summary.
+    // The creation flow is gone from history: back returns to Home, not to the builder.
     await press('Retour');
     expect(utils.getPathname()).toBe('/home');
   });
@@ -233,7 +234,6 @@ describe('Journey creation flow (sprint 10)', () => {
     await act(() => router.push('/journey/create'));
     await goToSuggestions();
     await press('Construire mon parcours');
-    await press('Voir mon parcours');
     await press('Créer mon parcours');
     await waitFor(() => expect(utils.getPathname()).toMatch(/^\/journey\/journey-/));
     const journey = await repositories.journeys.getCurrent();
@@ -266,22 +266,26 @@ describe('Journey creation flow (sprint 10)', () => {
     expect(screen.getByTestId(`journey-step-${outsider}`)).toBeOnTheScreen();
   });
 
-  it('active journey: Commencer → Continuer → Terminer → completed', async () => {
+  it('active journey: Continuer → … → Terminer le parcours → completed → feedback', async () => {
     const utils = await renderApp();
     await act(() => router.push('/journey/create'));
     await goToSuggestions();
     await press('Construire mon parcours');
-    await press('Voir mon parcours');
     await press('Créer mon parcours');
     await waitFor(() => expect(utils.getPathname()).toMatch(/^\/journey\/journey-/));
     const total = (await repositories.journeys.getCurrent())!.steps.length;
+    expect(total).toBeGreaterThan(1);
 
-    await fireEvent.press(await screen.findByRole('button', { name: 'Commencer' }));
+    // Each "Continuer mon parcours" moves one step on, persisted in the journey.
     expect(await screen.findByText(`Étape 1 sur ${total}`)).toBeOnTheScreen();
     for (let step = 1; step < total; step += 1) {
       await press('Continuer mon parcours');
+      expect(await screen.findByText(`Étape ${step + 1} sur ${total}`)).toBeOnTheScreen();
+      expect((await repositories.journeys.getCurrent())?.currentStep).toBe(step);
     }
-    await press('Terminer mon parcours');
+    // Last step: no more "Continuer", "Terminer le parcours" instead.
+    expect(screen.queryByRole('button', { name: 'Continuer mon parcours' })).toBeNull();
+    await press('Terminer le parcours');
 
     // Sprint 12: finishing opens the feedback; skipping it lands on the completed journey.
     await waitFor(() => expect(utils.getPathname()).toMatch(/\/feedback$/));

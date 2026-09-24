@@ -4,6 +4,7 @@ import { repositories } from '@/services';
 import type { Experience, Journey, JourneyDraft, JourneyState } from '@/types';
 
 import { buildPlan } from './lib/plan';
+import { currentStepAfterEdit } from './lib/progress';
 
 /**
  * The current journey, shared by every screen that shows or changes it (Experience detail's CTA, the
@@ -117,21 +118,23 @@ export class ActiveJourneyExistsError extends Error {
 }
 
 /** DRAFT → ACTIVE. Refuses to create a second active journey (MVP: one at a time); a completed one
- * is replaced as the current journey but stays in the history. */
+ * is replaced as the current journey but stays in the history. The journey starts right away, at its
+ * first step (sprint 12, D-86): "Continuer mon parcours" moves to the next one. */
 export async function createJourney(draft: JourneyDraft, title: string): Promise<Journey> {
   if (await currentActive()) throw new ActiveJourneyExistsError();
   const experiences = await experiencesById(draft.experienceIds);
   const plan = buildPlan(experiences, draft.startLocation, draft.startTime);
+  const now = new Date().toISOString();
   return persist({
     id: `journey-${Date.now()}`,
     status: 'active',
     title,
-    createdAt: new Date().toISOString(),
+    createdAt: now,
     context: draft.context,
     startLocation: draft.startLocation,
     startTime: draft.startTime,
     currentStep: 0,
-    startedAt: null,
+    startedAt: now,
     completedAt: null,
     ...plan,
   });
@@ -166,6 +169,27 @@ export async function removeJourneyStep(index: number): Promise<void> {
   const ids = journey.steps.map((step) => step.experienceId).filter((_, i) => i !== index);
   const shifted = index < journey.currentStep ? journey.currentStep - 1 : journey.currentStep;
   await persist(await replan({ ...journey, currentStep: shifted }, ids));
+}
+
+export class JourneyUpdateError extends Error {}
+
+/**
+ * Saves the edited steps of the active journey (sprint 12, `/journey/[id]/edit`): the same journey,
+ * still `active`, replanned. Progress is kept: the current step stays the current one wherever it
+ * moved; if it was removed, the next step not done yet becomes current (as many done steps as are
+ * still there). `currentStep` is always within the new steps (never past the end).
+ */
+export async function updateJourneySteps(
+  journeyId: string,
+  experienceIds: readonly string[],
+): Promise<Journey> {
+  const journey = await currentActive();
+  if (!journey || journey.id !== journeyId) throw new JourneyUpdateError('No such active journey');
+  const ids = [...new Set(experienceIds.map(String))];
+  if (ids.length === 0) throw new JourneyUpdateError('A journey needs at least one step');
+
+  const currentStep = currentStepAfterEdit(journey, ids);
+  return persist(await replan({ ...journey, currentStep }, ids));
 }
 
 export async function moveJourneyStep(from: number, to: number): Promise<void> {
