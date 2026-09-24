@@ -8,6 +8,7 @@ import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
 
 import { AuthProvider } from '@/auth';
+import { AppToast } from '@/components/ui';
 import { AppRoutes } from '@/features/navigation/AppRoutes';
 import { useBootstrap } from '@/hooks/useBootstrap';
 import { createNavigationTheme, ThemeProvider, useTheme } from '@/theme';
@@ -44,6 +45,7 @@ function AppChrome() {
     <NavigationThemeProvider value={createNavigationTheme(scheme, colors)}>
       <StatusBar style={isDark ? 'light' : 'dark'} />
       <AppRoutes />
+      <AppToast />
     </NavigationThemeProvider>
   );
 }

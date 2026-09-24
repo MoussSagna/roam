@@ -9,6 +9,9 @@ import { TabTransitionProvider } from '@/features/navigation/TabTransitionContex
  * (`RoamTabBar`). `expo-router`'s `Tabs` (React Navigation's bottom tabs under the hood) is used
  * instead of `NativeTabs`/the headless `expo-router/ui` primitives so the tab bar can fully morph
  * on scroll — see `docs/DECISIONS.md`.
+ *
+ * Sprint 11: "Parcours" (`journey`) took Favoris' place in the bar. The `favorites` route is kept
+ * (still reachable at `/favorites`) but is not a tab any more: `RoamTabBar` only draws `TAB_NAMES`.
  */
 export default function TabsLayout() {
   return (
@@ -17,8 +20,9 @@ export default function TabsLayout() {
         <Tabs tabBar={(props) => <RoamTabBar {...props} />} screenOptions={{ headerShown: false }}>
           <Tabs.Screen name="home" />
           <Tabs.Screen name="discover" />
-          <Tabs.Screen name="favorites" />
+          <Tabs.Screen name="journey" />
           <Tabs.Screen name="profile" />
+          <Tabs.Screen name="favorites" />
         </Tabs>
       </TabTransitionProvider>
     </TabBarCollapseProvider>

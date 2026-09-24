@@ -5,9 +5,13 @@ import type { ImageSourcePropType, NativeScrollEvent, NativeSyntheticEvent } fro
 import { Pressable, ScrollView, useWindowDimensions, View } from 'react-native';
 
 import { Text } from '@/components/ui';
+import { CarouselDots } from '@/features/home/components/CarouselDots';
 import type { GalleryOpenRect } from '@/types';
 
 import { getHeroHeight } from '../lib/heroHeight';
+
+/** Dots sit above the content sheet's 24 px overlap (`-mt-6`) so they stay visible. */
+const DOTS_BOTTOM = 34;
 
 type ExperienceHeroProps = {
   images: readonly ImageSourcePropType[];
@@ -86,6 +90,19 @@ export function ExperienceHero({ images, title, onOpenGallery }: ExperienceHeroP
           </Pressable>
         ))}
       </ScrollView>
+
+      {images.length > 1 ? (
+        // Pagination dots (D-73): `CarouselDots` reused from Home's hero, driven by the same
+        // `activeIndex` as the counter. Raised above the counter's baseline so they aren't tucked
+        // under the content sheet that overlaps the hero's bottom edge (`-mt-6` in the screen).
+        <View
+          pointerEvents="none"
+          testID="experience-hero-dots"
+          style={{ position: 'absolute', bottom: DOTS_BOTTOM, left: 20 }}
+        >
+          <CarouselDots count={images.length} activeIndex={activeIndex} />
+        </View>
+      ) : null}
 
       <View
         pointerEvents="none"

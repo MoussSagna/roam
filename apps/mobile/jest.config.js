@@ -1,7 +1,14 @@
 const jestExpoPreset = require('jest-expo/jest-preset');
 
 // Packages that ship untranspiled ESM and must go through Babel (in addition to jest-expo's list).
-const esmPackages = ['moti', 'nativewind', 'react-native-css-interop', 'lucide-react-native'];
+const esmPackages = [
+  'moti',
+  'nativewind',
+  'react-native-css-interop',
+  'lucide-react-native',
+  'react-native-gifted-charts',
+  'gifted-charts-core',
+];
 
 const transformIgnorePatterns = jestExpoPreset.transformIgnorePatterns.map((pattern) =>
   pattern.includes('(.pnpm|')

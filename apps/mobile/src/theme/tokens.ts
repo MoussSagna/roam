@@ -103,6 +103,49 @@ export const mapColors: Record<ThemeName, MapColors> = {
   dark: { base: derived.mapBaseDark, street: derived.mapStreetDark, park: derived.mapParkDark },
 };
 
+export type MoodBreakdownId = 'relaxed' | 'curious' | 'festive' | 'romantic' | 'family';
+
+/** Donut segment colors of "Ton humeur lors des sorties" (statistics screen, mockup tile 05).
+ * Reuses the same hues as `moodAccents` for the three concepts they share (relaxed/festive/romantic);
+ * `curious`/`family` have no onboarding equivalent, so they use the two extra chart hues. */
+export const moodBreakdownColors: Record<ThemeName, Record<MoodBreakdownId, string>> = {
+  light: {
+    relaxed: derived.moodGreen,
+    curious: derived.chartBlue,
+    festive: derived.moodOrange,
+    romantic: derived.moodCoral,
+    family: derived.chartViolet,
+  },
+  dark: {
+    relaxed: derived.forestLight,
+    curious: derived.chartBlueOnDark,
+    festive: derived.moodOrangeOnDark,
+    romantic: derived.moodCoralOnDark,
+    family: derived.chartVioletOnDark,
+  },
+};
+
+/** Bar colors of "Tes genres préférés" (statistics screen) — purely categorical, cycled by index;
+ * unlike `moodBreakdownColors` there is no shared concept to reuse a specific hue for. */
+export const genreChartColors: Record<ThemeName, readonly string[]> = {
+  light: [
+    derived.forestDeep,
+    derived.moodCoral,
+    derived.moodOrange,
+    derived.chartBlue,
+    derived.slate,
+    derived.chartViolet,
+  ],
+  dark: [
+    derived.forestLight,
+    derived.moodCoralOnDark,
+    derived.moodOrangeOnDark,
+    derived.chartBlueOnDark,
+    derived.sageMuted,
+    derived.chartVioletOnDark,
+  ],
+};
+
 /** Corner radii (px). Map to `rounded-small`, `rounded-card`… */
 export const radius = {
   small: '8px',

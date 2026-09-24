@@ -84,15 +84,42 @@ describe('experience detail & gallery navigation (sprint 5)', () => {
     expect(screen.getByRole('header')).toHaveTextContent('Rooftop Sunset');
   });
 
-  it('Experience Detail -> Create Journey placeholder', async () => {
+  it('Experience Detail -> journey creation (sprint 10)', async () => {
     const utils = await renderApp();
     await act(() => router.navigate('/experience/exp-rooftop-sunset'));
 
-    await fireEvent.press(screen.getByRole('button', { name: 'Créer mon parcours' }));
+    await fireEvent.press(await screen.findByRole('button', { name: 'Créer mon parcours' }));
 
-    expect(utils.getPathname()).toBe('/itinerary/create');
+    expect(utils.getPathname()).toBe('/journey/create');
     expect(screen.queryByText(/Unmatched Route/i)).toBeNull();
-    expect(screen.getByText('Ta sortie est prête')).toBeOnTheScreen();
-    expect(screen.getByText('Cet écran arrive bientôt.')).toBeOnTheScreen();
+    expect(screen.getByText('Créons ton parcours')).toBeOnTheScreen();
+  });
+
+  it('Experience Detail -> map block -> full-screen map -> back to the detail', async () => {
+    const utils = await renderApp();
+    await act(() => router.navigate('/experience/exp-rooftop-sunset'));
+
+    await fireEvent.press(screen.getByRole('button', { name: 'Voir sur la carte' }));
+
+    expect(utils.getPathname()).toBe('/experience-map/exp-rooftop-sunset');
+    expect(screen.queryByText(/Unmatched Route/i)).toBeNull();
+    expect(await screen.findByTestId('experience-map-footer')).toBeOnTheScreen();
+    expect(screen.getByTestId('roam-map')).toBeOnTheScreen();
+
+    await fireEvent.press(screen.getAllByRole('button', { name: 'Retour' }).at(-1)!);
+
+    expect(utils.getPathname()).toBe('/experience/exp-rooftop-sunset');
+    expect(screen.queryByText(/Unmatched Route/i)).toBeNull();
+  });
+
+  it('full-screen map footer: "Voir le lieu" returns to the detail instead of stacking a second one', async () => {
+    const utils = await renderApp();
+    await act(() => router.navigate('/experience/exp-rooftop-sunset'));
+    await fireEvent.press(screen.getByRole('button', { name: 'Voir sur la carte' }));
+    await screen.findByTestId('experience-map-footer');
+
+    await fireEvent.press(screen.getByRole('button', { name: 'Voir le lieu' }));
+
+    expect(utils.getPathname()).toBe('/experience/exp-rooftop-sunset');
   });
 });

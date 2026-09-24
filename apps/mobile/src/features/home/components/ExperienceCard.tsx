@@ -11,7 +11,9 @@ import { Text } from '@/components/ui';
 import { useTheme } from '@/theme';
 import type { Experience } from '@/types';
 
-const CARD_WIDTH = 260;
+/** Exported so a carousel rendering this card (Home, and Discover's `NearbySection`/`TrendingSection`)
+ * can compute its own `snapToInterval` from the exact same width — no separate hardcoded copy. */
+export const CARD_WIDTH = 260;
 
 type ExperienceCardProps = {
   experience: Experience;

@@ -12,14 +12,15 @@ import { ScrollView, Share, useWindowDimensions, View } from 'react-native';
 import { useSharedValue } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { Button, Text } from '@/components/ui';
+import { Button, STICKY_FOOTER_CLEARANCE, StickyActionFooter, Text } from '@/components/ui';
 import { useFavoriteExperienceIds } from '@/features/home/useFavoriteExperienceIds';
+import { useJourneyCta } from '@/features/journey/hooks/useJourneyCta';
 import { useCategories } from '@/hooks/useCategories';
+import { useCtaVisibility } from '@/hooks/useCtaVisibility';
 import type { Experience, GalleryOpenRect } from '@/types';
 import { useTheme } from '@/theme';
 
 import { Badge } from './components/Badge';
-import { ExperienceDetailFooter, FOOTER_CLEARANCE } from './components/ExperienceDetailFooter';
 import { ExperienceDetailHeader, HEADER_HEIGHT } from './components/ExperienceDetailHeader';
 import { ExperienceHero } from './components/ExperienceHero';
 import { HighlightsSection } from './components/HighlightsSection';
@@ -31,7 +32,6 @@ import { WhyRoamSection } from './components/WhyRoamSection';
 import { getCategoryLabel } from './lib/categoryLabel';
 import { getHeroHeight } from './lib/heroHeight';
 import { getWhyRecommended } from './lib/whyRecommended';
-import { useCtaVisibility } from './useCtaVisibility';
 import { useExperienceDetail } from './useExperienceDetail';
 
 type ExperienceDetailScreenProps = {
@@ -83,9 +83,12 @@ export function ExperienceDetailScreen({ experienceId }: ExperienceDetailScreenP
     [router],
   );
 
-  const goToCreateJourney = useCallback(() => {
+  // "Créer mon parcours" / "Ajouter au parcours", depending on the journey state (sprint 10).
+  const journeyCta = useJourneyCta(experience);
+
+  const goToMap = useCallback(() => {
     if (!experience) return;
-    router.push({ pathname: '/itinerary/create', params: { experienceId: experience.id } });
+    router.push({ pathname: '/experience-map/[id]', params: { id: experience.id } });
   }, [experience, router]);
 
   const handleShare = useCallback(() => {
@@ -122,14 +125,7 @@ export function ExperienceDetailScreen({ experienceId }: ExperienceDetailScreenP
   const infoItems: InfoItemData[] = useMemo(() => {
     if (!experience) return [];
     const items: InfoItemData[] = [];
-    if (experience.address) {
-      items.push({
-        key: 'address',
-        icon: MapPin,
-        label: t('experience.info.address'),
-        value: experience.address,
-      });
-    }
+    // The address lives under the map block now (`MapPreviewRow`, D-73), not in this grid.
     if (experience.openingHoursLabel) {
       items.push({
         key: 'today',
@@ -191,7 +187,7 @@ export function ExperienceDetailScreen({ experienceId }: ExperienceDetailScreenP
         onScrollEndDrag={ctaOnScrollEnd}
         onMomentumScrollEnd={ctaOnScrollEnd}
         scrollEventThrottle={16}
-        contentContainerStyle={{ paddingBottom: insets.bottom + FOOTER_CLEARANCE }}
+        contentContainerStyle={{ paddingBottom: insets.bottom + STICKY_FOOTER_CLEARANCE }}
       >
         <ExperienceHero
           images={images}
@@ -244,10 +240,7 @@ export function ExperienceDetailScreen({ experienceId }: ExperienceDetailScreenP
 
           <InfoGrid items={infoItems} />
 
-          <MapPreviewRow
-            location={experience.location ?? experience.title}
-            address={experience.address}
-          />
+          <MapPreviewRow experience={experience} onPress={goToMap} />
 
           <WhyRoamSection experience={experience} />
 
@@ -279,12 +272,14 @@ export function ExperienceDetailScreen({ experienceId }: ExperienceDetailScreenP
         revealOffset={revealOffset}
       />
 
-      <ExperienceDetailFooter
+      <StickyActionFooter
         visible={ctaVisible}
-        label={t('experience.createItinerary')}
-        onPress={goToCreateJourney}
-        bottomInset={insets.bottom}
+        label={journeyCta.label}
+        onPress={journeyCta.onPress}
+        icon={journeyCta.icon}
+        loading={journeyCta.loading}
       />
+      {journeyCta.modal}
     </View>
   );
 }

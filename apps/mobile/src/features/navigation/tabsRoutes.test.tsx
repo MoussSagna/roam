@@ -40,8 +40,11 @@ const TABS = [
   // (sprint 5): `exp-dinner-view` ("Dîners avec vue") is the mock data's first hero experience.
   { label: 'Accueil', path: '/home', title: 'Dîners avec vue' },
   { label: 'Découvrir', path: '/discover', title: 'Découvrir' },
-  { label: 'Favoris', path: '/favorites', title: 'Mes favoris' },
-  { label: 'Profil', path: '/profile', title: 'Profil' },
+  // Sprint 11: "Parcours" replaced "Favoris" in the bar. With no journey at all the hub shows its
+  // empty state, whose header is its title.
+  { label: 'Parcours', path: '/journey', title: 'Ton prochain parcours commence ici' },
+  // Profile has no static page title in the body (only the sticky reveal header's, off-screen at rest).
+  { label: 'Profil', path: '/profile', title: null },
 ] as const;
 
 function scrollTo(testID: string, y: number) {
@@ -69,7 +72,12 @@ describe('main navigation (tabs)', () => {
     for (const tab of TABS) {
       await act(() => router.navigate(tab.path));
       expect(utils.getPathname()).toBe(tab.path);
-      expect(screen.getByRole('header')).toHaveTextContent(tab.title);
+      if (tab.title) {
+        // The journey hub loads its store first (async), so wait for the header.
+        expect(await screen.findByRole('header')).toHaveTextContent(tab.title);
+      } else {
+        expect(screen.queryByRole('header')).toBeNull();
+      }
       expect(screen.getByRole('button', { name: tab.label })).toBeSelected();
     }
   });
@@ -114,13 +122,35 @@ describe('main navigation (tabs)', () => {
 
   it('tapping the collapsed bubble redeploys the tab bar without navigating away', async () => {
     const utils = await renderApp();
-    await act(() => router.navigate('/favorites'));
-    await scrollTo('favorites-scroll', 200);
+    await act(() => router.navigate('/journey'));
+    await screen.findByTestId('journey-hub-empty');
+    await scrollTo('journey-hub-scroll', 200);
 
     await fireEvent.press(screen.getByRole('button', { name: 'Agrandir la barre de navigation' }));
 
+    expect(utils.getPathname()).toBe('/journey');
+    expect(screen.getByRole('button', { name: 'Parcours' })).toBeVisible();
+    expect(screen.getByRole('button', { name: 'Parcours' })).toBeSelected();
+  });
+
+  it('shows Parcours instead of Favoris in the bar, in order', async () => {
+    await renderApp();
+    await act(() => router.navigate('/home'));
+
+    const labels = screen
+      .getAllByRole('button')
+      .map((button) => button.props.accessibilityLabel)
+      .filter((label) => ['Accueil', 'Découvrir', 'Parcours', 'Favoris', 'Profil'].includes(label));
+    expect(labels).toEqual(['Accueil', 'Découvrir', 'Parcours', 'Profil']);
+  });
+
+  it('keeps the /favorites route (not deleted, only out of the tab bar)', async () => {
+    const utils = await renderApp();
+    await act(() => router.navigate('/favorites'));
+
     expect(utils.getPathname()).toBe('/favorites');
-    expect(screen.getByRole('button', { name: 'Favoris' })).toBeVisible();
-    expect(screen.getByRole('button', { name: 'Favoris' })).toBeSelected();
+    expect(screen.queryByText(/Unmatched Route/i)).toBeNull();
+    expect(screen.getByRole('header')).toHaveTextContent('Mes favoris');
+    expect(screen.queryByRole('button', { name: 'Favoris' })).toBeNull();
   });
 });

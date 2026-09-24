@@ -2,7 +2,13 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import en from './locales/en.json';
 import fr from './locales/fr.json';
-import i18n, { DEFAULT_LANGUAGE, getStoredLanguage, setLanguage } from './index';
+import i18n, {
+  DEFAULT_LANGUAGE,
+  SUPPORTED_LANGUAGES,
+  getAvailableLanguages,
+  getStoredLanguage,
+  setLanguage,
+} from './index';
 
 function leafKeys(node: unknown, prefix = ''): string[] {
   if (typeof node !== 'object' || node === null) return [prefix];
@@ -40,5 +46,30 @@ describe('i18n', () => {
   it('ignores unsupported stored languages', async () => {
     await AsyncStorage.setItem('roam.language', 'de');
     expect(await getStoredLanguage()).toBeNull();
+  });
+
+  it('derives the available language list from the resources, not a hardcoded list', () => {
+    const languages = getAvailableLanguages();
+
+    // One entry per `SUPPORTED_LANGUAGES` — proves the list is derived, not a fixed length.
+    expect(languages).toHaveLength(SUPPORTED_LANGUAGES.length);
+    expect(languages.map((language) => language.code).sort()).toEqual(
+      [...SUPPORTED_LANGUAGES].sort(),
+    );
+    expect(languages).toEqual(
+      expect.arrayContaining([
+        { code: 'fr', nativeName: 'Français', flag: '🇫🇷' },
+        { code: 'en', nativeName: 'English', flag: '🇬🇧' },
+      ]),
+    );
+  });
+
+  it("reads each language's native name from its own resources, not the active language", async () => {
+    await i18n.changeLanguage('en');
+
+    const french = getAvailableLanguages().find((language) => language.code === 'fr');
+
+    // Still "Français", not translated to "French" because the UI is currently in English.
+    expect(french?.nativeName).toBe('Français');
   });
 });

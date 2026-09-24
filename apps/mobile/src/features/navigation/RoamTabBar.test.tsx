@@ -4,14 +4,16 @@ import type { ReactNode } from 'react';
 import { Pressable } from 'react-native';
 
 import { Text } from '@/components/ui';
+import { createJourney, resetJourneyStoreForTests } from '@/features/journey/journeyStore';
 import i18n from '@/i18n';
+import { repositories } from '@/services';
 import { renderWithProviders } from '@/test/renderWithProviders';
 
 import { RoamTabBar } from './RoamTabBar';
 import { TabBarCollapseProvider, useTabBarCollapse } from './TabBarCollapseContext';
 import { TabTransitionProvider, useTabTransition } from './TabTransitionContext';
 
-const TAB_NAMES = ['home', 'discover', 'favorites', 'profile'] as const;
+const TAB_NAMES = ['home', 'discover', 'journey', 'profile'] as const;
 
 function Providers({ children }: { children: ReactNode }) {
   return (
@@ -54,6 +56,8 @@ function makeNavigation() {
 describe('RoamTabBar', () => {
   beforeEach(async () => {
     await act(() => i18n.changeLanguage('fr'));
+    await repositories.journeys.clear();
+    resetJourneyStoreForTests();
   });
 
   it('shows all four tabs with the active one marked selected', async () => {
@@ -71,7 +75,7 @@ describe('RoamTabBar', () => {
 
     expect(screen.getByRole('button', { name: 'Accueil' })).toBeSelected();
     expect(screen.getByRole('button', { name: 'Découvrir' })).not.toBeSelected();
-    expect(screen.getByRole('button', { name: 'Favoris' })).toBeOnTheScreen();
+    expect(screen.getByRole('button', { name: 'Parcours' })).toBeOnTheScreen();
     expect(screen.getByRole('button', { name: 'Profil' })).toBeOnTheScreen();
   });
 
@@ -88,7 +92,7 @@ describe('RoamTabBar', () => {
       </Providers>,
     );
 
-    expect(screen.getByRole('button', { name: 'Favoris' })).toBeSelected();
+    expect(screen.getByRole('button', { name: 'Parcours' })).toBeSelected();
     expect(screen.getByRole('button', { name: 'Accueil' })).not.toBeSelected();
   });
 
@@ -105,9 +109,9 @@ describe('RoamTabBar', () => {
       </Providers>,
     );
 
-    await fireEvent.press(screen.getByRole('button', { name: 'Favoris' }));
+    await fireEvent.press(screen.getByRole('button', { name: 'Parcours' }));
 
-    expect(navigation.navigate).toHaveBeenCalledWith('favorites');
+    expect(navigation.navigate).toHaveBeenCalledWith('journey');
   });
 
   it('records a forward direction when switching to a tab further right', async () => {
@@ -124,7 +128,7 @@ describe('RoamTabBar', () => {
       </Providers>,
     );
 
-    await fireEvent.press(screen.getByRole('button', { name: 'Favoris' }));
+    await fireEvent.press(screen.getByRole('button', { name: 'Parcours' }));
 
     expect(screen.getByText('direction:1')).toBeOnTheScreen();
   });
@@ -195,9 +199,56 @@ describe('RoamTabBar', () => {
 
     await fireEvent.press(screen.getByLabelText('force-collapse'));
 
-    // Tapping the bubble only expands the bar; "Favoris" (the active tab) is still what re-appears.
+    // Tapping the bubble only expands the bar; "Parcours" (the active tab) is still what re-appears.
     await fireEvent.press(screen.getByRole('button', { name: 'Agrandir la barre de navigation' }));
 
-    expect(screen.getByRole('button', { name: 'Favoris' })).toBeSelected();
+    expect(screen.getByRole('button', { name: 'Parcours' })).toBeSelected();
+  });
+
+  it('marks the Parcours tab with a small dot while a journey is in progress', async () => {
+    await createJourney(
+      {
+        context: { mood: 'calm', duration: 'halfDay', budget: 'medium' },
+        startLocation: {
+          kind: 'current',
+          label: 'Ma position',
+          coordinates: { latitude: 48.8674, longitude: 2.3637 },
+        },
+        startTime: '18:00',
+        experienceIds: ['exp-slow-afternoon'],
+      },
+      'Sortie chill',
+    );
+    await renderWithProviders(
+      <Providers>
+        <RoamTabBar
+          state={makeState(0)}
+          descriptors={{} as BottomTabBarProps['descriptors']}
+          navigation={makeNavigation()}
+          insets={insets}
+        />
+      </Providers>,
+    );
+
+    expect(await screen.findByTestId('tab-journey-indicator')).toBeOnTheScreen();
+    expect(screen.getByRole('button', { name: 'Parcours' }).props.accessibilityHint).toBe(
+      'Un parcours est en cours',
+    );
+  });
+
+  it('shows no dot without a journey in progress', async () => {
+    await renderWithProviders(
+      <Providers>
+        <RoamTabBar
+          state={makeState(0)}
+          descriptors={{} as BottomTabBarProps['descriptors']}
+          navigation={makeNavigation()}
+          insets={insets}
+        />
+      </Providers>,
+    );
+
+    expect(screen.getByRole('button', { name: 'Parcours' })).toBeOnTheScreen();
+    expect(screen.queryByTestId('tab-journey-indicator')).toBeNull();
   });
 });

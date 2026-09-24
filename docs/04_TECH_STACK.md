@@ -163,7 +163,7 @@ Prioritize tests for:
 ## Implementation status (updated 2026-09-21)
 
 Only the **mobile foundation** exists. Nothing below the "Frontend → Mobile" level of this document
-is implemented: no web app, no API, no database, no shared `packages/*`, no map provider chosen.
+is implemented: no web app, no API, no database, no shared `packages/*`. Mobile map: `react-native-maps` (sprint 7, `DECISIONS.md` D-70) on mock data only — no Places/Directions API.
 Rationale for every choice: `DECISIONS.md`. Commands and conventions: `DEVELOPMENT.md`.
 
 ### Repository
@@ -194,6 +194,7 @@ into `packages/` when the web app needs them.
 | Persistence        | `@react-native-async-storage/async-storage` (theme, language) | 2.2.0                |
 | Fonts              | Plus Jakarta Sans + Inter (+ Newsreader, Mrs Saint Delafield for the mockups) via `@expo-google-fonts/*` | 0.4.x |
 | Icons              | `lucide-react-native` (one import per icon) + `react-native-svg`                   | 1.47 / 15.15 |
+| Charts             | `react-native-gifted-charts` (donut chart only, sprint 5, `DECISIONS.md` D-59)     | 1.4.78 |
 | Images             | `expo-image`                                               | 57.0                    |
 | Tests              | Jest 29 (`jest-expo`) + React Native Testing Library       | 57.0 / 14.0             |
 | Lint / format      | ESLint 9 (`eslint-config-expo`) + Prettier                 | 9.39 / 3.9              |

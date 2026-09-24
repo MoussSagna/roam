@@ -1,10 +1,28 @@
+export { AppToast } from './AppToast';
 export { Button, type ButtonProps } from './Button';
 export { Chip, type ChipProps } from './Chip';
+export {
+  ConfirmationModal,
+  type ConfirmationModalProps,
+  type ConfirmationModalVariant,
+} from './ConfirmationModal';
 export { FadeInUp } from './FadeInUp';
+export { HorizontalCarousel, type HorizontalCarouselProps } from './HorizontalCarousel';
 export { IconButton, type IconButtonProps } from './IconButton';
 export { PlaceholderCard } from './PlaceholderCard';
 export { Screen } from './Screen';
 export { ScrollScreen } from './ScrollScreen';
 export { SearchBar, type SearchBarProps } from './SearchBar';
+export { Slider, type SliderProps } from './Slider';
+export {
+  StickyActionFooter,
+  STICKY_FOOTER_CLEARANCE,
+  type StickyActionFooterProps,
+} from './StickyActionFooter';
+export {
+  StickyRevealHeader,
+  STICKY_REVEAL_HEADER_HEIGHT,
+  type StickyRevealHeaderProps,
+} from './StickyRevealHeader';
 export { Text, type TextProps } from './Text';
 export { TextField, type TextFieldProps } from './TextField';

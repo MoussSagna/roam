@@ -25,15 +25,38 @@ Translation resources (used by the mobile app):
 - `apps/mobile/src/i18n/locales/fr.json`
 - `apps/mobile/src/i18n/locales/en.json`
 
-Current status (2026-09-22): the mobile onboarding is implemented on the front end (no backend, no database; the
+Current status (2026-09-23): the mobile onboarding is implemented on the front end (no backend, no database; the
 profile creation is a simulation of about 10 s). Authentication screens are now all built, front-end only and
 simulated: Entry, Login, Register, and the whole Forgot password sub-flow (email → reset code → new password →
 success) — see `DECISIONS.md` D-28, D-29, D-31–D-36, `08_AGENT_TODO.md` and `docs/SCREEN_INTEGRATION_WORKFLOW.md`.
-The main navigation is also built: four tabs (Home, Discover, Favorites, Profile) behind a floating pill/bubble
+The main navigation is also built: four tabs (Home, Discover, Parcours — Favorites until sprint 11, D-81 —, Profile) behind a floating pill/bubble
 tab bar that collapses into a bubble on scroll and expands on tap — see `DECISIONS.md` D-38 to D-43. **Home is
 now the real discovery screen** (hero carousel, mood chips, popular/nearby/for-you sections, mock data only) —
-see `DECISIONS.md` D-45; Discover/Favorites/Profile are still sprint 3 placeholder content. **Experience detail
-and its full-screen photo gallery are built** (hero → gallery transition, reviews, similar experiences, mock
-data only) — see `DECISIONS.md` D-48; the itinerary/journey screen its CTAs lead to is still a placeholder.
+see `DECISIONS.md` D-45. **Discover is now a real, immersive editorial discovery page** (Sélection ROAM,
+suggestions, an immersive experience block, nearby/trending experiences, editorial collections; horizontal
+carousels/lists now default to `FlatList`, mock data only) — see `DECISIONS.md` D-65, D-66; the `Favorites`
+tab is still sprint 3 placeholder content.
+**Experience detail and its full-screen photo gallery are built** (hero → gallery transition, reviews, similar
+experiences, mock data only) — see `DECISIONS.md` D-48; its CTA now opens the journey ("parcours")
+creation flow — sprint 10, `DECISIONS.md` D-80. **Profile is now identity/activity/taste** (header, stats, "Ce que
+j'aime", favorites/history previews, a yearly activity summary) **and configuration moved to a new,
+real Settings screen** (`/profile/settings`: account, préférences, langue/thème, aide, confidentialité,
+déconnexion) — "Mes préférences", "Mes favoris", "Mon historique", "Mes statistiques", "Langue" and
+"Thème" are all real, reached from both Profile and Settings where called for; summary cards, a
+genre/city breakdown and a mood donut chart (`react-native-gifted-charts`); a dynamically derived,
+never-hardcoded language list; Light/Dark/System selection — mock data only except the language/theme
+systems, one screen at a time — see `DECISIONS.md` D-50, D-51, D-57, D-58, D-59, D-60, D-61, D-63; the
+other screens Settings links to (edit profile, help, privacy) are still placeholders, each built in its
+own session. **Logout now asks for confirmation** (a reusable `ConfirmationModal`, now living in
+Settings) before calling the existing mocked `logout()`/navigation-reset flow, and a real navigation bug
+is fixed: `AuthTopBar`'s back button no longer renders when there's nothing to go back to (previously
+always rendered, so it could be pressed with no route behind it right after logout) — see `DECISIONS.md`
+D-62.
+**Global search is now real** (`/search`), opened identically from both Home's and Discover's search
+bars: recent searches (persisted), trending chips, explore-by-mood, live suggestions, filterable
+results in a list (Trier / Filtres / Carte) or a dedicated full-screen real map (`/search/map`, `RoamMap`) over the same sorted/filtered
+results, and a "no results" state with fallback suggestions — mock data only, no real query engine — see
+`DECISIONS.md` D-68, D-71 and D-72. The Map screen (`/map`) is a real `react-native-maps` map on mock data too (sprint 7, D-70);
+the remaining illustrated maps (experience detail, onboarding) are replaced one screen at a time.
 
 The product is intentionally MVP-first. Do not expand scope without an explicit requirement.

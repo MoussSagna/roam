@@ -3,7 +3,7 @@ import { StatusBar } from 'expo-status-bar';
 import { useCallback, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { NativeScrollEvent, NativeSyntheticEvent } from 'react-native';
-import { ScrollView, View } from 'react-native';
+import { ScrollView, useWindowDimensions, View } from 'react-native';
 import Animated, {
   Extrapolation,
   interpolate,
@@ -21,11 +21,12 @@ import type { Experience, Mood } from '@/types';
 
 import { ExperienceCard } from './components/ExperienceCard';
 import { HeroCarousel } from './components/HeroCarousel';
-import { HomeHeader } from './components/HomeHeader';
+import { HEADER_HEIGHT, HomeHeader } from './components/HomeHeader';
 import { NearbyCard } from './components/NearbyCard';
 import { SectionHeader } from './components/SectionHeader';
 import { HOME_MOODS } from './data/moods';
 import { NEARBY_CATEGORIES } from './data/nearbyCategories';
+import { getHeroHeight } from './lib/heroHeight';
 import { pickForYou } from './lib/pickForYou';
 import { useFavoriteExperienceIds } from './useFavoriteExperienceIds';
 import { useHomeExperiences } from './useHomeExperiences';
@@ -41,11 +42,18 @@ const HERO_MAX_SCALE = 1.15;
  * Home / Accueil (sprint 5): an immersive discovery page — hero carousel, mood chips, and three
  * horizontally-scrolling sections — built on the mock experience pool (`useHomeExperiences`), not the
  * sprint 3 placeholder it replaces. See `docs/DECISIONS.md` D-45.
+ *
+ * Sticky search (sprint 6, D-69): the in-flow `SearchBar` below the Hero is untouched; `HomeHeader`
+ * also renders the *same* `SearchBar` in its own `searchSlot`, revealed (`showSearch`) once scrolled
+ * past the Hero — merged into the header's existing bell zone rather than a second, separate sticky
+ * element, and riding along with its existing scroll-direction hide/show (`useScrollDirection`),
+ * unchanged from before.
  */
 export function HomeScreen() {
   const { t } = useTranslation();
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
+  const { height: windowHeight } = useWindowDimensions();
   const router = useRouter();
   const tabBarOnScroll = useTabBarScrollHandler();
   const {
@@ -53,6 +61,12 @@ export function HomeScreen() {
     atTop: headerAtTop,
     handleScrollOffset: onHeaderScrollOffset,
   } = useScrollDirection();
+
+  // Sticky search (sprint 6, D-69): the header's search row reveals once scrolled roughly past the
+  // Hero — same "hero height minus header height" shape as Experience Detail's own `revealOffset`
+  // (`features/experiences/lib/heroHeight.ts`), computed from Home's own Hero formula instead.
+  const searchRevealOffset = Math.max(0, getHeroHeight(windowHeight) - HEADER_HEIGHT);
+  const [searchDocked, setSearchDocked] = useState(false);
 
   // UI-thread value driving the Hero's pull-to-stretch (below); mutated directly from the plain JS
   // `onScroll` handler, like `ProfileOrbit`'s loader progress — this does not re-render `HomeScreen`
@@ -64,9 +78,14 @@ export function HomeScreen() {
   // mutated this way, the same pattern `ProfileOrbit` uses from a plain `useEffect`). A fresh
   // function per render is harmless here — `ScrollView.onScroll` isn't a memoization-sensitive prop.
   const handleScroll = (event: NativeSyntheticEvent<NativeScrollEvent>) => {
-    scrollY.value = event.nativeEvent.contentOffset.y;
+    const offsetY = event.nativeEvent.contentOffset.y;
+    scrollY.value = offsetY;
     tabBarOnScroll(event);
-    onHeaderScrollOffset(event.nativeEvent.contentOffset.y);
+    onHeaderScrollOffset(offsetY);
+    setSearchDocked((current) => {
+      const next = offsetY > searchRevealOffset;
+      return current === next ? current : next;
+    });
   };
 
   const heroAnimatedStyle = useAnimatedStyle(() => {
@@ -125,6 +144,14 @@ export function HomeScreen() {
     router.push('/discover');
   }, [router]);
 
+  const goToSearch = useCallback(() => {
+    router.push({ pathname: '/search', params: { context: 'home' } });
+  }, [router]);
+
+  const goToSearchFilters = useCallback(() => {
+    router.push({ pathname: '/search', params: { context: 'home', openFilters: '1' } });
+  }, [router]);
+
   if (isLoading) {
     return (
       <View className="flex-1 items-center justify-center bg-background">
@@ -157,6 +184,8 @@ export function HomeScreen() {
           <SearchBar
             placeholder={t('home.search.placeholder')}
             filterLabel={t('home.search.filters')}
+            onPress={goToSearch}
+            onPressFilter={goToSearchFilters}
           />
 
           <View className="gap-3" testID="home-section-moods">
@@ -245,6 +274,15 @@ export function HomeScreen() {
         atTop={headerAtTop}
         topInset={insets.top}
         onPressNotifications={() => {}}
+        showSearch={searchDocked}
+        searchSlot={
+          <SearchBar
+            placeholder={t('home.search.placeholder')}
+            filterLabel={t('home.search.filters')}
+            onPress={goToSearch}
+            onPressFilter={goToSearchFilters}
+          />
+        }
       />
     </View>
   );

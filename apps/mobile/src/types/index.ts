@@ -1,3 +1,4 @@
+export type * from './collection';
 export type * from './common';
 export type * from './experience';
 export type * from './favorite';
@@ -5,4 +6,6 @@ export type * from './feedback';
 export type * from './geometry';
 export type * from './itinerary';
 export type * from './place';
+export type * from './search';
 export type * from './user';
+export type * from './journey';

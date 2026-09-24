@@ -1213,3 +1213,1571 @@ content changes beyond removing one named section.
   `translateY`, shortens the duration — identical to `HomeHeader`'s handling). The header's crossfade is
   a direct function of scroll position, not a timed animation independent of user input, so there is no
   separate motion to suppress; it inherently has no bounce, spring or autoplay to turn off.
+
+## Profile (2026-09-22)
+
+### D-50 — Profile 1 "Profil principal" (route `/profile`); `UserRepository` added; ten sub-screens stubbed
+
+Sprint 5, one screen at a time (`docs/SCREEN_INTEGRATION_WORKFLOW.md`): `ProfileScreen` replaces the
+sprint 3 placeholder (D-40) with the real main screen from the supplied mockup board (tile 01) — header,
+stats, and the grouped menu (préférences/favoris/historique/statistiques, langue/thème, aide/confidentialité,
+déconnexion). Screens 2–11 of the mockup board (edit profile, préférences, favoris, historique,
+statistiques, langue, thème, aide, confidentialité, the logout popup) are explicitly **not** built this
+session — each gets its own session and validation, per the brief's "one screen at a time" rule.
+
+- **No user/session data existed beyond `AuthContext`'s `isLoggedIn`.** `User` (`types/user.ts`) gained
+  optional display fields (`age`, `city`, `bio`, `stats: UserStats`) instead of a second type — same
+  precedent as `Experience`'s repeated extensions (D-45, D-48). A new `UserRepository.getCurrentUser()`
+  (`services/mock/user.ts`) follows the existing `Screen → hook → Repository → mock` convention
+  (`useCurrentUser`, mirroring `useExperience`); the mocked profile (`services/mock/data.ts` →
+  `currentUser`, "Moussa", 33, Paris) is the one from the mockup. `bio` is plain mock content, not an
+  i18n key — same "entity content is plain strings" precedent as place/experience descriptions (D-09).
+- **No avatar photo exists, so `ProfileAvatar` falls back to an initial-letter circle** (`bg-accent`,
+  first letter of `displayName`) instead of inventing or cropping one — the exact precedent `ReviewCard`
+  already established for reviewer avatars with no photo asset. Shows `avatarUrl` once a real one exists;
+  no temporary crop was created for this screen.
+- **Ten menu rows lead to screens not built this session; each gets a `ProfilePlaceholder` route**
+  (`features/profile/components/ProfilePlaceholder.tsx`, same shape as `CreateJourneyPlaceholder`/
+  `ExperienceDetailPlaceholder`, D-45/D-48): `/profile/{edit,preferences,favorites,history,statistics,
+language,theme,help,privacy,settings}`. Replace each route's body, not its path, when that screen's own
+  session comes; delete `ProfilePlaceholder` once nothing references it (D-37's precedent).
+- **"Mes favoris" and "Mon historique" get their own `/profile/*` routes, distinct from the existing
+  `/favorites` tab.** The mockup's tiles 03–04 show them as pushed screens with a back arrow and no tab
+  bar, not the tab bar's own Favoris screen — so this keeps the two entry points separate for now rather
+  than repointing the row at the tab. Which one (if either) the real "Mes favoris" screen (écran 5) ends
+  up reusing is that screen's own decision, not decided here.
+- **The mockup's header Settings gear icon has no dedicated screen in this sprint's 11-screen list**
+  (Langue/Thème/Aide/Confidentialité are already separate menu rows). Simplest reversible choice: it
+  pushes its own placeholder, `/profile/settings`, reusing the already-present-but-unused
+  `settings.title` i18n key ("Paramètres") as that placeholder's heading — same treatment as every other
+  not-yet-built destination on this screen, not a special case.
+- **Langue and Thème rows show their live current value**, not the mockup's static "Français"/"Système":
+  `i18n.language` (guarded by `isLanguage`) and `useTheme().preference` are already reactive app state, so
+  showing anything else would be a mock fiction the app doesn't need. Both values are resolved through an
+  explicit key map (`LANGUAGE_LABEL_KEYS`/`THEME_LABEL_KEYS` in `ProfileScreen.tsx`), not a dynamic
+  template-literal key — this project's typed i18n keys reject those (same pattern as `categoryLabel.ts`,
+  D-48).
+- **New generic-looking pieces stay feature-scoped, not promoted to `components/ui/`**: `ProfileAvatar`,
+  `ProfileHeader`, `ProfileStats`, `ProfileMenuRow` are all specific to this screen's exact shapes (a menu
+  row with an icon-in-a-tinted-circle, an optional subtitle _or_ trailing value, a chevron) — reusing
+  `Button`/`IconButton`/`Text`/`ScrollScreen` for everything generic rather than inventing a competing
+  "Card" primitive (`06_DESIGN_SYSTEM.md` lists one, but nothing here needed its full shape).
+- **Logout keeps its existing direct behavior (no confirmation), unchanged from the sprint 3 placeholder.**
+  The confirmation popup is explicitly écran 11 of this sprint's plan, its own session; adding it here
+  would be building ahead of the one-screen-at-a-time rule.
+- **`fireEvent.press` must be individually awaited (RNTL v14, `DEVELOPMENT.md`'s own testing convention) —
+  confirmed the hard way**: an early draft of `ProfileScreen.test.tsx` fired eight unawaited presses in one
+  test, which logged "overlapping act() calls" and left the _next_ test's fresh render unable to find its
+  own elements (a real cross-test failure, not a flake) until every press was awaited.
+- **Not done on purpose**: the ten linked screens themselves, and the logout confirmation popup (each a
+  later session); a "Card" design-system primitive (not needed yet); persisting the mocked profile (no
+  backend, `08_AGENT_TODO.md` Phase F still open).
+
+### D-51 — Profile 3 "Mes préférences" (route `/profile/preferences`); new `Slider` primitive, no new dependency
+
+Sprint 5, skipping écran 2 ("Modifier mon profil") on explicit request — the brief named this screen
+next. `PreferencesScreen` replaces the `ProfilePlaceholder` that `/profile/preferences` rendered since
+D-50, from the mockup's tile 02: types d'expériences and ambiance (multi-select tile grids), budget and
+distance (sliders), "Réinitialiser" and "Enregistrer mes préférences".
+
+- **No slider existed and none of `react-native`'s installed dependencies provide one** (no
+  `@react-native-community/slider`, no gesture-handler). Built `Slider` (`components/ui/`, the
+  `06_DESIGN_SYSTEM.md` "Core" component this sprint needed for the first time) on `PanResponder`
+  (React Native core) instead of adding a dependency for something a touch handler already core to the
+  platform can do — same reasoning as every other "build it on what's installed" choice in this project
+  (D-41's `expo-blur` was added only because a flat view genuinely couldn't fake a blur; a drag gesture
+  needs no such thing). `accessibilityRole="adjustable"` + `accessibilityValue` + increment/decrement
+  `accessibilityActions` make it usable without a drag gesture (VoiceOver/TalkBack).
+- **`react-hooks/refs` (this project's stricter-than-usual lint config, seen before in D-48's
+  `BackHandler` note) rejected the obvious `useRef(PanResponder.create(...)).current` lazy-init**, and
+  then rejected passing a ref-reading closure into `PanResponder.create` even from inside a `useMemo`
+  factory. Fixed by dropping the ref entirely: track width lives only in `useState` (already needed for
+  rendering the thumb's position), read directly by the touch handler closed over inside the `useMemo`
+  factory (deps: `min, max, step, onValueChange, trackWidth`) — no ref anywhere in the component.
+- **"Types d'expériences" reuses onboarding's exact 8-item vocabulary, not a new one.** The mockup's
+  labels (Restaurants, Bars & Soirées, Culture, Nature, Activités, Shopping, Bien-être, Événements) are
+  verbatim `onboarding.interests.*` (`InterestsScreen.tsx`, D-25) — same ids, same i18n keys, reused
+  directly rather than duplicated. `EXPERIENCE_TYPES` (`features/profile/data/experienceTypes.ts`)
+  re-declares the small id/icon list (including a cross-feature import of onboarding's `RunnerIcon`/
+  `LotusIcon` — same reuse precedent as `MapPreviewRow` reusing onboarding's `MapPreview`, D-48) rather
+  than relocating onboarding's own file, to avoid touching an already-validated screen for this session.
+  `InterestTile` (`features/onboarding/components/`) is reused as-is, cross-feature, for the same reason
+  — it already is exactly "an icon + label checkbox tile"; a percentage-free numeric `width`/`height` is
+  computed from `useWindowDimensions()` instead of onboarding's own height-constrained shrink logic,
+  since this screen scrolls and isn't fitted into one fixed-height step.
+- **"Ambiance" is a new, screen-specific vocabulary — not a reuse of `Mood` or `Company`.** The mockup's
+  six tags (Calme, Festive, Romantique, Entre amis, En famille, Solo) mix mood-like and company-like
+  concepts in one flat multi-select set that matches neither the onboarding `MoodScreen`'s own 9-tile
+  vocabulary (single choice) nor `Company` (single choice, and wrong grammatical gender for "ambiance",
+  a feminine noun: "Festive" here, "Festif" everywhere else in the app). New ids/keys
+  (`preferences.ambiance.*`, `features/profile/data/ambianceOptions.ts`), icons mirrored from the
+  onboarding Mood screen's own choices for the concepts they share, for visual consistency.
+- **New `ProfilePreferences` type (`types/user.ts`), not the existing `UserPreference`.** The onboarding
+  model's budget is a discrete `BudgetRange` bucket; this screen's budget is a continuous per-person
+  euro amount on a slider — genuinely different shapes, not a duplicate. Documented as local screen
+  state only, like the rest of this screen; no repository, since there is nothing to fetch (the mockup's
+  own default selection is hard-coded local state, the same pattern as every onboarding question
+  screen's own pre-selected default, D-21 to D-25) and "Enregistrer" only needs to simulate a delay.
+- **"Enregistrer mes préférences" simulates a save then `router.back()`** (700 ms, no next screen to
+  push to — this is a settings save, not a flow step) instead of a toast/confirmation UI, which nothing
+  else in the app has yet. "Réinitialiser" resets all four fields to the same mockup defaults, front-end
+  only, per `02_MVP_SCOPE.md`'s "Tout reste mocké" for this screen.
+- **A `fireEvent(el, 'accessibilityAction', …)` call needed the same await as `fireEvent.press`** (D-50
+  already found this for presses): an unawaited accessibility-action fire in one test corrupted the
+  _next_ test's render the same way, confirming the rule is about every `fireEvent` call, not just
+  `.press`.
+- **Not done on purpose**: dragging the slider thumb itself isn't exercised by a test (RNTL fires
+  `PanResponder` callbacks by calling the underlying gesture responder handlers directly, which is
+  possible but adds little over the already-covered increment/decrement path that exercises the same
+  `onValueChange` wiring); persisting preferences (no backend); the other nine `/profile/*` placeholders
+  (each its own session).
+
+### D-52 — `StickyActionFooter` extracted from experience detail's CTA footer; Preferences reuses it
+
+Polish pass, explicitly scoped to presentation/positioning only, requested before moving past
+`/profile/preferences`: "Enregistrer mes préférences" moves from an inline button at the end of the
+scrollable content to a floating sticky footer, matching experience detail's "Créer mon parcours"
+(D-49) exactly rather than inventing a second visual language for the same kind of control.
+
+- **`ExperienceDetailFooter` (`features/experiences/components/`) is promoted to
+  `StickyActionFooter` (`components/ui/`), not duplicated.** Its exact rendering — a full-bleed
+  `bg-surface` bar with a top border sitting flush against the screen's edges (not a floating
+  inset/rounded card), `MotiView` slide+fade tied to a `visible` prop, safe-area bottom padding — is
+  preserved byte-for-byte; only the API changed shape (`icon`, `disabled` and `variant` became
+  optional, generic props instead of a hardcoded `Sparkles` trailing icon and an implicit `primary`
+  Button). `bottomInset` was dropped as a prop: the component now calls `useSafeAreaInsets()` itself
+  (item 4 of the brief: the shared component owns safe-area handling, not each screen), which is a
+  behavior-preserving change since it reads the exact same context either way.
+- **`useCtaVisibility` (scroll-direction/scroll-end visibility) moved from `features/experiences/` to
+  `hooks/`**, alongside `useScrollDirection` — it was already 100% generic (no `Experience` reference
+  anywhere in it), so it belongs with the other cross-feature hooks rather than a single feature
+  folder, and Preferences needed the exact same behavior (item 7 of the brief: reuse the hook, don't
+  re-derive the logic). `FOOTER_CLEARANCE` was renamed `STICKY_FOOTER_CLEARANCE` and now lives with the
+  component it describes.
+- **`ScrollScreen` gained two additive, optional props** (`onScrollEndDrag`/`onMomentumScrollEnd`,
+  forwarded straight to its `ScrollView`) instead of switching `PreferencesScreen` to a raw
+  `ScrollView` like `ExperienceDetailScreen` uses — `ScrollScreen` already owned the safe-area/padding
+  boilerplate Preferences relies on, and every existing call site is unaffected by two new, unused-by-
+  default props (same "additive prop" precedent as `Button`'s `loading`/`leadingIcon`, D-29, and
+  `Chip`'s `icon`, D-45).
+- **`ExperienceDetailScreen`'s own behavior and tests are unchanged.** The refactor only swaps which
+  file the footer/hook come from and how `bottomInset` is supplied; `ExperienceDetailScreen.test.tsx`
+  (including the two scroll-hide/reveal tests) passes with zero modifications, which is the actual
+  proof "no visual/functional regression" holds — not just a visual read.
+- **Preferences' footer is not centered/inset with margins on every side**, despite an earlier draft of
+  this brief describing a floating card that never touches any screen edge — the _actual_,
+  already-validated experience detail footer is a full-width bar flush to the left/right/bottom edges
+  (safe-area bottom padding only, no card/rounded/glass treatment), and item 5 of this brief is explicit
+  that the new footer must match that "EXACTEMENT". Reusing the real implementation, not the
+  abstract description that didn't match it, is what keeps "no two different systems for the same
+  thing" true.
+- **Not done on purpose**: no visual change to either screen's footer beyond what "share one component"
+  requires; `PreferencesScreen`'s own save/reset business logic is untouched, only its CTA's
+  presentation moved.
+
+## Navigation (2026-09-22)
+
+### D-53 — Native back gesture disabled by default; button-only back navigation
+
+Global navigation rule, not scoped to one screen: back navigation should be controlled by ROAM's own
+UI (a back button calling `router.back()`), not the platform's native edge-swipe/interactive-pop
+gesture. `AppRoutes.tsx`'s root `<Stack>` now sets `gestureEnabled: false` in its `screenOptions`,
+applying to every `Stack.Screen` (including the ones inside each `Stack.Protected` block — it's one
+navigator, `Stack.Protected` only conditions which screens are registered) unless a screen overrides
+it.
+
+- **Audit before changing anything, per the brief**: grepped the whole app for existing
+  `gestureEnabled`/`screenOptions` usage (only `gallery/[id]` had one, `false`, from D-48) and read
+  every route file plus `DECISIONS.md` for any screen documented as relying on the gesture. Two
+  patterns turned up, both genuine, both kept working:
+  - **The entire onboarding question flow has no back button at all** — `MoodScreen`, `TimeScreen`,
+    `BudgetScreen`, `LocationScreen`, `InterestsScreen`, `ProfileCreationScreen` and `ReadyScreen`
+    (verified in code: none renders a `Pressable`/back control for it). D-21 says this outright ("No
+    visible 'Retour' — the mockup has none; going back is the native gesture / hardware button of the
+    stack"), D-27 confirms it for the profile-creation loader ("the back gesture stays enabled") and
+    that going back from `ready` lands on `interests` (`profile-creation` is `replace`d out of
+    history, so gesture-back from `ready` is the _only_ way there). Disabling the gesture on any of
+    these would have silently trapped the user going forward-only through onboarding.
+  - **`AuthEntryScreen` has no back button either** — D-29 says so explicitly ("the mockup's
+    Login/Register/Forgot-password tiles all have it, Entry doesn't"), and it's reached by `push` from
+    Welcome (D-30), so the gesture is its only way back. Login, Register, Forgot password, Reset code
+    and New password all _do_ have `AuthTopBar` (a real back button) — they get the new default
+    (gesture off) with zero loss, since the button still works.
+  - **`ResetSuccessScreen` has no back button either, but this is not an exception**: D-36 is explicit
+    that this is deliberate ("this is the end of a flow, not a step in one"), i.e. the screen was never
+    meant to be reachable backward at all — the previously-enabled default gesture was an unintentional
+    gap against the screen's own documented intent, not a validated behavior to preserve. It gets the
+    new default (gesture off) like every undocumented screen.
+- **Each exception is a `Stack.Screen`-level `options={{ gestureEnabled: true }}` override, commented
+  in place in `AppRoutes.tsx`** with its reason and source decision — not a `Stack.Protected`-level
+  `screenOptions` override, since that block also contains screens (Login, Register, the rest of the
+  forgot-password sub-flow) that should get the new default, not the exception.
+- **Carousels, galleries, sliders and any Reanimated/`PanResponder` gesture are architecturally
+  unrelated** to the Stack navigator's own edge-swipe-back (a `react-native-screens`/native-stack
+  feature, not a JS touch responder) — nothing about them needed touching, and the existing
+  `ExperienceHero.test.tsx`/`ExperienceGalleryScreen.test.tsx`/`useCtaVisibility.test.ts` suites (and
+  every route-tree test) pass unmodified, which is the practical proof.
+- **Not unit-tested directly**: `gestureEnabled` isn't a prop any existing test asserts on (a `grep`
+  turned up zero precedent, including for `gallery/[id]`'s own D-48 setting) — it configures
+  `react-native-screens`' native container, not something RNTL's rendered tree exposes as a queryable
+  element, the same category of "not meaningfully testable under this test setup" `D-49` already
+  documents for the header/footer crossfade. The full existing suite (44 files, 296 tests, every
+  route-tree test included) was run instead to confirm nothing broke, which is what an untestable
+  option's regression check actually looks like here.
+- **`docs/DEVELOPMENT.md`** gained a "Navigation back gesture" convention (the rule, the exception list
+  and why the "internal gestures are unaffected" claim holds) and
+  **`docs/SCREEN_INTEGRATION_WORKFLOW.md`**'s validation step gained the three checklist items the
+  brief asked for.
+- **Not done on purpose**: no change to any screen's own back-button UI or `router.back()` calls (the
+  brief is explicit this is presentation/config only); no new "swipe to dismiss" pattern introduced
+  anywhere it didn't already exist.
+
+### D-54 — Global toast feedback (`react-native-toast-message`); Preferences' save gets a success toast
+
+Polish pass: "Enregistrer mes préférences" now shows a success toast after the mocked save resolves,
+instead of only navigating back silently. No toast/snackbar mechanism existed anywhere in the app
+before this (grepped for "toast"/"snackbar"/"notification" across `src/`, nothing).
+
+- **`react-native-toast-message@2.5.2`** (latest stable, no beta — `3.0.0-beta.1` exists and was
+  skipped), added via `pnpm add` rather than `expo install` since it's not an Expo-maintained package
+  (same distinction as `moti`/`lucide-react-native`, both plain `pnpm add`s). Zero runtime dependencies
+  and no native module (confirmed by inspecting its own `package.json` and source — `GestureContext` is
+  a plain `React.createContext`, not `react-native-gesture-handler`), so it needed no compatibility
+  bridging for RN 0.86/Expo 57 and works the same in Expo Go as a dev build.
+- **Mounted once, at the app root** (`<AppToast />` in `app/_layout.tsx`, a sibling of `<AppRoutes />`,
+  after it in render order so it stacks on top): the library's own `Toast.show()`/`Toast.hide()` are
+  already a global singleton API by design (no Context/Provider needed to call them from anywhere), so
+  "mount once" here means the _visual_ host, not a data provider.
+- **`showToast(variant, { title, message? })`** (`lib/toast.ts`) is the only sanctioned entry point —
+  no screen imports `react-native-toast-message` directly. Only `'success' | 'error'` exist today
+  (this sprint's actual need, per the brief's own "ne développe pas un système complet de
+  notifications"); `'warning' | 'info'` are a type-and-config-case addition later, not a redesign.
+- **ROAM-styled `config`, not the library's default look**: `AppToast` renders a small
+  `surfaceElevated` card (icon + `Text variant="label"` + optional secondary line) through the
+  library's `config` prop, reusing existing tokens/`Text`/Lucide icons (`circle-check`/`circle-x`) —
+  the same "shadow via explicit style props, not a `shadow-*` className" convention `RoamTabBar` already
+  established, sized down for a small card instead of a full bar.
+- **Always top-positioned** (`position="top"`, offset by `useSafeAreaInsets().top`): the brief asks
+  that the toast never collide with `RoamTabBar` or a screen's `StickyActionFooter`, both bottom-
+  anchored; anchoring the toast to the opposite edge sidesteps that class of collision entirely instead
+  of computing per-screen bottom clearance.
+- **The error path is real, working code, but not reachable through today's mocked save.** `wait()`
+  (`PreferencesScreen.tsx`) never rejects — no screen's simulated request does anywhere in this app
+  (`AuthRepository.login`/`logout`, D-29/D-31's "any well-formed input succeeds", never reject either).
+  `handleSave`'s `try/catch` calls `showToast('error', …)` on a rejection, which is genuine
+  forward-compatible wiring for when a real save exists, not dead code — but it can't be exercised by
+  driving `PreferencesScreen` itself without inventing an arbitrary failure the brief's own "ne modifie
+  pas la logique de préférences" argues against. The error _rendering_ (card, icon, a11y role) is fully
+  unit-tested at the `AppToast` level instead, which exercises the exact same code the real failure
+  path would hit.
+- **Auto-dismiss is not unit-tested.** `ToastUI`/`AnimatedContainer` (library internals) never unmount
+  a shown toast's content — only an `Animated.Value`-driven style changes — so
+  `queryByText(...).toBeNull()` after advancing fake timers can't observe it; the same "not meaningfully
+  testable under this test setup" category `D-49` already documents for Reanimated-driven visibility.
+  The auto-hide _timer itself_ (`setTimeout(cb, visibilityTime)`) is plain, well-understood library
+  code, not something this app's own logic needs to re-prove.
+- **Reduced motion**: `AppToast` shortens the library's `animationConfig` duration to 120 ms instead of
+  its spring default when `useReduceMotion()` is true — the same "shorten, don't fully strip" compromise
+  used for `HomeHeader`/`ExperienceDetailFooter`, since the library exposes one opaque animated value,
+  not separately toggleable translate/opacity/scale channels.
+- **Not done on purpose**: `warning`/`info` variants (not needed this sprint); wiring `showToast` into
+  any other screen (only Preferences' save asked for it); a queue for multiple simultaneous toasts (the
+  library's own `// TODO: use a queue when Toast is already visible` — out of scope, and Preferences'
+  own `if (saving) return` already prevents overlapping saves from ever triggering two toasts back to
+  back).
+
+### D-55 — `StickyRevealHeader` extracted for future screens; experience detail's own header untouched
+
+Explicit brief: generalize experience detail's scroll-reveal header (transparent → background/title
+fade in once the hero's title scrolls out of view, D-49) into a reusable component **for future
+screens**, without migrating or risking the already-validated `ExperienceDetailHeader`.
+
+- **New component, not a refactor of the existing one.** `StickyRevealHeader` (`components/ui/`) is
+  written fresh, informed by `ExperienceDetailHeader`'s logic (same `scrollY`/`revealOffset`/
+  `fadeRange` crossfade via `interpolate`+`useAnimatedStyle`, same absolute/`zIndex`/`box-none`
+  positioning), but `ExperienceDetailHeader.tsx` and `ExperienceDetailScreen.tsx` are **not touched** —
+  zero risk to a validated screen, confirmed by `ExperienceDetailHeader.test.tsx`/
+  `ExperienceDetailScreen.test.tsx` passing unmodified.
+- **Why not extract in place instead**: `ExperienceDetailHeader` hardcodes three specific actions
+  (back/share/favorite, not a slot API) and fixed white-on-black-backdrop icons — correct for a header
+  that only ever sits over a photo, but not a safe default for an unknown future screen that might not.
+  Reshaping it into a generic slot-based, theme-aware component _in place_ would have been the kind of
+  "modify a validated screen for a future, unconfirmed need" the brief explicitly rules out (item 6).
+- **API is two `ReactNode` slots (`leftSlot`/`rightSlot`) instead of fixed action props**, the same
+  "component owns chrome, screen owns content" split `StickyActionFooter` already established (D-52):
+  the header doesn't know or care what a future screen puts in them (an `IconButton`, nothing, two
+  buttons) — no assumed action set to get wrong.
+- **Safe area is internal** (`useSafeAreaInsets()` inside the component, not a `topInset` prop) — same
+  precedent as `StickyActionFooter` dropping its `bottomInset` prop (D-52): the component owns safe
+  area per the brief's own list of responsibilities, not the screen.
+- **Reveal background is blur + a `surface`-tinted wash, not blur alone** — reusing `RoamTabBar`'s exact
+  glass recipe (`hexToRgbChannels(colors.surface)` at 0.75/0.85 alpha, D-41) instead of
+  `ExperienceDetailHeader`'s plain `BlurView`. A bare blur only reads as "a background" over a photo;
+  since this header is meant for screens that may not have one, the wash makes the reveal legible
+  either way — a deliberate generalization, not a copy of the original's exact visual.
+- **`docs/DEVELOPMENT.md` gained a "Sticky headers with a scroll-position reveal" convention**,
+  explicit that existing headers (`ExperienceDetailHeader`, `HomeHeader`, `AuthTopBar`, …) are
+  **not migrated now** and will be harmonized in one dedicated pass at the end of the project — not
+  screen-by-screen as new components appear.
+- **Not done on purpose at the time**: adopting `StickyRevealHeader` on any existing screen — Preferences
+  got it the same day, on request, see D-56; a `children`/arbitrary-content slot beyond title + two
+  action slots (nothing concrete needs it yet — additive later if a real screen does); migrating any
+  other header.
+
+### D-56 — `StickyRevealHeader` applied to Preferences (first real adoption)
+
+Same-day follow-up, explicit request to see `StickyRevealHeader` (D-55) on a real, already-shipped
+screen rather than only as an unused primitive. Chosen over Profile's main screen or a new demo-only
+screen (asked the user; Preferences was the answer) — nothing else about Preferences' design,
+sliders, tiles or save/reset logic changed.
+
+- **No hero to reveal past, unlike experience detail — so the screen needed a small restructure, not
+  just a header swap.** Preferences never had a separate "big in-content title" the way experience
+  detail's H1 sits below its hero: the title _was_ the header row. Moving back/"Réinitialiser" into
+  `StickyRevealHeader`'s `leftSlot`/`rightSlot` (pinned, always visible — unchanged from before) only
+  works if something still occupies the content's own top once the floating header's title is hidden
+  at rest, so a plain `Text variant="h2"` "Mes préférences" (`accessibilityRole="header"`) was added at
+  the top of the scrollable content, directly above the existing intro paragraph. This is new content
+  in the screen, not a copy of chrome — same as experience detail's own H1 title.
+- **`HEADER_REVEAL_OFFSET = 56`** is a visually-tuned approximation of that new heading's height, the
+  same "proxy, not a pixel-exact measurement" precedent `revealOffset` already sets in experience
+  detail (D-49) — expect it to need a small tweak once seen on a real device, not a sign of a deeper
+  problem.
+- **Back/"Réinitialiser" keep their exact previous look** (a plain `Pressable` + `ChevronLeft`/`Text`,
+  `colors.text`/`primary`, no circular backdrop) — unlike experience detail's white-icon-on-black-
+  backdrop treatment, which assumes a photo is always underneath. Preferences has no such photo, so
+  the backdrop styling wouldn't have made sense; keeping the pre-existing, already-legible plain style
+  was the safer, minimal choice over inventing a new backdrop rule for one screen.
+- **Padding math**: `ScrollScreen`'s own `SafeAreaView` already offsets content by `insets.top`, so the
+  content's added `paddingTop` only needs `STICKY_REVEAL_HEADER_HEIGHT` (+ a little breathing room) —
+  adding `insets.top` again would have double-counted it and pushed the content down twice as far as
+  intended. Caught before running anything, by re-deriving the two containers' coordinate spaces rather
+  than guessing.
+- **Not verified on a physical device/simulator by the agent** — this environment has no simulator
+  attached. All checks that don't require eyes on a real screen (types, lint, the full existing test
+  suite, unmodified) pass; the visual result (crossfade timing, spacing) still needs a look on-device,
+  which is exactly what this change was requested for.
+
+### D-57 — Profile 4 "Mes favoris" (route `/profile/favorites`); no separate Lieux/Expériences data split
+
+Sprint 5, one screen at a time: `FavoritesScreen` (`features/profile/`) replaces the `ProfilePlaceholder`
+that `/profile/favorites` rendered since D-50, from the mockup's tile 03 — thumbnail rows, a heart to
+remove, an empty state, `StickyRevealHeader` (D-55/D-56). This is the _profile_ favorites screen, distinct
+from the `/favorites` tab (still sprint-3 placeholder content, untouched this session — D-50 already
+reserved that separation).
+
+- **Backed entirely by `Experience.isFavorite`, not a new `Place`-favoriting system.** The mockup shows a
+  "Lieux"/"Expériences" segmented control, but nothing in the current data model draws that line: every
+  mock entity (including single-location items like "Rooftop Sunset" or "Musée d'Art Moderne") is an
+  `Experience`, already carrying every display field a "Lieux" row would need (image, category, location,
+  price). `Place` (`types/place.ts`) is unused scaffolding kept only to prove the repository pattern
+  (D-09) — two fields, no `list()`, two fixture rows, referenced nowhere in the UI. Building it out to
+  back a second tab would duplicate fields `Experience` already has under a different name, exactly what
+  `docs/SCREEN_INTEGRATION_WORKFLOW.md`'s "reuse before creating" argues against. The `cat-experience`
+  category that could in principle separate "a place" from "a composed outing" is itself unused by every
+  mock experience, so a category-based split would always leave one tab empty — decorative, not
+  functional. The task's own functional spec talks only about "expériences" throughout, which matches this
+  choice. **Not reproduced on purpose**; revisit if/when a real place-level favoriting concept exists.
+- **Removal is local component state on top of the mock seed (`useFavoriteExperiences`), not a shared
+  favorites store.** Same known gap as Home's own toggle (`useFavoriteExperienceIds`, D-45): this screen
+  and Home do not sync with each other (no backend, no global store yet) — removing a favorite here
+  doesn't un-favorite it on Home and vice versa. Forward-compatible: swapping the hook's body for a real
+  `FavoriteRepository` later doesn't change the screen's props.
+- **Five mock experiences were seeded `isFavorite: true`** (`exp-dinner-view`, `exp-nature-getaway`,
+  `exp-jazz-night`, `exp-mama-shelter`, `exp-bellevilloise`) so the screen has real content instead of an
+  empty list by default — matching the mockup's own populated state. Deliberately **not**
+  `exp-rooftop-sunset`, `exp-lake-hike` or `exp-modern-art-museum` (the three `isPopular` experiences):
+  `HomeScreen.test.tsx`'s favorite-toggle test counts "Ajouter aux favoris"/"Retirer des favoris" buttons
+  within Home's own "populaire" section and assumes all three start unfavorited, and
+  `ExperienceDetailScreen.test.tsx` defaults to `exp-rooftop-sunset` assuming the same — found by running
+  the full suite after the first seeding attempt, not by inspection alone.
+- **New feature-scoped `FavoriteExperienceRow`** (`features/profile/components/`), a full-width list row
+  (thumbnail, title, "category · location", a heart button), not a reuse of Home's `ExperienceCard`: that
+  component is a wide, image-heavy horizontal-scroll card (fixed 260px width) built for Home's carousel
+  sections, not a dense vertical list — reusing it verbatim would not match the mockup's row density. The
+  heart button reuses the exact nested-`Pressable`-inside-a-`Pressable` pattern `ExperienceCard` already
+  established (tapping it doesn't also trigger the row's own navigation, D-45) and the same
+  `home.favoriteRemove` label (identical action, no new key).
+- **Category label resolved via the existing `useCategories()`/`getCategoryLabel()` pair**
+  (`hooks/useCategories.ts`, `features/experiences/lib/categoryLabel.ts`), cross-feature reuse rather than
+  a second resolver — same precedent as `MapPreviewRow` reusing onboarding's `MapPreview` (D-48).
+- **Header follows Preferences' own restructure** (D-56): no hero to reveal past, so a plain in-content
+  `Text variant="h2"` stands in for the title until `StickyRevealHeader`'s own title crossfades in past
+  `HEADER_REVEAL_OFFSET`. Back button only — no right-side action (no reset/settings equivalent here).
+- **Empty state reuses `favorites.empty`/`favorites.discover`**, i18n keys already sitting in both locale
+  files, unused, since before this screen was built — no new key needed. "Découvrir" pushes to
+  `/discover`, the same destination Home's own "Voir tout" links use.
+- **Animation**: `FadeInUp` per row with a small stagger (`Math.min(index * 60, 240)` ms), consistent with
+  the rest of the app's unguarded `FadeInUp` usage (`ProfileScreen`, `SimilarExperiencesSection`) — not
+  gated behind `useReduceMotion()`, matching that same precedent (a single-shot fade+translate, not a loop
+  or rotation). No exit animation on removal: the item disappears on the next render, same "instant" result
+  the brief asked for; `AnimatePresence` isn't used anywhere else in this codebase yet, so adding it here
+  for one interaction would be a new pattern, not a reuse.
+- **Not done on purpose**: place-level favoriting (see above); a shared cross-screen favorites store (no
+  backend, `08_AGENT_TODO.md` Phase F); swipe-to-delete (the heart-tap removal already matches the app's
+  one existing favorite-toggle affordance, no need for a second gesture); a route-tree test (this screen's
+  test is a standalone component test, same convention `PreferencesScreen.test.tsx` already set — no
+  `/profile/*` sub-route has one).
+
+### D-58 — Profile 5 "Mon historique" (route `/profile/history`); `Experience` extended again, dynamic category filter
+
+Sprint 5, one screen at a time: `HistoryScreen` (`features/profile/`) replaces the `ProfilePlaceholder`
+that `/profile/history` rendered since D-50, from the mockup's tile 04 — category filter chips, entries
+grouped by "Cette semaine"/"Ce mois-ci"/"Plus tôt", each row showing a thumbnail, title, "category ·
+location", a visit date and a chevron (no removal interaction — `02_MVP_SCOPE.md` §10 only asks to "show
+completed experiences", unlike Favorites' explicit removal requirement).
+
+- **`Experience` gained `visitedAt`/`historyPeriod` instead of a new history/outing entity** — same choice
+  as `isFavorite` (D-57): `Experience` already carries every display field a history row needs, so a
+  parallel "CompletedOuting" type would duplicate them under a different name. `visitedAt` is a plain,
+  already-formatted string (`"Sam. 16 mars 2024"`), the same "no separate formatting layer for mock data"
+  convention `ExperienceReview.date` already set (D-09/D-10) — it is only ever displayed, never parsed.
+  `historyPeriod` (`'thisWeek' | 'thisMonth' | 'earlier'`) is a **precomputed** bucket, not derived from
+  `visitedAt` at render time: the mock dates are fixed in the past, so comparing them against the real
+  "today" would keep sliding every entry into `earlier` as real time passes — authoring the bucket
+  directly keeps the screen's grouping stable regardless of when it's opened.
+- **Six mock experiences were seeded** (`exp-rooftop-sunset`, `exp-modern-art-museum` → this week;
+  `exp-slow-afternoon`, `exp-panoramic-walk` → this month; `exp-picnic-park`, `exp-hasard-ludique` →
+  earlier), chosen to be unaffected by the constraint D-57 already found the hard way: three of them
+  (`exp-rooftop-sunset`, `exp-modern-art-museum`, and D-57's own picks) overlap with `isPopular`/
+  `isFavorite` fixtures, but `visitedAt`/`historyPeriod` are brand-new fields nothing else reads, so unlike
+  `isFavorite` they cannot affect any existing test's assertions regardless of which experiences carry
+  them — confirmed by running the full suite, not just inspected.
+- **Filter chips are derived from the history pool's own categories, not a fixed "Tout/Restaurants/
+  Bars/Culture" list copied from the mockup.** The mockup shows a fixed four; reproducing it verbatim would
+  either go stale against whatever experiences actually carry `historyPeriod`, or need inventing a
+  distinction the data doesn't drive. Deriving "Tout" + one chip per category actually present (first
+  appearance order, via `useCategories()`/`getCategoryLabel()` — the same cross-feature reuse Favorites
+  already established, D-57/D-48) means every generated chip is guaranteed at least one match, which also
+  sidesteps designing a "no results for this filter" state entirely — selecting any chip can only ever
+  narrow the list, never empty it outright (only clearing all history could do that, which is the existing
+  empty state).
+- **New feature-scoped `HistoryEntryRow`** (`features/profile/components/`), `FavoriteExperienceRow`'s
+  shape (thumbnail, title, "category · location") minus the heart, plus a visit date line and a trailing
+  chevron (`ChevronRight`, same icon/size/color `ProfileMenuRow` already uses for "this row opens
+  something") instead of a nested `Pressable` action — no second interaction to protect from bubbling here.
+- **Section headers reuse Home's `SectionHeader`** (title only, no `onSeeAll`) rather than a new heading
+  component — same cross-feature reuse precedent as `SimilarExperiencesSection`.
+- **`history.title` was corrected from "Mes expériences" to "Mon historique"/"My history"**, matching
+  `profile.history` (the menu row's own label, and what the mockup's header actually shows) — the key
+  existed, unused, since before this screen was built but held a different, never-shown string; the
+  mismatch would have made the same destination show two different names depending on which screen you
+  came from. Same kind of stale-key fix as D-23. `history.redo` ("Refaire") stays unused: the mockup's
+  history rows show only a chevron, no per-row secondary action — left in place rather than removed, same
+  "unused key left in place" precedent as D-25's `eyebrow`/`selected`/`addInterest…`.
+- **New `history.filters.all` / `history.sections.{thisWeek,thisMonth,earlier}` keys**, added to both
+  locale files (parity test enforces it).
+- **Empty state reuses `history.empty`, and "Trouver une sortie" (`history.findOuting`) pushes to
+  `/home`**, not `/discover` — unlike Favorites' "Découvrir" (D-57), which matches `/discover`'s own name
+  almost literally, "Trouver une sortie" ("find an outing") is `03_UX_SCREENS_AND_FLOWS.md`'s own
+  description of Home's purpose ("Purpose: start a new outing"), so Home is the more literal destination
+  for this specific wording.
+- **Animation**: `FadeInUp` per row, stagger continues across section boundaries (a single running index
+  rather than resetting per section) so the whole list reads as one progressive reveal, not three separate
+  ones — same unguarded-`FadeInUp` precedent as Favorites (D-57).
+- **Not done on purpose**: a "no results for this filter" state (see above, structurally unreachable);
+  removing/editing a history entry (not in scope, `02_MVP_SCOPE.md` §10); a route-tree test (standalone
+  component test, same convention as Favorites/Preferences).
+
+### D-59 — Profile 6 "Mes statistiques" (route `/profile/statistics`); `react-native-gifted-charts` added, used only for the donut
+
+Sprint 5, one screen at a time, from a design mockup this session was told is final ("le design est déjà
+défini... ne le redesign pas"): `StatisticsScreen` (`features/profile/`) replaces the `ProfilePlaceholder`
+that `/profile/statistics` rendered since D-50 — time-range chips, three summary cards, three breakdown
+sections (genres, mood donut, cities), an insight card.
+
+- **`react-native-gifted-charts` was added (`pnpm add`, 1.4.78), used for exactly one chart: the mood
+  donut.** No chart library existed before this screen (grepped `package.json` and `src/` for
+  `chart|gifted|victory|d3-|skia`, only `react-native-svg` — already a dependency, used for icons/
+  illustrations, not a charting layer). Its only real peer dependency, `expo-linear-gradient`, is already
+  part of the Expo SDK, so nothing new needed native linking or a dev-client rebuild — it works in Expo
+  Go. `react-native-gifted-charts`/`gifted-charts-core` ship untranspiled ESM, so both were added to
+  `jest.config.js`'s `esmPackages` list (same reason `moti`/`lucide-react-native` are there) — the test
+  suite failed with "Unexpected token 'export'" until they were, the same failure mode `react-native-css-
+interop` already documents for this project's ESM handling.
+- **The genre/city proportion bars are deliberately NOT built on the charting library.** They are a label
+  - percentage + a single horizontal fill, not a chart with axes/gridlines/categories — the library's
+    `BarChart` is shaped for that, and fitting a plain proportion-bar row into its API would mean fighting
+    its own bar-chart rendering for a shape it isn't built for (component/spacing/radius all governed by its
+    own props, not NativeWind classes). `PercentBarRow` (`features/profile/components/`) is a themed `View`
+    instead: a full-width track (`bg-border`) with a colored fill sized to the percentage, animated in via
+    `MotiView`'s `scaleX` (`transformOrigin: 'left'`, a plain RN style prop, no extra dependency) — full
+    control over the exact look, same "build it on what's installed" reasoning as `Slider` (D-51). The mood
+    donut, by contrast, is a genuine circular chart (real arc math for 5 proportional slices) — the one case
+    in this screen where hand-rolling would cost more than it's worth, so it uses the library's own `PieChart`
+    (`donut`, `innerRadius`, `centerLabelComponent` for "N sorties" in the middle) instead.
+- **New decorative color tokens**: `moodBreakdownColors` (5 named hues: relaxed/curious/festive/romantic/
+  family) and `genreChartColors` (6 categorical hues, cycled by index) in `theme/tokens.ts`, plus
+  `chartBlue(OnDark)`/`chartViolet(OnDark)` in `palette.ts` — the only two genuinely new hues; `relaxed`/
+  `festive`/`romantic` reuse the exact same `derived.moodGreen`/`moodOrange`/`moodCoral` constants
+  `moodAccents` already uses for the onboarding mood tiles' icons (same concepts, so same colors), rather
+  than inventing parallel ones. `moodAccents` itself (typed `MoodAccent = 'relaxed'|'festive'|'romantic'`,
+  scoped to the onboarding mood tiles) was **not** extended with `curious`/`family` and reused here: it's a
+  different screen's decoration with its own narrower scope, and widening its type to fit an unrelated
+  chart would couple the two for no shared benefit — a new, separate token pair is the safer, minimal
+  choice (same "why not extract in place" reasoning `StickyRevealHeader` used against reshaping
+  `ExperienceDetailHeader`, D-55).
+- **The three summary cards reuse `UserStats` (`useCurrentUser`), not new data** — "12 Sorties / 36 Lieux
+  découverts / 8 Favoris" are the exact same numbers the main Profile screen already shows (`ProfileStats`,
+  D-50); the donut's center label reuses `stats.outings` again, so both places on this one screen agree.
+  **`StatCard` is a new, separate component from `ProfileStats`**, not a reuse: the mockup's three cards
+  are individually bordered with an icon above the number, `ProfileStats` is one continuous row divided by
+  vertical rules with no icons (mockup tile 01) — same data, a genuinely different presentation the brief
+  asked not to simplify away, so forcing `ProfileStats`' shape onto it would have meant redesigning one of
+  the two mockups, not "reusing a component."
+- **Genre labels reuse `EXPERIENCE_TYPES`** (`features/profile/data/experienceTypes.ts`, D-51) for both the
+  id list and the i18n key/label — the mockup's six genres (Culture, Restaurants, Bars & Soirées, Nature,
+  Activités, Événements) are an exact subset of that already-built 8-item vocabulary (itself reused from
+  onboarding's "Centres d'intérêt"), so `GENRE_BREAKDOWN` (`data/statisticsBreakdown.ts`) only carries an
+  `id`/`percentage` pair per genre and looks the label/icon up from `EXPERIENCE_TYPES` at render time —
+  the third reuse of that same vocabulary in this codebase, not a fourth copy of the label strings.
+- **"Ton humeur lors des sorties" is its own new vocabulary (`relaxed/curious/festive/romantic/family`),
+  not a reuse of `Mood` or the Preferences screen's `AMBIANCE_OPTIONS`.** Neither matches: `Mood`'s own
+  labels are "Calme"/"Découvrir" (context/onboarding wording, not "Détendu"/"Curieux"), and
+  `AMBIANCE_OPTIONS` has no "curious" concept at all and spells "festive" as "Festive" not "Festif" — same
+  "screen-specific vocabulary, not a forced reuse of an almost-but-not-quite-matching enum" reasoning
+  `AMBIANCE_OPTIONS` itself already used against `Mood`/`Company` (D-51). New `statistics.moods.*` i18n
+  keys.
+- **All breakdown numbers (genres/moods/cities/the three cards) are static, curated mock content — none of
+  it is computed from the favorites/history pools.** Same "plain mock content" precedent as `UserStats`
+  itself and place/experience descriptions (D-09/D-50): nothing in this prototype tracks a real per-outing
+  genre, mood or city yet, so inventing a computation over the 6 history entries or 5 favorites would be a
+  fake precision this MVP doesn't have data to back.
+- **Time-range chips ("Tout"/"30 jours"/"6 mois"/"1 an") are local selection state only — they do not
+  change any displayed number.** Building four genuinely different datasets for a value nothing else in
+  this app tracks per-range would be invented precision, not a real feature; the chips are a faithful,
+  interactive reproduction of the mockup's own control (single-choice, "Tout" selected by default), wired
+  the same "control exists, not yet backed by real logic" way this prototype already accepts elsewhere
+  (the onboarding `LocationScreen`'s position/city choice, D-24; the auth entry screen's Google/Apple
+  buttons with nowhere to go yet, D-29).
+- **Header follows Favorites'/History's own restructure** (D-57/D-58): no hero to reveal past, a plain
+  in-content `Text variant="h2"` stands in for the title until `StickyRevealHeader`'s own title crossfades
+  in. `profile.statistics` ("Mes statistiques") is reused directly for both the menu row and this screen's
+  own title — unlike `history.title`, which needed a fix, this key already matched, nothing to change.
+- **Animation**: `FadeInUp` staggers the range chips' row, the three cards, and each section (unguarded,
+  same precedent as Favorites/History); `PercentBarRow`'s fill and the donut both honor
+  `useReduceMotion()` — the bars skip the `scaleX` grow-in (render at full width immediately), and the
+  donut's `isAnimated` prop is set to `false` (the library exposes one opaque animation toggle, not
+  separate translate/opacity/scale channels — same "shorten/disable, don't fully decompose" compromise
+  `AppToast`/`HomeHeader` already use for an opaque third-party animation).
+- **Not done on purpose**: computing any figure from real data (see above); a fourth chart type beyond the
+  donut (nothing else in the mockup needs one); wiring the time-range chips to change numbers (see above);
+  a route-tree test (standalone component test, same convention as Favorites/History/Preferences).
+
+### D-60 — Profile 7 "Langue" (route `/profile/language`); languages are derived, never hardcoded in the screen
+
+Sprint 5, one screen at a time, explicit brief: build the language list from the i18n layer's own
+source of truth, not a list authored in `LanguageScreen`. `LanguageScreen` (`features/profile/`)
+replaces the `ProfilePlaceholder` that `/profile/language` rendered since D-50.
+
+- **`getAvailableLanguages()` (`src/i18n/index.ts`) is the single new abstraction, not a bigger one.**
+  The brief's own suggested shape (`getAvailableLanguages`/`getCurrentLanguage`/`changeLanguage`/
+  `persistLanguage`) already exists in three quarters: reading the current language is already the
+  one-line `isLanguage(i18n.language) ? i18n.language : DEFAULT_LANGUAGE` pattern `ProfileScreen`
+  itself uses (D-50) — no wrapper needed; `setLanguage()` already changes **and** persists in one call
+  (D-08). Only "the selectable list" had no home yet, so only that one function was added — adding the
+  other three would have been the "unnecessary abstraction" the brief explicitly warns against.
+- **Each language's native name is read from its own resource bundle, not the active one.**
+  `getAvailableLanguages()` calls `i18n.getResource(code, 'translation', \`settings.languages.${code}\`)`for every`code`in`SUPPORTED_LANGUAGES`— a self-referential lookup (French's own bundle is asked
+for French's own name), not`t()`(which always resolves against whatever language is *currently
+active*). This matters concretely: switching the UI to English must still show "Français", not a
+translation of it — verified by a test that flips the active language first. The existing`settings.languages.*` keys already exist in **every** locale file (`ProfileScreen`'s own
+`LANGUAGE_LABEL_KEYS`/D-50 already reused them for the menu row's value), and because `t()`in that
+call site always resolves against the active language too, every existing cross-entry (fr.json's own`settings.languages.en`, en.json's own `settings.languages.fr`) turns out to be dead weight — nothing
+reads them. Left in place rather than pruned: removing unused JSON values isn't this screen's job, and
+churning a shared, already-validated file for a cleanup unrelated to the brief isn't worth the risk.
+**A new locale only needs to add its own `settings.languages.<code>` key to its own file** — not
+  every other file's.
+- **Flags are a small, separate, purely decorative map (`LANGUAGE_FLAGS`), not part of the translation
+  resources.** A flag isn't translatable text, so it has no natural home in `fr.json`/`en.json`; kept as
+  its own `Partial<Record<Language, string>>` in `i18n/index.ts` so a language missing a flag still
+  renders (just without one) instead of the whole list breaking. Plain Unicode emoji (🇫🇷/🇬🇧), not a new
+  icon library or asset: the brief explicitly asks not to add a dependency for "quelques drapeaux", and
+  nothing in this codebase renders flag icons anywhere yet.
+- **Adding a language: add its resource file + register it in `SUPPORTED_LANGUAGES`/`resources`
+  (`i18n/index.ts`) + give that file its own `settings.languages.<code>` key + optionally add it to
+  `LANGUAGE_FLAGS`.** Nothing in `LanguageScreen` changes — verified by a test that mocks
+  `getAvailableLanguages()` to return a third, fake language (`es`) and asserts it renders correctly,
+  which is the only way to exercise "a language was added" without actually shipping a new locale file
+  just for a test. The `SUPPORTED_LANGUAGES` array/`resources` object remain the one unavoidable,
+  explicit-import step Metro requires (no `require.context`-style dynamic glob import exists for Expo/
+  Metro the way it does for webpack) — documented as a deliberate, accepted technical constraint, not
+  something this screen works around.
+- **New `LanguageOptionRow`** (`features/profile/components/`): flag, native name, a checkmark
+  (`colors.primary`) when active — plain rows, no border/card treatment, same list density as
+  `FavoriteExperienceRow`/`HistoryEntryRow` (D-57/D-58). `accessibilityRole="radiogroup"`/`"radio"` +
+  `accessibilityState={{ checked }}`, the exact same single-choice pattern the onboarding `MoodScreen`
+  already established (D-21) — reused, not reinvented.
+- **Selecting a row applies immediately and stays on the screen** — no save button, no navigation away:
+  the brief's own point 6 ("mettre à jour... immédiatement") and the existing `setLanguage()` behavior
+  (already fire-and-persist, no confirmation step anywhere else it's used) both point the same way. No
+  `StickyActionFooter` needed, unlike Preferences (D-52), which has several fields to commit at once.
+- **Header follows the same restructure as every other profile sub-screen this sprint**
+  (`StickyRevealHeader`, in-content `h2` title, D-56/D-57/D-58/D-59). `settings.language` ("Langue") is
+  reused directly for both the menu row and this screen's own title, same "already matches, nothing to
+  fix" case as `profile.statistics` (D-59), unlike `history.title` (D-58).
+- **Animation**: `FadeInUp` staggers the rows on mount (unguarded, same precedent as every other list
+  this sprint); the checkmark itself has no separate animation (no loop, no scale) — appearing/
+  disappearing with the row's own re-render is enough, nothing to gate behind `useReduceMotion()`.
+- **Not done on purpose**: pruning the now-confirmed-unused cross-language `settings.languages.*`
+  entries in `fr.json`/`en.json` (see above — out of scope, no functional effect); a `getCurrentLanguage()`/
+  `persistLanguage()` wrapper (see above, already covered); a route-tree test (standalone component test,
+  same convention as every other profile sub-screen this sprint).
+
+### D-61 — Profile 8 "Thème" (route `/profile/theme`); reuses `THEME_PREFERENCES`, no design image this session
+
+Sprint 5, one screen at a time: `ThemeScreen` (`features/profile/`) replaces the `ProfilePlaceholder`
+that `/profile/theme` rendered since D-50. Built from memory of the same mockup board's tile 08 (no
+fresh image was attached this session) plus `05_THEME_AND_I18N.md`'s own documented order — Light,
+Dark, System — used to resolve the one point of genuine uncertainty (see below).
+
+- **Reuses `THEME_PREFERENCES` (`theme/tokens.ts`) directly, not a second list.** Same "derive, don't
+  hardcode" principle "Langue" established (D-60), but simpler here: the theme preference set is a
+  small, fixed enum (light/dark/system) that doesn't grow file-by-file the way locales do, so there is
+  no dynamic-derivation mechanism to build — iterating the existing array is already the correct,
+  minimal choice. Grepped every usage of `THEME_PREFERENCES` first (only `isThemePreference`'s
+  membership check) to confirm reusing it for display order wouldn't couple two unrelated concerns.
+- **Row order (Light, Dark, System) was not re-verified against the mockup pixel-for-pixel** — this
+  session had no image attached, only a text instruction to follow "l'écran fourni" from earlier in the
+  project. Recall of the board's own tile 08 was genuinely uncertain on ordering (System first, or
+  Light first), so the order was resolved from the one written source available:
+  `05_THEME_AND_I18N.md`'s own "Theme switching UX" section, which lists "Light / Dark / System" —
+  matching `THEME_PREFERENCES`'s own declared order for free. **Flag for visual re-check**: if the
+  actual mockup shows a different order, this is a one-line change (`THEME_PREFERENCES`'s declared
+  order, or a local display-order override in this screen — not a redesign).
+- **New `ThemeOptionRow`** (`features/profile/components/`): icon (in a tinted circle, matching
+  `ProfileMenuRow`'s own icon treatment) + label + checkmark when active — same shape and
+  `radiogroup`/`radio` semantics as "Langue"'s `LanguageOptionRow` (D-60), a `LucideIcon` in place of
+  the flag emoji since a theme preference has no flag-like asset. Not a generalized shared row
+  component covering both screens: the two leading elements (a `LucideIcon` component vs. an emoji
+  string) have different prop shapes, and this is only the second use — same "don't abstract on the
+  second occurrence" restraint the rest of this sprint's small per-screen row components already show
+  (`FavoriteExperienceRow`, `HistoryEntryRow`).
+- **Selecting a row calls the existing `useTheme().setPreference` directly** — already resolves
+  `system` against the OS scheme and persists under `roam.theme` (D-05); no new persistence, no second
+  provider. Applies immediately, stays on the screen, same "no save button, no navigate-away" choice as
+  "Langue" (D-60): a preference switch, not a multi-field form to commit (unlike Preferences, D-52).
+- **Icons**: `Sun`/`Moon`/`Monitor` (Lucide) — `Monitor` for "Système" rather than reusing
+  `ProfileMenuRow`'s own `SunMoon` (that one represents "theme" as a menu-row concept generically; here
+  each of the three rows needs its own distinct, literal icon).
+- **Animation**: `FadeInUp` staggers the three rows on mount (unguarded, same precedent as every other
+  list this sprint); no separate checkmark animation, same reasoning as "Langue".
+- **Not done on purpose**: verifying the exact row order/spacing against the real mockup image (see
+  above, flagged for human review); a route-tree test (standalone component test, same convention as
+  every other profile sub-screen this sprint).
+
+## Logout confirmation, navigation fix, general audit (2026-09-23)
+
+### D-62 — `ConfirmationModal` (generic, reusable); logout confirmation; `AuthTopBar`'s dead back button fixed at the source
+
+End-of-sprint stabilization pass, from a provided reference image (a centered dialog, "Se déconnecter ?" /
+reassurance copy / Annuler + Se déconnecter). Three things, in dependency order: a reusable confirmation
+dialog, wiring it into logout, and fixing a real, pre-existing navigation bug the brief flagged
+independently ("Login affiche un bouton retour qui plante").
+
+- **`ConfirmationModal` (`components/ui/`) is a centered card, not a bottom sheet.** The reference image
+  shows visible margins on every side (not flush to the bottom edge), so a bottom sheet would have been
+  copying the wrong pattern despite the decorative handle bar at the top (kept anyway — it's in the
+  image, and it's harmless on a centered card). Built on RN's own `Modal` (`transparent`,
+  `onRequestClose` wired to `onCancel` — the Android hardware-back handler, for free) since no
+  modal/bottom-sheet library exists anywhere in this codebase yet (grepped first) — no new dependency.
+- **Exit animation needed a small, deliberate state pattern, not a naïve `useEffect` + `setState`.** RN's
+  `Modal` disappears the instant `visible` goes `false`, with no chance for an exit fade/scale to play.
+  Fix: an internal `shouldRender` state that mirrors `visible` immediately when it turns `true` (adjusted
+  **during render**, not inside an effect — React's own documented "adjusting state when a prop changes"
+  recipe, which avoids both an extra blank frame and this project's `react-hooks/set-state-in-effect`
+  lint rule, which flags a synchronous `setState` inside an effect body but not one inside a `setTimeout`
+  callback), and only flips back to `false` after `EXIT_DURATION_MS` (180 ms) once `visible` turns
+  `false`, via a timeout in a `useEffect` — the legitimate "subscribe to a timer, update state in its
+  callback" shape the same lint rule's own message describes as fine.
+- **`variant: 'default' | 'destructive'` tints the icon and picks the confirm button's variant** —
+  logout itself uses `default` (the reference image's confirm button is ROAM's ordinary primary green,
+  not red; "tes données resteront en sécurité" is reassurance copy, not a scare warning), but the prop is
+  real and wired for a future confirmation that does need it (e.g. delete account).
+- **`Button` gained a third variant, `destructive` (`bg-error`), to make that prop actually do
+  something** — additive, every existing call site unaffected, same "extending an existing primitive
+  beats a one-off style override" precedent as `loading`/`leadingIcon` (D-29) and `Chip`'s `icon` (D-45).
+  This was necessary, not optional: NativeWind "ignores class order for conflicts" (`DEVELOPMENT.md`'s
+  own styling convention) — passing a `bg-error` override via `className` to the existing `primary`
+  variant would silently not have worked, only a real variant does.
+- **The component owns display/animation/interaction only — no logout logic inside it.** `ProfileScreen`
+  still owns `handleLogout` (`logout()` then `router.replace('/auth/login')`, unchanged from before this
+  session) and now also a `logoutModalVisible` boolean; the row opens the modal instead of calling
+  `handleLogout` directly, `onCancel` closes it, `onConfirm` calls the existing handler. New
+  `profile.logoutConfirm.title`/`description` i18n keys; `confirmLabel`/`cancelLabel` reuse the existing
+  `profile.logout`/`common.cancel` keys rather than duplicating that text under a new key.
+- **The actual back-button bug, found by reading `AuthTopBar.tsx`, not by guessing**: its `Pressable`
+  rendered unconditionally and called `router.back()` unconditionally. On the _normal_ auth flow (Login
+  reached by `push` from `auth/index`, D-44's own "going back to the entry screen from Login is existing,
+  tested behavior... the brief never asked to change") that's correct and was already working —
+  `AppRoutes.test.tsx` Scenario 4 already asserted `router.canGoBack() === false` right after logout, which
+  meant `Stack.Protected`'s guard-swap history purge (D-44) was already doing its job at the navigator
+  level. The bug was purely presentational: a back button rendered and pressable even though there was
+  provably nothing behind it, which is what "une erreur apparaît" on press describes (a `GO_BACK` action
+  with no handler). **Fix, entirely inside `AuthTopBar`**: `const canGoBack = router.canGoBack();` gates
+  whether the `Pressable` renders at all (a same-size empty `View` keeps the wordmark's position
+  unchanged either way) — one check, in the one component responsible for rendering that button, not
+  `canGoBack()` guards scattered across call sites (the brief explicitly warned against that shape of
+  patch). Every other screen using `AuthTopBar` (Register, ForgotPassword, ResetCode, NewPassword) is
+  always reached by `push`, so `canGoBack()` is always `true` for them today — zero behavior change,
+  confirmed by their existing test suites passing unmodified once their `useRouter` mocks gained
+  `canGoBack: () => true` (see below).
+- **No navigation-reset mechanism was changed.** `router.replace('/auth/login')` (not `push`) was already
+  the call in `ProfileScreen`, and `Stack.Protected`'s guard swap was already correctly purging history —
+  both pre-dated this session and are exactly what the brief asked for ("supprimer l'historique
+  permettant de revenir dans l'application authentifiée"), already true, already tested. Fixing the
+  presentational bug was the actual missing piece, not a deeper navigation-architecture problem.
+- **Five existing auth-screen test files needed a one-line mock update, not a rewrite**: `LoginScreen`,
+  `RegisterScreen`, `ForgotPasswordScreen`, `ResetCodeScreen`, `NewPasswordScreen` each mock `useRouter`
+  without a `canGoBack`, which `AuthTopBar` now calls unconditionally — every one of them failed with
+  "canGoBack is not a function" until their mock gained `canGoBack: () => true` (matching their real,
+  unchanged behavior: back is always available on these screens' own tests). Found by running the full
+  suite after the fix, not by inspection — the right way to catch this class of change.
+- **Two more existing tests broke on contact, both expected**: `ProfileScreen.test.tsx`'s old "pressing
+  'Se déconnecter' logs out" test (logout is no longer immediate — split into three tests: opens the
+  modal without logging out, confirming logs out, cancelling doesn't) and `AppRoutes.test.tsx` Scenario 4
+  (same reason; rewritten to press through the modal, plus a new Scenario 4b that exercises the
+  cancel path and asserts — at the real, unmocked router level this time — that Login shows no "Retour"
+  button after logout, the end-to-end proof of the fix). Disambiguating "Se déconnecter" queries once
+  both the menu row and the modal's confirm button can be on screen at once needed `getAllByRole` (row is
+  always index `0`, confirm is always the last) rather than the usual single `getByRole` — a just-cancelled
+  modal can still be mid exit-animation (still mounted, `EXIT_DURATION_MS` not yet elapsed) when a test
+  presses the row again, so an assertion that it had already fully unmounted proved unreliable under this
+  suite's fake-timer setup and was dropped in favor of asserting the behavior that actually matters
+  (no premature navigation).
+- **Animation**: backdrop + card both fade in (card also scales/translates in slightly), `useReduceMotion()`
+  drops the scale/translate and shortens the duration to `0` — same "shorten/simplify, don't fully
+  redesign" compromise as every other reduce-motion screen this sprint. Respects the project's Moti/
+  Reanimated-only rule; no new animation dependency.
+- **Audit findings** (ran full `pnpm check` + coverage after the fix, not just the new code): no other
+  screen renders an unconditional back button the same way `AuthTopBar` did (grepped every
+  `router.back()` call site); no other test file's `useRouter` mock was missing a method a component now
+  calls; coverage sits at 91.8% statements / 75.5% branches / 92.97% lines project-wide (see
+  `08_AGENT_TODO.md` Phase G for the standing "not done on purpose" list this doesn't change) — the
+  weakest spots remain framework bootstrap code with no meaningful branches to test
+  (`app/_layout.tsx`, `hooks/useBootstrap.ts`, `theme/navigationTheme.ts`, all pre-existing, all 0%
+  branches, none touched this session) and a handful of single-path decorative icon components
+  (`GoogleIcon`, `AppleIcon`, `LotusIcon`, `RunnerIcon`, `EuroGlyph` — one SVG path each, no real branch
+  to exercise). Every file touched this session individually sits at 100% statements
+  (`AuthTopBar`/`AppRoutes` are additionally 100% branches too); `ConfirmationModal`'s remaining branch
+  gaps are the `reduceMotion === true` paths and the unused-by-logout `destructive` variant, neither
+  exercised by `ProfileScreen`'s own tests since logout doesn't use them — not artificially padded with
+  tests that don't reflect a real call site.
+- **Not done on purpose**: a bottom-sheet variant of `ConfirmationModal` (the reference image reads as
+  centered, not a sheet — see above); wiring `variant="destructive"` anywhere yet (nothing in this sprint
+  needs it); adding `canGoBack`-based guards to any _other_ back button in the app (grepped, none share
+  `AuthTopBar`'s bug — each existing gesture exception in `AppRoutes.tsx` is a screen with no back button
+  at all, a different, already-correct case, D-53); a `getCurrentSession()`-style new auth abstraction
+  (the brief's own §7 keeps the mocked session exactly as it is — `AuthProvider`/`useAuth`, D-44 — no
+  API, JWT, Prisma or backend introduced).
+
+## Profile / Settings split (2026-09-23)
+
+### D-63 — Profile becomes identity/activity/taste; a new, real Settings screen holds configuration
+
+Refactor, not a new screen from scratch: `ProfileScreen` (sprint 5 écran 1, D-50) is rebuilt around
+"qui je suis, ce que j'aime et ce que je fais sur ROAM"; everything that was account/app configuration
+moves to a new `SettingsScreen`, reached from the existing gear icon (`/profile/settings`, already
+wired to that route since D-50 — a `ProfilePlaceholder` until now). No route was added, renamed or
+duplicated: every destination this session touches already existed.
+
+- **What moved, and why each one qualifies as "configuration" and not "taste/activity"**: Préférences
+  (row removed from Profile's menu, `/profile/preferences` itself untouched — see "two entry points"
+  below), Langue, Thème, Aide & Support, Confidentialité, Se déconnecter (+ its `ConfirmationModal`,
+  D-62, moved verbatim — same `logout()`/`router.replace('/auth/login')` call, no new logic). "Modifier
+  mon profil" also gained a **second** entry point in Settings' "Compte" group (`/profile/edit`,
+  unchanged route) — the brief's own suggested structure asks for it there, alongside the pencil-edit
+  button already on `ProfileHeader`, the same "more than one door to the same room" pattern already
+  established for Preferences (see below).
+- **Two access points to Preferences, one screen — not two.** `PreferencesScreen`/`/profile/preferences`
+  is completely unchanged; both "Profil → Ce que j'aime → Modifier" and "Paramètres → Mes préférences"
+  `router.push` the exact same route. The brief was explicit this must not become two different
+  Preferences screens, and reusing one route from two call sites needed no new code to keep that true.
+- **`SettingsScreen` reuses `ProfileMenuRow` for every row** — the brief's own instruction ("ne crée pas
+  inutilement de nouveaux patterns si un composant SettingsRow/ListItem existe déjà") is satisfied
+  literally: that component already _is_ the settings-row shape (icon, label, optional value/subtitle,
+  chevron), unchanged. Group headers ("Compte", "Préférences ROAM", "Apparence", "Support",
+  "Confidentialité & données", "Session") are a plain `Text variant="caption"` each — not a new
+  component, since a static label above a group needed nothing more.
+- **"Ce que j'aime" shows the current `DEFAULT_EXPERIENCE_TYPES`/`DEFAULT_AMBIANCE` selection
+  (`Chip`, unselected style, non-interactive), not a richer, invented tag list.** `PreferencesScreen`'s
+  own selection state is local to that screen (D-51: "no repository, nothing persisted") — there is no
+  shared, queryable "user's current preferences" to read from anywhere else yet. Reading the exact same
+  default constants `PreferencesScreen` itself seeds from is the only truthful thing Profile can show
+  without inventing a fake selection or building the shared-state layer the brief explicitly scoped out
+  ("ne fais pas un gros refactor global"). Reused as-is: `EXPERIENCE_TYPES`/`AMBIANCE_OPTIONS`
+  (`features/profile/data/`, D-51) for the id/icon/i18n-key list, filtered down to the default ids.
+- **"Parcours en cours" is new UI over a small, purpose-built mock overlay
+  (`data/activeJourney.ts`/`useActiveJourney`), not a new itinerary system.** There is no
+  itinerary-progress feature yet (`itinerary/create` is still `CreateJourneyPlaceholder`,
+  `04_TECH_STACK.md`), so "current step 2 of 5" etc. has nothing real to compute from. Same "extend
+  `Experience`... no, actually don't" call as the statistics screen's breakdowns (D-59): here the
+  progress fields are kept in their own small record (`experienceId` + `currentStep`/`totalSteps`/
+  `nextStep`) rather than added to `Experience` itself, because journey progress is per-user session
+  state conceptually, not a property of the experience — the hook joins the two at read time
+  (`repositories.experiences.getById`) instead. The referenced experience (`exp-live-concert`) was
+  chosen deliberately **not** already seeded as a favorite or history entry (D-57/D-58), so this
+  section reads as its own distinct thing instead of visually overlapping the favorites/history
+  previews directly below it — confirmed the hard way, by an initial pick (`exp-jazz-night`) that _was_
+  also a favorite, producing ambiguous duplicate-text test queries once both sections rendered it.
+  "Continuer mon parcours" pushes the existing `itinerary/create` placeholder (the one registered
+  route this app has for "an itinerary flow", D-48) rather than inventing a new route for a screen that
+  doesn't exist; "Voir sur la carte" from the brief's own mockup was **not** built — no map screen exists
+  yet (`features/map` is an empty `.gitkeep`) and the brief itself marks that action "éventuellement".
+- **New `ExperiencePreviewCard`, not a reuse of Home's `ExperienceCard`.** The favorites/history
+  previews are a fixed 3-column row sized to a third of the screen width; `ExperienceCard` is a fixed
+  260px horizontal-scroll card (Home's carousels) — forcing that width into a 3-up grid would have
+  meant fighting its own sizing, not reusing it. The new card is deliberately smaller and simpler (image,
+  title, one subtitle line, an optional decorative badge slot) — the favorites preview passes a small
+  static heart badge (no toggle: removal stays the full Favorites screen's job, same "preview, not a
+  second full feature" scope as the rest of this section), the history preview passes none.
+- **Both preview rows hide themselves when empty** (`favorites.length > 0` / `history.length > 0`)
+  rather than rendering their own nested empty state — Profile is a preview surface for those lists, and
+  the real empty states already exist on `/profile/favorites`/`/profile/history` (D-57/D-58); duplicating
+  them here would be a second copy of the same UI for a screen this brief didn't ask to touch.
+- **New `ActivitySummaryCard`, reusing `UserStats` (`useCurrentUser`) — same numbers as the top
+  `ProfileStats` row, a second, year-framed presentation of them**, not new data. Same "same data,
+  different shape, so a different component" reasoning the statistics screen's own `StatCard` already
+  used against `ProfileStats` (D-59).
+- **Not done on purpose**: a shared/persisted preferences store (see above — explicitly out of the
+  "no big refactor" scope); a real itinerary-progress system behind "Parcours en cours" (see above); a
+  "Voir sur la carte" action (no map screen exists); deleting or renaming any existing route (every
+  destination already existed); touching `PreferencesScreen`, `FavoritesScreen`, `HistoryScreen`,
+  `StatisticsScreen`, `LanguageScreen`, `ThemeScreen` or any other already-validated screen beyond what
+  points to them.
+
+### D-64 — `ProfileScreen` adopts `StickyRevealHeader` (follow-up to D-63)
+
+Same-day follow-up: `ProfileScreen` was the one screen this sprint's Profile/Settings refactor left on
+the plain inline title row (`Text` + gear `IconButton` in a `flex-row`); every sub-screen it links to
+already uses `StickyRevealHeader` (D-56 onward). Brought in line, no other change.
+
+- **Same restructure as every other adoption**: the in-content `h2` "Profil" stands in for the title
+  until the floating header's own title crossfades in past `HEADER_REVEAL_OFFSET` (70, the same proxy
+  value used everywhere else this sprint); the settings gear moved from the inline row into the
+  header's `rightSlot` — same icon, same `accessibilityLabel`, same destination, so the existing test
+  asserting `router.push('/profile/settings')` needed no change.
+- **No `leftSlot`**: unlike the pushed `/profile/*` sub-screens (which all show a back button there),
+  Profile is a tab root reached from the tab bar, not pushed — there is nothing to go back to, so the
+  slot is simply omitted (the component already renders nothing when a slot isn't passed, same as
+  `HomeHeader`'s own no-back-button header).
+- **Scroll handling merges two independent concerns in one function**, `handleScroll`: mutating
+  `scrollY.value` for the header's own crossfade, and forwarding the same event to the existing
+  `useTabBarScrollHandler()` for `RoamTabBar`'s collapse — the exact pattern `HomeScreen` already
+  established for combining its own hero-stretch shared value with the tab bar handler, not a new one.
+- **Not done on purpose**: a scroll-driven reveal test at the screen level — same "not meaningfully
+  testable under this setup" category D-49/D-55 already document for this exact crossfade; the
+  mechanism itself stays covered by `StickyRevealHeader.test.tsx`.
+
+## Discover (2026-09-23)
+
+### D-65 — Discover 1: immersive editorial discovery (route `/discover`); new `Collection` type/repository
+
+`DiscoverScreen` (`src/features/discover/`) replaces the sprint 3 placeholder. Sprint 6 brief:
+Discover is an editorial "magazine vivant de sorties", explicitly **not** a social feed — no profiles,
+followers, stories, comments or like counts. Built on two mock pools through the same
+`Screen -> hook -> Repository -> mock` pattern as Home (`useDiscoverData`).
+
+- **New domain type and repository: `Collection`** (`src/types/collection.ts`, `CollectionRepository`
+  in `services/repositories/types.ts`). An editorial grouping of experiences around a theme ("Les plus
+  beaux rooftops de Paris", "Quand il pleut"…) — distinct from `Experience` (a composed outing) and from
+  a `Category` (a place taxonomy). Mock fixtures live alongside the existing ones in
+  `services/mock/data.ts` (`collections`), same "plain, already-formatted strings" convention as
+  `Experience` (D-09/D-10); `isFeatured` marks the two shown in "Sélection ROAM", the rest only appear
+  in "Explorer par envie" (no collection is shown under two different cards at once).
+- **No `StickyRevealHeader`.** Unlike Experience Detail or Profile, Discover has no full-bleed hero photo
+  at the very top for a header to reveal over — its own "hero" (Sélection ROAM) is an inset card further
+  down the page. A plain in-flow title (the sprint 3 placeholder's own shape, kept) is the correct fit,
+  not a gap in adopting the pattern.
+- **Secondary-nav tabs actually filter the page**, rather than being cosmetic: "Pour toi" (default) shows
+  the full editorial mix (`RoamSelectionSection`, `SuggestionsSection`, the immersive card, `NearbySection`,
+  `TrendingSection`, `CollectionsSection`); "Tendances"/"À proximité"/"Collections" narrow the page down to
+  the one section they name (`DiscoverScreen`'s `TAB_SECTIONS` map). The mockup only shows "Pour toi", so
+  the other three tabs' content mix was a judgment call, not a documented design.
+- **"Suggestions pour toi" (Ce soir / Entre amis / En couple / Culture / Nature / Activités) is a
+  different, smaller vocabulary than Home's own mood chips** (`HOME_MOODS`): moment/company/category
+  shortcuts to inspire browsing, not a filter on the `Mood` type. Static config (`SUGGESTION_MOODS`,
+  same "no repository for a fixed option list" precedent as `HOME_MOODS`/`NEARBY_CATEGORIES`), purely
+  presentational — selecting a tile only highlights it, same "local state, nothing wired to it yet"
+  precedent as the onboarding mood/interests screens.
+- **The "grande expérience immersive" section's headline/subtitle are static editorial copy**
+  (`discover.immersive.*`, e.g. "Pour une soirée qui change"), deliberately independent from whichever
+  experience is picked underneath it (`pickImmersiveExperience`: first festive-mood experience, or the
+  first one). Reusing the picked experience's own `title`/`description` instead was considered and
+  rejected: the section should read as a standing "night out" invitation, not one specific place's
+  self-description that happens to change every time the mock pool changes.
+- **Reused rather than duplicated:** `ExperienceCard` and `SectionHeader` (from `features/home/components/`,
+  same cross-feature precedent as `SimilarExperiencesSection`) for "Près de toi" and "Ce qui fait envie en
+  ce moment" — the brief's own description of those cards (image, distance, rating, tap-to-open) is
+  exactly `ExperienceCard`'s existing shape. `parseDistanceMeters` (Home's `pickForYou.ts`) is exported and
+  reused by `pickNearby.ts` rather than re-implemented.
+- **One configurable `DiscoverCollectionCard`, not two near-duplicate components**: `variant="hero"` (image
+  then title/subtitle/CTA below it, "Sélection ROAM") and `variant="compact"` (title overlaid on the image,
+  "Explorer par envie") are one component, per the brief's own "évalue s'il peut être rendu configurable"
+  guidance (§7).
+- **New placeholder routes, same pattern as every other one this project has needed**
+  (`CreateJourneyPlaceholder`/`ProfilePlaceholder`, D-45/D-50): `collection/[id]` (`CollectionDetailPlaceholder`,
+  shows the real collection's own title, not a new i18n key) for "tap a collection", and `/map`
+  (`MapPlaceholder`, `features/map/`, reusing the existing `map.title` key) for "Voir la carte" — neither
+  screen is built this sprint (`08_AGENT_TODO.md` still lists Itinerary/Map as not done).
+- **States**: loading/error/empty are real, not just content (`useDiscoverData` tracks `isError` — the mock
+  repositories never reject today, but the hook stays ready for a real API implementation that can, unlike
+  `useHomeExperiences` which only tracks `isLoading`).
+
+### D-66 — Horizontal lists/carousels default to `FlatList`; existing `ScrollView horizontal` carousels audited, not migrated
+
+New project-wide rule, requested for this sprint and meant to outlive it:
+
+> Horizontal lists and carousels of repeating data default to `FlatList horizontal`. `ScrollView
+horizontal` is reserved for a paging pager with its own custom scroll-position tracking (a hero,
+> a gallery) or other genuinely non-repeating/special-cased content — not for a plain list of cards.
+
+Reasons (documented in `DEVELOPMENT.md`'s new "Horizontal lists / carousels" section): virtualization,
+better performance on longer lists, a consistent component shape across the app, and readiness for real
+API data (a `FlatList` doesn't change shape when its `data` stops being a small fixed mock array).
+
+- **Applied to every carousel/list built for Discover this sprint** (`DiscoverTabs`, `RoamSelectionSection`,
+  `SuggestionsSection`, `NearbySection`, `TrendingSection`, `CollectionsSection`) — all `FlatList horizontal`,
+  none of them `ScrollView`. The one exception, `ImmersiveExperienceCard`, is a single fixed card, not a
+  repeating list, so the rule doesn't apply to it (a plain `View`).
+- **Audit of existing screens** (brief §15) found these `ScrollView horizontal` carousels of repeating data,
+  none migrated this sprint (see below for why):
+  - `HomeScreen.tsx`: the mood chips, "Les expériences les plus populaires", "Lieux proches de toi" and
+    "Des idées pour toi" sections (4 carousels).
+  - `SimilarExperiencesSection.tsx` (experience detail): "Suggestions similaires".
+  - `HistoryScreen.tsx` (profile): the category filter chip row.
+- **Not migrated, on purpose** — the brief itself asks for restraint here ("si une migration présente un
+  risque important, ne la fais pas immédiatement; documente-la plutôt") and states the sprint's real goal
+  is putting the strategy in place and applying it to Discover, not retrofitting every existing screen:
+  - Each of the three files above is an already-validated, tested screen (`HomeScreen.test.tsx`,
+    `ExperienceDetailScreen.test.tsx`, `HistoryScreen.test.tsx`, plus the route-tree tests that scroll
+    `home-scroll` by testID) — a mechanical `ScrollView` -> `FlatList` swap is low-risk in isolation, but
+    touching four sections across three screens for no user-visible change, with no code owner asking for
+    it yet, is exactly the kind of scope creep `00_AGENT_INSTRUCTIONS.md` warns against ("avoid
+    overengineering", "prioritize the core user journey").
+  - Migrate each one **the next time that screen is touched for an unrelated reason** (a bug fix, a new
+    section, a design change) — do not do it as a drive-by change, and do not do all of them in one sweep
+    either: one screen, one focused change, same "one screen per session" discipline as
+    `SCREEN_INTEGRATION_WORKFLOW.md`.
+- **Deliberately excluded from the rule** (not carousels of repeating data, kept as `ScrollView`):
+  - `HeroCarousel.tsx` (Home) and `ExperienceHero.tsx` (experience detail): paging `ScrollView`s with their
+    own `ref`-based `scrollTo`, `onScroll`-driven `activeIndex`/shared-value tracking, and (Home) a
+    pull-to-stretch `Animated.View` wrapper — a `FlatList` buys virtualization neither needs (both show at
+    most 5 slides) at the cost of rebuilding that tracking against `FlatList`'s different ref API, for a
+    UI role (a full-bleed hero pager) that isn't "a list of cards" in the first place.
+  - Every vertical page-container `ScrollView` (`ScrollScreen`, the auth screens' own `ScrollView` +
+    `KeyboardAvoidingView`, `ExperienceDetailScreen`'s main scroll) — the rule is about **horizontal**
+    carousels of repeating items; a page's own vertical scroll container is a different thing entirely.
+
+## Discover carousels: full-bleed + snap (2026-09-23)
+
+### D-67 — `HorizontalCarousel` (generic, reusable); Discover's five carousels bleed past the page padding and snap
+
+Follow-up requested after reviewing D-65/D-66 on device: Discover's carousels sat inside the page's own
+`px-6` padding, so "peek" cards were visually boxed in (clipped by that padding instead of bleeding to the
+screen's physical edge) and swiping didn't settle cleanly on a card boundary. Explicitly **not** a
+redesign — no section, card, color, text, navigation or animation changed; this only touches how the five
+existing `FlatList`s scroll and are positioned.
+
+- **New primitive: `components/ui/HorizontalCarousel.tsx`.** A thin `FlatList` wrapper, not a new
+  abstraction over cards/data: it owns exactly two mechanics — full-bleed positioning and snap — and
+  passes everything else (`data`, `renderItem`, `keyExtractor`, …) straight through. Checked first for an
+  existing carousel component to adapt (brief §7); none existed, so this is new, placed in
+  `components/ui/` (not `features/discover/`) since nothing about it is Discover-specific — any future
+  screen with the same "padded page, full-bleed peek-card carousel" shape can reuse it as-is.
+- **Full bleed**: `marginHorizontal: -sidePadding` on the `FlatList` (default 24, matching `px-6`) cancels
+  the parent's padding; a matching `paddingHorizontal: sidePadding` in `contentContainerStyle` keeps the
+  first/last item aligned with the rest of the page's content rather than touching the physical screen
+  edge. A wrapper `View` with negative margin around an untouched `FlatList` was considered and rejected
+  as an unnecessary extra layer — the negation belongs on the scrollable element itself.
+- **Snap**: `snapToInterval={itemWidth + spacing}`, `snapToAlignment="start"`, `decelerationRate="fast"`,
+  exactly as requested. `pagingEnabled` was evaluated for the Sélection ROAM hero cards (brief's own
+  suggestion for "cards occupying exactly one page") and rejected: once full-bleed, the carousel's own
+  frame is the full window width, but the hero card itself is narrower
+  (`windowWidth - 2 * sidePadding`, `DiscoverCollectionCard`'s `getHeroCardWidth`) — paging by the frame's
+  width would drift out of alignment with the card's actual width after a few swipes. `snapToInterval`
+  computed from the card's real width doesn't have that mismatch, so it's used uniformly for all five
+  carousels rather than special-casing the hero one.
+- **One exported width constant per card, not a second hardcoded copy in each section** — the exact
+  failure mode brief §5 warns about ("ne mets pas une valeur arbitraire en dur"): `ExperienceCard` exports
+  `CARD_WIDTH` (used by `NearbySection`/`TrendingSection`), `DiscoverMoodCard` exports `TILE_SIZE`
+  (`SuggestionsSection`), `DiscoverCollectionCard` exports `COMPACT_WIDTH` (`CollectionsSection`) and
+  `getHeroCardWidth(windowWidth)` (`RoamSelectionSection`, which calls `useWindowDimensions()` itself and
+  passes the same number both to the card and to the carousel's `itemWidth`). None of these exports change
+  what the card looks like — purely making an already-fixed value or already-existing formula reusable.
+- **`DiscoverTabs` (the secondary-nav chip row) was deliberately left untouched.** It's a navigation
+  control, not a "peek card" carousel — the reported problem (cards clipped by the page's padding) doesn't
+  really apply to a row of pill-shaped chips, and bleeding the tab selector to the screen edges wasn't
+  asked for; doing it anyway would be exactly the "modifier la navigation" this pass was told not to do.
+- **Existing `ScrollView horizontal` carousels (D-66's audit) are unaffected** — this pass only touches
+  Discover's own `FlatList`s; Home's mood/popular/nearby/for-you sections, experience detail's
+  "Suggestions similaires" and the history screen's category filter still use their original
+  `ScrollView`s, unchanged. `HorizontalCarousel` exists now as the target shape for whenever one of them
+  is migrated later, but adopting it there is still its own, separate change (D-66 still applies: migrate
+  one screen at a time, not as a drive-by of this pass).
+- **New test file `HorizontalCarousel.test.tsx`.** No visible role/text distinguishes a full-bleed,
+  snapping `FlatList` from a plain one, so — unlike the rest of this codebase's component tests — it reads
+  the rendered `FlatList` element's own props via a `testID` passed straight through
+  (`screen.getByTestId(...).props`), the only query that can actually see `style`/`snapToInterval`/etc.
+  `UNSAFE_getByType` (the more common React Testing Library escape hatch for this) doesn't exist in this
+  project's RNTL version (14.0.1) — `getByTestId` reaches the same props on the host node without it.
+
+### D-68 — Sprint 6: one shared `SearchScreen` for Home and Discover; mocked illustrated map with pins
+
+Both `SearchBar`s (Home, Discover) were fully inert since their introduction (D-09/D-45/D-65's own note:
+"a mocked search field — no real query engine in this sprint"). Sprint 6 wires them to a single shared
+search experience rather than building two — the brief was explicit that Home and Discover must open the
+exact same flow, only the entry context (placeholder copy) differs.
+
+- **Route: `app/search.tsx` → `features/search/SearchScreen.tsx`.** A single route, not a nested
+  folder — filters and the map are in-screen state (a bottom sheet / a Liste-Carte toggle), not
+  sub-routes, so there is nothing else to register. Reads `context: 'home' | 'discover'` and
+  `openFilters: '1'` via `useLocalSearchParams` — the first only picks between the two already-existing
+  `home.search.placeholder` / `discover.search.placeholder` i18n keys, the second opens the filter sheet
+  immediately (the trailing filter icon on either `SearchBar`). `SearchBar` itself needed no new props:
+  `onPress` already flowed through via its `...PressableProps` spread; only Home/Discover's own JSX
+  changed, to pass `onPress`/`onPressFilter` that `router.push({ pathname: '/search', params: {...} })`.
+- **Data layer, same `Screen -> hook -> Repository -> mock` layering as the rest of the app.** New
+  `SearchRepository` (`suggest`/`search`) added to `Repositories`, implemented in
+  `services/mock/search.ts`: deterministic, accent/case-insensitive substring matching against title,
+  description, tags, moods and the resolved category slug — explicitly no fuzzy/AI matching (brief §2).
+  `useSearch` owns query/filter/result state (two phases: debounced `suggest()` while typing,
+  `search()` once submitted, re-run whenever `filters` changes afterwards). No new fixtures: filters over
+  the existing experience pool.
+- **`react-hooks/set-state-in-effect` shaped `useSearch`'s two effects**: neither ever calls `setState`
+  synchronously in the effect body (only inside a `.then()`), matching `useDiscoverData`/
+  `useHomeExperiences`'s own discipline. `isLoading` therefore flips to `true` from the *event handlers*
+  that trigger a new search (`submit`/the returned, wrapped `setFilters`), not from inside the effect —
+  the effect's job is only to fetch and then resolve `isLoading` back to `false`.
+- **Recent searches persisted through the existing `lib/storage.ts` `AsyncStorage` wrapper** (`useRecentSearches`,
+  new `STORAGE_KEYS.recentSearches`), same low-risk pattern already used for theme/language — no new
+  storage abstraction. Deduped by normalized query text (newest first, capped at 10); id is the trimmed
+  query itself rather than a generated one, since a search is already unique by that text.
+- **"Explorer par envie" reuses Discover's `SUGGESTION_MOODS`/`DiscoverMoodCard` as-is**, rather than a
+  parallel vocabulary for what is visually the same tile — its **first real wiring**: on Discover
+  selecting one is purely presentational (documented there as "no downstream filtering yet"); here it
+  submits the mood's translated label as the search query.
+- **Filters: `SearchFiltersSheet`, a bottom sheet built on `ConfirmationModal`'s own `Modal` + backdrop +
+  `MotiView` plumbing** (same exit-duration/`reduceMotion` handling), but sliding up from the bottom edge
+  instead of scaling in centered — no dedicated `BottomSheet` primitive existed to reuse, and this is the
+  closest existing modal machinery. Works on a local draft, committed only through "Voir X résultats" (a
+  live count re-queries `search()` as the draft changes); category options come from
+  `repositories.categories.list()` via the already-existing `useCategories`/`getCategoryLabel` (not a new
+  dynamic-key lookup — `react-i18next`'s typed keys reject a template built from an untyped
+  `Category.slug: string`, which is exactly what `getCategoryLabel` was already built to solve);
+  budget options reuse the existing `context.budget.<value>` labels rather than duplicating them. Distance
+  and "Quand ?" are fixed chip rows (1/3/5/10 km, Maintenant/Aujourd'hui/Ce week-end), not the `Slider`
+  primitive — the brief's own mockup shows discrete choices here, unlike Preferences' continuous range.
+- **Map: no real map SDK.** `features/map/ExperienceMapView.tsx` reuses onboarding `MapPreview`'s
+  decorative streets/parks illustration (now exported from there as `MAP_STREETS`/`MAP_PARKS`/
+  `MAP_DESIGN_WIDTH`/`MAP_DESIGN_HEIGHT` instead of duplicated), scaled to fill its container, with one
+  pin per experience positioned by a deterministic hash of its id — explicitly mock positioning, not real
+  geocoding (`Experience` has no `coordinates`, only `Place` does; resolving every place through it would
+  add async complexity with no real payoff for an illustration). One shared component, not two parallel
+  map systems: `MapPlaceholder` (the standalone `/map` route, Discover's "Voir la carte") now renders it
+  over a small `pickNearby` pool instead of "coming soon" text, and `SearchScreen`'s own Liste/Carte
+  toggle renders it **inline** with the current filtered results — inline, not a navigation to `/map`,
+  because that route has no way to receive an arbitrary result set through serializable route params.
+- **Results list: a new `SearchResultCard`, not a reuse of `ExperienceCard`.** Same content/iconography,
+  but stretched to the list's own width — `ExperienceCard`'s `CARD_WIDTH` (260) is tuned for a horizontal
+  carousel, not a single-column `FlatList`; reusing it directly would leave dead space on a full-width
+  vertical list. `SearchResultsList` is a `FlatList`, not a `ScrollView` (brief §8), with `ListEmptyComponent`
+  → `SearchEmptyState` (brief §11's three relax-a-constraint actions mirror
+  `07_DATA_AND_RECOMMENDATION.md`'s "No perfect match" guidance almost verbatim: relax distance, relax a
+  filter, fall back to trending) plus a "Peut-être que ça te plaira" `HorizontalCarousel` reusing
+  `pickTrending`, not a new picking rule.
+- **New test files**: `SearchScreen.test.tsx`, `SearchFiltersSheet.test.tsx`, `SearchResultsHeader.test.tsx`,
+  `SearchSuggestionsList.test.tsx`, `SearchEmptyState.test.tsx`, `useRecentSearches.test.ts`,
+  `services/mock/search.test.ts`, `features/map/ExperienceMapView.test.tsx`, and route-level
+  `searchRoutes.test.tsx` (same `renderRouter`-over-the-real-`src/app` shape as `discoverRoutes.test.tsx`)
+  covering Home → Search, Discover → Search, Search → Experience Detail, and back navigation. Existing
+  `HomeScreen.test.tsx`/`DiscoverScreen.test.tsx` gained the new `onPress`/`onPressFilter` assertions.
+
+### D-69 — Sticky search on Home and Discover: two mechanisms, one shared idiom, no forced unification
+
+Follow-up requested right after D-68: neither `SearchBar` was reachable while scrolling. Home
+complicated this further — it already has a floating sticky header (`HomeHeader`, the notification
+bell); a second, independent sticky search bar would have been exactly the "two overlapping sticky
+zones" the brief ruled out.
+
+**The decision that shaped everything else**: `HomeHeader`'s bell has three existing, deliberate tests
+(`HomeScreen.test.tsx`) asserting it hides on a sustained scroll down and reveals on scroll up
+(`useScrollDirection`, D-46/D-47). Nothing in this task asked to change that interaction, so it was
+treated as a hard constraint, not a detail to redesign around — the whole solution was built to
+preserve it exactly rather than switch Home to a different sticky mechanism for the sake of a single
+shared component.
+
+- **Discover** — no existing sticky header, so it gets `StickyRevealHeader` directly, via a new
+  `centerSlot?: ReactNode` prop (`components/ui/StickyRevealHeader.tsx`), mutually exclusive with
+  `title`. It renders inside the exact same crossfading `Animated.View` the title already used (same
+  `revealStyle`/`interpolate`, untouched) — the only difference is `pointerEvents`: `"none"` for a
+  title (decorative), `"box-none"` for `centerSlot` (must stay tappable once revealed — a `SearchBar`,
+  unlike a title, is the whole point of showing it). All 7 `title`-only callers (Profile, Settings,
+  Preferences, Favorites, History, Statistics, Language, Theme) are byte-for-byte unaffected — the new
+  branch only activates when `centerSlot` is passed. `DiscoverScreen.tsx` adds one
+  `useSharedValue(0)` `scrollY`, folded into its existing `onScroll` (same "one handler, several
+  consumers" composition `HomeScreen`/`ProfileScreen` already use), and a `SEARCH_REVEAL_OFFSET = 120`
+  local constant — the same kind of round, unmeasured proxy the 7 `HEADER_REVEAL_OFFSET` screens
+  already use, sized a bit larger for Discover's taller two-line title block above the bar.
+- **Home** — `HomeHeader` (`features/home/components/`) is extended in place, not migrated to
+  `StickyRevealHeader`: a new `searchSlot?: ReactNode` + `showSearch?: boolean` prop pair adds a second
+  row below the existing (untouched) bell row, inside its own `MotiView` animating `height`/`opacity`
+  between `0` and a fixed row height as `showSearch` toggles — a smooth grow/fade, never an instant
+  snap. The whole zone's `visible`/`atTop`-driven translateY/opacity/wash — what the three existing
+  tests assert on — is untouched; the search row rides along with it, so it hides when the bell hides
+  and reappears when it reappears. This *is* "one zone, not two": literally the same floating element,
+  not two components kept in sync. `showSearch` is a new, independent signal (scrolled past the Hero),
+  computed in `HomeScreen.tsx` from a new `features/home/lib/heroHeight.ts` (`HERO_HEIGHT_RATIO`,
+  `HERO_MIN_HEIGHT`, `getHeroHeight`) — Home's own hero-height constants relocated out of
+  `HeroCarousel.tsx` (same numbers, zero visual change) so `HomeScreen` can compute
+  `getHeroHeight(windowHeight) - HEADER_HEIGHT` (now exported from `HomeHeader.tsx`) without
+  duplicating them, mirroring `features/experiences/lib/heroHeight.ts`'s existing shape rather than a
+  hardcoded guess — Home's Hero varies far more by device than Discover's title block does, so a
+  measured formula was worth it here where a round constant wasn't.
+- **Why two mechanisms, not one shared component**: `StickyRevealHeader`'s "always pinned, wash
+  crossfades" model and `HomeHeader`'s "hides on sustained scroll down" model are genuinely different
+  UX contracts, and Home's is the one with three tests already codifying it as intentional. Forcing
+  Home onto `StickyRevealHeader` would have been a real, unrequested behavior change (the bell would
+  stop hiding on scroll-down) disguised as a refactor. What *is* shared: the visual language (Moti,
+  blur + `surface`-tinted wash, safe-area handling, `useReduceMotion`) and the underlying idiom (an
+  in-flow element untouched, a floating twin that reveals past an offset) — applied through whichever
+  existing, already-tested mechanism actually fits each screen.
+- **No visual duplicate, and no new accessibility-hiding either**: both the in-flow and the floating
+  `SearchBar` always trigger the identical `router.push('/search', ...)`, so a brief overlap during the
+  crossfade window is inconsequential — tapping "the search bar" does the right thing regardless of
+  which instance intercepts the touch. This is exactly the level of care the existing title-reveal
+  pattern already has (the in-flow title on 7 screens is never hidden from accessibility once the
+  sticky one crossfades in, either) — matching it was a deliberate choice to avoid a new inconsistency
+  and scope creep, not an oversight.
+- **Tests updated for the new second instance**: `DiscoverScreen.test.tsx`/`HomeScreen.test.tsx`/
+  `searchRoutes.test.tsx`/`onboardingRoutes.test.tsx` (Home is reached at the end of onboarding) now use
+  `getAllByRole('search')`/`getAllByText(...)` where a query used to assume a single `SearchBar`, plus
+  new tests: `StickyRevealHeader.test.tsx` covers `centerSlot` (renders instead of `title`, stays
+  interactive — same "no crossfade assertion, the Jest Reanimated mock stubs `interpolate`" scope as
+  its existing tests); `HomeScreen.test.tsx` covers pressing the header-docked search bar once
+  scrolled past the Hero. The three pre-existing notification-button scroll tests were **not** changed
+  and still pass.
+
+## Sprint 7 — real maps
+
+### D-70 — `react-native-maps` is the map solution; `MapPlaceholder`s are replaced one screen at a time; Map screen first
+
+**Rule (do not break):** _Les MapPlaceholder sont remplacées progressivement, une screen à la fois. Chaque
+intégration doit être validée avant de passer à la suivante._ Each integration ends with tests, a commit and a
+stop for visual validation.
+
+**Audit (start of sprint 7).** No real map SDK existed. The surfaces that stood in for a map are:
+
+| # | Screen / route                                    | Surface today                                                       | Status                  |
+| - | ------------------------------------------------- | ------------------------------------------------------------------- | ----------------------- |
+| 1 | Map — `/map` (Discover "Voir la carte")           | `MapScreen` (was named `MapPlaceholder`) → **`RoamMap`**            | **Done (this decision)** |
+| 2 | Search — Liste/Carte toggle (`/search`)           | `ExperienceMapView` (illustrated map + hash-positioned pins)        | **Done in sprint 8 (D-71)** |
+| 3 | Experience detail — "Voir sur la carte"           | `MapPreviewRow` → onboarding `MapPreview` illustration              | To do                   |
+| 4 | Onboarding location — "Où souhaites-tu sortir ?"  | `MapPreview` illustration (a decorative preview, not a real place)  | To do (may stay static) |
+
+There is no itinerary map, outing/live map or place-detail map yet (`features/itinerary`, `outing`,
+`recommendations` are empty or placeholders); they will get `RoamMap` when those screens are built.
+
+**Choices.**
+
+- **`react-native-maps` 1.27.2** (`npx expo install`, SDK 57-compatible), the only map library. No Google Places,
+  Directions or Geocoding API, no backend, no network call: the data is mocked.
+- **Layering** — `Screen → hook → repository (mock) → RoamMap → react-native-maps`. Only
+  `features/map/components/RoamMap.tsx` and `ExperienceMarker.tsx` import the vendor; the rest of the app sees
+  `MapMarkerData` (`features/map/types/map.types.ts`), so switching provider (`04_TECH_STACK.md`: Google Maps or
+  Mapbox) touches those two files. Created and nothing more: `RoamMap`, `ExperienceMarker`,
+  `ExperienceMapCard` (the selection card, extracted from `ExperienceMapView` so the two maps share it while the
+  illustrated one is being phased out), `useNearbyMapExperiences`, `lib/region.ts`, `MapScreen`. Polyline, user
+  location and camera controls are **not** built (nothing needs them yet).
+- **`RoamMap` role**: draws markers, frames them once on mount (`getRegionForCoordinates`; Paris when empty),
+  reports marker/map taps. It does not own selection — the screen does (`useNearbyMapExperiences`). Frame is
+  `overflow-hidden rounded-large`, so the native view is clipped to the same radius as before.
+- **Data** — `Experience` gained an optional `coordinates` (mock Paris coordinates on the 14 mock
+  experiences, `services/mock/data.ts`). This replaced the hash-of-the-id positioning of the illustrated map.
+  No separate `places` repository was added: the existing `ExperienceRepository` already serves the pool, and
+  `Place` (which has coordinates) is not joined to experiences yet. A future API implementation returns real
+  coordinates through the same repository.
+- **Scope of the swap** — only `/map` uses `RoamMap`. `ExperienceMapView` (Search) is untouched apart from using
+  the shared `ExperienceMapCard`. `MapPlaceholder.tsx` was renamed `MapScreen.tsx` (it stopped being a placeholder
+  in sprint 6) — the route file `app/map.tsx` is otherwise unchanged.
+- **Interactions**: pan/zoom (native), tap a pin → selected pin + bottom card, tap it again / tap the map / the
+  card's close button → deselect, "Voir le lieu" → `experience/[id]`. Rotation, pitch, compass and the Android
+  toolbar are off. The back button is the screen's own (`router.back()`); the native swipe-back stays disabled
+  (D-53), and the map's own pan gesture is unaffected. The screen does not scroll (map is `flex-1`), so no
+  ScrollView/gesture conflict exists.
+- **Dark mode**: `userInterfaceStyle` follows the app theme, which Apple Maps (iOS) honors. Google Maps (Android)
+  keeps its native light style: a dark `customMapStyle` would need hex colors outside the theme tokens
+  (`DEVELOPMENT.md` forbids them in components), so it is deferred, documented rather than half-done.
+- **Expo Go vs development build.** Works in Expo Go (iOS: Apple Maps; Android: Google Maps through Expo Go's own
+  key) with no key in the repo. For a **development/production build** the Google Maps SDK needs a key, to be
+  provided through EAS secrets / an untracked config, **never committed**: `expo.android.config.googleMaps.apiKey`
+  (Android, mandatory) and `expo.ios.config.googleMapsApiKey` (iOS, only if `provider="google"` is chosen — Apple
+  Maps needs none). Nothing else is required: no location permission (the user position is not shown).
+- **Tests** — `jest.setup.ts` mocks `react-native-maps` globally with `src/test/reactNativeMapsMock.tsx`
+  (`MapView` → a `View` keeping its props, `Marker` → a pressable named after `accessibilityLabel`).
+  `RoamMap.test.tsx`, `MapScreen.test.tsx`, `region.test.ts`; the Discover → Map route tests now assert `RoamMap`.
+- **Future real data**: real coordinates/routes come with the place provider, geolocation and routing phases
+  (`08_AGENT_TODO.md` Phase E): `Polyline` for itineraries, a user-location marker, camera control — added to
+  `RoamMap` only when a screen needs them.
+
+### D-71 — Sprint 8: Search redesigned (Trier / Filtrer / Carte); Search's map becomes a full-screen `RoamMap`
+
+Second surface of the D-70 replacement ("une screen à la fois"), together with a rework of Search's results flow.
+Front-end only: no backend, no Places/Directions API, no new library.
+
+**Flow.** LIST = `SearchInput` → `[Trier] [Filtres] [Carte]` → result count + active sort → results. MAP = `SearchInput`
+→ `[Filtres]` alone → full-screen `RoamMap` → `ExperienceMapCard` for the selected pin. One `SearchScreen`, one
+`view: 'list' | 'map'` state — no new route.
+
+**Decisions.**
+
+- **One shared action row, not two.** `SearchActionBar` (replaces `SearchResultsHeader`) renders both shapes from a
+  `view` prop, built from the existing `Chip` (icon + label; `selected` = "a non-default sort / any filter is active").
+  No new button primitive.
+- **Removed on purpose, to follow the new (simpler) brief:** the "Tous / Ouvert maintenant / < 2 km" quick-filter chips
+  and the Liste/Carte segmented toggle. "Ouvert maintenant" and distance remain reachable in the filters sheet (1/3/5/10 km —
+  the 2 km shortcut is gone), so nothing is lost but a shortcut; keeping a quick-chip row would have duplicated the filter
+  system the brief forbids duplicating. Their i18n keys (`search.results.quickFilters.*`) were deleted with them.
+- **Wording:** the button says "Filtres" (the app's existing string, also the sheet's title) rather than the mockup's verb
+  "Filtrer"; "Trier" is new (`search.results.sort`), and also titles the sort sheet, mirroring Filtres.
+- **Sort is client-side.** `SearchSortOption` (`types/search.ts`) = recommended / nearest / topRated / priceAsc / priceDesc;
+  `features/search/lib/sortResults.ts` is a pure, stable transform of what `SearchRepository.search()` returned
+  (`recommended` = the repository's order). Distance reuses `parseDistanceMeters`; price sorts by the budget bracket
+  (`BudgetRange` order) because the mock has no numeric price. `SearchSortSheet` copies `SearchFiltersSheet`'s `Modal` +
+  `MotiView` slide-up chrome; rows are `SortOptionRow` (the `LanguageOptionRow` shape); picking a row applies and closes —
+  a single choice needs no draft/"apply" step. The active sort is echoed next to the count (mockup's "Recommandées").
+- **Single source of truth.** `results → sortResults → sortedResults` feeds the list, the count and the map. The map has no
+  search/filter logic (`toMapMarkers(sortedResults)` only). Filters are the one `SearchFiltersSheet`, opened from either
+  mode; applying re-runs the search, so the map re-mounts framed on the new markers. Query, filters, sort and the selected
+  pin live in `SearchScreen`, above both views, so a Liste ↔ Carte round trip loses none of them (the pin stays selected
+  as long as it is still among the results).
+- **Reuse.** `RoamMap`, `ExperienceMarker`, `ExperienceMapCard` unchanged in behavior; `RoamMap` gained `rounded`
+  (default `true`) so Search's map can bleed to the screen edges — a prop, since NativeWind can't override a class by order.
+  `isPinnable`/`toMapMarkers` moved to `features/map/lib/markers.ts` (Map screen and Search share them; an experience
+  without `coordinates` stays in the list, gets no pin, crashes nothing).
+- **Way back to the list.** The action row must only show "Filtrer" in map mode, so the return control is a floating
+  "Liste" pill on the map itself (top right), not a repurposed "Carte" chip. Obvious, one tap, no new route.
+- **Header and safe area.** The back chevron + "Recherche" title stay above the search field in every state: the app has no
+  swipe-back (D-53) and Search must always be leavable. The `SearchInput` is a real text field outside the scrolling
+  area, which already makes it "sticky" in list mode and the same single instance above the map (no duplicate, no double
+  header). `SafeAreaView edges={['top']}` is unchanged; the map bleeds under the bottom inset, and the selected-pin card adds it.
+- **Tab bar.** Nothing to do: `/search` is a root `Stack` screen beside `(tabs)`, so the floating tab bar is not rendered in
+  list or map mode — the map is immersive without touching `RoamTabBar`.
+- **Deleted:** `ExperienceMapView` (+ test) — nothing used it any more (the same "delete a stand-in once unreferenced"
+  precedent as the placeholders); `MapPreview` no longer exports `MAP_STREETS`/`MAP_PARKS`, which only it had needed.
+- **Not done / visual checks left to the user:** Android stays on Google Maps' light style in dark mode (D-70);
+  the camera re-frames whenever the result set changes (filters) rather than preserving pan/zoom; carousels are untouched.
+- **Tests:** `SearchActionBar`, `SearchSortSheet`, `sortResults`, `searchFilters`, `markers` unit tests; `SearchScreen`
+  covers list/map layout, sort reordering, marker selection + "Voir le lieu", filtering from the map, the floating "Liste"
+  button, no-results-on-map, and query/filters/sort/selection surviving list ↔ map.
+
+### D-72 — Search's map becomes its own screen: `SearchMapScreen` on `/search/map`, over a shared `SearchSessionProvider`
+
+Fix for D-71. D-71 kept the map inside `SearchScreen` (a `view` flag). Visually that stacked back + title + search field +
+chip above a map that only started below them — not the immersive map the design shows (search bar *floating over* a map that
+runs to the screen edges). The map itself was never inside a scroll view (it was already `flex-1`); the problem was the surrounding
+layout, which a list-oriented screen can't shed. **Superseded from D-71:** the in-screen map mode, its floating "Liste" button,
+the `view` state, and `SearchActionBar`'s map shape. Everything else in D-71 (sort, action row, shared filters, `RoamMap` reuse) stands.
+
+**Why a dedicated screen (and not just a re-styled map mode).** The same picture could be drawn inside `SearchScreen`, but a
+route also gives Android's hardware back a real "map → list" step, keeps the list (and its `FlatList`) out of the way while on
+the map, and lets each screen have exactly the layout it needs. Cost: the search state can no longer live in one screen.
+
+**Decisions.**
+
+- **Route `app/search.tsx` → `app/search/{_layout,index,map}.tsx`.** `/search` still resolves to `index` (every existing
+  `router.push('/search', …)`, the typed route and the tests are unchanged); `/search/map` is new, no conflict with `/map`
+  (the standalone Map screen). `AppRoutes`' `<Stack.Screen name="search" />` stays. The nested `Stack`
+  (`features/search/SearchLayout.tsx`) repeats `headerShown: false, gestureEnabled: false` (D-53 — nested navigators don't inherit
+  the root's `screenOptions`); the map opens with `animation: 'fade'`.
+- **`SearchSessionProvider`** (`SearchSessionContext.tsx`), mounted by that layout, holds the one Search state: `useSearch()`
+  (query, filters, results, loading, submitted), `sort`, recent searches, the selected map pin, plus `runSearch`/`applyFilters`
+  (previously duplicated inline in the screen). `sortedResults` is derived once there. Navigating list ↔ map keeps every bit of it;
+  leaving `/search` unmounts it (fresh start next time, as before). No second search logic, no second filters system — the
+  map screen calls the same `SearchFiltersSheet`.
+- **Map screen layout.** `RoamMap` (`rounded={false}`, `StyleSheet.absoluteFill`, no fixed height) is the surface; a
+  `pointerEvents="box-none"` overlay under `SafeAreaView edges={['top']}` carries the controls, so the map pans anywhere they
+  aren't and reaches every edge (also under the bottom inset — `ExperienceMapCard` adds it for itself).
+- **Header kept light:** two rows only — [‹ back (`IconButton`)] + `SearchInput` (the same component as the list), then the single
+  `SearchFilterChip`. `SearchFilterChip` is the one "Filtres" chip both screens use. The list's `back + title` row isn't repeated:
+  the ‹ button *is* the map's title row.
+- **Search field on the map** is live: editing + submit re-runs the shared search (pins update); clearing it empties the search and
+  goes back to the list's initial state (a map with no search is meaningless); no suggestions panel is shown over the map.
+- **Re-framing.** `RoamMap` frames once on mount, so `SearchMapScreen` keys it by the *set* of pinned ids: a new result set
+  re-frames, selecting a pin or reordering doesn't remount the native map. No loading screen replaces the map any more.
+- **No results:** the map stays, with a small "Aucune sortie trouvée" pill (existing `search.empty.title`) instead of a blank map.
+- **Tab bar:** analysed, not changed. `/search/map` sits in the root `Stack` beside `(tabs)` like `/search`, `/map` and
+  `experience/[id]`, where the floating tab bar isn't rendered — so the map is already immersive without touching `RoamTabBar`.
+- **Tests:** `SearchMapScreen.test.tsx` (layout, pins, selection/card/detail, shared filters, reset, no results, back /
+  deep-link fallback, clear), `searchRoutes.test.tsx` (real navigation: list → `/search/map` → back with query/filters/sort
+  intact, filters changed on the map carried back, pin → detail), `SearchScreen.test.tsx` ("Carte" pushes `/search/map`).
+
+### D-73 — Experience detail: hero dots, real map block, full-screen `ExperienceMapScreen` + `ExperienceMapFooter`
+
+Only what was asked, on Experience detail (`experience/[id]`); reference mockup supplied. Front-end only, mock data, no
+Places/Directions API.
+
+- **Hero dots.** `ExperienceHero` renders Home's existing `CarouselDots` (active dot widens, others dim, Moti, reduced motion
+  respected) from the same `activeIndex` as the "n / total" counter, so they follow every swipe. Bottom-left, raised to 34 px so
+  they clear the 24 px the content sheet overlaps the hero by (`-mt-6`). White dots (the component's own photo-safe default) read
+  in light and dark. Not shown for a single image. Pager, images, counter, gallery tap: untouched.
+- **Map block.** `MapPreviewRow` no longer draws onboarding's illustrated `MapPreview`: it renders a real `RoamMap` in a rounded
+  card, `interactive={false}` (new `RoamMap` prop: pan/zoom off and `pointerEvents="none"`, so the touch reaches the wrapper —
+  a native map inside a vertical `ScrollView` would otherwise swallow it), with the experience's own pin
+  (`toMapMarkers([experience])`, selected style), a "Voir sur la carte" pill, and the address under it. The block is one
+  `Pressable` → `router.push('/experience-map/[id]')`. Without `coordinates` only the address row remains (nothing to open);
+  with neither, nothing renders. Same reuse as everywhere: `RoamMap`, `ExperienceMarker`, `lib/markers`; no second map system.
+- **Address moved out of the info grid.** The address was an `InfoGrid` cell; it now lives once, under the map (as in the mockup),
+  so the grid's `address` item and its `experience.info.address` key were removed to avoid showing it twice. Price / hours /
+  transport are unchanged.
+- **Full-screen map.** `ExperienceMapScreen` (`features/map/`), route `experience-map/[id]` (flat, like `gallery/[id]`,
+  D-48 — not nested under `experience/[id]/`; registered in `AppRoutes`, no gesture override, so no swipe-back): a header
+  (back, name, address) then `RoamMap` (`rounded={false}`, interactive) filling the rest, and `ExperienceMapFooter` anchored
+  over its bottom edge with `FadeInUp` (skipped under reduced motion). The map has no logic of its own; loading / unknown
+  experience get a back button, no crash.
+- **`ExperienceMapFooter`** (`features/map/components/`): a separate, reusable component (photo, name, "category · place",
+  rating + review count, full-width "Voir le lieu"). Distinct from `ExperienceMapCard` (compact, dismissible overlay for choosing
+  among many pins): this one is the permanent footer of a single-experience map. Its CTA leads to the experience, which is
+  normally the screen the map was opened from, so the screen does `router.back()` (or `replace` to the experience when there is
+  nothing behind, e.g. a deep link) instead of stacking a duplicate detail.
+- **Not built, on purpose:** the mockup's "Itinéraire" and locate buttons (they need Directions / geolocation — later phases;
+  `RoamMap` has no such controls yet) and, as asked, **the floating picker over the map, place carousel, multi-selection and
+  advanced bottom sheet — all deferred to the next sprint.**
+- **Tests:** `ExperienceHero` (dots per image, active dot follows scroll, none for one image), `MapPreviewRow`, `ExperienceMapFooter`,
+  `ExperienceMapScreen`, `RoamMap` (`interactive`), `ExperienceDetailScreen` (map block, static preview, tap → route) and
+  `experienceRoutes` (detail → map → back, footer CTA → detail). No existing test was edited.
+
+### D-74 — Experience map: address action bubble, transparent header, hide/show footer
+
+Follow-up to D-73; only what was asked. Mock data, no backend, no Maps API.
+
+- **Address bubble.** The detail's map block is now two targets: the map still opens the full-screen map; the **address row** opens
+  `AddressActionsBubble` — a small centered rounded card over a dimmed backdrop (the `ConfirmationModal` plumbing: `Modal` +
+  Moti fade/scale, no motion under reduced motion, padded by the safe-area insets; closed by backdrop, ×, or Android back).
+  It takes the *behavior* of the reference (a small action bubble), not its look. Actions (`useAddressActions`): **Copier l'adresse**,
+  **Copier les coordonnées GPS** (`lib/externalMaps.ts` → `48.8566, 2.3522`, ≤ 6 decimals), **Ouvrir dans Plans**, **Ouvrir dans
+  Google Maps**. The bubble closes first, then the toast / app switch happens.
+- **New dependency: `expo-clipboard`** (SDK-matched via `expo install`) — RN core no longer ships a clipboard, so copying can't be
+  done without it. Stubbed globally in `jest.setup.ts`. No other library.
+- **Opening external apps = plain URLs** through `Linking.openURL`, no Maps API, no key, no permission: Plans →
+  `https://maps.apple.com/?ll=lat,lng&q=name` (iOS universal link); Google Maps →
+  `https://www.google.com/maps/search/?api=1&query=lat,lng`, which iOS/Android hand to the Google Maps app when installed and
+  otherwise show in the browser — so there is no fragile `canOpenURL`/`LSApplicationQueriesSchemes` branch. **Fallbacks:** no
+  `coordinates` → only "Copier l'adresse"; **Plans is iOS-only** (Apple Plans doesn't exist on Android — the action is left out
+  there, Google Maps covers it); `openURL`/clipboard failure → an error toast (`experience.addressActions.openError`).
+  Feedback uses the existing `showToast` (D-54): "Adresse copiée" / "Coordonnées copiées".
+- **Transparent header on the map.** `ExperienceMapScreen` now uses the existing `StickyRevealHeader` (no new header system) with an
+  unreachable reveal offset (the screen never scrolls, so its background never fades in): a back button (same `bg-black/25` circle
+  as `ExperienceDetailHeader`) and the experience name in a translucent `bg-surface/85` pill so it reads over any map tile.
+  `RoamMap` is `absoluteFill`, so the map runs behind the header to the top edge. The address left the header (it lives on the detail).
+- **Footer hide/show.** `RoamMap`'s `onPressMap` (fired by `react-native-maps` only for *bare map* — not the marker, not the footer,
+  and pan/zoom are untouched) sets `footerVisible=false`; the footer, in a `MotiView`, animates `translateY` from 0 to its measured
+  height (`onLayout`, 320 px until measured) in 240 ms (0 under reduced motion), and becomes `pointerEvents="none"` +
+  hidden from accessibility. A single `IconButton` (info icon, "Afficher les informations du lieu", bottom-right above the safe
+  area) fades/scales in while hidden; pressing it slides the footer back up and removes the button. It also slides up on first mount
+  (replacing the earlier `FadeInUp`). The marker keeps its existing (no-op) tap.
+- **Still deferred to the next sprint, on purpose:** the floating multi-experience picker on the map — one experience, one marker,
+  one `ExperienceMapFooter`, one show/hide button.
+- **Tests:** `externalMaps` (formatting/URLs), `MapPreviewRow` (bubble open/close, each action, error toast, Android without Plans, no
+  coordinates), `ExperienceDetailScreen` (address opens the bubble, map still navigates), `ExperienceMapScreen` (header/map layout,
+  footer hide → picto → show cycle, marker/footer taps don't hide, pan/zoom enabled).
+
+## Sprint 9 — map markers
+
+### D-75 — Round photo markers, one selected experience, camera focused between header and footer
+
+Only what was asked; no new library, mock data, no Maps API.
+
+- **`ExperienceMarker` redesigned, still generic.** A 48 px round photo (`MapMarkerData.image`, filled by `toMapMarkers`
+  from the experience's existing `coverImage` — no new data, no download) in a 3 px `surface` ring with a soft
+  `overlay` shadow; a dot when there is no photo. **Selected:** ring turns `primary`, marker scales to 1.18 (Moti timing,
+  200 ms; 0 under reduced motion), stronger shadow, `zIndex` 1, `accessibilityState.selected`. The native marker box is
+  68 px so the scale and shadow aren't clipped (Android rasterizes the marker). `tracksViewChanges` stays on until the
+  photo has loaded and for 300 ms after each selection flip, then off. Memoized, with a stable `onPress` from
+  `RoamMap`: a selection only re-renders the two markers whose state flips. Being the one marker component, it changes
+  on every `RoamMap` (Map, Search map, the detail's static preview) — intended, their behavior is unchanged.
+- **Camera focus = opt-in `RoamMap` prop `focusInsets: { top, bottom }`.** With it, the map opens on the selected marker
+  (`FOCUS_DELTA` 0.04) and, once laid out, snaps it (0 ms) to the center of the area between the insets; each new
+  selection — or a re-tap of the selected marker after panning — glides there (`animateToRegion`, 350 ms, 0 under
+  reduced motion) keeping the current zoom (tracked with `onRegionChangeComplete`). `getFocusedRegion` (`lib/region.ts`)
+  shifts the latitude by `(top − bottom) / 2` px at the region's degrees-per-pixel, so the marker is in the middle of the
+  *visible* map, not under the header or footer. Without the prop nothing moves (Search/Map screens unchanged). A
+  selection without a marker (no coordinates) is ignored, no crash.
+- **Experience map shows several experiences.** `ExperienceMapScreen` pins the opened experience plus the rest of the
+  pool (`useHomeExperiences`, the same repository; pinnable ones only). **One state, `selectedExperienceId`** (initially
+  the opened experience), derives both the selected marker and the `ExperienceMapFooter` content — no parallel
+  marker/footer state. A marker tap selects (never deselects: the footer always has something to show) and slides a
+  hidden footer back — the only footer change, needed so marker and footer stay in sync; its design, content and
+  hide/show animation are untouched. Insets: header = `STICKY_REVEAL_HEADER_HEIGHT` + safe-area top; footer = its
+  measured height. Footer CTA: `back` for the opened experience (as before), `push experience/[id]` for another. The
+  header keeps the opened experience's name (the header was not to be changed).
+- **Tests:** `region` (`getFocusedRegion`), `markers` (image), `RoamMap` (photo per marker, fallback, selected state,
+  focus on open/selection/re-tap, current zoom kept, none without `focusInsets`, no crash without marker),
+  `ExperienceMapScreen` (several photo markers, initial selection, marker → selection + footer, camera command with the
+  experience's coordinates, hidden footer comes back, bare-map tap keeps selection, CTA per experience). The
+  `react-native-maps` mock's `MapView` now forwards a ref exposing `mockAnimateToRegion`.
+
+### D-76 — Map fixes: no title beside the back button; a marker tap is no longer also a map tap (iOS)
+
+- **Title beside the back button.** Not a native/Expo Router header (`AppRoutes` sets `headerShown: false` for every
+  screen, `experience-map/[id]` included): it was `ExperienceMapScreen`'s own `StickyRevealHeader` `leftSlot`, which
+  rendered the back button *and* a pill with the opened experience's name (D-74). The pill is removed; the back button
+  is unchanged. Since D-75 that pill could even name another experience than the footer.
+- **Marker → wrong/no card.** Cause in `react-native-maps` 1.27 (iOS, Apple Maps): `AIRMapManager.handleMapTap` has no
+  marker hit-test and recognizes simultaneously with `AIRMapMarker`'s tap recognizer, and it waits for the map's
+  double-tap recognizer to fail — so every marker tap emits the marker's `onPress` **and then, ~300 ms later, the map's
+  `onPress`** (no `action` field). Screens treat `onPressMap` as "bare map": `ExperienceMapScreen` hid the footer it
+  had just filled (the "info" button appeared instead of the card), `MapScreen`/`SearchMapScreen` cleared the selection
+  just made. The Jest mock never sent that echo, so tests did not see it. Selection itself was sound: one
+  `selectedExperienceId`, markers keyed by `experience.id` (unique), footer derived from it, camera from the same id.
+- **Fix, at the vendor boundary (`RoamMap`), not per screen:** the map press following a marker press within 600 ms
+  (consumed once) — or any map press flagged `action: 'marker-press'` — is ignored. No screen changed for this.
+  Tests reproduce the real sequence (`pressMapEcho`) and use `pressBareMap` for a genuinely new bare-map tap; the three
+  existing tests that tapped the map right after a marker now use it.
+- **Mock data:** experiences had mostly `location: 'Paris'`, so the footer subtitle looked the same for every marker.
+  Each now has its own neighbourhood (`Oberkampf, Paris 11e`, `Pigalle, Paris 9e`…); coordinates of six experiences
+  were moved to their existing address (they sat elsewhere), and the two Île-de-France ones got distinct addresses.
+  `Montmartre, Paris` / `Saint-Germain, Paris` unchanged (asserted by the Profile tests).
+
+### D-77 — "Filtrer" never raises the keyboard: no autofocus when Search is opened for its filters
+
+- **Cause.** Home's `SearchBar` has no text field (a `Pressable` entry point). Its filter icon pushes
+  `/search?openFilters=1`; `SearchScreen` mounted with the filter sheet already open **and** `SearchInput`'s
+  `autoFocus={!hasSubmitted}` (true on arrival), so the field focused on mount and the native keyboard came up over the
+  sheet — and stayed up once it closed. Same path from Discover's `SearchBar` (same route, same param). Inside Search,
+  the "Filtres" chip opened the sheet without ending text editing, so a keyboard raised while typing stayed over it.
+- **Fix, in `SearchScreen` (the screen that owns both the field and the sheet), nothing global:** no autofocus when
+  `openFilters === '1'` (the user asked for filters, not to type); opening the sheet from the chip first calls
+  `Keyboard.dismiss()` (blurs the field). Closing the sheet never refocuses (`autoFocus` only acts on mount). `SearchBar`,
+  `SearchInput`, the sheet, the filters and the Home are unchanged; opening Search from the bar itself still autofocuses.
+- **Tests:** `SearchScreen.test.tsx` → "filters never raise the keyboard (D-77)".
+
+### D-78 — Logout confirmation: log out only once the dialog has exited (frozen dialog on iOS)
+
+- **Symptom:** in Settings, the "Se déconnecter ?" dialog opened, but after "Se déconnecter" it stayed on screen and its
+  buttons did nothing.
+- **Cause:** `onConfirm` called `handleLogout` directly while the dialog was still presented. `logout()` (mock, instant)
+  flips `isLoggedIn`, and `Stack.Protected` removes every authenticated screen at once — Settings included, which renders
+  the dialog. On iOS the native `Modal` presented over that screen outlives it: still displayed, but its React tree (and
+  so its handlers) gone. It surfaced when D-63 moved logout from the Profile tab into the pushed Settings screen. Jest's
+  `Modal` is a plain view, so no test could see it.
+- **Fix:** `ConfirmationModal` gained a generic `onExited` (called after the commit that unmounted the `Modal`, i.e.
+  once the exit animation is over and the native dialog dismissed). Settings' confirm now closes the dialog and records
+  the choice; `onExited` runs the unchanged `handleLogout` (`logout()` → `router.replace('/auth/login')`). Cancel never
+  logs out. Rule for any confirm that tears its own screen down: run it in `onExited`, not `onConfirm`.
+- **Tests:** `ConfirmationModal` (`onExited` timing), `SettingsScreen` (no logout while the dialog is up, then Login);
+  the two `AppRoutes` logout scenarios flush the post-exit logout.
+
+### D-79 — `ConfirmationModal` mounts from its `visible` prop, not from internal state (dialog never appeared on iOS)
+
+- **Symptom (iPhone, Expo Go):** "Se déconnecter" in Settings showed nothing at all. The real cause of the report behind
+  D-78 — D-78 stays (logging out while the dialog is presented is still unsafe), but it was not this bug.
+- **Diagnosis, from on-device logs:** the row press arrived and `logoutModalVisible` became `true`; inside the dialog
+  the internal `shouldRender` went `true`, then back to `false` on the next render while `visible` was still `true`. The
+  component returned `null`, so no native `Modal` was ever presented. Opening depended on a render-phase state update
+  plus the exit timer (`setShouldRender(false)`), and on device that state was reset. Neither StrictMode nor the React
+  Compiler (off: `experiments.reactCompiler` is unset) reproduce it; Jest never did.
+- **Fix:** `mounted = visible || shouldRender`. The dialog mounts in the very render that receives `visible === true`,
+  whatever the internal state; `shouldRender` now only keeps it mounted during the 180 ms exit animation. `onExited`
+  (D-78) follows `mounted`. Validated on the user's iPhone. Nothing else changed; `AddressActionsBubble` and the search
+  sheets use the older pattern and work today — to be aligned only if they show the same symptom.
+- **Tests:** a reopen-during-exit guard in `ConfirmationModal.test.tsx`. It passes on the old code too: the on-device
+  reset is not reproducible under Jest, so the guard documents the behavior rather than proving the fix.
+
+## Sprint 10 — journeys ("parcours")
+
+### D-80 — Journey creation flow, one active journey, a store over a repository; the Profile no longer shows it
+
+- **Found before building:** no journey domain. `itinerary/create` was a placeholder, and the Profile's "Parcours en
+  cours" was a static mock overlay (`data/activeJourney.ts`). `ItineraryStep` / `TravelConnector` were only names in
+  `06_DESIGN_SYSTEM.md`. `types/itinerary.ts` (place-based) is left untouched: a journey is made of *experiences*.
+- **Domain (`types/journey.ts`):** `JourneyStatus` = `draft | active | completed`; screens read `JourneyState` =
+  `none | active | completed` (the brief's NO_ACTIVE / ACTIVE / COMPLETED). `Journey` holds context, start location,
+  start/end time, totals and ordered `JourneyStep`s (experienceId, order, arrival, duration, travel duration/distance/mode),
+  `currentStep`, `startedAt`, `completedAt`.
+- **Layers:** `JourneyRepository` (`getCurrent` / `save` / `clear`) — the mock keeps one current journey, persisted with the
+  storage helper (`roam.journey.current`). Planning and suggestions are pure functions (`features/journey/lib/plan.ts`,
+  `suggest.ts`), so a backend repository only stores. `journeyStore.ts` is a small external store
+  (`useSyncExternalStore`) shared by Experience detail, the summary and the active screen; every mutation saves through
+  the repository first. No provider was added to the root layout.
+- **Draft ≠ active:** the draft lives in `JourneyDraftProvider`, mounted by the `/journey/create` layout (the Search layout
+  pattern, D-72). Leaving the flow drops it; the active journey only changes on "Créer mon parcours". A second active
+  journey is refused (`ActiveJourneyExistsError`, shown with "Voir mon parcours"); a completed one is replaced.
+- **Suggestions reuse the existing approach, not a new system:** the mock experience pool and doc 07's "filter impossible
+  candidates, then explainable score". Budget, duration and distance from the start filter; ambiance (existing `Mood`
+  values), proximity and rating rank. One human reason per card (mood / nearby / budget); constraints are relaxed with a
+  notice rather than returning nothing. Up to 3 are pre-selected while they fit the time available.
+- **Travel without a routing API:** straight-line distance; on foot up to 1.5 km (4.8 km/h), otherwise métro (24 km/h + 6 min).
+  Budget = sum of each experience's bracket midpoint ("≈ 26 €"), since the mock has brackets, not prices.
+- **Starting point:** there is no geolocation in the app (no `expo-location`, no permission), so none was added. "Ma
+  position" and a typed address resolve to central Paris (`DEFAULT_REGION`), and the screen says it is approximate.
+  "Choisir un lieu" offers a short list of Paris spots (`data/startSpots.ts`).
+- **Ambiances:** Chill, Découverte, Gourmand, Culture, Sport, Romantique, Festif — existing `Mood` values that the mock
+  experiences actually carry. The brief's "Aventure" has no matching data, so it is not offered.
+- **Reused:** `MoodTile`, `ChoiceRow`, `ProgressBars` (onboarding), `Button`, `Chip`, `TextField`, `FadeInUp`,
+  `StickyActionFooter`, `ConfirmationModal` (quit / added dialogs, navigating in `onExited`, D-78), `RoamMap` +
+  `toMapMarkers` (photo markers), `getCategoryLabel`, `showToast`. New components live in `features/journey/components`:
+  `JourneyStepCard` (the design system's ItineraryStep), `TravelConnector`, `JourneyTimeline`, `JourneyStats`,
+  `SuggestionCard`, `JourneyMapPreview`, `JourneyFlowHeader`.
+- **Reorder:** move up / move down buttons, not drag-and-drop (no gesture/list library; accessible). Drag can come later.
+- **Experience detail:** `useJourneyCta` — "Créer mon parcours" → the flow with that experience pre-selected; with an active
+  journey, "Ajouter au parcours" → added (never a new journey, never twice: "Déjà dans ton parcours") → "Ajouté à ton
+  parcours ✓" with "Voir mon parcours" / "Fermer".
+- **Active journey (`/journey/[id]`):** "Commencer" sets `startedAt`; "Continuer mon parcours" marks the current step done
+  and moves on; "Terminer mon parcours" completes it. "+ Ajouter une expérience" goes to Discover. The screen created from
+  the summary *replaces* the creation flow, so back returns to where the flow was opened.
+- **Profile:** the "Parcours en cours" section is removed, with `ActiveJourneyCard`, `useActiveJourney`,
+  `data/activeJourney.ts` and the `profile.journey.*` keys. Nothing else in the Profile changed. The `itinerary/create`
+  route and `CreateJourneyPlaceholder` are deleted (the route becomes `journey/create`).
+- **Open points:** entry point to an active journey besides Experience detail (a tab or Home card is a product call);
+  real geolocation/geocoding and routing; drag-and-drop reordering; opening "Créer mon parcours" from an experience shown
+  *inside* the flow pushes a second flow on top.
+- **Tests:** `lib/plan`, `lib/suggest`, `journeyStore` (DRAFT→ACTIVE, one active, no duplicates, reorder/remove,
+  progression, load error), `journeyRoutes` (full flow on the real route tree, seeded experience, reorder/remove, leave
+  with/without input, add from detail once + "Voir mon parcours", progression to completed, error/empty states, Search
+  round trip keeps the draft, empty and unknown journeys). Updated: the detail CTA and route tests (placeholder → flow)
+  and the Profile test (section gone).
+
+## Sprint 11 — the Parcours tab (journey hub)
+
+### D-81 — "Parcours" replaces "Favoris" in the tab bar; `/journey` is a hub over the existing journey store; completed journeys are kept
+
+- **Tab bar:** `TAB_NAMES` = home, discover, **journey**, profile (Lucide `route` — the winding path of the ROAM mark and of a
+  journey on the map; label `navigation.journey`). `RoamTabBar` itself is unchanged except for an optional `accent` dot on the
+  Parcours icon while a journey is active (`useJourney()`; accessibility hint "Un parcours est en cours"). No badge count, no
+  progress ring: the brief asked for something discreet.
+- **Favorites are not removed:** `(tabs)/favorites.tsx`, `features/favorites/`, `/profile/favorites`, the favorite hooks and
+  data are untouched. The `favorites` route stays declared in `(tabs)/_layout.tsx` (so `/favorites` still resolves) but is not in
+  `TAB_NAMES`, so the bar does not draw it. No new entry point to favorites was added (Profile already links to them).
+- **Hub (`/journey`, `JourneyHubScreen`) only decides what to show** — it reads `useJourney()` and the experience pool:
+  in progress → `CurrentJourneyCard` (photo + step indicator after the "Sortie en cours" reference, current step, next steps,
+  time/distance left from `lib/progress.ts`, map preview, "Continuer mon parcours" → `/journey/[id]`), then the history, then a
+  discreet "Créer un nouveau parcours"; completed only → "Mes parcours" with a primary create button and the history; nothing →
+  `JourneyHubEmptyState`. It never progresses a journey: that stays on `/journey/[id]`.
+- **One active journey at a time (D-80) is kept.** With one in progress, "Créer un nouveau parcours" opens a
+  `ConfirmationModal` ("Un parcours est déjà en cours" → "Voir mon parcours") instead of starting a flow the summary would
+  refuse at its very last step. Abandoning a journey is not offered (not asked for; it would need a new status).
+- **History, in the existing repository — not a second storage:** `JourneyRepository.listCompleted()`; the mock upserts a
+  journey into `roam.journey.history` whenever a *completed* journey is saved, so `createJourney` can keep replacing the
+  completed current journey (D-80) without losing it. Most recent first, by id (no duplicates). A journey completed in sprint
+  10 (only in `roam.journey.current`) is picked up on the first read. `clear()` forgets both. The store loads the history with
+  the current journey (`JourneySnapshot.history`) and `findJourney()` resolves an id against both.
+- **`/journey/[id]` opens past journeys too** (`ActiveJourneyScreen`, no new screen): it used to show only the current
+  journey. A completed journey now shows its title; its "Créer un nouveau parcours" footer is hidden while another journey is
+  active. With nothing behind it, back goes to `/journey` (was `/home`).
+- **Only one reference screen was provided** ("13 — Sortie en cours"); the hub's history and empty states follow ROAM's
+  existing patterns (serif titles, `FadeInUp`, `rounded-card` surfaces, photo collages from the experience pool as in the
+  creation intro) rather than a mockup.
+- **Not verified on a device in this session** (no iOS simulator on the build machine): rendering, dark mode and motion need a
+  manual pass.
+
+### D-82 — Journey hub, journey in progress: edge-to-edge hero, only the current journey
+
+- **Product request after the first review of D-81**, for that state only (history and empty states unchanged). The hero
+  starts at the very top of the screen, full width, under the status bar (light while the tab is focused, `useIsFocused`), no
+  card, no border, no radius: the state renders its own `ScrollView` (no top safe area, no horizontal padding) instead of
+  `ScrollScreen`. The content below keeps `px-6` and sits on a borderless sheet (`rounded-t-hero`, `bg-background`) that rides
+  24 px over the photo, like the "Sortie en cours" reference. `CurrentJourneyCard` was adapted, not replaced.
+- **Only the current journey:** no "Mes parcours précédents", no "Créer un nouveau parcours" in this state. D-81's
+  "un parcours est déjà en cours" dialog had no entry point left and was removed with its keys. Past journeys remain in the
+  repository and still open on `/journey/[id]`; they show again on the hub once no journey is in progress.

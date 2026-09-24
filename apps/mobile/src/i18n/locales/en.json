@@ -34,6 +34,8 @@
   "navigation": {
     "home": "Home",
     "discover": "Discover",
+    "journey": "Journeys",
+    "journeyInProgress": "A journey is in progress",
     "favorites": "Favorites",
     "profile": "Profile",
     "itinerary": "Itinerary",
@@ -179,7 +181,116 @@
     "reviewCount": "({count} reviews)"
   },
   "discover": {
-    "title": "Discover"
+    "title": "Discover",
+    "subtitle": "Places, experiences, and ideas for today.",
+    "search": {
+      "placeholder": "What do you want to discover?",
+      "filters": "Filters"
+    },
+    "tabs": {
+      "forYou": "For you",
+      "trends": "Trending",
+      "nearby": "Nearby",
+      "collections": "Collections"
+    },
+    "roamSelection": {
+      "badge": "ROAM Selection",
+      "cta": "Discover the selection",
+      "places": "{count} places"
+    },
+    "sections": {
+      "suggestions": "Suggestions for you",
+      "nearby": "Near you",
+      "seeMap": "See the map",
+      "trending": "Trending right now",
+      "collections": "Explore by mood"
+    },
+    "suggestions": {
+      "tonight": "Tonight",
+      "friends": "With friends",
+      "couple": "As a couple",
+      "culture": "Culture",
+      "nature": "Nature",
+      "activities": "Activities"
+    },
+    "immersive": {
+      "eyebrow": "Immersive experience",
+      "title": "For a night that stands out",
+      "subtitle": "An experience designed to break the routine.",
+      "cta": "Explore"
+    },
+    "empty": {
+      "title": "Nothing to discover yet",
+      "description": "Check back soon, new ideas are added regularly."
+    },
+    "error": {
+      "title": "Couldn't load Discover",
+      "description": "Something went wrong while loading this content."
+    }
+  },
+  "search": {
+    "title": "Search",
+    "clearQuery": "Clear search",
+    "recent": {
+      "title": "Recent searches",
+      "remove": "Remove \"{query}\" from recent searches"
+    },
+    "trending": {
+      "title": "Trending",
+      "rooftops": "Rooftops",
+      "restaurants": "Restaurants",
+      "exhibitions": "Exhibitions",
+      "bars": "Bars"
+    },
+    "explore": {
+      "title": "Explore by mood"
+    },
+    "suggestions": {
+      "title": "Suggestions",
+      "experiencesTitle": "Experiences"
+    },
+    "results": {
+      "count": "{count} experiences",
+      "sort": "Sort",
+      "filters": "Filters",
+      "viewList": "List",
+      "viewMap": "Map"
+    },
+    "filters": {
+      "title": "Filters",
+      "category": "Category",
+      "distance": "Distance",
+      "distanceValue": "{count} km",
+      "budget": "Budget",
+      "when": "When?",
+      "whenValue": {
+        "now": "Now",
+        "today": "Today",
+        "weekend": "This weekend"
+      },
+      "options": "Options",
+      "openNow": "Open now",
+      "walkable": "Walkable",
+      "reset": "Reset",
+      "apply": "See {count} results"
+    },
+    "empty": {
+      "title": "No outings found",
+      "description": "We couldn't find anything for this search. Let's try something else.",
+      "expandArea": "Expand the area",
+      "clearFilters": "Remove a filter",
+      "seeTrending": "See trending",
+      "fallbackTitle": "You might like this"
+    },
+    "sort": {
+      "options": {
+        "recommended": "Recommended",
+        "nearest": "Nearest",
+        "topRated": "Top rated",
+        "priceAsc": "Price: low to high",
+        "priceDesc": "Price: high to low"
+      }
+    }
   },
   "context": {
     "mood": {
@@ -262,7 +373,6 @@
       "counter": "{current} / {total}"
     },
     "info": {
-      "address": "Address",
       "today": "Today",
       "price": "Price",
       "transport": "Transport"
@@ -285,7 +395,18 @@
       "culture": "Culture",
       "nature": "Nature",
       "experience": "Experience"
-    }
+    },
+    "addressActions": {
+      "title": "Address",
+      "copyAddress": "Copy address",
+      "copyCoordinates": "Copy GPS coordinates",
+      "openPlans": "Open in Maps",
+      "openGoogleMaps": "Open in Google Maps",
+      "addressCopied": "Address copied",
+      "coordinatesCopied": "Coordinates copied",
+      "openError": "Couldn't open the app"
+    },
+    "addToJourney": "Add to journey"
   },
   "itinerary": {
     "title": "Your outing is ready",
@@ -308,7 +429,8 @@
     "title": "Your itinerary",
     "currentLocation": "My location",
     "openNavigation": "Open directions",
-    "viewPlace": "View place"
+    "viewPlace": "View place",
+    "showInfo": "Show place information"
   },
   "outing": {
     "step": "Step",
@@ -340,28 +462,127 @@
     "discover": "Discover"
   },
   "history": {
-    "title": "My experiences",
+    "title": "My history",
     "empty": "No experiences yet.",
     "findOuting": "Find an outing",
-    "redo": "Do it again"
+    "redo": "Do it again",
+    "filters": {
+      "all": "All"
+    },
+    "sections": {
+      "thisWeek": "This week",
+      "thisMonth": "This month",
+      "earlier": "Earlier"
+    }
   },
   "profile": {
     "title": "Profile",
+    "settings": "Settings",
+    "editProfile": "Edit my profile",
+    "ageCity": "{age} years old · {city}",
     "preferences": "My preferences",
+    "preferencesSubtitle": "Mood, budget, interests",
     "history": "My history",
+    "historySubtitle": "All your past outings",
     "favorites": "My favorites",
+    "favoritesSubtitle": "Saved places and experiences",
     "statistics": "My statistics",
+    "statisticsSubtitle": "Your activity and discoveries",
+    "help": "Help & Support",
+    "privacy": "Privacy",
     "placesDiscovered": "Places discovered",
     "areasExplored": "Areas explored",
     "experiencesCompleted": "Experiences completed",
     "favoriteCategory": "Favorite category",
-    "logout": "Log out"
+    "stats": {
+      "outings": "Outings",
+      "favorites": "Favorites"
+    },
+    "logout": "Log out",
+    "logoutConfirm": {
+      "title": "Log out?",
+      "description": "You'll be signed out of your account, but your data will stay safe."
+    },
+    "likes": {
+      "title": "What I like",
+      "edit": "Edit"
+    },
+    "activity": {
+      "title": "My activity this year",
+      "outingsThisYear": "outings this year"
+    }
+  },
+  "statistics": {
+    "ranges": {
+      "all": "All",
+      "30d": "30 days",
+      "6m": "6 months",
+      "1y": "1 year"
+    },
+    "sections": {
+      "genres": "Your favorite genres",
+      "moods": "Your mood while out",
+      "cities": "Cities visited"
+    },
+    "moods": {
+      "relaxed": "Relaxed",
+      "curious": "Curious",
+      "festive": "Festive",
+      "romantic": "Romantic",
+      "family": "With family"
+    },
+    "cities": {
+      "paris": "Paris",
+      "lyon": "Lyon",
+      "other": "Other"
+    },
+    "insight": "You mostly explore cultural spots and restaurants, with a preference for calm atmospheres. We'll keep that in mind!"
+  },
+  "preferences": {
+    "title": "My preferences",
+    "reset": "Reset",
+    "intro": "These preferences help us suggest outings that suit you.",
+    "save": "Save my preferences",
+    "saveSuccess": {
+      "title": "Preferences saved",
+      "message": "Your preferences have been updated."
+    },
+    "saveError": "Couldn't save your preferences",
+    "experienceTypes": {
+      "title": "Types of experiences",
+      "subtitle": "Select what you enjoy (multiple choices possible)"
+    },
+    "ambiance": {
+      "title": "Vibe",
+      "subtitle": "Which vibe suits you?",
+      "calm": "Calm",
+      "festive": "Festive",
+      "romantic": "Romantic",
+      "friends": "With friends",
+      "family": "With family",
+      "solo": "Solo"
+    },
+    "budget": {
+      "title": "Budget",
+      "subtitle": "Average budget per person",
+      "value": "€{amount}",
+      "min": "€0",
+      "max": "€100+"
+    },
+    "distance": {
+      "title": "Maximum distance",
+      "subtitle": "How far are you willing to travel?",
+      "value": "{distance} km",
+      "min": "1 km",
+      "max": "50 km+"
+    }
   },
   "settings": {
     "title": "Settings",
     "appearance": "Appearance",
     "language": "Language",
     "theme": {
+      "title": "Theme",
       "light": "Light",
       "dark": "Dark",
       "system": "System"
@@ -369,6 +590,13 @@
     "languages": {
       "fr": "Français",
       "en": "English"
+    },
+    "sections": {
+      "account": "Account",
+      "preferences": "ROAM preferences",
+      "support": "Support",
+      "privacyData": "Privacy & data",
+      "session": "Session"
     }
   },
   "auth": {
@@ -451,5 +679,187 @@
     "location": "We couldn't get your location.",
     "recommendations": "We couldn't load recommendations.",
     "feedback": "We couldn't send your feedback."
+  },
+  "journey": {
+    "defaultTitle": "{mood} outing",
+    "close": "Leave journey creation",
+    "continue": "Continue",
+    "stepOf": "Step {current} of {total}",
+    "intro": {
+      "eyebrow": "Your ROAM journey",
+      "title": "Let's build your journey",
+      "subtitle": "Tell us what you feel like doing and ROAM helps you put together an outing that feels like you.",
+      "start": "Get started",
+      "cancel": "Cancel"
+    },
+    "quit": {
+      "title": "Leave journey creation?",
+      "description": "Your journey hasn't been created yet.",
+      "stay": "Keep going",
+      "leave": "Leave"
+    },
+    "context": {
+      "moodTitle": "What kind of vibe today?",
+      "durationTitle": "How much time do you have?",
+      "budgetTitle": "What's your budget?"
+    },
+    "moods": {
+      "calm": "Chill",
+      "discover": "Discovery",
+      "food": "Foodie",
+      "culture": "Culture",
+      "energetic": "Sport",
+      "romantic": "Romantic",
+      "festive": "Party"
+    },
+    "moodAdjectives": {
+      "calm": "chill",
+      "discover": "new",
+      "food": "tasty",
+      "culture": "cultural",
+      "energetic": "sporty",
+      "romantic": "romantic",
+      "festive": "festive"
+    },
+    "durations": {
+      "1h": "1 h",
+      "2h": "2 h",
+      "3h": "3 h",
+      "halfDay": "Half a day",
+      "day": "All day"
+    },
+    "budgets": {
+      "free": "Free",
+      "low": "€",
+      "medium": "€€",
+      "high": "€€€"
+    },
+    "budgetNames": {
+      "free": "Free",
+      "low": "Small budget",
+      "medium": "Mid budget",
+      "high": "Comfortable budget"
+    },
+    "location": {
+      "title": "Where are we starting?",
+      "subtitle": "ROAM plans your journey around this starting point.",
+      "current": "My current location",
+      "currentLabel": "My location",
+      "currentHint": "Approximate location — no geolocation yet.",
+      "place": "Pick a place",
+      "address": "Enter an address",
+      "addressLabel": "Starting address",
+      "addressPlaceholder": "12 rue de la Paix, Paris",
+      "startPoint": "Starting point"
+    },
+    "suggestions": {
+      "title": "Here's what we came up with",
+      "subtitleOne": "A one-experience journey near you",
+      "subtitleMany": "A {count}-experience journey near you",
+      "subtitleNone": "Pick the experiences for your journey",
+      "relaxed": "No perfect match: here are the ideas closest to what you want.",
+      "reasonMood": "Because you're in the mood for something {mood}",
+      "reasonNearby": "Right next to your starting point",
+      "reasonBudget": "Within your budget",
+      "add": "Add",
+      "added": "Added",
+      "addLabel": "Add {title} to the journey",
+      "removeLabel": "Remove {title} from the journey",
+      "details": "See details",
+      "build": "Build my journey",
+      "explore": "Explore other ideas",
+      "emptyTitle": "No experience available",
+      "emptySubtitle": "Try another vibe or budget.",
+      "error": "Couldn't load the ideas."
+    },
+    "builder": {
+      "title": "Your journey",
+      "addExperience": "Add an experience",
+      "viewJourney": "See my journey",
+      "emptyTitle": "Your journey is empty",
+      "emptySubtitle": "Add at least one experience to continue."
+    },
+    "step": {
+      "moveUp": "Move {title} up",
+      "moveDown": "Move {title} down",
+      "remove": "Remove {title}",
+      "open": "Open {title}"
+    },
+    "travel": {
+      "walk": "{duration} on foot",
+      "metro": "{duration} by metro"
+    },
+    "stats": {
+      "experiences": "Experiences",
+      "duration": "Total time",
+      "budget": "Estimated budget",
+      "distance": "Distance",
+      "start": "Start",
+      "end": "End"
+    },
+    "summary": {
+      "title": "Your journey is ready",
+      "encouragementTitle": "A route made for you",
+      "encouragement": "Based on what you want, your budget and your time. Enjoy it!",
+      "create": "Create my journey",
+      "createError": "Couldn't create your journey. Try again.",
+      "alreadyActive": "You already have a journey in progress.",
+      "viewActive": "See my journey"
+    },
+    "active": {
+      "title": "My journey",
+      "progress": "Step {current} of {total}",
+      "ready": "Ready to go",
+      "current": "Right now",
+      "start": "Start",
+      "continue": "Continue my journey",
+      "finish": "Finish my journey",
+      "addExperience": "Add an experience",
+      "completedTitle": "Journey complete",
+      "completedSubtitle": "Well done, you lived your whole outing.",
+      "createNew": "Create a new journey",
+      "emptyTitle": "Your journey is empty",
+      "emptySubtitle": "Add experiences from Discover.",
+      "notFound": "This journey no longer exists.",
+      "error": "Couldn't load your journey."
+    },
+    "added": {
+      "title": "Added to your journey ✓",
+      "description": "“{title}” is now part of your journey.",
+      "alreadyTitle": "Already in your journey",
+      "alreadyDescription": "“{title}” is already part of your journey.",
+      "view": "See my journey",
+      "error": "Couldn't add this experience."
+    },
+    "hub": {
+      "eyebrow": "Journeys",
+      "activeTitle": "My journey",
+      "historyTitle": "My journeys",
+      "historySubtitle": "Look back on the outings you’ve lived.",
+      "currentLabel": "In progress",
+      "readyLabel": "Ready to go",
+      "currentStep": "Current stop",
+      "firstStep": "First stop",
+      "next": "Next",
+      "lastStep": "Last stop, enjoy it!",
+      "stepsDone": "{done} / {total} stops",
+      "remainingTime": "Time left",
+      "remainingDistance": "Distance left",
+      "steps": "Stops",
+      "continue": "Continue my journey",
+      "createNew": "Create a new journey",
+      "previousTitle": "My past journeys",
+      "experienceCountOne": "1 experience",
+      "experienceCount": "{count} experiences",
+      "completedOn": "Completed on {date}",
+      "completed": "Completed",
+      "openJourney": "Open the journey {title}",
+      "emptyTitle": "Your next journey starts here",
+      "emptySubtitle": "Create a tailored outing and let ROAM build your route.",
+      "emptyCta": "Create my journey",
+      "emptyStepMood": "Pick what you’re in the mood for",
+      "emptyStepPlan": "ROAM plans your route",
+      "emptyStepGo": "Head out and enjoy every stop"
+    }
   }
 }
