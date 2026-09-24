@@ -4,6 +4,7 @@ import { memo, useCallback, useEffect, useState } from 'react';
 import { View } from 'react-native';
 import { Marker } from 'react-native-maps';
 
+import { Text } from '@/components/ui';
 import { useReduceMotion } from '@/hooks/useReduceMotion';
 import { useTheme } from '@/theme';
 
@@ -17,6 +18,8 @@ export const MARKER_SELECTED_SCALE = 1.18;
  * rasterizes the marker's view bounds). */
 const MARKER_BOX = 68;
 const BORDER_WIDTH = 3;
+/** Step-number badge on the ring's top-right edge; stays inside `MARKER_BOX` even when selected. */
+const BADGE_SIZE = 22;
 const SELECT_MS = 200;
 /** How long a marker keeps re-rasterizing its custom view after it changes (see `useTracksViewChanges`)
  * — longer than the selection animation, so the bitmap is taken once it has settled. */
@@ -53,7 +56,9 @@ type ExperienceMarkerProps = {
  * ROAM map marker (sprint 9): a round photo of the experience (`marker.image`, its `coverImage`) in a
  * `surface` ring with a soft shadow, so it reads on any map tile in both themes. Selected: the ring
  * turns `primary` and the marker scales up (Moti, 200 ms; no animation under reduced motion) and is
- * drawn above its neighbours. Without an image it falls back to the former dot. Memoized: a selection
+ * drawn above its neighbours. Without an image it falls back to the former dot. With `marker.badge`
+ * (a journey's step number, sprint 12) a small round label sits on the ring's edge — `primary` for the
+ * current step (`highlighted`), `surface` otherwise. Memoized: a selection
  * change only re-renders the two markers whose `selected` flips (`RoamMap` passes a stable `onPress`).
  */
 export const ExperienceMarker = memo(function ExperienceMarker({
@@ -129,6 +134,36 @@ export const ExperienceMarker = memo(function ExperienceMarker({
               />
             )}
           </View>
+          {marker.badge ? (
+            <View
+              testID={`experience-marker-badge-${marker.id}`}
+              style={{
+                position: 'absolute',
+                top: -5,
+                right: -5,
+                width: BADGE_SIZE,
+                height: BADGE_SIZE,
+                borderRadius: BADGE_SIZE / 2,
+                alignItems: 'center',
+                justifyContent: 'center',
+                borderWidth: 2,
+                borderColor: marker.highlighted ? colors.surface : colors.primary,
+                backgroundColor: marker.highlighted ? colors.primary : colors.surface,
+              }}
+            >
+              <Text
+                variant="caption"
+                className={
+                  marker.highlighted
+                    ? 'font-bodySemibold text-primaryForeground'
+                    : 'font-bodySemibold text-primary'
+                }
+                style={{ fontSize: 11, lineHeight: 14 }}
+              >
+                {marker.badge}
+              </Text>
+            </View>
+          ) : null}
         </MotiView>
       </View>
     </Marker>

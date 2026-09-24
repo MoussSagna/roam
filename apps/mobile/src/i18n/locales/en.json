@@ -844,19 +844,12 @@
     },
     "hub": {
       "eyebrow": "Journeys",
-      "activeTitle": "My journey",
       "historyTitle": "My journeys",
       "historySubtitle": "Look back on the outings you’ve lived.",
-      "currentLabel": "In progress",
-      "readyLabel": "Ready to go",
       "currentStep": "Current stop",
       "firstStep": "First stop",
-      "next": "Next",
       "lastStep": "Last stop, enjoy it!",
       "stepsDone": "{done} / {total} stops",
-      "remainingTime": "Time left",
-      "remainingDistance": "Distance left",
-      "steps": "Stops",
       "continue": "Continue my journey",
       "createNew": "Create a new journey",
       "previousTitle": "My past journeys",
@@ -870,7 +863,18 @@
       "emptyCta": "Create my journey",
       "emptyStepMood": "Pick what you’re in the mood for",
       "emptyStepPlan": "ROAM plans your route",
-      "emptyStepGo": "Head out and enjoy every stop"
+      "emptyStepGo": "Head out and enjoy every stop",
+      "inProgress": "Journey in progress",
+      "nextStep": "Next stop"
+    },
+    "map": {
+      "title": "Journey in progress",
+      "completedTitle": "Journey completed",
+      "open": "See the journey map",
+      "step": "Stop {number}",
+      "visit": "{duration} visit",
+      "arrival": "Arrives {time}",
+      "notFound": "This journey no longer exists."
     },
     "feedback": {
       "skip": "Skip",

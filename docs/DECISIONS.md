@@ -2838,3 +2838,31 @@ Only what was asked; no new library, mock data, no Maps API.
 - **Tests:** existing flow tests go through it with fake timers for that step only; the splash's own 2.6 s timer has to run
   before the flow in a fully fake-timer test (`journeyBuildingRoutes.test.tsx`).
 - **Not verified on a device in this session** (no iOS simulator on the build machine).
+
+### D-85 — Active journey: richer hub hero, a tappable mini-map and `/journey/[id]/map`
+
+- **Hub, journey in progress only** (D-82's edge-to-edge hero and borderless content kept), after the "Parcours en cours"
+  references: the hero shows "Parcours en cours", the title, experiences · duration · distance (the journey's own totals) and
+  "1 / 3 étapes" with a progress bar (done steps / total, `accent` on the photo). Below: the current step (tappable → the
+  experience), "Continuer mon parcours" (→ `/journey/[id]`, unchanged), a mini-map "Voir la carte du parcours"
+  (→ `/journey/[id]/map`) and "Prochaine étape". The sprint-11 step indicator (`JourneyProgressStepper`) and the
+  "time/distance left" tiles are gone from this state, as are their now unused keys. Other hub states are unchanged.
+- **One data path for both maps:** `lib/journeyMap.ts` (`journeyMapData`) turns the journey into the start point + one marker
+  per step (the experience's photo, its step number, the current step highlighted: the first one before "Commencer", none once
+  completed) + the route. The mini-map (a static `RoamMap`, `interactive={false}`) and the full map both call it.
+- **No second map system, additive changes only:** `RoamMap` gets an optional `route` (a `react-native-maps` `Polyline`,
+  straight segments — no Directions API, like the plan's distances, D-80; it is also framed on mount) and `MapMarkerData` an
+  optional `badge` / `highlighted`, drawn by `ExperienceMarker` on the ring's edge (inside its native box, even selected).
+  `ExperienceMapFooter` gets an optional status pill ("Étape actuelle" / "Étape 2"). Every existing map renders as before.
+  There was no `RoutePolyline` in the project; the line lives in `RoamMap`, the only component allowed to import
+  `react-native-maps` (D-70).
+- **`JourneyMapScreen`** follows `ExperienceMapScreen` (D-73–D-76): one `selectedExperienceId` (the current step until a
+  marker is tapped) drives the selected marker, the camera focus (`focusInsets`) and the footer, so the footer always
+  describes the marker shown selected; the start point isn't selectable; a bare-map tap slides the footer away and "info"
+  brings it back; the footer CTA opens the experience. Its header is an overlay with `StickyRevealHeader`'s measurements but
+  not that component: `StickyRevealHeader` only fades its centre in past a scroll offset, and "Parcours en cours" must stay
+  visible over a map that never scrolls (Search's map screen also has its own overlay). Back → the hub; the native swipe-back
+  stays off (D-53).
+- **Not done:** the user's position (no geolocation in the app, D-80), the references' "⋮" menu and status dropdown
+  (nothing to put in them yet), the step-list bottom sheet of the second reference.
+- **Not verified on a device in this session** (no iOS simulator on the build machine).

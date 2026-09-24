@@ -844,19 +844,12 @@
     },
     "hub": {
       "eyebrow": "Parcours",
-      "activeTitle": "Mon parcours",
       "historyTitle": "Mes parcours",
       "historySubtitle": "Retrouve les sorties que tu as vécues.",
-      "currentLabel": "En cours",
-      "readyLabel": "Prêt à partir",
       "currentStep": "Étape actuelle",
       "firstStep": "Première étape",
-      "next": "Ensuite",
       "lastStep": "Dernière étape, profite !",
       "stepsDone": "{done} / {total} étapes",
-      "remainingTime": "Temps restant",
-      "remainingDistance": "Distance restante",
-      "steps": "Étapes",
       "continue": "Continuer mon parcours",
       "createNew": "Créer un nouveau parcours",
       "previousTitle": "Mes parcours précédents",
@@ -870,7 +863,18 @@
       "emptyCta": "Créer mon parcours",
       "emptyStepMood": "Choisis ton envie du moment",
       "emptyStepPlan": "ROAM compose ton itinéraire",
-      "emptyStepGo": "Pars et profite de chaque étape"
+      "emptyStepGo": "Pars et profite de chaque étape",
+      "inProgress": "Parcours en cours",
+      "nextStep": "Prochaine étape"
+    },
+    "map": {
+      "title": "Parcours en cours",
+      "completedTitle": "Parcours terminé",
+      "open": "Voir la carte du parcours",
+      "step": "Étape {number}",
+      "visit": "{duration} de visite",
+      "arrival": "Arrivée {time}",
+      "notFound": "Ce parcours n'existe plus."
     },
     "feedback": {
       "skip": "Passer",

@@ -8,7 +8,8 @@ import type { ViewProps } from 'react-native';
  * Jest stand-in for `react-native-maps` (native views don't exist under Jest). Registered globally in
  * `jest.setup.ts`, so any test rendering a `RoamMap` gets this: `MapView` renders a `View` that keeps
  * its props (so a test can read `initialRegion`, `userInterfaceStyle`…) and forwards `onPress`;
- * each `Marker` is a pressable named after its `accessibilityLabel`, rendering its children. Camera
+ * each `Marker` is a pressable named after its `accessibilityLabel`, rendering its children; a
+ * `Polyline` is a `View` holding its `coordinates`. Camera
  * commands sent through the map's ref land in `mockAnimateToRegion` (clear it in `beforeEach`).
  */
 export const mockAnimateToRegion = jest.fn();
@@ -23,6 +24,11 @@ export function Marker({ onPress, children, ...props }: MockMarkerProps) {
       {children}
     </Pressable>
   );
+}
+
+/** A route line: a `View` keeping its `coordinates`, so a test can read the drawn path. */
+export function Polyline(props: ViewProps & { coordinates: unknown[] }) {
+  return <View {...props} />;
 }
 
 const MapView = forwardRef<unknown, ViewProps & { children?: ReactNode }>(function MapView(

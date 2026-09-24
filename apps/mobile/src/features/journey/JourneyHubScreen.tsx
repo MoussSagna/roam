@@ -79,6 +79,12 @@ export function JourneyHubScreen() {
               experiencesById={byId}
               categoryLabelFor={categoryLabelFor}
               onContinue={() => openJourney(active.id)}
+              onOpenMap={() =>
+                router.push({ pathname: '/journey/[id]/map', params: { id: active.id } })
+              }
+              onOpenExperience={(experience) =>
+                router.push({ pathname: '/experience/[id]', params: { id: experience.id } })
+              }
             />
           </FadeInUp>
         </ScrollView>

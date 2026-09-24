@@ -285,6 +285,7 @@ time**.
 | Search — "Carte" (`/search/map`)              | `features/search/SearchMapScreen.tsx` → full-screen `RoamMap`         | **Real map (sprint 8)**  |
 | Experience detail — map block + `/experience-map/[id]` | `MapPreviewRow` → static `RoamMap`; full screen: `ExperienceMapScreen` | **Real map (sprint 8)**  |
 | Onboarding location                           | `MapPreview` (illustrated, decorative)                               | **Next** (may stay static) |
+| Journey hub mini-map + `/journey/[id]/map`    | `CurrentJourneyCard` (static `RoamMap`) → `JourneyMapScreen`         | **Real map (sprint 12)** |
 
 ```text
 Screen → hook / derived results (useNearbyMapExperiences · Search's sortedResults)
@@ -293,7 +294,9 @@ Screen → hook / derived results (useNearbyMapExperiences · Search's sortedRes
 ```
 
 - `RoamMap` is the **only** component (with `ExperienceMarker`) allowed to import `react-native-maps`; screens pass
-  `MapMarkerData[]` (`features/map/types/map.types.ts`), a selected id and press callbacks. It frames the markers
+  `MapMarkerData[]` (`features/map/types/map.types.ts`), a selected id and press callbacks; optionally a `route`
+  (ordered points → one `Polyline`, straight segments, sprint 12) and, per marker, a `badge` (a step number) /
+  `highlighted` (the current step's badge in `primary`). It frames the markers
   once (`lib/region.ts`), clips to a rounded frame (or edge to edge with `rounded={false}` and `style={StyleSheet.absoluteFill}`, `SearchMapScreen`), and follows the theme through `userInterfaceStyle` (iOS).
 - **Markers** (`ExperienceMarker`, sprint 9, D-75): a round photo of the experience (`MapMarkerData.image` =
   its `coverImage`) in a `surface` ring with a shadow; selected = `primary` ring + scale 1.18 (Moti, 200 ms, none
@@ -378,6 +381,7 @@ other row is still a `ProfilePlaceholder` stub (`docs/DECISIONS.md` D-50) until 
 | Summary | `/journey/create/summary` | `JourneySummaryScreen` | Totals, map, timeline; "Créer mon parcours" = DRAFT → ACTIVE, then `replace` → `/journey/[id]` |
 | Active | `/journey/[id]` | `ActiveJourneyScreen` | Progress, map, timeline (done/current/upcoming), Commencer → Continuer → Terminer; the only place a journey is shown — the current one or a completed one from the history (sprint 11) |
 | Feedback | `/journey/[id]/feedback` | `JourneyFeedbackScreen` | Sprint 12, D-83. Opened by "Terminer mon parcours" once the journey is `completed` (never by opening it). Edge-to-edge photo + "Passer", recap, `StarRating` (1–5, required), `FeedbackCommentField` (optional, 300 max), sticky "Envoyer mon avis"; thanks shown in place → "Voir mon parcours" / "Retour à mes parcours"; feedback already given → its recap, no form |
+| Journey map | `/journey/[id]/map` | `JourneyMapScreen` | Sprint 12, D-85. From the hub's mini-map. `RoamMap` edge to edge + route line, numbered photo markers (current step highlighted), transparent header with an always-visible "Parcours en cours" pill, `ExperienceMapFooter` (+ step badge) for the one `selectedExperienceId`; bare-map tap hides the footer. Data: `lib/journeyMap.ts`, shared with the mini-map |
 | Hub | `/journey` (Parcours tab) | `JourneyHubScreen` | Sprint 11, D-81. Picks one of three states: journey in progress (only `CurrentJourneyCard`: edge-to-edge hero from the top of the screen, content in `px-6` below, no border; "Continuer mon parcours" opens `/journey/[id]`; no history, no create — D-82); none in progress but some completed ("Mes parcours": create, then `JourneyHistoryCard`s); nothing (`JourneyHubEmptyState`, "Créer mon parcours") |
 
 - **Layers:** `Screen → journeyStore (useJourney + operations) → JourneyRepository → mock` (persisted, `roam.journey.current`;

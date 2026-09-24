@@ -10,6 +10,10 @@ export type MapMarkerData = {
   coordinate: Coordinates;
   /** Photo drawn inside the round marker (the experience's own `coverImage`); a plain dot without it. */
   image?: ImageSourcePropType;
+  /** Small label on the marker's edge — a journey step's number ("1", "2"…), sprint 12. */
+  badge?: string;
+  /** Draws the badge in `primary` (a journey's current step) instead of `surface`. */
+  highlighted?: boolean;
 };
 
 /** Height (px) of the chrome floating over the map's top and bottom edges (a transparent header, a

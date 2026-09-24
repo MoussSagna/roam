@@ -143,13 +143,16 @@ describe('Parcours tab — journey hub (sprint 11)', () => {
 
     const card = await screen.findByTestId('current-journey-card');
     expect(screen.getByRole('header')).toHaveTextContent('Paris au coucher du soleil');
-    expect(within(card).getByText('Mon parcours')).toBeOnTheScreen();
-    // Edge-to-edge hero from the very top: its height includes the status bar (top inset 47).
-    expect(within(card).getByTestId('current-journey-hero')).toHaveStyle({ height: 47 + 300 });
-    expect(within(card).getByText('Étape actuelle')).toBeOnTheScreen();
-    expect(within(card).getByText('Temps restant')).toBeOnTheScreen();
+    // Hero (sprint 12, D-85): state, title, experiences · duration · distance, progress.
+    expect(within(card).getByText('Parcours en cours')).toBeOnTheScreen();
+    expect(within(card).getByText('2 expériences')).toBeOnTheScreen();
     expect(within(card).getByText('0 / 2 étapes')).toBeOnTheScreen();
-    expect(within(card).getByTestId('journey-map')).toBeOnTheScreen();
+    expect(within(card).getByTestId('journey-progress-bar')).toBeOnTheScreen();
+    // Edge-to-edge hero from the very top: its height includes the status bar (top inset 47).
+    expect(within(card).getByTestId('current-journey-hero')).toHaveStyle({ height: 47 + 320 });
+    expect(within(card).getByText('Étape actuelle')).toBeOnTheScreen();
+    expect(within(card).getByTestId('journey-mini-map')).toBeOnTheScreen();
+    expect(within(card).getByText('Prochaine étape')).toBeOnTheScreen();
     expect(screen.queryByTestId('journey-hub-empty')).toBeNull();
 
     await fireEvent.press(within(card).getByRole('button', { name: 'Continuer mon parcours' }));

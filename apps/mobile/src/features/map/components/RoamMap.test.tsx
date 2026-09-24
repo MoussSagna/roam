@@ -272,4 +272,34 @@ describe('RoamMap', () => {
       expect(screen.getByTestId('roam-map')).toBeOnTheScreen();
     });
   });
+
+  describe('route and step badges (sprint 12)', () => {
+    it('draws no line without a route', async () => {
+      await renderWithProviders(<RoamMap markers={MARKERS} />);
+      expect(screen.queryByTestId('roam-map-route')).toBeNull();
+    });
+
+    it('joins the route points in order with one line', async () => {
+      const route = MARKERS.map((marker) => marker.coordinate);
+      await renderWithProviders(<RoamMap markers={MARKERS} route={route} />);
+      expect(screen.getByTestId('roam-map-route').props.coordinates).toEqual(route);
+    });
+
+    it('frames the route points too, not only the markers', async () => {
+      const far = { latitude: 48.7, longitude: 2.1 };
+      await renderWithProviders(
+        <RoamMap markers={MARKERS} route={[far, ...MARKERS.map((marker) => marker.coordinate)]} />,
+      );
+      const region = screen.getByTestId('mock-map-view').props.initialRegion;
+      expect(region.latitude - region.latitudeDelta / 2).toBeLessThanOrEqual(far.latitude);
+    });
+
+    it("shows a marker's badge (a step number), without changing the others", async () => {
+      await renderWithProviders(
+        <RoamMap markers={[{ ...MARKERS[0], badge: '2', highlighted: true }, MARKERS[1]]} />,
+      );
+      expect(screen.getByTestId('experience-marker-badge-a')).toHaveTextContent('2');
+      expect(screen.queryByTestId('experience-marker-badge-b')).toBeNull();
+    });
+  });
 });
