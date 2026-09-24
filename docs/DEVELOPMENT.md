@@ -11,7 +11,8 @@ sprint's scope and are still not built (`DECISIONS.md` D-29). **Main navigation*
 tab bar) is built — see `DECISIONS.md` D-38 to D-43. **Home is now the real discovery screen** (hero carousel, mood
 chips, popular/nearby/for-you sections, sprint 5, `DECISIONS.md` D-45). **Discover is now a real, immersive editorial
 discovery page** (Sélection ROAM, suggestions, an immersive experience block, nearby/trending experiences, editorial
-collections — sprint 6, `DECISIONS.md` D-65); the `/favorites` tab is still the sprint 3 placeholder content.
+collections — sprint 6, `DECISIONS.md` D-65). **Sprint 11: the "Parcours" tab (`/journey`, the journey hub) replaced
+"Favoris" in the tab bar** (D-81); the `/favorites` route (sprint 3 placeholder) still exists, just not in the bar.
 **Experience detail and its full-screen gallery are also built** (sprint 5, `DECISIONS.md`
 D-48); its CTA now opens the real journey ("parcours") creation flow, sprint 10, D-80. **The Map screen Discover's "Voir la
 carte" links to is now a real map** (`react-native-maps`, sprint 7, `DECISIONS.md` D-70); the other illustrated maps are being
@@ -74,7 +75,7 @@ apps/mobile/
 ├── assets/images/           # splash-background.png, icons, logo/ (roles in logo/README.md), onboarding/
 └── src/
     ├── app/                 # Expo Router routes ONLY, kept thin
-    │   ├── (tabs)/          # Main navigation group: home, discover, favorites, profile + _layout.tsx (no path segment)
+    │   ├── (tabs)/          # Main navigation group: home, discover, journey (Parcours), profile — plus favorites, kept but out of the bar — + _layout.tsx (no path segment)
     │   └── /, /welcome, /onboarding/*, /auth/*
     ├── components/
     │   ├── ui/              # Text, Button, IconButton, Chip, ConfirmationModal, SearchBar, Slider, StickyActionFooter, StickyRevealHeader, AppToast, Screen, ScrollScreen, PlaceholderCard, FadeInUp, TextField
@@ -85,7 +86,7 @@ apps/mobile/
     │   ├── navigation/      # Main navigation: RoamTabBar (floating pill/bubble), TabBarCollapseContext, tabBarConfig
     │   ├── home/            # Home (sprint 5): hero carousel, sections, mock data/lib — see the table below
     │   ├── discover/        # Discover (sprint 6): immersive editorial discovery — see the table below
-    │   ├── favorites/       # `/favorites` tab: still sprint 3 placeholder content (distinct from `/profile/favorites`)
+    │   ├── favorites/       # `/favorites` route: sprint 3 placeholder, no longer in the tab bar since sprint 11 (distinct from `/profile/favorites`)
     │   ├── profile/         # Profile (sprint 5): main screen (identity/activity/taste) + settings + preferences + favorites + history + statistics + language + theme real, other sub-screens still placeholders
     │   ├── experiences/     # Experience detail (route experience/[id]) + gallery/ (route gallery/[id]) — sprint 5
     │   ├── auth/            # Authentication: all 7 screens built (Entry, Login, Register, ForgotPassword, ResetCode, NewPassword, ResetSuccess)
@@ -126,7 +127,7 @@ Four tabs behind one floating pill/bubble tab bar, sprint 3, with scroll-collaps
 | ------------ | --------- | ------------------------------------------------------ |
 | `/home`      | Home      | Real discovery screen (sprint 5) — see the table below |
 | `/discover`  | Discover  | Placeholder headline + 8 `PlaceholderCard`s            |
-| `/favorites` | Favorites | Placeholder headline + 8 `PlaceholderCard`s            |
+| `/journey`   | Parcours  | Journey hub (sprint 11, D-81) — see "Journey" below    |
 | `/profile`   | Profile   | Placeholder headline + 8 `PlaceholderCard`s            |
 
 Routes live in `src/app/(tabs)/` (a route _group_: adds no path segment), with `_layout.tsx` rendering
@@ -147,6 +148,10 @@ Routes live in `src/app/(tabs)/` (a route _group_: adds no path segment), with `
   `components/ui/PlaceholderCard`. Every new screen using this pattern reuses both, plus
   `useTabBarScrollHandler()` and `TAB_BAR_CLEARANCE` (`features/navigation/tabBarConfig.ts`) for the
   bottom padding that keeps content clear of the floating bar.
+
+**Sprint 11 (D-81):** "Parcours" (`journey`, Lucide `route` icon) took Favoris' place. `(tabs)/favorites.tsx` is still
+declared (after `profile`) and reachable at `/favorites`, but `RoamTabBar` only draws `TAB_NAMES`, which no longer lists it.
+While a journey is active, the Parcours icon carries a small `accent` dot (`journeyStore`'s `useJourney()`).
 
 **Conventions for a future screen behind a tab:** add the route file under `src/app/(tabs)/`, add it to
 `TAB_NAMES`/`TAB_CONFIG` in `tabBarConfig.ts` (icon + `navigation.*` label key) and to the `<Tabs.Screen>`
@@ -370,14 +375,18 @@ other row is still a `ProfilePlaceholder` stub (`docs/DECISIONS.md` D-50) until 
 | Suggestions | `/journey/create/suggestions` | `JourneySuggestionsScreen` | `suggestForJourney` (filter then score, doc 07), pre-selection, add/remove/details, "Explorer d'autres idées" → `/search` |
 | Builder | `/journey/create/builder` | `JourneyBuilderScreen` | Timeline (`JourneyStepCard` + `TravelConnector`), move up/down, remove |
 | Summary | `/journey/create/summary` | `JourneySummaryScreen` | Totals, map, timeline; "Créer mon parcours" = DRAFT → ACTIVE, then `replace` → `/journey/[id]` |
-| Active | `/journey/[id]` | `ActiveJourneyScreen` | Progress, map, timeline (done/current/upcoming), Commencer → Continuer → Terminer; the only place a journey is shown |
+| Active | `/journey/[id]` | `ActiveJourneyScreen` | Progress, map, timeline (done/current/upcoming), Commencer → Continuer → Terminer; the only place a journey is shown — the current one or a completed one from the history (sprint 11) |
+| Hub | `/journey` (Parcours tab) | `JourneyHubScreen` | Sprint 11, D-81. Picks one of three states: journey in progress (`CurrentJourneyCard` → "Continuer mon parcours" opens `/journey/[id]`, then the history, then a discreet "Créer un nouveau parcours" that explains there is already one); none in progress but some completed ("Mes parcours": create, then `JourneyHistoryCard`s); nothing (`JourneyHubEmptyState`, "Créer mon parcours") |
 
-- **Layers:** `Screen → journeyStore (useJourney + operations) → JourneyRepository → mock` (persisted, `roam.journey.current`).
+- **Layers:** `Screen → journeyStore (useJourney + operations) → JourneyRepository → mock` (persisted, `roam.journey.current`;
+  completed journeys also in `roam.journey.history`, `listCompleted()`, sprint 11). "What's left" (time, distance, steps) is
+  `lib/progress.ts`.
   Planning (travel, arrivals, totals) and suggestions are pure functions in `features/journey/lib/`.
 - **Draft vs active:** the draft lives in `JourneyDraftProvider`, mounted by `app/journey/create/_layout.tsx`; leaving the
   flow discards it. Nothing is saved before "Créer mon parcours". One active journey at a time (`ActiveJourneyExistsError`).
 - **Leaving:** the flow's × (and Intro's "Annuler") leaves at once without input, otherwise "Quitter la création ?".
-- **Tests:** `journeyStore.test.ts`, `lib/*.test.ts`, `journeyRoutes.test.tsx` (full flow on the real route tree).
+- **Tests:** `journeyStore.test.ts`, `lib/*.test.ts`, `journeyRoutes.test.tsx` (full flow on the real route tree),
+  `journeyHubRoutes.test.tsx` (the hub's three states, sprint 11).
 
 ## Authentication (current state)
 

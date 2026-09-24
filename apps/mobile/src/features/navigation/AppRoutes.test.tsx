@@ -92,8 +92,8 @@ describe('AppRoutes (mocked session route protection)', () => {
     await fireEvent.press(screen.getByRole('button', { name: 'Découvrir' }));
     expect(utils.getPathname()).toBe('/discover');
 
-    await fireEvent.press(screen.getByRole('button', { name: 'Favoris' }));
-    expect(utils.getPathname()).toBe('/favorites');
+    await fireEvent.press(screen.getByRole('button', { name: 'Parcours' }));
+    expect(utils.getPathname()).toBe('/journey');
 
     await fireEvent.press(screen.getByRole('button', { name: 'Profil' }));
     expect(utils.getPathname()).toBe('/profile');

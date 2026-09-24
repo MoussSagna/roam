@@ -26,7 +26,7 @@ import { JourneyMapPreview } from './components/JourneyMapPreview';
 import { JourneyStats } from './components/JourneyStats';
 import { JourneyTimeline } from './components/JourneyTimeline';
 import { useJourneyExperiences } from './hooks/useJourneyExperiences';
-import { completeCurrentStep, startJourney, useJourney } from './journeyStore';
+import { completeCurrentStep, findJourney, startJourney, useJourney } from './journeyStore';
 import { formatBudget, formatDistance, formatDuration } from './lib/format';
 
 type ActiveJourneyScreenProps = {
@@ -35,7 +35,8 @@ type ActiveJourneyScreenProps = {
 
 /**
  * The created journey (`/journey/[id]`, sprint 10) — the one place a journey is shown (it no longer
- * lives in the Profile). Progress, totals, map, timeline with done / current / upcoming steps, and a
+ * lives in the Profile), whether it is the current one or a completed one from the history (sprint 11,
+ * opened from the Parcours tab's hub). Progress, totals, map, timeline with done / current / upcoming steps, and a
  * CTA that follows the state: "Commencer" → "Continuer mon parcours" (next step) → "Terminer mon
  * parcours" → completed. "+ Ajouter une expérience" goes to Discover, where an experience's CTA reads
  * "Ajouter au parcours".
@@ -44,12 +45,13 @@ export function ActiveJourneyScreen({ journeyId }: ActiveJourneyScreenProps) {
   const { t, i18n } = useTranslation();
   const router = useRouter();
   const { colors } = useTheme();
-  const { journey, isLoading, error, reload } = useJourney();
+  const { journey: current, history, state, isLoading, error, reload } = useJourney();
+  const journey = findJourney({ journey: current, history }, journeyId);
   const { byId, isLoading: experiencesLoading, categoryLabelFor } = useJourneyExperiences();
 
   const goBack = () => {
     if (router.canGoBack()) router.back();
-    else router.replace('/home');
+    else router.replace('/journey');
   };
   const openExperience = (experience: Experience) =>
     router.push({ pathname: '/experience/[id]', params: { id: experience.id } });
@@ -74,7 +76,7 @@ export function ActiveJourneyScreen({ journeyId }: ActiveJourneyScreenProps) {
     </Pressable>
   );
 
-  if (isLoading || experiencesLoading || error || !journey || journey.id !== journeyId) {
+  if (isLoading || experiencesLoading || error || !journey) {
     const message =
       isLoading || experiencesLoading
         ? t('common.loading')
@@ -112,8 +114,12 @@ export function ActiveJourneyScreen({ journeyId }: ActiveJourneyScreenProps) {
 
   const currentExperience = started && !completed ? experiences[journey.currentStep] : undefined;
 
+  // A completed journey opened from the history while another one is under way offers no "new
+  // journey": there can only be one active journey at a time.
   const cta = completed
-    ? { label: t('journey.active.createNew'), onPress: () => router.push('/journey/create') }
+    ? state === 'active'
+      ? null
+      : { label: t('journey.active.createNew'), onPress: () => router.push('/journey/create') }
     : isEmpty
       ? null
       : !started
@@ -146,8 +152,13 @@ export function ActiveJourneyScreen({ journeyId }: ActiveJourneyScreenProps) {
               {completed ? t('journey.active.completedTitle') : t('journey.active.title')}
             </Text>
             <Text variant="body" tone="secondary">
-              {completed ? t('journey.active.completedSubtitle') : journey.title}
+              {journey.title}
             </Text>
+            {completed ? (
+              <Text variant="small" tone="secondary">
+                {t('journey.active.completedSubtitle')}
+              </Text>
+            ) : null}
           </FadeInUp>
 
           {!isEmpty ? (

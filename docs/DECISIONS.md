@@ -2737,3 +2737,36 @@ Only what was asked; no new library, mock data, no Maps API.
   with/without input, add from detail once + "Voir mon parcours", progression to completed, error/empty states, Search
   round trip keeps the draft, empty and unknown journeys). Updated: the detail CTA and route tests (placeholder → flow)
   and the Profile test (section gone).
+
+## Sprint 11 — the Parcours tab (journey hub)
+
+### D-81 — "Parcours" replaces "Favoris" in the tab bar; `/journey` is a hub over the existing journey store; completed journeys are kept
+
+- **Tab bar:** `TAB_NAMES` = home, discover, **journey**, profile (Lucide `route` — the winding path of the ROAM mark and of a
+  journey on the map; label `navigation.journey`). `RoamTabBar` itself is unchanged except for an optional `accent` dot on the
+  Parcours icon while a journey is active (`useJourney()`; accessibility hint "Un parcours est en cours"). No badge count, no
+  progress ring: the brief asked for something discreet.
+- **Favorites are not removed:** `(tabs)/favorites.tsx`, `features/favorites/`, `/profile/favorites`, the favorite hooks and
+  data are untouched. The `favorites` route stays declared in `(tabs)/_layout.tsx` (so `/favorites` still resolves) but is not in
+  `TAB_NAMES`, so the bar does not draw it. No new entry point to favorites was added (Profile already links to them).
+- **Hub (`/journey`, `JourneyHubScreen`) only decides what to show** — it reads `useJourney()` and the experience pool:
+  in progress → `CurrentJourneyCard` (photo + step indicator after the "Sortie en cours" reference, current step, next steps,
+  time/distance left from `lib/progress.ts`, map preview, "Continuer mon parcours" → `/journey/[id]`), then the history, then a
+  discreet "Créer un nouveau parcours"; completed only → "Mes parcours" with a primary create button and the history; nothing →
+  `JourneyHubEmptyState`. It never progresses a journey: that stays on `/journey/[id]`.
+- **One active journey at a time (D-80) is kept.** With one in progress, "Créer un nouveau parcours" opens a
+  `ConfirmationModal` ("Un parcours est déjà en cours" → "Voir mon parcours") instead of starting a flow the summary would
+  refuse at its very last step. Abandoning a journey is not offered (not asked for; it would need a new status).
+- **History, in the existing repository — not a second storage:** `JourneyRepository.listCompleted()`; the mock upserts a
+  journey into `roam.journey.history` whenever a *completed* journey is saved, so `createJourney` can keep replacing the
+  completed current journey (D-80) without losing it. Most recent first, by id (no duplicates). A journey completed in sprint
+  10 (only in `roam.journey.current`) is picked up on the first read. `clear()` forgets both. The store loads the history with
+  the current journey (`JourneySnapshot.history`) and `findJourney()` resolves an id against both.
+- **`/journey/[id]` opens past journeys too** (`ActiveJourneyScreen`, no new screen): it used to show only the current
+  journey. A completed journey now shows its title; its "Créer un nouveau parcours" footer is hidden while another journey is
+  active. With nothing behind it, back goes to `/journey` (was `/home`).
+- **Only one reference screen was provided** ("13 — Sortie en cours"); the hub's history and empty states follow ROAM's
+  existing patterns (serif titles, `FadeInUp`, `rounded-card` surfaces, photo collages from the experience pool as in the
+  creation intro) rather than a mockup.
+- **Not verified on a device in this session** (no iOS simulator on the build machine): rendering, dark mode and motion need a
+  manual pass.

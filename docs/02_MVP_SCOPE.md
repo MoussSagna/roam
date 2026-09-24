@@ -188,6 +188,9 @@ Example statistics:
 Home · Discover · Favorites · Profile
 ```
 
+Implementation note (sprint 11, `DECISIONS.md` D-81): the Favorites tab was replaced by **Parcours** (the journey hub),
+at the product owner's request; favorites stay reachable from the Profile (`/profile/favorites`).
+
 The itinerary/map is entered from an experience/itinerary rather than being a permanent bottom-nav tab.
 
 ### Web

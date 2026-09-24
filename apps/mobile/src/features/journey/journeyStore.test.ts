@@ -1,6 +1,8 @@
 import { act, renderHook, waitFor } from '@testing-library/react-native';
 
+import { STORAGE_KEYS, writeStorage } from '@/lib/storage';
 import { repositories } from '@/services';
+import { createMockJourneyRepository } from '@/services/mock/journey';
 import type { JourneyDraft } from '@/types';
 
 import {
@@ -8,6 +10,7 @@ import {
   addExperienceToJourney,
   completeCurrentStep,
   createJourney,
+  findJourney,
   moveJourneyStep,
   removeJourneyStep,
   resetJourneyStoreForTests,
@@ -119,5 +122,81 @@ describe('journeyStore', () => {
       await createJourney(DRAFT, 'A');
     });
     expect(result.current.state).toBe('active');
+  });
+
+  describe('history (sprint 11)', () => {
+    async function finish() {
+      await startJourney();
+      let journey = await repositories.journeys.getCurrent();
+      while (journey?.status === 'active') {
+        await completeCurrentStep();
+        journey = await repositories.journeys.getCurrent();
+      }
+    }
+
+    it('a completed journey is kept in the history, once', async () => {
+      const created = await createJourney(DRAFT, 'Paris au coucher du soleil');
+      expect(await repositories.journeys.listCompleted()).toEqual([]);
+
+      await finish();
+
+      const history = await repositories.journeys.listCompleted();
+      expect(history.map((journey) => journey.id)).toEqual([created.id]);
+      expect(history[0].status).toBe('completed');
+      expect(history[0].completedAt).not.toBeNull();
+    });
+
+    it('a new journey replaces the completed current one, which stays in the history', async () => {
+      const first = await createJourney(DRAFT, 'Premier');
+      await finish();
+      jest.spyOn(Date, 'now').mockReturnValueOnce(Date.now() + 1000);
+      const second = await createJourney(DRAFT, 'Second');
+
+      expect(second.id).not.toBe(first.id);
+      expect((await repositories.journeys.getCurrent())?.id).toBe(second.id);
+      expect((await repositories.journeys.getCurrent())?.status).toBe('active');
+      expect((await repositories.journeys.listCompleted()).map((j) => j.id)).toEqual([first.id]);
+    });
+
+    it('lists the most recently completed first, without duplicates', async () => {
+      const first = await createJourney(DRAFT, 'Premier');
+      await finish();
+      jest.spyOn(Date, 'now').mockReturnValueOnce(Date.now() + 1000);
+      const second = await createJourney(DRAFT, 'Second');
+      await finish();
+
+      const ids = (await repositories.journeys.listCompleted()).map((j) => j.id);
+      expect(ids).toEqual([second.id, first.id]);
+    });
+
+    it('useJourney exposes the history, and findJourney finds current and past journeys', async () => {
+      const first = await createJourney(DRAFT, 'Premier');
+      await finish();
+      jest.spyOn(Date, 'now').mockReturnValueOnce(Date.now() + 1000);
+      const second = await createJourney(DRAFT, 'Second');
+      resetJourneyStoreForTests();
+
+      const { result } = await renderHook(() => useJourney());
+      await waitFor(() => expect(result.current.isLoading).toBe(false));
+
+      expect(result.current.state).toBe('active');
+      expect(result.current.history.map((j) => j.id)).toEqual([first.id]);
+      expect(findJourney(result.current, second.id)?.title).toBe('Second');
+      expect(findJourney(result.current, first.id)?.title).toBe('Premier');
+      expect(findJourney(result.current, 'unknown')).toBeNull();
+      expect(findJourney(result.current, undefined)).toBeNull();
+    });
+
+    it('picks up a journey completed before the history existed (sprint 10 storage)', async () => {
+      const created = await createJourney(DRAFT, 'Ancien');
+      await finish();
+      const completed = await repositories.journeys.getCurrent();
+      // Sprint 10 storage: only the current journey, no history key.
+      await repositories.journeys.clear();
+      await writeStorage(STORAGE_KEYS.journey, JSON.stringify(completed));
+
+      const fresh = createMockJourneyRepository();
+      expect((await fresh.listCompleted()).map((j) => j.id)).toEqual([created.id]);
+    });
   });
 });

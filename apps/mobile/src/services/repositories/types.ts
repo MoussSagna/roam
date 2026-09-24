@@ -56,15 +56,20 @@ export interface SearchRepository {
 }
 
 /**
- * The user's journey (sprint 10). MVP: a single current journey — active or completed — is kept; a
- * draft is never saved (it lives in the creation flow until "Créer mon parcours"). Planning (travel,
- * times, totals) is domain logic in `features/journey`, so a backend implementation only stores.
+ * The user's journey (sprint 10). MVP: a single current journey — active or completed — plus the
+ * completed ones (history, sprint 11); a draft is never saved (it lives in the creation flow until
+ * "Créer mon parcours"). Planning (travel, times, totals) is domain logic in `features/journey`, so a
+ * backend implementation only stores.
  */
 export interface JourneyRepository {
   /** The current journey (active or completed), or `null` when there is none. */
   getCurrent(): Promise<Journey | null>;
-  /** Creates or replaces the current journey. */
+  /** Creates or replaces the current journey. A completed journey is also kept in the history. */
   save(journey: Journey): Promise<Journey>;
+  /** Completed journeys (sprint 11), most recently completed first — they stay there after a new
+   * journey replaces the current one. */
+  listCompleted(): Promise<Journey[]>;
+  /** Forgets every journey, current and completed. */
   clear(): Promise<void>;
 }
 

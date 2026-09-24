@@ -17,3 +17,8 @@ export function formatDistance(meters: number, language: string): string {
 export function formatBudget(euros: number): string {
   return `≈ ${Math.round(euros)} €`;
 }
+
+/** "12 septembre" / "September 12" (the history's "Terminé le …"). */
+export function formatDayMonth(iso: string, language: string): string {
+  return new Intl.DateTimeFormat(language, { day: 'numeric', month: 'long' }).format(new Date(iso));
+}

@@ -14,11 +14,13 @@ import { buildPlan } from './lib/plan';
  */
 export type JourneySnapshot = {
   journey: Journey | null;
+  /** Completed journeys, most recent first (sprint 11) — may include the current one once done. */
+  history: Journey[];
   isLoading: boolean;
   error: boolean;
 };
 
-const INITIAL: JourneySnapshot = { journey: null, isLoading: true, error: false };
+const INITIAL: JourneySnapshot = { journey: null, history: [], isLoading: true, error: false };
 
 let snapshot: JourneySnapshot = INITIAL;
 let loading: Promise<void> | null = null;
@@ -34,13 +36,12 @@ function subscribe(listener: () => void) {
   return () => listeners.delete(listener);
 }
 
-/** Loads the current journey once (again after an error, or when `force`d). */
+/** Loads the current journey and the history once (again after an error, or when `force`d). */
 export function loadJourney(force = false): Promise<void> {
   if (loading && !force) return loading;
   setSnapshot({ isLoading: true, error: false });
-  loading = repositories.journeys
-    .getCurrent()
-    .then((journey) => setSnapshot({ journey, isLoading: false, error: false }))
+  loading = Promise.all([repositories.journeys.getCurrent(), repositories.journeys.listCompleted()])
+    .then(([journey, history]) => setSnapshot({ journey, history, isLoading: false, error: false }))
     .catch(() => {
       loading = null;
       setSnapshot({ isLoading: false, error: true });
@@ -53,7 +54,18 @@ export function journeyStateOf(journey: Journey | null): JourneyState {
   return journey.status === 'completed' ? 'completed' : 'active';
 }
 
-/** The current journey + its state (`none` | `active` | `completed`), loaded on first use. */
+/** A journey by id: the current one, or one from the history (`/journey/[id]` opens both). */
+export function findJourney(
+  { journey, history }: Pick<JourneySnapshot, 'journey' | 'history'>,
+  id: string | undefined,
+): Journey | null {
+  if (!id) return null;
+  if (journey?.id === id) return journey;
+  return history.find((item) => item.id === id) ?? null;
+}
+
+/** The current journey + its state (`none` | `active` | `completed`) and the history, loaded on first
+ * use. */
 export function useJourney() {
   const current = useSyncExternalStore(subscribe, () => snapshot);
   useEffect(() => {
@@ -86,7 +98,9 @@ async function replan(journey: Journey, experienceIds: readonly string[]): Promi
 
 async function persist(journey: Journey): Promise<Journey> {
   const saved = await repositories.journeys.save(journey);
-  setSnapshot({ journey: saved, isLoading: false, error: false });
+  const history =
+    saved.status === 'completed' ? await repositories.journeys.listCompleted() : snapshot.history;
+  setSnapshot({ journey: saved, history, isLoading: false, error: false });
   return saved;
 }
 
@@ -103,7 +117,7 @@ export class ActiveJourneyExistsError extends Error {
 }
 
 /** DRAFT → ACTIVE. Refuses to create a second active journey (MVP: one at a time); a completed one
- * is replaced. */
+ * is replaced as the current journey but stays in the history. */
 export async function createJourney(draft: JourneyDraft, title: string): Promise<Journey> {
   if (await currentActive()) throw new ActiveJourneyExistsError();
   const experiences = await experiencesById(draft.experienceIds);

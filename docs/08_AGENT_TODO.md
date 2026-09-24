@@ -38,6 +38,8 @@ Status for **mobile** (2026-09-22). Web and API foundations are not started.
       (`gallery/[id]`) with a hero -> gallery Reanimated transition, sprint 5 — `DECISIONS.md` D-48
 - [x] Journey ("parcours") — creation flow `/journey/create/*` (intro, context, start, suggestions, builder,
       summary) and active journey `/journey/[id]`; add from Experience detail — sprint 10, `DECISIONS.md` D-80
+- [x] Parcours tab — journey hub `/journey` (in progress / history / empty), replaces Favoris in the tab bar
+      (the `/favorites` route is kept) — sprint 11, `DECISIONS.md` D-81
 - [x] Search — shared `SearchScreen` (`/search`) opened from both Home's and Discover's `SearchBar`;
       recent searches (persisted), trending chips, explore-by-mood, live suggestions, results
       (list/map), a sort sheet (Recommandé/Plus proche/Mieux noté/Prix), and a filters bottom sheet, all over the mock experience pool — no real query

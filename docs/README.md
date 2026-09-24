@@ -29,7 +29,7 @@ Current status (2026-09-23): the mobile onboarding is implemented on the front e
 profile creation is a simulation of about 10 s). Authentication screens are now all built, front-end only and
 simulated: Entry, Login, Register, and the whole Forgot password sub-flow (email → reset code → new password →
 success) — see `DECISIONS.md` D-28, D-29, D-31–D-36, `08_AGENT_TODO.md` and `docs/SCREEN_INTEGRATION_WORKFLOW.md`.
-The main navigation is also built: four tabs (Home, Discover, Favorites, Profile) behind a floating pill/bubble
+The main navigation is also built: four tabs (Home, Discover, Parcours — Favorites until sprint 11, D-81 —, Profile) behind a floating pill/bubble
 tab bar that collapses into a bubble on scroll and expands on tap — see `DECISIONS.md` D-38 to D-43. **Home is
 now the real discovery screen** (hero carousel, mood chips, popular/nearby/for-you sections, mock data only) —
 see `DECISIONS.md` D-45. **Discover is now a real, immersive editorial discovery page** (Sélection ROAM,

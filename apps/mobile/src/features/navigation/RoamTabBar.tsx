@@ -6,6 +6,7 @@ import { useTranslation } from 'react-i18next';
 import { Pressable, useWindowDimensions, View } from 'react-native';
 
 import { Text } from '@/components/ui';
+import { useJourney } from '@/features/journey/journeyStore';
 import { useReduceMotion } from '@/hooks/useReduceMotion';
 import { hexToRgbChannels } from '@/theme/color';
 import { useTheme } from '@/theme';
@@ -21,6 +22,7 @@ const ITEM_WIDTH = 72;
 const PILL_PADDING_H = 6;
 const ICON_BADGE_SIZE = 36;
 const ICON_SIZE = 21;
+const INDICATOR_SIZE = 10;
 /** Keeps the pill/bubble clear of the screen edges on narrow devices (brief §6, §11). */
 const SIDE_CLEARANCE = 20;
 /** Visible gap above the safe area so the bar reads as floating, not docked (brief §14). */
@@ -31,48 +33,69 @@ type TabIconBadgeProps = {
   focused: boolean;
   reduceMotion: boolean;
   colors: ThemeColors;
+  /** Small `accent` dot on the icon (sprint 11: a journey is in progress, on the Parcours tab). */
+  indicator?: boolean;
 };
 
 /** Icon + its active fill/spring-pop, shared by the expanded row and the collapsed bubble (brief §1, §12). */
-function TabIconBadge({ icon: Icon, focused, reduceMotion, colors }: TabIconBadgeProps) {
+function TabIconBadge({ icon: Icon, focused, reduceMotion, colors, indicator }: TabIconBadgeProps) {
   return (
-    <View
-      style={{
-        width: ICON_BADGE_SIZE,
-        height: ICON_BADGE_SIZE,
-        borderRadius: ICON_BADGE_SIZE / 2,
-        alignItems: 'center',
-        justifyContent: 'center',
-        overflow: 'hidden',
-      }}
-    >
-      <MotiView
-        pointerEvents="none"
+    <View>
+      <View
         style={{
-          position: 'absolute',
-          inset: 0,
-          backgroundColor: colors.primary,
+          width: ICON_BADGE_SIZE,
+          height: ICON_BADGE_SIZE,
           borderRadius: ICON_BADGE_SIZE / 2,
+          alignItems: 'center',
+          justifyContent: 'center',
+          overflow: 'hidden',
         }}
-        animate={{ opacity: focused ? 1 : 0 }}
-        transition={{ type: 'timing', duration: reduceMotion ? 0 : 180 }}
-      />
-      <MotiView
-        key={focused ? 'active' : 'inactive'}
-        from={reduceMotion || !focused ? undefined : { scale: 0.82 }}
-        animate={{ scale: 1 }}
-        transition={
-          reduceMotion
-            ? { type: 'timing', duration: 0 }
-            : { type: 'spring', damping: 11, stiffness: 220 }
-        }
       >
-        <Icon
-          size={ICON_SIZE}
-          strokeWidth={1.8}
-          color={focused ? colors.primaryForeground : colors.textSecondary}
+        <MotiView
+          pointerEvents="none"
+          style={{
+            position: 'absolute',
+            inset: 0,
+            backgroundColor: colors.primary,
+            borderRadius: ICON_BADGE_SIZE / 2,
+          }}
+          animate={{ opacity: focused ? 1 : 0 }}
+          transition={{ type: 'timing', duration: reduceMotion ? 0 : 180 }}
         />
-      </MotiView>
+        <MotiView
+          key={focused ? 'active' : 'inactive'}
+          from={reduceMotion || !focused ? undefined : { scale: 0.82 }}
+          animate={{ scale: 1 }}
+          transition={
+            reduceMotion
+              ? { type: 'timing', duration: 0 }
+              : { type: 'spring', damping: 11, stiffness: 220 }
+          }
+        >
+          <Icon
+            size={ICON_SIZE}
+            strokeWidth={1.8}
+            color={focused ? colors.primaryForeground : colors.textSecondary}
+          />
+        </MotiView>
+      </View>
+      {indicator ? (
+        <View
+          testID="tab-journey-indicator"
+          pointerEvents="none"
+          style={{
+            position: 'absolute',
+            top: 0,
+            right: 0,
+            width: INDICATOR_SIZE,
+            height: INDICATOR_SIZE,
+            borderRadius: INDICATOR_SIZE / 2,
+            backgroundColor: colors.accent,
+            borderWidth: 2,
+            borderColor: colors.surface,
+          }}
+        />
+      ) : null}
     </View>
   );
 }
@@ -91,6 +114,8 @@ export function RoamTabBar({ state, navigation, insets }: BottomTabBarProps) {
   const { collapsed, expand } = useTabBarCollapse();
   const reduceMotion = useReduceMotion();
   const { width: windowWidth } = useWindowDimensions();
+  const { state: journeyState } = useJourney();
+  const journeyInProgress = journeyState === 'active';
 
   const routes = state.routes.filter((route) => isTabName(route.name));
   const activeRoute = state.routes[state.index];
@@ -169,6 +194,7 @@ export function RoamTabBar({ state, navigation, insets }: BottomTabBarProps) {
               const isFocused = route.key === activeRoute?.key;
               const tab = TAB_CONFIG[route.name as keyof typeof TAB_CONFIG];
               const label = t(tab.labelKey);
+              const indicator = route.name === 'journey' && journeyInProgress;
 
               const onPress = () => {
                 const event = navigation.emit({
@@ -187,6 +213,7 @@ export function RoamTabBar({ state, navigation, insets }: BottomTabBarProps) {
                   key={route.key}
                   accessibilityRole="button"
                   accessibilityLabel={label}
+                  accessibilityHint={indicator ? t('navigation.journeyInProgress') : undefined}
                   accessibilityState={{ selected: isFocused }}
                   onPress={onPress}
                   hitSlop={4}
@@ -203,6 +230,7 @@ export function RoamTabBar({ state, navigation, insets }: BottomTabBarProps) {
                     focused={isFocused}
                     reduceMotion={reduceMotion}
                     colors={colors}
+                    indicator={indicator}
                   />
                   <MotiView
                     key={isFocused ? 'label-active' : 'label-inactive'}
@@ -254,6 +282,7 @@ export function RoamTabBar({ state, navigation, insets }: BottomTabBarProps) {
                   focused
                   reduceMotion={reduceMotion}
                   colors={colors}
+                  indicator={activeRoute?.name === 'journey' && journeyInProgress}
                 />
               </Pressable>
             )}
