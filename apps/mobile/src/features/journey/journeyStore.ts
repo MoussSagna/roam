@@ -137,14 +137,25 @@ export async function createJourney(draft: JourneyDraft, title: string): Promise
   });
 }
 
+/** Whether an experience is one of the journey's steps — the one membership check, used by
+ * `addExperienceToJourney` (no duplicates) and Experience detail's CTA (hidden once it's in). Ids are
+ * compared as strings, never objects. */
+export function isExperienceInJourney(
+  journey: Journey | null | undefined,
+  experienceId: string | null | undefined,
+): boolean {
+  if (!journey || experienceId == null) return false;
+  return journey.steps.some((step) => String(step.experienceId) === String(experienceId));
+}
+
 export type AddResult = 'added' | 'alreadyAdded' | 'noActiveJourney';
 
 /** Adds an experience at the end of the active journey — never creates one, never duplicates. */
 export async function addExperienceToJourney(experienceId: string): Promise<AddResult> {
   const journey = await currentActive();
   if (!journey) return 'noActiveJourney';
+  if (isExperienceInJourney(journey, experienceId)) return 'alreadyAdded';
   const ids = journey.steps.map((step) => step.experienceId);
-  if (ids.includes(experienceId)) return 'alreadyAdded';
   await persist(await replan(journey, [...ids, experienceId]));
   return 'added';
 }

@@ -187,7 +187,10 @@ export function ExperienceDetailScreen({ experienceId }: ExperienceDetailScreenP
         onScrollEndDrag={ctaOnScrollEnd}
         onMomentumScrollEnd={ctaOnScrollEnd}
         scrollEventThrottle={16}
-        contentContainerStyle={{ paddingBottom: insets.bottom + STICKY_FOOTER_CLEARANCE }}
+        // No footer (the experience is already in the active journey) → no room kept for it.
+        contentContainerStyle={{
+          paddingBottom: insets.bottom + (journeyCta.hidden ? 24 : STICKY_FOOTER_CLEARANCE),
+        }}
       >
         <ExperienceHero
           images={images}
@@ -272,13 +275,15 @@ export function ExperienceDetailScreen({ experienceId }: ExperienceDetailScreenP
         revealOffset={revealOffset}
       />
 
-      <StickyActionFooter
-        visible={ctaVisible}
-        label={journeyCta.label}
-        onPress={journeyCta.onPress}
-        icon={journeyCta.icon}
-        loading={journeyCta.loading}
-      />
+      {journeyCta.hidden ? null : (
+        <StickyActionFooter
+          visible={ctaVisible}
+          label={journeyCta.label}
+          onPress={journeyCta.onPress}
+          icon={journeyCta.icon}
+          loading={journeyCta.loading}
+        />
+      )}
       {journeyCta.modal}
     </View>
   );

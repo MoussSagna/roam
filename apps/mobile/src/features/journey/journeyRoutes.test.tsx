@@ -9,7 +9,12 @@ import i18n from '@/i18n';
 import { repositories } from '@/services';
 import { ThemeProvider } from '@/theme';
 
-import { createJourney, removeJourneyStep, resetJourneyStoreForTests } from './journeyStore';
+import {
+  addExperienceToJourney,
+  createJourney,
+  removeJourneyStep,
+  resetJourneyStoreForTests,
+} from './journeyStore';
 import { BUILD_TIMELINE } from './lib/building';
 
 /** Real route tree (same harness as `searchRoutes.test.tsx`), sprint 10 journey flow. */
@@ -247,11 +252,12 @@ describe('Journey creation flow (sprint 10)', () => {
     expect((await repositories.journeys.getCurrent())?.steps).toHaveLength(stepsBefore + 1);
     expect((await repositories.journeys.getCurrent())?.id).toBe(journey!.id);
 
-    // Close, then try again: not added twice.
-    await press('Fermer');
-    await waitFor(() => expect(screen.queryByText('Ajouté à ton parcours ✓')).toBeNull());
-    await press('Ajouter au parcours');
-    expect(await screen.findByText('Déjà dans ton parcours')).toBeOnTheScreen();
+    // Now in the journey: the CTA is gone (sprint 12), so it can't be offered twice; the store
+    // refuses a duplicate anyway.
+    await waitFor(() =>
+      expect(screen.queryByRole('button', { name: 'Ajouter au parcours' })).toBeNull(),
+    );
+    expect(await addExperienceToJourney(outsider)).toBe('alreadyAdded');
     expect((await repositories.journeys.getCurrent())?.steps).toHaveLength(stepsBefore + 1);
 
     await press('Voir mon parcours');

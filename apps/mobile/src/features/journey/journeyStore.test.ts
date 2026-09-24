@@ -11,6 +11,7 @@ import {
   completeCurrentStep,
   createJourney,
   findJourney,
+  isExperienceInJourney,
   moveJourneyStep,
   removeJourneyStep,
   resetJourneyStoreForTests,
@@ -198,5 +199,17 @@ describe('journeyStore', () => {
       const fresh = createMockJourneyRepository();
       expect((await fresh.listCompleted()).map((j) => j.id)).toEqual([created.id]);
     });
+  });
+
+  it('isExperienceInJourney: by step id, as strings; false without a journey or an id', async () => {
+    const journey = await createJourney(DRAFT, 'A');
+
+    expect(isExperienceInJourney(journey, 'exp-slow-afternoon')).toBe(true);
+    expect(isExperienceInJourney(journey, 'exp-rooftop-sunset')).toBe(false);
+    expect(isExperienceInJourney(null, 'exp-slow-afternoon')).toBe(false);
+    expect(isExperienceInJourney(journey, undefined)).toBe(false);
+    // A numeric-looking id coming from elsewhere as a number still matches its string step id.
+    const numeric = { ...journey, steps: [{ ...journey.steps[0], experienceId: '42' }] };
+    expect(isExperienceInJourney(numeric, 42 as unknown as string)).toBe(true);
   });
 });

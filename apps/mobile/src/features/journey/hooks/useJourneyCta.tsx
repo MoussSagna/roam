@@ -9,7 +9,7 @@ import { ConfirmationModal } from '@/components/ui';
 import { showToast } from '@/lib/toast';
 import type { Experience } from '@/types';
 
-import { addExperienceToJourney, useJourney } from '../journeyStore';
+import { addExperienceToJourney, isExperienceInJourney, useJourney } from '../journeyStore';
 
 type Confirmation = { kind: 'added' | 'alreadyAdded'; title: string } | null;
 
@@ -18,7 +18,9 @@ type Confirmation = { kind: 'added' | 'alreadyAdded'; title: string } | null;
  * - no journey (or a completed one) → "Créer mon parcours" → the creation flow, this experience
  *   pre-selected;
  * - an active journey → "Ajouter au parcours" → added to that journey (never a new one, never twice),
- *   then "Ajouté à ton parcours ✓" with "Voir mon parcours" / "Fermer".
+ *   then "Ajouté à ton parcours ✓" with "Voir mon parcours" / "Fermer";
+ * - an active journey that already has this experience → no CTA at all (`hidden`, sprint 12): it
+ *   can't be added twice, so it isn't offered.
  * Navigation from the dialog waits for it to exit (`onExited`, D-78).
  */
 export function useJourneyCta(experience: Experience | null) {
@@ -31,6 +33,7 @@ export function useJourneyCta(experience: Experience | null) {
   const [viewRequested, setViewRequested] = useState(false);
 
   const isActive = state === 'active';
+  const isExperienceInActiveJourney = isActive && isExperienceInJourney(journey, experience?.id);
 
   const onPress = async () => {
     if (!experience || adding) return;
@@ -86,6 +89,7 @@ export function useJourneyCta(experience: Experience | null) {
   );
 
   return {
+    hidden: isExperienceInActiveJourney,
     label: t(isActive ? 'experience.addToJourney' : 'experience.createItinerary'),
     icon: isActive ? Plus : Sparkles,
     loading: adding,
