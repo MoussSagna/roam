@@ -7,6 +7,7 @@ import MapIcon from 'lucide-react-native/icons/map';
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Pressable, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Button, Text } from '@/components/ui';
 import { fontFamily } from '@/theme/typography';
@@ -30,13 +31,18 @@ type CurrentJourneyCardProps = {
   onContinue: () => void;
 };
 
-const HERO_HEIGHT = 250;
+/** Hero height below the status bar (the safe-area inset is added on top). */
+const HERO_HEIGHT = 300;
+/** How far the content sheet rides up over the bottom of the photo. */
+const SHEET_OVERLAP = 24;
 
 /**
- * The journey in progress, at the top of the Parcours hub (sprint 11). After the "Sortie en cours"
- * reference: the current step's photo with the journey's title and a step indicator, then the step
- * itself, what comes next, what is left (time, distance, steps), a small map, and "Continuer mon
- * parcours" — which only opens `/journey/[id]`: progressing a step stays that screen's job.
+ * The journey in progress — the whole Parcours hub in that state (sprint 11). After the "Sortie en
+ * cours" reference: an edge-to-edge hero from the very top of the screen (the current step's photo,
+ * under the status bar, with the journey's title and a step indicator), then a content sheet riding
+ * slightly over it — no card, no border, only the page's horizontal padding: the step itself, what
+ * comes next, what is left (time, distance, steps), a small map, and "Continuer mon parcours" — which
+ * only opens `/journey/[id]`: progressing a step stays that screen's job. The parent must not pad it.
  */
 export function CurrentJourneyCard({
   journey,
@@ -45,6 +51,7 @@ export function CurrentJourneyCard({
   onContinue,
 }: CurrentJourneyCardProps) {
   const { t, i18n } = useTranslation();
+  const insets = useSafeAreaInsets();
 
   const experiences = useMemo(
     () =>
@@ -68,16 +75,14 @@ export function CurrentJourneyCard({
     : t('journey.hub.readyLabel');
 
   return (
-    <View
-      testID="current-journey-card"
-      className="overflow-hidden rounded-hero border border-border bg-surface"
-    >
+    <View testID="current-journey-card">
       <Pressable
+        testID="current-journey-hero"
         accessibilityRole="button"
         accessibilityLabel={`${journey.title}, ${status}`}
         onPress={onContinue}
         className="active:opacity-90"
-        style={{ height: HERO_HEIGHT }}
+        style={{ height: insets.top + HERO_HEIGHT }}
       >
         <View className="absolute inset-0 bg-surfaceElevated">
           {focus?.coverImage ? (
@@ -96,7 +101,10 @@ export function CurrentJourneyCard({
           style={{ position: 'absolute', inset: 0 }}
         />
 
-        <View className="absolute left-5 top-5 flex-row items-center gap-2 rounded-pill bg-black/35 px-3 py-1.5">
+        <View
+          className="absolute left-6 flex-row items-center gap-2 rounded-pill bg-black/35 px-3 py-1.5"
+          style={{ top: insets.top + 12 }}
+        >
           <View
             className={started ? 'h-2 w-2 rounded-pill bg-accent' : 'h-2 w-2 rounded-pill bg-white'}
           />
@@ -106,14 +114,26 @@ export function CurrentJourneyCard({
           </Text>
         </View>
 
-        <View className="absolute inset-x-0 bottom-0 gap-4 p-5">
-          <Text
-            numberOfLines={2}
-            className="text-white"
-            style={{ fontFamily: fontFamily.editorialSemibold, fontSize: 28, lineHeight: 32 }}
-          >
-            {journey.title}
-          </Text>
+        <View
+          className="absolute inset-x-0 bottom-0 gap-4 px-6 pt-6"
+          style={{ paddingBottom: SHEET_OVERLAP + 20 }}
+        >
+          <View className="gap-1">
+            <Text
+              variant="caption"
+              className="font-bodySemibold uppercase tracking-[2px] text-white/80"
+            >
+              {t('journey.hub.activeTitle')}
+            </Text>
+            <Text
+              accessibilityRole="header"
+              numberOfLines={2}
+              className="text-white"
+              style={{ fontFamily: fontFamily.editorialSemibold, fontSize: 32, lineHeight: 38 }}
+            >
+              {journey.title}
+            </Text>
+          </View>
           {total > 1 ? (
             <JourneyProgressStepper
               labels={experiences.map(
@@ -125,7 +145,10 @@ export function CurrentJourneyCard({
         </View>
       </Pressable>
 
-      <View className="gap-4 p-5">
+      <View
+        className="gap-5 rounded-t-hero bg-background px-6 pt-6"
+        style={{ marginTop: -SHEET_OVERLAP }}
+      >
         {focus && focusStep ? (
           <View className="flex-row items-center gap-3">
             <View className="h-16 w-16 overflow-hidden rounded-large bg-surfaceElevated">
@@ -152,7 +175,7 @@ export function CurrentJourneyCard({
         )}
 
         {focus ? (
-          <View className="flex-row items-start gap-2 rounded-large bg-background px-4 py-3">
+          <View className="flex-row items-start gap-2 rounded-large bg-surface px-4 py-3">
             <Text variant="small" tone="secondary" className="font-bodySemibold">
               {t('journey.hub.next')}
             </Text>

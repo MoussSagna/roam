@@ -834,7 +834,6 @@
     "hub": {
       "eyebrow": "Journeys",
       "activeTitle": "My journey",
-      "activeSubtitle": "ROAM has your back, enjoy the moment.",
       "historyTitle": "My journeys",
       "historySubtitle": "Look back on the outings you’ve lived.",
       "currentLabel": "In progress",
@@ -860,10 +859,7 @@
       "emptyCta": "Create my journey",
       "emptyStepMood": "Pick what you’re in the mood for",
       "emptyStepPlan": "ROAM plans your route",
-      "emptyStepGo": "Head out and enjoy every stop",
-      "activeExistsTitle": "A journey is already in progress",
-      "activeExistsDescription": "Finish “{title}” before creating a new one. It’s waiting for you here.",
-      "activeExistsView": "See my journey"
+      "emptyStepGo": "Head out and enjoy every stop"
     }
   }
 }

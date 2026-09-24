@@ -128,8 +128,10 @@ describe('Parcours tab — journey hub (sprint 11)', () => {
     await act(() => router.navigate('/journey'));
 
     const card = await screen.findByTestId('current-journey-card');
-    expect(screen.getAllByRole('header')[0]).toHaveTextContent('Mon parcours');
-    expect(within(card).getByText('Paris au coucher du soleil')).toBeOnTheScreen();
+    expect(screen.getByRole('header')).toHaveTextContent('Paris au coucher du soleil');
+    expect(within(card).getByText('Mon parcours')).toBeOnTheScreen();
+    // Edge-to-edge hero from the very top: its height includes the status bar (top inset 47).
+    expect(within(card).getByTestId('current-journey-hero')).toHaveStyle({ height: 47 + 300 });
     expect(within(card).getByText('Étape actuelle')).toBeOnTheScreen();
     expect(within(card).getByText('Temps restant')).toBeOnTheScreen();
     expect(within(card).getByText('0 / 2 étapes')).toBeOnTheScreen();
@@ -146,20 +148,22 @@ describe('Parcours tab — journey hub (sprint 11)', () => {
     expect(screen.getByTestId('current-journey-card')).toBeOnTheScreen();
   });
 
-  it('state 1 — creating another journey explains there is already one instead of starting the flow', async () => {
-    await seedJourney('Paris au coucher du soleil');
-    const utils = await renderApp();
+  it('state 1 — only the journey in progress: no history, no "Créer un nouveau parcours"', async () => {
+    await seedJourney('Premier');
+    await finishCurrentJourney();
+    await seedJourney('Second');
+    await renderApp();
     await act(() => router.navigate('/journey'));
-    await screen.findByTestId('current-journey-card');
 
-    await press('Créer un nouveau parcours');
-
-    expect(await screen.findByText('Un parcours est déjà en cours')).toBeOnTheScreen();
-    expect(utils.getPathname()).toBe('/journey');
-    await act(async () => {
-      fireEvent.press(screen.getByRole('button', { name: 'Voir mon parcours' }));
-    });
-    await waitFor(() => expect(utils.getPathname()).toMatch(/^\/journey\/journey-/));
+    const card = await screen.findByTestId('current-journey-card');
+    expect(within(card).getByText('Second')).toBeOnTheScreen();
+    expect(within(card).getByRole('button', { name: 'Continuer mon parcours' })).toBeOnTheScreen();
+    // A past journey exists, but this state is only about the current one.
+    expect(screen.queryByTestId('journey-history-list')).toBeNull();
+    expect(screen.queryByText('Mes parcours précédents')).toBeNull();
+    expect(screen.queryByText('Premier')).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Créer un nouveau parcours' })).toBeNull();
+    expect(screen.queryByTestId('journey-hub-empty')).toBeNull();
   });
 
   it('state 2 — no journey in progress, some completed: "Mes parcours", history, create', async () => {
@@ -190,20 +194,15 @@ describe('Parcours tab — journey hub (sprint 11)', () => {
     expect(utils.getPathname()).toBe('/journey/create');
   });
 
-  it('an older completed journey opens from the history while another one is in progress', async () => {
+  it('an older completed journey still opens on /journey/[id] while another one is in progress', async () => {
     const past = await seedJourney('Premier');
     await finishCurrentJourney();
     await seedJourney('Second');
     const utils = await renderApp();
     await act(() => router.navigate('/journey'));
+    await screen.findByTestId('current-journey-card');
 
-    // Hierarchy: current journey, then the past ones, then create.
-    const card = await screen.findByTestId('current-journey-card');
-    const list = screen.getByTestId('journey-history-list');
-    expect(within(card).getByText('Second')).toBeOnTheScreen();
-    expect(within(list).getAllByRole('button')).toHaveLength(1);
-
-    await fireEvent.press(within(list).getByRole('button', { name: 'Ouvrir le parcours Premier' }));
+    await act(() => router.push({ pathname: '/journey/[id]', params: { id: past.id } }));
     expect(utils.getPathname()).toBe(`/journey/${past.id}`);
     expect((await screen.findAllByText('Parcours terminé')).length).toBeGreaterThan(0);
     // Another journey is under way: no "Créer un nouveau parcours" on a past one.
@@ -248,9 +247,8 @@ describe('Parcours tab — journey hub (sprint 11)', () => {
     await press('Retour');
     expect(utils.getPathname()).toBe('/journey');
     expect(await screen.findByTestId('current-journey-card')).toBeOnTheScreen();
-    expect(within(screen.getByTestId('journey-history-list')).getAllByRole('button')).toHaveLength(
-      1,
-    );
+    // In progress: the hub shows only the current journey (the first one is still in the history).
+    expect(screen.queryByTestId('journey-history-list')).toBeNull();
   });
 
   it('the journey state survives a restart (persisted through the repository)', async () => {

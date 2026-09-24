@@ -1,12 +1,12 @@
-import { useRouter } from 'expo-router';
+import { useIsFocused, useRouter } from 'expo-router';
+import { StatusBar } from 'expo-status-bar';
 import Plus from 'lucide-react-native/icons/plus';
-import Route from 'lucide-react-native/icons/route';
-import { useMemo, useState } from 'react';
+import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Pressable, View } from 'react-native';
+import { ScrollView, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { Button, ConfirmationModal, FadeInUp, ScrollScreen, Text } from '@/components/ui';
+import { Button, FadeInUp, ScrollScreen, Text } from '@/components/ui';
 import { TAB_BAR_CLEARANCE } from '@/features/navigation/tabBarConfig';
 import { useTabBarScrollHandler } from '@/features/navigation/TabBarCollapseContext';
 import { useTheme } from '@/theme';
@@ -23,9 +23,9 @@ import { useJourney } from './journeyStore';
  * from the existing `journeyStore`; the journey itself stays on `/journey/[id]` and creation on the
  * `/journey/create` flow:
  *
- * - a journey in progress → it comes first ("Continuer mon parcours" → `/journey/[id]`), then the past
- *   ones, then a discreet "Créer un nouveau parcours" (one active journey at a time: it explains that
- *   instead of starting a flow that would be refused at the end);
+ * - a journey in progress → only that journey (`CurrentJourneyCard`: an edge-to-edge hero from the top
+ *   of the screen, then its content; "Continuer mon parcours" → `/journey/[id]`) — no history, no
+ *   "Créer un nouveau parcours" (one active journey at a time);
  * - none in progress, some completed → "Mes parcours": create, then the history;
  * - nothing at all → an empty state with "Créer mon parcours".
  */
@@ -34,6 +34,7 @@ export function JourneyHubScreen() {
   const router = useRouter();
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
+  const isFocused = useIsFocused();
   const onScroll = useTabBarScrollHandler();
   const { journey, history, state, isLoading, error, reload } = useJourney();
   const {
@@ -44,9 +45,6 @@ export function JourneyHubScreen() {
     retry,
     categoryLabelFor,
   } = useJourneyExperiences();
-  const [activeExistsVisible, setActiveExistsVisible] = useState(false);
-  const [openActiveOnExit, setOpenActiveOnExit] = useState(false);
-
   const active = state === 'active' ? journey : null;
 
   const covers = useMemo(
@@ -61,7 +59,32 @@ export function JourneyHubScreen() {
 
   const openJourney = (id: string) => router.push({ pathname: '/journey/[id]', params: { id } });
   const create = () => router.push('/journey/create');
-  const requestCreate = () => (active ? setActiveExistsVisible(true) : create());
+
+  // A journey in progress: the hero starts at the very top, edge to edge — no safe-area inset and no
+  // horizontal padding here; the content under it keeps the page padding (`CurrentJourneyCard`).
+  if (active && !isLoading && !experiencesLoading && !error && !experiencesError) {
+    return (
+      <View className="flex-1 bg-background">
+        {isFocused ? <StatusBar style="light" /> : null}
+        <ScrollView
+          testID="journey-hub-scroll"
+          onScroll={onScroll}
+          scrollEventThrottle={16}
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={{ paddingBottom: insets.bottom + TAB_BAR_CLEARANCE }}
+        >
+          <FadeInUp>
+            <CurrentJourneyCard
+              journey={active}
+              experiencesById={byId}
+              categoryLabelFor={categoryLabelFor}
+              onContinue={() => openJourney(active.id)}
+            />
+          </FadeInUp>
+        </ScrollView>
+      </View>
+    );
+  }
 
   const header = (title: string, subtitle: string) => (
     <FadeInUp style={{ gap: 6 }}>
@@ -83,7 +106,7 @@ export function JourneyHubScreen() {
 
   const historySection =
     history.length > 0 ? (
-      <FadeInUp delay={active ? 200 : 120} style={{ gap: 12 }}>
+      <FadeInUp delay={120} style={{ gap: 12 }}>
         <Text variant="h4" accessibilityRole="header">
           {t('journey.hub.previousTitle')}
         </Text>
@@ -120,32 +143,6 @@ export function JourneyHubScreen() {
         />
       </View>
     );
-  } else if (active) {
-    body = (
-      <>
-        {header(t('journey.hub.activeTitle'), t('journey.hub.activeSubtitle'))}
-        <FadeInUp delay={100}>
-          <CurrentJourneyCard
-            journey={active}
-            experiencesById={byId}
-            categoryLabelFor={categoryLabelFor}
-            onContinue={() => openJourney(active.id)}
-          />
-        </FadeInUp>
-        {historySection}
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel={t('journey.hub.createNew')}
-          onPress={requestCreate}
-          className="flex-row items-center justify-center gap-2 rounded-card border border-dashed border-border py-4 active:opacity-70"
-        >
-          <Plus size={18} strokeWidth={2} color={colors.textSecondary} />
-          <Text variant="body" tone="secondary" className="font-bodySemibold">
-            {t('journey.hub.createNew')}
-          </Text>
-        </Pressable>
-      </>
-    );
   } else if (history.length > 0) {
     body = (
       <>
@@ -165,37 +162,16 @@ export function JourneyHubScreen() {
   }
 
   return (
-    <>
-      <ScrollScreen
-        testID="journey-hub-scroll"
-        onScroll={onScroll}
-        contentContainerStyle={{
-          paddingTop: 24,
-          paddingBottom: insets.bottom + TAB_BAR_CLEARANCE,
-          gap: 24,
-        }}
-      >
-        {body}
-      </ScrollScreen>
-
-      <ConfirmationModal
-        visible={activeExistsVisible}
-        title={t('journey.hub.activeExistsTitle')}
-        description={t('journey.hub.activeExistsDescription', { title: active?.title ?? '' })}
-        confirmLabel={t('journey.hub.activeExistsView')}
-        cancelLabel={t('common.close')}
-        icon={Route}
-        onConfirm={() => {
-          setOpenActiveOnExit(true);
-          setActiveExistsVisible(false);
-        }}
-        onCancel={() => setActiveExistsVisible(false)}
-        onExited={() => {
-          // Navigate once the dialog is gone (D-78).
-          if (openActiveOnExit && active) openJourney(active.id);
-          setOpenActiveOnExit(false);
-        }}
-      />
-    </>
+    <ScrollScreen
+      testID="journey-hub-scroll"
+      onScroll={onScroll}
+      contentContainerStyle={{
+        paddingTop: 24,
+        paddingBottom: insets.bottom + TAB_BAR_CLEARANCE,
+        gap: 24,
+      }}
+    >
+      {body}
+    </ScrollScreen>
   );
 }

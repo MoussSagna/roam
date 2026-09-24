@@ -834,7 +834,6 @@
     "hub": {
       "eyebrow": "Parcours",
       "activeTitle": "Mon parcours",
-      "activeSubtitle": "ROAM t'accompagne, profite de l'instant.",
       "historyTitle": "Mes parcours",
       "historySubtitle": "Retrouve les sorties que tu as vécues.",
       "currentLabel": "En cours",
@@ -860,10 +859,7 @@
       "emptyCta": "Créer mon parcours",
       "emptyStepMood": "Choisis ton envie du moment",
       "emptyStepPlan": "ROAM compose ton itinéraire",
-      "emptyStepGo": "Pars et profite de chaque étape",
-      "activeExistsTitle": "Un parcours est déjà en cours",
-      "activeExistsDescription": "Termine « {title} » avant d'en créer un nouveau. Il t'attend ici.",
-      "activeExistsView": "Voir mon parcours"
+      "emptyStepGo": "Pars et profite de chaque étape"
     }
   }
 }

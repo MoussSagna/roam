@@ -2770,3 +2770,14 @@ Only what was asked; no new library, mock data, no Maps API.
   creation intro) rather than a mockup.
 - **Not verified on a device in this session** (no iOS simulator on the build machine): rendering, dark mode and motion need a
   manual pass.
+
+### D-82 — Journey hub, journey in progress: edge-to-edge hero, only the current journey
+
+- **Product request after the first review of D-81**, for that state only (history and empty states unchanged). The hero
+  starts at the very top of the screen, full width, under the status bar (light while the tab is focused, `useIsFocused`), no
+  card, no border, no radius: the state renders its own `ScrollView` (no top safe area, no horizontal padding) instead of
+  `ScrollScreen`. The content below keeps `px-6` and sits on a borderless sheet (`rounded-t-hero`, `bg-background`) that rides
+  24 px over the photo, like the "Sortie en cours" reference. `CurrentJourneyCard` was adapted, not replaced.
+- **Only the current journey:** no "Mes parcours précédents", no "Créer un nouveau parcours" in this state. D-81's
+  "un parcours est déjà en cours" dialog had no entry point left and was removed with its keys. Past journeys remain in the
+  repository and still open on `/journey/[id]`; they show again on the hub once no journey is in progress.

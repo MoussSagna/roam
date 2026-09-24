@@ -376,7 +376,7 @@ other row is still a `ProfilePlaceholder` stub (`docs/DECISIONS.md` D-50) until 
 | Builder | `/journey/create/builder` | `JourneyBuilderScreen` | Timeline (`JourneyStepCard` + `TravelConnector`), move up/down, remove |
 | Summary | `/journey/create/summary` | `JourneySummaryScreen` | Totals, map, timeline; "Créer mon parcours" = DRAFT → ACTIVE, then `replace` → `/journey/[id]` |
 | Active | `/journey/[id]` | `ActiveJourneyScreen` | Progress, map, timeline (done/current/upcoming), Commencer → Continuer → Terminer; the only place a journey is shown — the current one or a completed one from the history (sprint 11) |
-| Hub | `/journey` (Parcours tab) | `JourneyHubScreen` | Sprint 11, D-81. Picks one of three states: journey in progress (`CurrentJourneyCard` → "Continuer mon parcours" opens `/journey/[id]`, then the history, then a discreet "Créer un nouveau parcours" that explains there is already one); none in progress but some completed ("Mes parcours": create, then `JourneyHistoryCard`s); nothing (`JourneyHubEmptyState`, "Créer mon parcours") |
+| Hub | `/journey` (Parcours tab) | `JourneyHubScreen` | Sprint 11, D-81. Picks one of three states: journey in progress (only `CurrentJourneyCard`: edge-to-edge hero from the top of the screen, content in `px-6` below, no border; "Continuer mon parcours" opens `/journey/[id]`; no history, no create — D-82); none in progress but some completed ("Mes parcours": create, then `JourneyHistoryCard`s); nothing (`JourneyHubEmptyState`, "Créer mon parcours") |
 
 - **Layers:** `Screen → journeyStore (useJourney + operations) → JourneyRepository → mock` (persisted, `roam.journey.current`;
   completed journeys also in `roam.journey.history`, `listCompleted()`, sprint 11). "What's left" (time, distance, steps) is
