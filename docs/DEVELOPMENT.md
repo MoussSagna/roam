@@ -372,6 +372,7 @@ other row is still a `ProfilePlaceholder` stub (`docs/DECISIONS.md` D-50) until 
 | Intro | `/journey/create` | `CreateJourneyIntroScreen` | Photo collage from the pool, "Commencer" / "Annuler" |
 | Context | `/journey/create/context` | `JourneyContextScreen` | Ambiance → temps → budget, one question at a time (`MoodTile`, `ChoiceRow`, `ProgressBars` from onboarding) |
 | Start | `/journey/create/location` | `JourneyLocationScreen` | Ma position (approximate — no geolocation yet) / a spot (`data/startSpots.ts`) / an address; static `RoamMap` |
+| Building | `/journey/create/building` | `JourneyBuildingScreen` | Sprint 12, D-84. ~3.6 s front-end simulation, nothing to press: the onboarding's `ProfileOrbit` (faster ring) + `JourneyBuildChecklist` fed by the draft (start, ambiance, time, budget, then "Construction de ton parcours"); then `replace` → suggestions. Reads the draft, never saves |
 | Suggestions | `/journey/create/suggestions` | `JourneySuggestionsScreen` | `suggestForJourney` (filter then score, doc 07), pre-selection, add/remove/details, "Explorer d'autres idées" → `/search` |
 | Builder | `/journey/create/builder` | `JourneyBuilderScreen` | Timeline (`JourneyStepCard` + `TravelConnector`), move up/down, remove |
 | Summary | `/journey/create/summary` | `JourneySummaryScreen` | Totals, map, timeline; "Créer mon parcours" = DRAFT → ACTIVE, then `replace` → `/journey/[id]` |

@@ -60,13 +60,24 @@ type ProfileOrbitProps = {
   size: number;
   stage: ProfileStage;
   reduceMotion: boolean;
+  /** Ring pace per stage. Defaults to the onboarding's (~10 s); the journey building screen (sprint
+   * 12, D-84) runs the same stages in about 3.5 s. */
+  ringProgress?: Record<ProfileStage, { to: number; duration: number }>;
+  /** Defaults to the onboarding's "Un instant…". */
+  accessibilityLabel?: string;
 };
 
 /**
  * The centre piece of the profile creation: the ROAM mark in a disc, a loader ring that fills up and, around
  * it, six chips for the information ROAM uses. Only opacity/scale/rotation are animated (native driver).
  */
-export function ProfileOrbit({ size, stage, reduceMotion }: ProfileOrbitProps) {
+export function ProfileOrbit({
+  size,
+  stage,
+  reduceMotion,
+  ringProgress = RING_PROGRESS,
+  accessibilityLabel,
+}: ProfileOrbitProps) {
   const { t } = useTranslation();
   const { colors, scheme } = useTheme();
   const k = size / ORBIT_DESIGN_SIZE;
@@ -77,12 +88,12 @@ export function ProfileOrbit({ size, stage, reduceMotion }: ProfileOrbitProps) {
 
   const progress = useSharedValue(0);
   useEffect(() => {
-    const { to, duration } = RING_PROGRESS[stage];
+    const { to, duration } = ringProgress[stage];
     progress.value =
       reduceMotion || duration === 0
         ? to
         : withTiming(to, { duration, easing: Easing.inOut(Easing.quad) });
-  }, [stage, reduceMotion, progress]);
+  }, [stage, reduceMotion, progress, ringProgress]);
 
   const arcProps = useAnimatedProps(() => ({
     strokeDashoffset: circumference * (1 - progress.value),
@@ -112,7 +123,7 @@ export function ProfileOrbit({ size, stage, reduceMotion }: ProfileOrbitProps) {
     <View
       accessible
       accessibilityRole="progressbar"
-      accessibilityLabel={t('onboarding.profile.waiting')}
+      accessibilityLabel={accessibilityLabel ?? t('onboarding.profile.waiting')}
       style={{ width: size, height: size }}
     >
       <Svg width={size} height={size} style={{ position: 'absolute' }}>

@@ -2814,3 +2814,27 @@ Only what was asked; no new library, mock data, no Maps API.
   state; giving it one would change those screens.
 - **Not verified on a device in this session** (no iOS simulator on the build machine): keyboard, safe area, dark mode and the
   star animation need a manual pass.
+
+### D-84 — "On prépare ton parcours": a ~3.6 s building transition between "On part d'où ?" and the suggestions
+
+- **A front-end simulation** in the spirit of the onboarding's profile creation (D-27): nothing is computed or saved, the
+  suggestions are still produced by the suggestions screen as before. `/journey/create/building` sits inside the creation
+  layout, so the draft (`JourneyDraftProvider`) is untouched and the journey stays a draft until "Créer mon parcours".
+- **Reused, not duplicated:** the onboarding's `ProfileOrbit` (ROAM mark, loader ring, the six chips — place, mood, time,
+  budget, interests, activity — which are exactly what a journey is built from). It got two optional props, `ringProgress`
+  (the journey runs the same stages in ~3.5 s instead of ~10 s) and `accessibilityLabel`; their defaults keep the onboarding
+  identical. The journey phases map onto the profile stages (`orbitStageFor`). The screen layout (brand + "Un instant…", orbit
+  that shrinks on short screens, serif title, card) and the `setTimeout` timeline hook follow `ProfileCreationScreen` /
+  `profileCreation.ts`. `ProfileChecklist` could not be reused as is (three fixed onboarding lines), so
+  `JourneyBuildChecklist` copies its card and motion with lines read from the draft ("Départ : République", "Ambiance chill",
+  "Temps disponible : Demi-journée", "Budget moyen") and a last line, "Construction de ton parcours", that waits as an empty
+  ring and gets its check ("Ton parcours est prêt") at the end. A missing value (a direct link) just skips its line. The
+  onboarding's landscape (`ProfileScene`, a temporary mockup crop of mountains) is not reused: it doesn't fit a city outing and
+  the five lines need the room.
+- **Navigation:** "On part d'où ?" now pushes the building screen (its only change); the building screen *replaces* itself
+  with the suggestions, so back from the suggestions returns to "On part d'où ?" without replaying it. It has no button and no
+  header; the native swipe-back stays off (D-53); leaving with Android's back button clears the timers.
+- **Reduced motion:** as in the onboarding — no rise/scale/drift/pulse, same timing, still moves on by itself.
+- **Tests:** existing flow tests go through it with fake timers for that step only; the splash's own 2.6 s timer has to run
+  before the flow in a fully fake-timer test (`journeyBuildingRoutes.test.tsx`).
+- **Not verified on a device in this session** (no iOS simulator on the build machine).

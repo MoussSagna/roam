@@ -752,6 +752,17 @@
       "addressPlaceholder": "12 rue de la Paix, Paris",
       "startPoint": "Point de départ"
     },
+    "building": {
+      "title": "On prépare ton parcours",
+      "subtitle": "On assemble les meilleures expériences pour toi…",
+      "waiting": "Un instant…",
+      "start": "Départ : {place}",
+      "mood": "Ambiance {mood}",
+      "duration": "Temps disponible : {duration}",
+      "building": "Construction de ton parcours",
+      "ready": "Ton parcours est prêt",
+      "accessibility": "ROAM prépare ton parcours"
+    },
     "suggestions": {
       "title": "Voici ce qu'on a imaginé pour toi",
       "subtitleOne": "Un parcours d'une expérience autour de toi",

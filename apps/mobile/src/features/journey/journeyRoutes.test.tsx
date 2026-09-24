@@ -10,6 +10,7 @@ import { repositories } from '@/services';
 import { ThemeProvider } from '@/theme';
 
 import { createJourney, removeJourneyStep, resetJourneyStoreForTests } from './journeyStore';
+import { BUILD_TIMELINE } from './lib/building';
 
 /** Real route tree (same harness as `searchRoutes.test.tsx`), sprint 10 journey flow. */
 function TestLayout() {
@@ -48,8 +49,21 @@ async function goToSuggestions() {
   await pressRadio('Budget moyen');
   await press('Continuer');
   await pressRadio('Ma position actuelle');
-  await press('Continuer');
+  await continueThroughBuilding();
   await screen.findByTestId('journey-suggestions-list');
+}
+
+/** "On prépare ton parcours" (sprint 12, D-84) plays ~3.6 s before the suggestions: "Continuer" on
+ * "On part d'où ?", then fast-forward it (fake timers only for that step). */
+async function continueThroughBuilding() {
+  jest.useFakeTimers();
+  try {
+    await press('Continuer');
+    expect(screen.getByTestId('journey-building')).toBeOnTheScreen();
+    await act(() => jest.advanceTimersByTimeAsync(BUILD_TIMELINE.navigate));
+  } finally {
+    jest.useRealTimers();
+  }
 }
 
 const selectedSuggestions = () =>
@@ -95,7 +109,7 @@ describe('Journey creation flow (sprint 10)', () => {
     await pressRadio('Choisir un lieu');
     await press('République');
     expect(screen.getByTestId('journey-map')).toBeOnTheScreen();
-    await press('Continuer');
+    await continueThroughBuilding();
 
     // Suggestions: ROAM pre-selects some, each card explains why.
     expect(utils.getPathname()).toBe('/journey/create/suggestions');
@@ -285,7 +299,7 @@ describe('Journey creation flow (sprint 10)', () => {
     await pressRadio('Gratuit');
     await press('Continuer');
     await pressRadio('Ma position actuelle');
-    await press('Continuer');
+    await continueThroughBuilding();
 
     expect(await screen.findByText('Impossible de charger les idées.')).toBeOnTheScreen();
     list.mockResolvedValueOnce([]);

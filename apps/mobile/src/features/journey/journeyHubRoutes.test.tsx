@@ -16,6 +16,7 @@ import {
   resetJourneyStoreForTests,
   startJourney,
 } from './journeyStore';
+import { BUILD_TIMELINE } from './lib/building';
 
 /** Real route tree (same harness as `journeyRoutes.test.tsx`): the Parcours tab's hub, sprint 11. */
 function TestLayout() {
@@ -74,6 +75,19 @@ const topButton = (name: string | RegExp) => screen.getAllByRole('button', { nam
 const press = (name: string | RegExp) => fireEvent.press(topButton(name));
 const pressRadio = (name: string) => fireEvent.press(screen.getByRole('radio', { name }));
 
+/** "On prépare ton parcours" (sprint 12, D-84) plays ~3.6 s before the suggestions: "Continuer" on
+ * "On part d'où ?", then fast-forward it (fake timers only for that step). */
+async function continueThroughBuilding() {
+  jest.useFakeTimers();
+  try {
+    await press('Continuer');
+    expect(screen.getByTestId('journey-building')).toBeOnTheScreen();
+    await act(() => jest.advanceTimersByTimeAsync(BUILD_TIMELINE.navigate));
+  } finally {
+    jest.useRealTimers();
+  }
+}
+
 /** The whole creation flow with its defaults, from the intro to "Créer mon parcours". */
 async function createThroughFlow() {
   await press('Commencer');
@@ -84,7 +98,7 @@ async function createThroughFlow() {
   await pressRadio('Budget moyen');
   await press('Continuer');
   await pressRadio('Ma position actuelle');
-  await press('Continuer');
+  await continueThroughBuilding();
   await screen.findByTestId('journey-suggestions-list');
   await press('Construire mon parcours');
   await press('Voir mon parcours');

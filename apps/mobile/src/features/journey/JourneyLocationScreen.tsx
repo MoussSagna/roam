@@ -71,7 +71,8 @@ export function JourneyLocationScreen() {
 
   const goNext = () => {
     if (kind === 'address') draft.setStartLocation(addressLocation());
-    router.push('/journey/create/suggestions');
+    // "On prépare ton parcours" first (sprint 12, D-84); it replaces itself with the suggestions.
+    router.push('/journey/create/building');
   };
 
   const preview =

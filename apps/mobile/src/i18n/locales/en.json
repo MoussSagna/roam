@@ -752,6 +752,17 @@
       "addressPlaceholder": "12 rue de la Paix, Paris",
       "startPoint": "Starting point"
     },
+    "building": {
+      "title": "We're preparing your journey",
+      "subtitle": "Putting together the best experiences for you…",
+      "waiting": "One moment…",
+      "start": "Starting point: {place}",
+      "mood": "{mood} vibe",
+      "duration": "Time available: {duration}",
+      "building": "Building your journey",
+      "ready": "Your journey is ready",
+      "accessibility": "ROAM is preparing your journey"
+    },
     "suggestions": {
       "title": "Here's what we came up with",
       "subtitleOne": "A one-experience journey near you",
