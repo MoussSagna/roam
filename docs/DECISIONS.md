@@ -2781,3 +2781,36 @@ Only what was asked; no new library, mock data, no Maps API.
 - **Only the current journey:** no "Mes parcours précédents", no "Créer un nouveau parcours" in this state. D-81's
   "un parcours est déjà en cours" dialog had no entry point left and was removed with its keys. Past journeys remain in the
   repository and still open on `/journey/[id]`; they show again on the hub once no journey is in progress.
+
+## Sprint 12 — feedback after a journey
+
+### D-83 — Journey feedback: 1–5 stars + optional comment on `/journey/[id]/feedback`, one per journey
+
+- **What the docs said vs. the brief:** `02_MVP_SCOPE.md` §9 describes per-*experience* feedback with four options (love /
+  like / meh / not for me) and reasons, with a matching unused `Feedback` type and `feedback.*` keys. The sprint 12 brief asks
+  for a *journey* rating of 1–5 stars plus a comment. The brief wins; the old type and keys are left untouched (not deleted,
+  still documented) and the new model sits next to them: `JourneyFeedback { id, journeyId, userId, rating: 1–5,
+  comment: string | null, createdAt }`.
+- **Trigger, no parallel end-of-journey logic:** `completeCurrentStep()` now returns the saved journey; when it comes back
+  `completed`, `ActiveJourneyScreen` pushes `/journey/[id]/feedback`. Opening a journey never does. The feedback screen itself
+  refuses anything but a completed journey (message + back), so a link cannot bypass it either.
+- **Data:** `JourneyFeedbackRepository` (`getForJourney` / `submit` / `clear`), mock persisted in `roam.journey.feedback`.
+  `submit` is idempotent per journey (returns the saved one), and the screen guards the button with a ref + `loading`, so a
+  double tap or a retry never duplicates. `submitJourneyFeedback` (features/journey) checks the journey is `completed` (current
+  or in the history), takes the user from `UserRepository`, trims the comment (blank → `null`, max 300 — the reference's
+  counter). The journey's status is never changed by feedback.
+- **Screen, after the "14 — Feedback" reference, adapted:** reference 1's photo ("Alors, comment c'était ?") and recap
+  (check badge, title, step tiles) and reference 2's stars + "Un petit mot ? (optionnel)" are one screen; "Passer" sits on the
+  photo like reference 2's. Stars use `colors.warning`, the rating color of every star in the app. The thank-you is in place
+  (reference 3 only shows a closing line), then "Voir mon parcours" (back to `/journey/[id]`) / "Retour à mes parcours"
+  (`/journey`). Not built (not in the brief): "Qu'est-ce que tu as le plus aimé ?" chips, per-step ratings, the 0–10
+  recommendation question, "Plus tard" (skipping is final: no way to give feedback later yet).
+- **"Passer":** straight on to the completed journey when nothing was entered; after a rating or a comment,
+  `ConfirmationModal` first ("Passer sans envoyer ?"). Nothing is saved either way.
+- **Reused:** `StickyActionFooter` (inside the `KeyboardAvoidingView`, so it rides above the keyboard), `Button`,
+  `ConfirmationModal`, `FadeInUp`, `SuccessCheckmark` (auth), `showToast` (send error), `useReduceMotion`, the hub's
+  photo-hero + sheet layout (D-82). New: `StarRating` (Moti spring per filled star, fade only under reduced motion) and
+  `FeedbackCommentField` — not `TextField`, which is the auth screens' single-line field with a required icon and no focus
+  state; giving it one would change those screens.
+- **Not verified on a device in this session** (no iOS simulator on the build machine): keyboard, safe area, dark mode and the
+  star animation need a manual pass.

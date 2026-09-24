@@ -114,6 +114,15 @@ export function ActiveJourneyScreen({ journeyId }: ActiveJourneyScreenProps) {
 
   const currentExperience = started && !completed ? experiences[journey.currentStep] : undefined;
 
+  // The journey is over only once its status is `completed` (never just by opening it): that is when
+  // the feedback is asked (sprint 12).
+  const finishStep = async () => {
+    const saved = await completeCurrentStep();
+    if (saved?.status === 'completed') {
+      router.push({ pathname: '/journey/[id]/feedback', params: { id: saved.id } });
+    }
+  };
+
   // A completed journey opened from the history while another one is under way offers no "new
   // journey": there can only be one active journey at a time.
   const cta = completed
@@ -126,7 +135,7 @@ export function ActiveJourneyScreen({ journeyId }: ActiveJourneyScreenProps) {
         ? { label: t('journey.active.start'), onPress: () => void startJourney() }
         : {
             label: t(isLastStep ? 'journey.active.finish' : 'journey.active.continue'),
-            onPress: () => void completeCurrentStep(),
+            onPress: () => void finishStep(),
           };
 
   return (

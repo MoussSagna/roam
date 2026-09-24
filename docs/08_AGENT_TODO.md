@@ -48,7 +48,9 @@ Status for **mobile** (2026-09-22). Web and API foundations are not started.
       (`DECISIONS.md` D-70). [x] `/map` (Discover's "Voir la carte"); [x] Search's full-screen map
       (`/search/map`, sprint 8, D-71/D-72 — `ExperienceMapView` deleted); [x] Experience detail's map block + full-screen `/experience-map/[id]` (D-73; round photo markers, selection + camera focus on several experiences, sprint 9, D-75);
       [ ] onboarding location preview
-- [ ] Feedback
+- [~] Feedback — after a completed journey: `/journey/[id]/feedback` (1–5 stars + optional comment, skip,
+      one per journey, mock repository) — sprint 12, `DECISIONS.md` D-83; the per-experience feedback of
+      `02_MVP_SCOPE.md` §9 (love/like/meh/not for me + reasons) is not built
 
 Use mock data. The onboarding is complete on the front end (no backend, nothing saved: D-28).
 

@@ -263,8 +263,12 @@ describe('Journey creation flow (sprint 10)', () => {
     }
     await press('Terminer mon parcours');
 
-    expect(await screen.findAllByText('Parcours terminé')).not.toHaveLength(0);
+    // Sprint 12: finishing opens the feedback; skipping it lands on the completed journey.
+    await waitFor(() => expect(utils.getPathname()).toMatch(/\/feedback$/));
     expect((await repositories.journeys.getCurrent())?.status).toBe('completed');
+    await press('Passer');
+    await waitFor(() => expect(utils.getPathname()).not.toMatch(/\/feedback$/));
+    expect(await screen.findAllByText('Parcours terminé')).not.toHaveLength(0);
     expect(screen.getByRole('button', { name: 'Créer un nouveau parcours' })).toBeOnTheScreen();
   });
 

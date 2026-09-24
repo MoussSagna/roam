@@ -173,16 +173,17 @@ export async function startJourney(): Promise<void> {
   await persist({ ...journey, startedAt: new Date().toISOString(), currentStep: 0 });
 }
 
-/** The current step is done: move on, or complete the journey after the last one. */
-export async function completeCurrentStep(): Promise<void> {
+/** The current step is done: move on, or complete the journey after the last one. Returns the saved
+ * journey (`status: 'completed'` once it is over — the moment the feedback is asked, sprint 12), or
+ * `null` when there was nothing to progress. */
+export async function completeCurrentStep(): Promise<Journey | null> {
   const journey = await currentActive();
-  if (!journey || !journey.startedAt) return;
+  if (!journey || !journey.startedAt) return null;
   const next = journey.currentStep + 1;
   if (next >= journey.steps.length) {
-    await persist({ ...journey, status: 'completed', completedAt: new Date().toISOString() });
-  } else {
-    await persist({ ...journey, currentStep: next });
+    return persist({ ...journey, status: 'completed', completedAt: new Date().toISOString() });
   }
+  return persist({ ...journey, currentStep: next });
 }
 
 /** Tests only: forget the cached snapshot (the repository is cleared separately). */

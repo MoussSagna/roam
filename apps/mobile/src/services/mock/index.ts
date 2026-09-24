@@ -2,6 +2,7 @@ import type { Repositories } from '../repositories/types';
 
 import { createMockAuthRepository } from './auth';
 import { createMockJourneyRepository } from './journey';
+import { createMockJourneyFeedbackRepository } from './journeyFeedback';
 import { categories, collections, experiences, places } from './data';
 import { createMockSearchRepository } from './search';
 import { createMockUserRepository } from './user';
@@ -29,5 +30,6 @@ export function createMockRepositories(): Repositories {
     users: createMockUserRepository(),
     search: createMockSearchRepository(experiences, categories),
     journeys: createMockJourneyRepository(),
+    journeyFeedback: createMockJourneyFeedbackRepository(),
   };
 }

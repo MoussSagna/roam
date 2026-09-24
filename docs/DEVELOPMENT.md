@@ -376,17 +376,20 @@ other row is still a `ProfilePlaceholder` stub (`docs/DECISIONS.md` D-50) until 
 | Builder | `/journey/create/builder` | `JourneyBuilderScreen` | Timeline (`JourneyStepCard` + `TravelConnector`), move up/down, remove |
 | Summary | `/journey/create/summary` | `JourneySummaryScreen` | Totals, map, timeline; "Créer mon parcours" = DRAFT → ACTIVE, then `replace` → `/journey/[id]` |
 | Active | `/journey/[id]` | `ActiveJourneyScreen` | Progress, map, timeline (done/current/upcoming), Commencer → Continuer → Terminer; the only place a journey is shown — the current one or a completed one from the history (sprint 11) |
+| Feedback | `/journey/[id]/feedback` | `JourneyFeedbackScreen` | Sprint 12, D-83. Opened by "Terminer mon parcours" once the journey is `completed` (never by opening it). Edge-to-edge photo + "Passer", recap, `StarRating` (1–5, required), `FeedbackCommentField` (optional, 300 max), sticky "Envoyer mon avis"; thanks shown in place → "Voir mon parcours" / "Retour à mes parcours"; feedback already given → its recap, no form |
 | Hub | `/journey` (Parcours tab) | `JourneyHubScreen` | Sprint 11, D-81. Picks one of three states: journey in progress (only `CurrentJourneyCard`: edge-to-edge hero from the top of the screen, content in `px-6` below, no border; "Continuer mon parcours" opens `/journey/[id]`; no history, no create — D-82); none in progress but some completed ("Mes parcours": create, then `JourneyHistoryCard`s); nothing (`JourneyHubEmptyState`, "Créer mon parcours") |
 
 - **Layers:** `Screen → journeyStore (useJourney + operations) → JourneyRepository → mock` (persisted, `roam.journey.current`;
   completed journeys also in `roam.journey.history`, `listCompleted()`, sprint 11). "What's left" (time, distance, steps) is
-  `lib/progress.ts`.
+  `lib/progress.ts`. Feedback: `journeyFeedback.ts` (`submitJourneyFeedback`, `useJourneyFeedback`) →
+  `JourneyFeedbackRepository` → mock (`roam.journey.feedback`, one per journey).
   Planning (travel, arrivals, totals) and suggestions are pure functions in `features/journey/lib/`.
 - **Draft vs active:** the draft lives in `JourneyDraftProvider`, mounted by `app/journey/create/_layout.tsx`; leaving the
   flow discards it. Nothing is saved before "Créer mon parcours". One active journey at a time (`ActiveJourneyExistsError`).
 - **Leaving:** the flow's × (and Intro's "Annuler") leaves at once without input, otherwise "Quitter la création ?".
 - **Tests:** `journeyStore.test.ts`, `lib/*.test.ts`, `journeyRoutes.test.tsx` (full flow on the real route tree),
-  `journeyHubRoutes.test.tsx` (the hub's three states, sprint 11).
+  `journeyHubRoutes.test.tsx` (the hub's three states, sprint 11), `journeyFeedback.test.ts` +
+  `journeyFeedbackRoutes.test.tsx` (sprint 12).
 
 ## Authentication (current state)
 
