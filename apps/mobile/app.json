@@ -4,12 +4,21 @@
     "slug": "roam",
     "scheme": "roam",
     "version": "0.1.0",
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "userInterfaceStyle": "automatic",
     "platforms": ["ios", "android"],
-    "ios": {},
+    "ios": {
+      "bundleIdentifier": "com.mousgamee.roam",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
+    },
     "android": {
+      "package": "com.mousgamee.roam",
       "adaptiveIcon": {
         "backgroundColor": "#3F624E",
         "foregroundImage": "./assets/images/android-icon-foreground.png",
@@ -34,6 +43,16 @@
     ],
     "experiments": {
       "typedRoutes": true
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "7c48b0f2-87fc-4a03-ae60-4d69d8f5a75a"
+      }
+    },
+    "owner": "mousgamee",
+    "updates": {
+      "url": "https://u.expo.dev/7c48b0f2-87fc-4a03-ae60-4d69d8f5a75a"
     }
   }
 }

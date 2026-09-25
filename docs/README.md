@@ -19,6 +19,7 @@ Implementation documents (kept in sync with the code):
 - `DEVELOPMENT.md` — install, run, commands, structure, conventions
 - `DECISIONS.md` — technical decisions taken where the docs were silent
 - `SCREEN_INTEGRATION_WORKFLOW.md` — the step-by-step procedure for integrating one screen at a time
+- `deployment.md` — EAS builds for testers (preview), EAS Update, what production still needs
 
 Translation resources (used by the mobile app):
 
