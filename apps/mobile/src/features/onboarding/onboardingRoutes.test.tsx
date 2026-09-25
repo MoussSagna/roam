@@ -77,8 +77,19 @@ async function scrollPagerTo(index: number) {
   }
 }
 
-/** One answer per question slide, in order (each question needs one to move on, D-88). */
-const ANSWERS = ['Curieux', '1 à 2 h', 'Gratuit', 'Autour de moi'];
+/**
+ * How to answer each question slide, in order (each needs an answer to move on, D-88). The location is
+ * a spot picked by hand (D-89), so no device position is needed.
+ */
+const ANSWERS: readonly (() => Promise<void>)[] = [
+  () => fireEvent.press(screen.getByRole('radio', { name: 'Curieux' })),
+  () => fireEvent.press(screen.getByRole('radio', { name: '1 à 2 h' })),
+  () => fireEvent.press(screen.getByRole('radio', { name: 'Gratuit' })),
+  async () => {
+    await fireEvent.press(screen.getByRole('radio', { name: 'Choisir un lieu' }));
+    await fireEvent.press(screen.getByRole('button', { name: 'Bastille' }));
+  },
+];
 
 type JsonNode = { type: string; props: Record<string, unknown>; children: JsonNode[] | null };
 
@@ -110,7 +121,7 @@ async function openPager() {
 async function openSlide(step: (typeof PAGER_STEPS)[number]) {
   const utils = await openPager();
   for (let index = 1; index <= PAGER_STEPS.indexOf(step); index++) {
-    await fireEvent.press(screen.getByRole('radio', { name: ANSWERS[index - 1] }));
+    await ANSWERS[index - 1]();
     await fireEvent.press(screen.getByRole('button', { name: 'Suivant' }));
     await scrollPagerTo(index);
   }
@@ -189,7 +200,9 @@ describe('onboarding routes', () => {
 
     expect(utils.getPathname()).toBe('/onboarding/mood');
     expect(screen.getByRole('header')).toHaveTextContent('Où souhaites-tu sortir ?');
-    expect(screen.getAllByRole('radio')).toHaveLength(3);
+    // The journey's two choices over the map (D-89).
+    expect(screen.getAllByRole('radio')).toHaveLength(2);
+    expect(screen.getByTestId('onboarding-location-map')).toBeOnTheScreen();
   });
 
   it('location → "Suivant" shows the interests slide', async () => {

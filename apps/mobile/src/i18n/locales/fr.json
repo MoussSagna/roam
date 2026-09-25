@@ -124,10 +124,14 @@
       "title": "Où souhaites-tu sortir ?",
       "subtitle": "On te propose des sorties près de toi.",
       "current": "Ma position actuelle",
-      "city": "Choisir une ville",
-      "nearby": "Autour de moi",
-      "previewCity": "Paris",
-      "previewCountry": "France"
+      "place": "Choisir un lieu",
+      "currentLabel": "Ma position",
+      "explain": "Utilise ta position actuelle pour trouver des sorties près de toi.",
+      "locating": "Localisation en cours…",
+      "denied": "Pas de souci, tu peux choisir ton emplacement manuellement.",
+      "blocked": "La localisation est désactivée. Tu peux l’autoriser dans les réglages ou choisir un emplacement manuellement.",
+      "openSettings": "Ouvrir les réglages",
+      "unavailable": "Ta position est indisponible pour le moment. Réessaie ou choisis un emplacement."
     },
     "distance": {
       "title": "Jusqu'où veux-tu aller ?",

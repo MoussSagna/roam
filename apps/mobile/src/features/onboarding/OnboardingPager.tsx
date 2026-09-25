@@ -41,22 +41,23 @@ import {
   isStepComplete,
   lastReachableIndex,
   type OnboardingAnswers,
+  type OnboardingLocation,
 } from './onboardingAnswers';
 import { PAGER_STEPS, useOnboardingNavigation, type PagerStep } from './onboardingFlow';
 import type { SingleChoiceSlideProps } from './slideProps';
 import { TimeScreen } from './TimeScreen';
 
-type SingleChoiceStep = Exclude<PagerStep, 'interests'>;
+type SingleChoiceStep = Exclude<PagerStep, 'interests' | 'location'>;
 
-const SINGLE_CHOICE_STEPS: readonly SingleChoiceStep[] = ['mood', 'time', 'budget', 'location'];
+const SINGLE_CHOICE_STEPS: readonly SingleChoiceStep[] = ['mood', 'time', 'budget'];
 
 /** The existing screens, one per slide. `memo`: a slide re-renders only when its own answer changes. */
 const SINGLE_CHOICE_SLIDES: Record<SingleChoiceStep, ComponentType<SingleChoiceSlideProps>> = {
   mood: memo(MoodScreen),
   time: memo(TimeScreen),
   budget: memo(BudgetScreen),
-  location: memo(LocationScreen),
 };
+const LocationSlide = memo(LocationScreen);
 const InterestsSlide = memo(InterestsScreen);
 
 /** Entering/leaving slide: subtle fade, small horizontal lag and scale, driven by the scroll position. */
@@ -180,6 +181,10 @@ export function OnboardingPager() {
       ) as Record<SingleChoiceStep, (id: string) => void>,
     [],
   );
+  const onSelectLocation = useCallback(
+    (location: OnboardingLocation) => setAnswers((current) => ({ ...current, location })),
+    [],
+  );
   const onToggleInterest = useCallback(
     (id: string) =>
       setAnswers((current) => {
@@ -219,6 +224,8 @@ export function OnboardingPager() {
       let content: ReactNode;
       if (item === 'interests') {
         content = <InterestsSlide selected={answers.interests} onToggle={onToggleInterest} />;
+      } else if (item === 'location') {
+        content = <LocationSlide selected={answers.location} onSelect={onSelectLocation} />;
       } else {
         const Screen = SINGLE_CHOICE_SLIDES[item];
         content = <Screen selected={answers[item]} onSelect={onSelect[item]} />;
@@ -236,7 +243,17 @@ export function OnboardingPager() {
         </Slide>
       );
     },
-    [answers, onSelect, onToggleInterest, width, pageHeight, scrollX, reduceMotion, currentIndex],
+    [
+      answers,
+      onSelect,
+      onSelectLocation,
+      onToggleInterest,
+      width,
+      pageHeight,
+      scrollX,
+      reduceMotion,
+      currentIndex,
+    ],
   );
 
   return (

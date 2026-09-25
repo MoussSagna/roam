@@ -124,10 +124,14 @@
       "title": "Where do you want to go out?",
       "subtitle": "We suggest outings near you.",
       "current": "My current location",
-      "city": "Choose a city",
-      "nearby": "Around me",
-      "previewCity": "Paris",
-      "previewCountry": "France"
+      "place": "Choose a place",
+      "currentLabel": "My location",
+      "explain": "Use your current location to find outings near you.",
+      "locating": "Finding your location…",
+      "denied": "No problem, you can choose your spot manually.",
+      "blocked": "Location is turned off. You can allow it in Settings or choose a spot manually.",
+      "openSettings": "Open Settings",
+      "unavailable": "Your location isn’t available right now. Try again or choose a spot."
     },
     "distance": {
       "title": "How far do you want to go?",

@@ -1,4 +1,17 @@
+import type { Coordinates } from '@/types';
+
 import { PAGER_STEPS, type PagerStep } from './onboardingFlow';
+
+/**
+ * Where the user wants to go out: the one selected location of the onboarding (D-89). The last valid
+ * choice wins, whether it came from the device position (`current`) or a spot picked by hand (`manual`).
+ * Held in memory for the prototype only, like the other answers — never saved, no history.
+ */
+export type OnboardingLocation = {
+  source: 'current' | 'manual';
+  label: string;
+  coordinates: Coordinates;
+};
 
 /**
  * The answers to the onboarding questions, held by the pager for the prototype (nothing is saved, D-28).
@@ -8,7 +21,7 @@ export type OnboardingAnswers = {
   mood: string | null;
   time: string | null;
   budget: string | null;
-  location: string | null;
+  location: OnboardingLocation | null;
   interests: ReadonlySet<string>;
 };
 

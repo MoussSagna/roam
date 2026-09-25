@@ -73,7 +73,11 @@ async function reachInterests() {
   await answerAndContinue('Curieux', 1);
   await answerAndContinue('1 à 2 h', 2);
   await answerAndContinue('Gratuit', 3);
-  await answerAndContinue('Autour de moi', 4);
+  // The location: a spot picked by hand (no device position needed).
+  await fireEvent.press(screen.getByRole('radio', { name: 'Choisir un lieu' }));
+  await fireEvent.press(screen.getByRole('button', { name: 'Bastille' }));
+  await fireEvent.press(nextButton());
+  await scrollToSlide(4);
 }
 
 describe('OnboardingPager: fixed header and footer around the question slides', () => {

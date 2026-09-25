@@ -156,7 +156,7 @@ Implemented in `apps/mobile/src/theme/` and exposed through `tailwind.config.ts`
   on the onboarding mockups (`DECISIONS.md` D-19).
 - **Icons:** Lucide (`lucide-react-native`), one import per icon.
 - **Components built so far:** `Text`, `Button` (primary, secondary; 64 px high, 20 px radius, optional
-  trailing icon), `Chip`, `Screen`, `FadeInUp`, `Logo`; onboarding: `WelcomeCollage`, `ProgressBars`, `ChoiceRow`, `MoodTile`, `InterestTile`, `MapPreview`, `ProfileOrbit`, `ProfileChecklist`, `ProfileScene`. None of the "Core" components of this document beyond `Button` and
+  trailing icon), `Chip`, `Screen`, `FadeInUp`, `Logo`; onboarding: `WelcomeCollage`, `ProgressBars`, `ChoiceRow`, `MoodTile`, `InterestTile`, `ProfileOrbit`, `ProfileChecklist`, `ProfileScene`. None of the "Core" components of this document beyond `Button` and
   `Chip` exist yet (selectors, cards, navigation, sheet, map marker…). (Later sprints added `IconButton`,
   `SearchBar`, `TextField` and `Slider` — see `DEVELOPMENT.md`'s per-feature tables for where each is used.)
 - **Motion:** Moti. `FadeInUp` = fade + 12 px translateY over 500 ms. Selection scale (~1.03) and staggered

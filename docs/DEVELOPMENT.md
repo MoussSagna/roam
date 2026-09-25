@@ -93,7 +93,7 @@ apps/mobile/
     │   ├── journey/         # Journey ("parcours", sprint 10, D-80): creation flow /journey/create/*, active /journey/[id], journeyStore, lib (plan, suggest)
     │   ├── map/             # RoamMap (react-native-maps) + ExperienceMarker/ExperienceMapCard/markers lib; Map screen (route /map) — sprint 7, D-70; Search's `SearchMapScreen` lives in `features/search/` — sprints 8, D-71/D-72
     │   └── recommendations, outing, feedback
-    ├── hooks/               # Cross-feature hooks (useBootstrap, useReduceMotion, useCtaVisibility)
+    ├── hooks/               # Cross-feature hooks (useBootstrap, useReduceMotion, useCtaVisibility, useCurrentLocation)
     ├── i18n/                # i18next setup + locales/fr.json, locales/en.json
     ├── lib/                 # Small framework-agnostic helpers (storage, cx, toast)
     ├── services/            # Data access: repository interfaces + mock implementation
@@ -285,7 +285,7 @@ time**.
 | Map — `/map` (Discover "Voir la carte")       | `features/map/MapScreen.tsx` → `RoamMap`                             | **Real map (sprint 7)**  |
 | Search — "Carte" (`/search/map`)              | `features/search/SearchMapScreen.tsx` → full-screen `RoamMap`         | **Real map (sprint 8)**  |
 | Experience detail — map block + `/experience-map/[id]` | `MapPreviewRow` → static `RoamMap`; full screen: `ExperienceMapScreen` | **Real map (sprint 8)**  |
-| Onboarding location                           | `MapPreview` (illustrated, decorative)                               | **Next** (may stay static) |
+| Onboarding location (`/onboarding/mood`, slide 4) | `LocationScreen` → interactive `RoamMap`, glides to the selected location | **Real map (D-89)**      |
 | Journey hub mini-map + `/journey/[id]/map`    | `CurrentJourneyCard` (static `RoamMap`) → `JourneyMapScreen`         | **Real map (sprint 12)** |
 
 ```text

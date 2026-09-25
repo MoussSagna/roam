@@ -1,10 +1,16 @@
 import { EMPTY_ANSWERS, isStepComplete, lastReachableIndex } from './onboardingAnswers';
 
+const BASTILLE = {
+  source: 'manual',
+  label: 'Bastille',
+  coordinates: { latitude: 48.8532, longitude: 2.3691 },
+} as const;
+
 describe('onboarding answers', () => {
   it('needs a choice on each single-choice question', () => {
     expect(isStepComplete('mood', EMPTY_ANSWERS)).toBe(false);
     expect(isStepComplete('mood', { ...EMPTY_ANSWERS, mood: 'curious' })).toBe(true);
-    expect(isStepComplete('location', { ...EMPTY_ANSWERS, location: 'around' })).toBe(true);
+    expect(isStepComplete('location', { ...EMPTY_ANSWERS, location: BASTILLE })).toBe(true);
   });
 
   it('needs at least one interest', () => {
@@ -24,7 +30,7 @@ describe('onboarding answers', () => {
         mood: 'curious',
         time: 'over4h',
         budget: 'free',
-        location: 'around',
+        location: BASTILLE,
         interests: new Set(['nature']),
       }),
     ).toBe(4);

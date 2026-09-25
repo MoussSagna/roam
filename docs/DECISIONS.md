@@ -2950,3 +2950,31 @@ D-25 and D-25's "Suivant is never blocked", on the product owner's decision.
   cannot be opened before the earlier ones are answered). The pager's `initialStep` prop is gone.
 - **Keyboard:** no slide has a text field, so there is nothing to handle.
 - **Not verified on a device in this session** (no iOS simulator on the build machine).
+
+### D-89 — Onboarding "Où souhaites-tu sortir ?": the journey's choices over a real map, device position on request
+
+The location slide now works like the journey's "On part d'où ?" (D-80, D-86), on the product owner's choice: two choices,
+**"Ma position actuelle"** and **"Choisir un lieu"** (the journey's `START_SPOTS` chips), over an interactive `RoamMap` that
+shows the selected location and glides to it. "Choisir une ville" and "Autour de moi" are gone (redundant with the real
+position; the MVP covers Paris). No second map: `RoamMap` is reused as is, with its existing camera focus (`focusInsets`) —
+the marker's id follows its coordinates, so a new location is a new selection the map glides to. `ChoiceRow` and `Chip` are
+reused; the onboarding's illustrated `MapPreview` had no other user and was deleted (the `mapColors` token is left in the
+theme, unused).
+
+- **Real position, `expo-location`** (added: the app had no geolocation, no permission helper). `hooks/useCurrentLocation.ts`
+  is generic (the journey can adopt it later; it still uses its approximate position, unchanged): permission states
+  `unknown` / `granted` / `denied` (can ask again) / `blocked` (only the settings can change it), read on mount **without
+  prompting**. The system prompt is shown **only when "Ma position actuelle" is pressed**, never on arrival, and never
+  again once granted (the position is simply read again) or blocked (no prompt loop). Balanced accuracy, one read, a 10 s
+  timeout; refusal, timeout, native errors and invalid coordinates are results, never throws.
+- **Never a dead end.** Before asking, a line explains why ("Utilise ta position actuelle pour trouver des sorties près de
+  toi."). Refused: "Pas de souci, tu peux choisir ton emplacement manuellement." and the spots open. Blocked: the same plus
+  "Ouvrir les réglages" (`Linking.openSettings`). Unavailable: a message, and the button works again. "Passer" is untouched.
+- **One source of truth:** `OnboardingAnswers.location` is now an `OnboardingLocation` (`source: 'current' | 'manual'`,
+  label, coordinates), set only once coordinates exist; the last choice wins (a spot after the position replaces it). Same
+  validation as before (`isStepComplete`: a location is selected). In memory for the prototype, never saved, no history.
+- **Native config:** the `expo-location` plugin with a when-in-use description only; iOS and Android background location
+  and the Android foreground service explicitly off. Android gets `ACCESS_COARSE_LOCATION` / `ACCESS_FINE_LOCATION`.
+  A native build is needed for the new module (Expo Go already includes it).
+- **Not verified on a device in this session** (no iOS simulator on the build machine); in particular the map's pan inside
+  the horizontal pager, the permission prompts and "Ouvrir les réglages" need a check on a phone.
