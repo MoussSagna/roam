@@ -6,10 +6,11 @@ Documentation of the **API / backend**. Start from
 ## Status
 
 **Backend foundation only (API-02).** `apps/api` is a NestJS 12 + Prisma 7 application with its technical base —
-configuration, database access layer, validation, errors, logging, CORS, health check, OpenAPI, tests — and **no domain
-yet** ([`BACKEND_FOUNDATION.md`](BACKEND_FOUNDATION.md),
-[`API_IMPLEMENTATION_ROADMAP.md`](API_IMPLEMENTATION_ROADMAP.md)). No PostgreSQL is available locally: the database
-layer is ready but has never been connected to a real database.
+configuration, database access layer, validation, errors, logging, CORS, health check, OpenAPI, tests — and its
+**database schema** (API-03, [`DATABASE_SCHEMA.md`](DATABASE_SCHEMA.md)), but **no domain endpoint yet**
+([`BACKEND_FOUNDATION.md`](BACKEND_FOUNDATION.md),
+[`API_IMPLEMENTATION_ROADMAP.md`](API_IMPLEMENTATION_ROADMAP.md)). The schema is migrated on a local PostgreSQL 18.6
+(`roam`) and tested on a dedicated test database (`roam_test`, `pnpm test:db`).
 
 The Data Foundation documents below are the target design of the data layer (how external data — Google Places,
 Ticketmaster, French open data — becomes ROAM data served by the API), implemented one data sprint at a time
@@ -38,7 +39,8 @@ deployment.
 | Document                                                                               | Content                                                                                                                                         |
 | -------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
 | [`BACKEND_FOUNDATION.md`](BACKEND_FOUNDATION.md)                                       | Architecture, bootstrap, configuration and environment, Prisma, validation, errors, logging, CORS, health, routing, OpenAPI, tests, local setup |
-| [`API_IMPLEMENTATION_ROADMAP.md`](API_IMPLEMENTATION_ROADMAP.md)                       | API steps (API-01, API-02 done, next), deferred items, decisions                                                                                |
+| [`DATABASE_SCHEMA.md`](DATABASE_SCHEMA.md)                                             | Prisma data model: models, relations, enums, constraints, indexes, provider data vs. enrichment, deferred items, consistency audit              |
+| [`API_IMPLEMENTATION_ROADMAP.md`](API_IMPLEMENTATION_ROADMAP.md)                       | API steps (API-01, API-02 and API-03 done, POSTGRESQL DEFERRED, next), deferred items, decisions                                                |
 | [`DATA_FOUNDATION.md`](DATA_FOUNDATION.md)                                             | Objective, pipeline (sources → adapters → normalization → enrichment → database/cache → engine → app), initial sources, MVP scope (Paris)       |
 | [`PROVIDER_ARCHITECTURE.md`](PROVIDER_ARCHITECTURE.md)                                 | Layers from the mobile app to provider adapters, adapter responsibilities, failures, secrets                                                    |
 | [`NORMALIZATION_AND_ENRICHMENT.md`](NORMALIZATION_AND_ENRICHMENT.md)                   | Pipeline, pricing normalization, enrichment enums, confidence, rule-based first version                                                         |

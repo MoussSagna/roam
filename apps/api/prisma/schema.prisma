@@ -1,14 +1,542 @@
-// ROAM database schema (PostgreSQL). API-02 sets up the foundation only: the datasource and the
-// generated client. Domain models (Experience, Place, Event, Journey…) are added by their own tasks,
-// following appdocs/domain/ — do not add them here ahead of time.
-// The connection URL lives in prisma.config.ts (Prisma 7), read from DATABASE_URL.
+// ROAM database schema (PostgreSQL) — API-03, data foundation.
+//
+// Every model and field below comes from the documentation; the reference is in its comment:
+//   appdocs/domain/*.md            (EXPERIENCE, PLACE, EVENT, JOURNEY, FEEDBACK, DOMAIN_OVERVIEW)
+//   appdocs/product/MVP_SCOPE.md   (user preferences)
+//   appdocs/architecture/*.md      (data domains, DATA_RULES)
+//   apps/api/apidocs/*.md          (provider architecture, normalization, data source matrix, sync)
+// What the documentation does not specify well enough is not modeled: see apps/api/apidocs/DATABASE_SCHEMA.md
+// ("Deferred"). CHECK constraints live in a hand-written migration (Prisma cannot declare them); rules that
+// need the domain are enforced by the services (same document, "Constraints").
+//
+// Conventions: UUID v7 ids, `createdAt`/`updatedAt` on every mutable row (timestamptz), tables in
+// snake_case (@@map), columns in camelCase, enum values in UPPER_SNAKE_CASE. The connection URL lives in
+// prisma.config.ts (Prisma 7), read from DATABASE_URL.
 
 generator client {
-  provider     = "prisma-client"
-  output       = "../src/generated/prisma"
-  moduleFormat = "esm"
+  provider        = "prisma-client"
+  output          = "../src/generated/prisma"
+  moduleFormat    = "esm"
+  /// Partial unique index "one ACTIVE journey per user" (JOURNEY.md), declared here so that Prisma knows it
+  /// and never reports it as drift. Preview in Prisma 7.10; see DATABASE_SCHEMA.md → "Migrations".
+  previewFeatures = ["partialIndexes"]
 }
 
 datasource db {
   provider = "postgresql"
+}
+
+// ─── Shared vocabularies ────────────────────────────────────────────────────────────────────────────
+
+/// Normalized price level (EXPERIENCE.md "Suggested enums", NORMALIZATION_AND_ENRICHMENT.md).
+enum PriceLevel {
+  FREE
+  LOW
+  MEDIUM
+  HIGH
+  VERY_HIGH
+  UNKNOWN
+}
+
+/// ROAM enrichment: energy of an experience (EXPERIENCE.md).
+enum EnergyLevel {
+  LOW
+  MEDIUM
+  HIGH
+  UNKNOWN
+}
+
+/// ROAM enrichment: who an experience suits (EXPERIENCE.md "Audience").
+enum Audience {
+  SOLO
+  COUPLE
+  FRIENDS
+  FAMILY
+  GROUP
+  UNKNOWN
+}
+
+/// ROAM enrichment: best moments (EXPERIENCE.md "Moment").
+enum Moment {
+  MORNING
+  AFTERNOON
+  EVENING
+  NIGHT
+  ANYTIME
+}
+
+/// Budget brackets of the MVP (MVP_SCOPE.md §3; mobile `BudgetRange`).
+enum BudgetRange {
+  FREE
+  UNDER_10
+  FROM_10_TO_25
+  FROM_25_TO_50
+  OVER_50
+}
+
+/// Usual company (MVP_SCOPE.md §2; mobile `Company`).
+enum Company {
+  ALONE
+  COUPLE
+  FRIENDS
+  FAMILY
+}
+
+// ─── Users ──────────────────────────────────────────────────────────────────────────────────────────
+
+/// A ROAM user (mobile `User`). Credentials and sessions belong to the authentication task (deferred).
+model User {
+  id          String   @id @default(uuid(7)) @db.Uuid
+  email       String   @unique
+  displayName String
+  avatarUrl   String?
+  age         Int?
+  city        String?
+  bio         String?
+  createdAt   DateTime @default(now()) @db.Timestamptz(3)
+  updatedAt   DateTime @updatedAt @db.Timestamptz(3)
+
+  preference UserPreference?
+  journeys   Journey[]
+  favorites  Favorite[]
+  feedbacks  JourneyFeedback[]
+
+  @@map("users")
+}
+
+/// The user's lasting preferences, as the MVP scope defines the onboarding (MVP_SCOPE.md §2,
+/// ARCHITECTURE.md "Data domains", mobile `UserPreference`). Every field is optional: a profile fills
+/// in over time. The per-outing context (mood, time, budget, company, location) is not stored here.
+model UserPreference {
+  userId        String       @id @db.Uuid
+  interests     String[]
+  activities    String[]
+  usualBudget   BudgetRange?
+  maxDistanceKm Int?
+  usualCompany  Company?
+  createdAt     DateTime     @default(now()) @db.Timestamptz(3)
+  updatedAt     DateTime     @updatedAt @db.Timestamptz(3)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("user_preferences")
+}
+
+// ─── Catalog: categories, places, experiences, events ───────────────────────────────────────────────
+
+/// ROAM category (mobile `Category`: a stable slug; labels are resolved by the apps).
+model Category {
+  id        String   @id @default(uuid(7)) @db.Uuid
+  slug      String   @unique
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+
+  places      PlaceCategory[]
+  experiences ExperienceCategory[]
+  events      Event[]
+
+  @@map("categories")
+}
+
+/// A persistent physical place (PLACE.md). Provider facts only; ROAM inferences are in `RoamEnrichment`,
+/// provenance in `ExternalSource`.
+model Place {
+  id           String     @id @default(uuid(7)) @db.Uuid
+  name         String
+  description  String?
+  address      String?
+  city         String?
+  latitude     Float
+  longitude    Float
+  /// Ordered photo references (URLs or provider photo references, per provider terms).
+  photos       String[]
+  /// Provider opening hours, normalized but structure-flexible (varies by source).
+  openingHours Json?
+  priceLevel   PriceLevel @default(UNKNOWN)
+  rating       Float?
+  reviewCount  Int?
+  /// Selected provider attributes (e.g. outdoor seating, live music), provider-specific.
+  attributes   Json?
+  /// False when a sync no longer finds the place; rows are deactivated, not deleted (history, journeys).
+  isActive     Boolean    @default(true)
+  createdAt    DateTime   @default(now()) @db.Timestamptz(3)
+  updatedAt    DateTime   @updatedAt @db.Timestamptz(3)
+
+  categories  PlaceCategory[]
+  experiences ExperiencePlace[]
+  events      Event[]
+  sources     ExternalSource[]
+  enrichment  RoamEnrichment?
+
+  /// City pages and bounding-box lookups (no PostGIS: plain latitude/longitude, see DATABASE_SCHEMA.md).
+  @@index([city])
+  @@index([latitude, longitude])
+  @@map("places")
+}
+
+model PlaceCategory {
+  placeId    String @db.Uuid
+  categoryId String @db.Uuid
+
+  place    Place    @relation(fields: [placeId], references: [id], onDelete: Cascade)
+  category Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
+  @@id([placeId, categoryId])
+  @@index([categoryId])
+  @@map("place_categories")
+}
+
+/// What ROAM recommends: a composed outing (EXPERIENCE.md, canonical model). Identity, location anchor,
+/// media, schedule, pricing and quality; ROAM context (atmosphere, energy…) is in `RoamEnrichment`.
+model Experience {
+  id           String     @id @default(uuid(7)) @db.Uuid
+  title        String
+  description  String?
+  // Location (anchor point of the experience)
+  address      String?
+  city         String?
+  latitude     Float?
+  longitude    Float?
+  // Media
+  coverImage   String?
+  images       String[]
+  // Schedule
+  startDate    DateTime?  @db.Timestamptz(3)
+  endDate      DateTime?  @db.Timestamptz(3)
+  openingHours Json?
+  // Pricing (never invented: null / UNKNOWN when the source has none — DATA_RULES.md)
+  priceLevel   PriceLevel @default(UNKNOWN)
+  priceMin     Decimal?   @db.Decimal(10, 2)
+  priceMax     Decimal?   @db.Decimal(10, 2)
+  currency     String?    @db.Char(3)
+  // Quality
+  rating       Float?
+  reviewCount  Int?
+  popularity   Float?
+  isActive     Boolean    @default(true)
+  createdAt    DateTime   @default(now()) @db.Timestamptz(3)
+  updatedAt    DateTime   @updatedAt @db.Timestamptz(3)
+
+  places       ExperiencePlace[]
+  categories   ExperienceCategory[]
+  events       Event[]
+  sources      ExternalSource[]
+  enrichment   RoamEnrichment?
+  journeySteps JourneyStep[]
+  favorites    Favorite[]
+
+  @@index([city])
+  @@index([latitude, longitude])
+  @@index([isActive])
+  @@map("experiences")
+}
+
+/// The ordered places an experience is made of (ARCHITECTURE.md "Data domains": ExperiencePlace;
+/// mobile `Experience.placeIds`, ordered).
+model ExperiencePlace {
+  experienceId String @db.Uuid
+  placeId      String @db.Uuid
+  /// 0-based order of the place in the experience.
+  position     Int
+
+  experience Experience @relation(fields: [experienceId], references: [id], onDelete: Cascade)
+  place      Place      @relation(fields: [placeId], references: [id], onDelete: Restrict)
+
+  @@id([experienceId, placeId])
+  @@unique([experienceId, position])
+  @@index([placeId])
+  @@map("experience_places")
+}
+
+model ExperienceCategory {
+  experienceId String @db.Uuid
+  categoryId   String @db.Uuid
+
+  experience Experience @relation(fields: [experienceId], references: [id], onDelete: Cascade)
+  category   Category   @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
+  @@id([experienceId, categoryId])
+  @@index([categoryId])
+  @@map("experience_categories")
+}
+
+/// A time-bound experience (EVENT.md), independent from persistent places. The venue is a `Place` when
+/// known. Never an invented end time or price.
+model Event {
+  id           String     @id @default(uuid(7)) @db.Uuid
+  experienceId String?    @db.Uuid
+  placeId      String?    @db.Uuid
+  categoryId   String?    @db.Uuid
+  title        String
+  description  String?
+  startDate    DateTime   @db.Timestamptz(3)
+  endDate      DateTime?  @db.Timestamptz(3)
+  /// IANA timezone of the event when the source gives it (EVENT.md "Timing").
+  timezone     String?
+  images       String[]
+  priceMin     Decimal?   @db.Decimal(10, 2)
+  priceMax     Decimal?   @db.Decimal(10, 2)
+  currency     String?    @db.Char(3)
+  priceLevel   PriceLevel @default(UNKNOWN)
+  bookingUrl   String?
+  isActive     Boolean    @default(true)
+  createdAt    DateTime   @default(now()) @db.Timestamptz(3)
+  updatedAt    DateTime   @updatedAt @db.Timestamptz(3)
+
+  experience Experience?      @relation(fields: [experienceId], references: [id], onDelete: SetNull)
+  place      Place?           @relation(fields: [placeId], references: [id], onDelete: SetNull)
+  category   Category?        @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  sources    ExternalSource[]
+
+  /// "What's on between these dates" and sync refreshes.
+  @@index([startDate])
+  @@index([experienceId])
+  @@index([placeId])
+  @@index([categoryId])
+  @@map("events")
+}
+
+// ─── Provenance and ROAM enrichment ────────────────────────────────────────────────────────────────
+
+/// An external data source (Google Places, Ticketmaster, a data.gouv.fr dataset…). A row, not an enum,
+/// so a provider is added without a schema change (PROVIDER_ARCHITECTURE.md: providers stay behind adapters).
+model Provider {
+  id        String   @id @default(uuid(7)) @db.Uuid
+  /// Stable key used by its adapter, e.g. "google_places", "ticketmaster", "data_gouv".
+  key       String   @unique
+  name      String
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+
+  sources ExternalSource[]
+
+  @@map("providers")
+}
+
+enum SourceEntityType {
+  PLACE
+  EVENT
+  EXPERIENCE
+}
+
+/// Provenance of an imported record (DATA_RULES.md "Provenance", EXPERIENCE.md "Source metadata"): one
+/// row per provider record, so a place merged from two providers keeps both. Exactly one of
+/// placeId / eventId / experienceId is set, matching `entityType` (CHECK constraint + service). No raw
+/// provider payload is stored (provider JSON never leaves its adapter; provider caching terms).
+model ExternalSource {
+  id                 String           @id @default(uuid(7)) @db.Uuid
+  providerId         String           @db.Uuid
+  entityType         SourceEntityType
+  externalId         String
+  externalUrl        String?
+  /// Provider classification, preserved as received (EVENT.md "Classification").
+  providerCategories String[]
+  /// Provider-declared confidence of the match, when relevant (EXPERIENCE.md "Source metadata").
+  confidence         Float?
+  fetchedAt          DateTime         @db.Timestamptz(3)
+  /// Last update time declared by the provider, when known.
+  providerUpdatedAt  DateTime?        @db.Timestamptz(3)
+  placeId            String?          @db.Uuid
+  eventId            String?          @db.Uuid
+  experienceId       String?          @db.Uuid
+  createdAt          DateTime         @default(now()) @db.Timestamptz(3)
+  updatedAt          DateTime         @updatedAt @db.Timestamptz(3)
+
+  provider   Provider    @relation(fields: [providerId], references: [id], onDelete: Restrict)
+  place      Place?      @relation(fields: [placeId], references: [id], onDelete: Cascade)
+  event      Event?      @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  experience Experience? @relation(fields: [experienceId], references: [id], onDelete: Cascade)
+
+  /// Deduplication: provider ids first (EXPERIENCE.md "Deduplication", SYNC_CACHE_AND_COST_CONTROL.md).
+  @@unique([providerId, entityType, externalId])
+  @@index([placeId])
+  @@index([eventId])
+  @@index([experienceId])
+  /// Refresh the oldest records first (sync TTLs).
+  @@index([providerId, fetchedAt])
+  @@map("external_sources")
+}
+
+enum EnrichmentSource {
+  /// Deterministic, explainable rules (the first version).
+  ROAM_RULES
+  CURATED
+  USER_FEEDBACK
+}
+
+/// ROAM-owned context of a place or an experience (EXPERIENCE.md "ROAM Context", PLACE.md "ROAM",
+/// NORMALIZATION_AND_ENRICHMENT.md, DATA_SOURCE_MATRIX.md "Primary owner"). Kept apart from provider facts
+/// so derived values stay identifiable. Exactly one of placeId / experienceId is set (CHECK constraint + service).
+model RoamEnrichment {
+  id                   String           @id @default(uuid(7)) @db.Uuid
+  placeId              String?          @unique @db.Uuid
+  experienceId         String?          @unique @db.Uuid
+  /// Open list (the documentation gives examples: CHILL, COZY, ROMANTIC, FESTIVE…), not a closed enum.
+  atmosphere           String[]
+  energyLevel          EnergyLevel      @default(UNKNOWN)
+  suitableFor          Audience[]
+  bestMoments          Moment[]
+  tags                 String[]
+  estimatedDurationMin Int?
+  /// True when the duration was inferred rather than given by the provider (EXPERIENCE.md "Duration").
+  durationIsDerived    Boolean          @default(false)
+  source               EnrichmentSource @default(ROAM_RULES)
+  /// Per-field confidence and rule basis, e.g. { "energyLevel": { "confidence": 0.78, "rule": "…" } }
+  /// (NORMALIZATION_AND_ENRICHMENT.md "Confidence") — flexible on purpose.
+  confidence           Json?
+  createdAt            DateTime         @default(now()) @db.Timestamptz(3)
+  updatedAt            DateTime         @updatedAt @db.Timestamptz(3)
+
+  place      Place?      @relation(fields: [placeId], references: [id], onDelete: Cascade)
+  experience Experience? @relation(fields: [experienceId], references: [id], onDelete: Cascade)
+
+  @@map("roam_enrichments")
+}
+
+// ─── Journeys ──────────────────────────────────────────────────────────────────────────────────────
+
+/// A saved journey is active or completed; a draft is never saved (JOURNEY.md).
+enum JourneyStatus {
+  ACTIVE
+  COMPLETED
+}
+
+/// Journey ambiance: a subset of the mood vocabulary (JOURNEY.md, mobile `JourneyMood`).
+enum JourneyMood {
+  CALM
+  DISCOVER
+  FOOD
+  CULTURE
+  ENERGETIC
+  ROMANTIC
+  FESTIVE
+}
+
+/// mobile `JourneyDuration`: 1h | 2h | 3h | halfDay | day.
+enum JourneyDuration {
+  ONE_HOUR
+  TWO_HOURS
+  THREE_HOURS
+  HALF_DAY
+  DAY
+}
+
+/// mobile `JourneyBudget`: free | € | €€ | €€€.
+enum JourneyBudget {
+  FREE
+  LOW
+  MEDIUM
+  HIGH
+}
+
+/// Where the journey starts (JOURNEY.md "Starting point").
+enum JourneyStartKind {
+  CURRENT
+  PLACE
+  ADDRESS
+  EXPERIENCE
+}
+
+enum TravelMode {
+  WALK
+  METRO
+}
+
+/// An ordered outing of experiences (JOURNEY.md). At most one ACTIVE journey per user: the journey service
+/// checks it (clear error), the partial unique index below guarantees it under concurrency.
+model Journey {
+  id                   String           @id @default(uuid(7)) @db.Uuid
+  userId               String           @db.Uuid
+  status               JourneyStatus    @default(ACTIVE)
+  title                String
+  // Context
+  mood                 JourneyMood
+  duration             JourneyDuration
+  budget               JourneyBudget
+  // Start location (a snapshot: the label and point chosen at creation)
+  startKind            JourneyStartKind
+  startLabel           String
+  startDetail          String?
+  startLatitude        Float
+  startLongitude       Float
+  /// Planned times, "HH:MM" (JOURNEY.md).
+  startTime            String           @db.VarChar(5)
+  endTime              String           @db.VarChar(5)
+  estimatedDurationMin Int
+  /// Euros, estimated from the experiences' budget brackets.
+  estimatedBudgetEur   Int
+  totalDistanceM       Int
+  /// 0-based index of the step in progress.
+  currentStep          Int              @default(0)
+  startedAt            DateTime?        @db.Timestamptz(3)
+  completedAt          DateTime?        @db.Timestamptz(3)
+  createdAt            DateTime         @default(now()) @db.Timestamptz(3)
+  updatedAt            DateTime         @updatedAt @db.Timestamptz(3)
+
+  user     User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  steps    JourneyStep[]
+  feedback JourneyFeedback?
+
+  @@unique([userId], map: "journeys_one_active_per_user", where: { status: "ACTIVE" })
+  /// "The current journey" and "my completed journeys" of a user.
+  @@index([userId, status])
+  @@map("journeys")
+}
+
+/// One experience of a journey (JOURNEY.md "steps"). Planning values are computed by the service.
+model JourneyStep {
+  id                   String     @id @default(uuid(7)) @db.Uuid
+  journeyId            String     @db.Uuid
+  experienceId         String     @db.Uuid
+  /// 0-based position in the journey.
+  order                Int
+  /// "HH:MM", computed from the journey's start time.
+  estimatedArrival     String     @db.VarChar(5)
+  estimatedDurationMin Int
+  /// Travel from the previous step (or from the start location for the first one).
+  travelDurationMin    Int
+  travelDistanceM      Int
+  travelMode           TravelMode
+
+  journey    Journey    @relation(fields: [journeyId], references: [id], onDelete: Cascade)
+  experience Experience @relation(fields: [experienceId], references: [id], onDelete: Restrict)
+
+  @@unique([journeyId, order])
+  /// Each experience at most once in a journey (JOURNEY.md "Rules").
+  @@unique([journeyId, experienceId])
+  @@index([experienceId])
+  @@map("journey_steps")
+}
+
+// ─── User activity ─────────────────────────────────────────────────────────────────────────────────
+
+/// A saved experience (mobile D-57: favorites are experiences). One per user and experience.
+model Favorite {
+  id           String   @id @default(uuid(7)) @db.Uuid
+  userId       String   @db.Uuid
+  experienceId String   @db.Uuid
+  createdAt    DateTime @default(now()) @db.Timestamptz(3)
+
+  user       User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  experience Experience @relation(fields: [experienceId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, experienceId])
+  @@index([experienceId])
+  @@map("favorites")
+}
+
+/// The feedback given after a completed journey (FEEDBACK.md "Implemented", mobile D-83): 1–5 stars
+/// (CHECK constraint, migration 20260926002147_check_constraints) and an optional comment of at most
+/// 300 characters. One per journey.
+model JourneyFeedback {
+  id        String   @id @default(uuid(7)) @db.Uuid
+  journeyId String   @unique @db.Uuid
+  userId    String   @db.Uuid
+  rating    Int      @db.SmallInt
+  comment   String?  @db.VarChar(300)
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+
+  journey Journey @relation(fields: [journeyId], references: [id], onDelete: Cascade)
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("journey_feedbacks")
 }

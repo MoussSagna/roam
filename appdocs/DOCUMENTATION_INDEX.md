@@ -56,6 +56,7 @@ check, no domain endpoint) and no connected database; the mobile app does not ca
 | Why something was built that way (mobile) | [`mobiledocs/DECISIONS.md`](../apps/mobile/mobiledocs/DECISIONS.md) (D-01 → D-90) |
 | Integrating a new screen | [`mobiledocs/SCREEN_INTEGRATION_WORKFLOW.md`](../apps/mobile/mobiledocs/SCREEN_INTEGRATION_WORKFLOW.md) |
 | Builds, EAS Update, testers | [`mobiledocs/DEPLOYMENT.md`](../apps/mobile/mobiledocs/DEPLOYMENT.md) |
+| Database schema (Prisma models, constraints, deferred items) | [`apidocs/DATABASE_SCHEMA.md`](../apps/api/apidocs/DATABASE_SCHEMA.md) |
 | Backend data pipeline, providers, sync, data sprints | [`apidocs/README.md`](../apps/api/apidocs/README.md) |
 | How this documentation was reorganized, open questions | [`DOCUMENTATION_RESTRUCTURE_REPORT.md`](DOCUMENTATION_RESTRUCTURE_REPORT.md) |
 

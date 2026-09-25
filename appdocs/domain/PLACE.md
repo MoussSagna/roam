@@ -33,7 +33,12 @@ Enrich places with atmosphere, energy, audience compatibility, best moments, est
 
 Do not present ROAM enrichment as provider facts.
 
-## Current implementation (mobile, mock data)
+## Current implementation
+
+**Backend (API-03):** `Place` table (provider facts), provenance in `ExternalSource`, ROAM enrichment in
+`RoamEnrichment` — `apps/api/apidocs/DATABASE_SCHEMA.md`. No endpoint yet.
+
+**Mobile (mock data):**
 
 `apps/mobile/src/types/place.ts`: `Place` (`id`, `name`, `categoryId`, `description`, `address`, `coordinates`,
 `price` as a `BudgetRange`, optional `imageUrl`, `tags`) and `Category` (`id`, `slug`). Mock content only; no provider,

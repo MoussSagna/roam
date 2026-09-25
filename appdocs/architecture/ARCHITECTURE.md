@@ -108,6 +108,9 @@ real authentication (backend, sessions/tokens) is done later, after all the fron
 
 ## Data domains
 
+> Since API-03 the stored model is `apps/api/apidocs/DATABASE_SCHEMA.md` (the list below was the initial proposal;
+> `Itinerary`/`ItineraryStep` became `Journey`/`JourneyStep`, `FeedbackReason` is deferred).
+
 Likely core entities:
 
 ```text
@@ -162,7 +165,8 @@ Prioritize tests for:
 
 The **mobile** application is built (`apps/mobile`, see `apps/mobile/mobiledocs/`). `apps/api` is the backend
 **foundation** (API-02): a NestJS + Prisma application with configuration, database access layer, validation, errors,
-health check and tests, but no domain endpoint and no database connected yet (`apps/api/apidocs/BACKEND_FOUNDATION.md`).
+health check and tests, and its data model (API-03, `apps/api/apidocs/DATABASE_SCHEMA.md`), but no domain endpoint and no
+database connected yet (`apps/api/apidocs/BACKEND_FOUNDATION.md`).
 The mobile app does not call it yet. No web app and no shared `packages/*` yet.
 
 ```text
