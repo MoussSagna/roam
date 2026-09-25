@@ -6,7 +6,8 @@ Build ROAM as an MVP focused on one core loop:
 
 > Context → Recommendation → Experience → Itinerary → Real-world outing → Feedback
 
-The agent must prioritize the core user journey over secondary features.
+The agent must prioritize the core user journey over secondary features. The product is intentionally MVP-first:
+do not expand scope without an explicit requirement.
 
 ## Product principles
 
@@ -45,7 +46,12 @@ The agent must prioritize the core user journey over secondary features.
 
 ## When requirements are ambiguous
 
-Prefer the documented MVP behavior. If a decision is genuinely architectural and not documented, choose the simplest reversible option and document it in `docs/DECISIONS.md`.
+Prefer the documented MVP behavior. If a decision is genuinely architectural and not documented, choose the simplest reversible option and document it in the decision log of the application concerned (mobile: [`apps/mobile/mobiledocs/DECISIONS.md`](../apps/mobile/mobiledocs/DECISIONS.md)). A decision shared by several applications goes in [`architecture/ARCHITECTURE.md`](architecture/ARCHITECTURE.md) → "Decided since this proposal".
+
+## Where the documentation lives
+
+Start with [`DOCUMENTATION_INDEX.md`](DOCUMENTATION_INDEX.md): shared product/domain/architecture in `appdocs/`, mobile implementation in
+`apps/mobile/mobiledocs/`, API/backend in `apps/api/apidocs/`. Keep one source of truth per concept (see `README.md`).
 
 ## Language
 

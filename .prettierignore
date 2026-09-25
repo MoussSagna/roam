@@ -5,5 +5,5 @@ dist
 coverage
 apps/mobile/ios
 apps/mobile/android
-# Handoff docs are maintained by hand
-docs/0*.md
+# Shared docs are maintained by hand (mobile DECISIONS.md D-14, D-90)
+appdocs/**/*.md

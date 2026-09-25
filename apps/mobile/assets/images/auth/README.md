@@ -3,7 +3,7 @@
 ## Entry screen background
 
 `entry-background.png` — Paris rooftops and the Eiffel Tower at sunrise, seen from Montmartre. Official
-photo (replaces the temporary mockup crop used when the screen was first built, `DECISIONS.md` D-29): no
+photo (replaces the temporary mockup crop used when the screen was first built, [`DECISIONS.md`](../../../mobiledocs/DECISIONS.md) D-29): no
 baked-in text, so the screen's own "ROAM" + tagline (rendered in code) is the only text on it.
 
 The screen fills the top of the display with `cover` and darkens the photo with a flat scrim (`derived.night`

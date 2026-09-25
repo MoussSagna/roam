@@ -39,7 +39,7 @@ Purpose: communicate the value proposition.
 Primary CTA: Start.
 Secondary CTA: Sign in.
 Prototype: the built welcome screen has a single "Suivant" button and no pagination dots. Sign in / sign up
-screens are the next front-end step, simulated (no backend) — see `DECISIONS.md` D-28.
+screens are the next front-end step, simulated (no backend) — see [`DECISIONS.md`](../../apps/mobile/mobiledocs/DECISIONS.md) D-28.
 
 ### 03 Home
 Purpose: start a new outing.
@@ -70,7 +70,7 @@ All visible copy localized.
 ### 08b Profile creation (prototype simulation)
 Purpose: after the preferences, show ROAM "building" the user's profile before the final onboarding screen.
 Front-end simulation only (about 10 s, no backend, nothing stored); nothing to press, it moves on to
-"Prêt à explorer ?" by itself. See `DECISIONS.md` D-27.
+"Prêt à explorer ?" by itself. See [`DECISIONS.md`](../../apps/mobile/mobiledocs/DECISIONS.md) D-27.
 
 ### 09 Recommendations
 Purpose: show a limited number of relevant outings.
@@ -170,33 +170,3 @@ Optional reason selection.
 - explain recommendations in human language;
 - preserve user control;
 - never make the map the starting point.
-
----
-
-## Implementation notes (mobile, updated 2026-09-22)
-
-### Mocked session
-
-No backend yet, so "being signed in" is simulated end to end — see `docs/DECISIONS.md` for the
-full rationale. Summary:
-
-- **`isLoggedIn`** (`apps/mobile/src/auth/AuthContext.tsx`, `AuthProvider`/`useAuth`) is the single
-  source of truth. `login()`/`logout()` simulate a request (`repositories.auth`, ~900 ms delay) then
-  flip it; it is persisted (`apps/mobile/src/auth/session.ts`, reusing the theme/language storage
-  abstraction) so a restart returns to the same session.
-- **Public flow** (`isLoggedIn === false`): Welcome, the whole onboarding journey (mood → … → ready),
-  and the whole `/auth/*` sub-flow (entry, login, register, forgot password, reset code, new
-  password, reset success).
-- **Authenticated flow** (`isLoggedIn === true`): the four tabs ((tabs)/home, discover, favorites,
-  profile).
-- Both flows are declared once in `apps/mobile/src/features/navigation/AppRoutes.tsx`, gated with
-  `Stack.Protected`, and reused by the app and its route tests alike.
-- **Becoming "signed in"**: Login, Register, and finishing onboarding ("Commencer") all call the
-  same `login()` — the brief behind this treats them as equally valid ways to enter the app for the
-  first time, matching what each already did (land on Home) before route protection existed.
-- **Logout**: `ProfileScreen`'s "Se déconnecter" calls `logout()`, then navigates to `/auth/login`.
-- **No way back once switched**: `Stack.Protected` removes the other flow's screens from history the
-  moment `isLoggedIn` flips (Login/Register/finish-onboarding → Home, or logout → Login) — the back
-  button/gesture cannot reach them. Welcome specifically also can't be reached from the auth flow
-  it leads into, even though both stay on the *public* side of that guard (unaffected by
-  `Stack.Protected`): choosing "Se connecter" from Welcome `replace`s it instead of pushing.

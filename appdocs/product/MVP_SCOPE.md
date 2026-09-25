@@ -9,7 +9,7 @@
 - User profile
 
 Prototype note: the account screens (login, sign up, password recovery) are built first on the front end
-and simulated, with no backend, API, database or real authentication; those come later (`DECISIONS.md` D-28).
+and simulated, with no backend, API, database or real authentication; those come later ([`DECISIONS.md`](../../apps/mobile/mobiledocs/DECISIONS.md) D-28).
 
 ## 2. Onboarding
 
@@ -188,7 +188,7 @@ Example statistics:
 Home · Discover · Favorites · Profile
 ```
 
-Implementation note (sprint 11, `DECISIONS.md` D-81): the Favorites tab was replaced by **Parcours** (the journey hub),
+Implementation note (sprint 11, [`DECISIONS.md`](../../apps/mobile/mobiledocs/DECISIONS.md) D-81): the Favorites tab was replaced by **Parcours** (the journey hub),
 at the product owner's request; favorites stay reachable from the Profile (`/profile/favorites`).
 
 The itinerary/map is entered from an experience/itinerary rather than being a permanent bottom-nav tab.

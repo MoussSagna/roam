@@ -1,7 +1,7 @@
 # ROAM — Screen Integration Workflow
 
 Standard procedure for turning one design mockup screen into a screen in the mobile app. Used since the
-onboarding sprint (`DECISIONS.md` D-19 to D-27) and formalized here for the authentication sprint
+onboarding sprint ([`DECISIONS.md`](DECISIONS.md) D-19 to D-27) and formalized here for the authentication sprint
 (D-28 onward). **One screen per session; stop and wait for human validation before the next one.**
 
 ```text
@@ -28,10 +28,10 @@ STOP — human validation
 
 ## 1. Read the context
 
-Read the relevant `.md` files before touching any code: `00_AGENT_INSTRUCTIONS.md`,
-`01_PRODUCT_CONTEXT.md`, `02_MVP_SCOPE.md`, `03_UX_SCREENS_AND_FLOWS.md`, `05_THEME_AND_I18N.md`,
-`06_DESIGN_SYSTEM.md`, `DECISIONS.md`, `DEVELOPMENT.md`. They are the source of truth; if a document is
-stale, check the code before changing the doc (see `00_AGENT_INSTRUCTIONS.md`).
+Read the relevant `.md` files before touching any code: [`AGENT_INSTRUCTIONS.md`](../../../appdocs/AGENT_INSTRUCTIONS.md),
+[`PRODUCT_CONTEXT.md`](../../../appdocs/product/PRODUCT_CONTEXT.md), [`MVP_SCOPE.md`](../../../appdocs/product/MVP_SCOPE.md), [`UX_SCREENS_AND_FLOWS.md`](../../../appdocs/product/UX_SCREENS_AND_FLOWS.md), [`THEME_AND_I18N.md`](../../../appdocs/design/THEME_AND_I18N.md),
+[`DESIGN_SYSTEM.md`](../../../appdocs/design/DESIGN_SYSTEM.md), [`DECISIONS.md`](DECISIONS.md), [`CONVENTIONS.md`](CONVENTIONS.md) and the feature document in [`features/`](features/). They are the source of truth; if a document is
+stale, check the code before changing the doc (see [`AGENT_INSTRUCTIONS.md`](../../../appdocs/AGENT_INSTRUCTIONS.md)).
 
 ## 2. Inspect the existing codebase
 
@@ -61,14 +61,14 @@ From the mockup, identify:
 - spacing, typography, color roles — map every color to a semantic token, never a hex value;
 - components needed, and which ones already exist;
 - interactive states: default, pressed, selected, disabled, loading, error;
-- what the states in `03_UX_SCREENS_AND_FLOWS.md` → "Important states" imply for this screen
+- what the states in [`UX_SCREENS_AND_FLOWS.md`](../../../appdocs/product/UX_SCREENS_AND_FLOWS.md) → "Important states" imply for this screen
   (loading / empty / error where relevant);
 - animation opportunities (entrance, selection, transition);
 - how it behaves on a short screen (iPhone SE-class, 375 × 667) — what shrinks first.
 
 If only a flattened mockup image is available (no separate photo/asset export), a temporary low-resolution
-crop is acceptable, **only if documented as temporary** (see `assets/images/onboarding/README.md` and
-`assets/images/auth/README.md` for the pattern) — a short README next to the asset naming what's temporary
+crop is acceptable, **only if documented as temporary** (see [`apps/mobile/assets/images/onboarding/README.md`](../assets/images/onboarding/README.md) and
+[`apps/mobile/assets/images/auth/README.md`](../assets/images/auth/README.md) for the pattern) — a short README next to the asset naming what's temporary
 and what the replacement should look like. Never bake user-facing text into an image: render it with
 `Text`/`RNText` and an i18n key even if that means the code-rendered text roughly overlaps mockup pixels
 baked into a temporary crop underneath it.
@@ -90,11 +90,11 @@ Default to an existing component. Create a new one only when nothing fits, and p
   needs one that doesn't exist yet.
 - Typography goes through `<Text variant="…">`; never set a font family/size by hand except for a
   documented, deliberate exception (e.g. a serif display size measured from a mockup, as the splash
-  and onboarding titles do — record it in `DECISIONS.md` if it introduces something new).
+  and onboarding titles do — record it in [`DECISIONS.md`](DECISIONS.md) if it introduces something new).
 - All visible copy comes from `src/i18n/locales/{fr,en}.json`, added to **both** files (a test enforces
   parity). Keys are semantic (`auth.entry.continueWithGoogle`), never screen-coordinate based.
 - Every screen considers loading / empty / error / success states where the UX doc calls for them, even
-  in a front-end-only prototype (see `00_AGENT_INSTRUCTIONS.md` → "Definition of done").
+  in a front-end-only prototype (see [`AGENT_INSTRUCTIONS.md`](../../../appdocs/AGENT_INSTRUCTIONS.md) → "Definition of done").
 
 ## 6. Animation (Moti)
 
@@ -106,7 +106,7 @@ default fade (loops, larger translations, rotations).
 ## 7. Navigation
 
 Add routes in `src/app/` without breaking existing ones. If a screen's primary action leads to a screen
-that isn't built yet in this sprint, add a minimal placeholder screen/route (`DECISIONS.md` D-20, D-29,
+that isn't built yet in this sprint, add a minimal placeholder screen/route ([`DECISIONS.md`](DECISIONS.md) D-20, D-29,
 D-37 — `OnboardingPlaceholder` and `AuthPlaceholder` were this pattern's two examples so far, each
 deleted once every screen using it was built) so navigation doesn't hit "Unmatched Route" — the
 placeholder has no design content, just a title and a way back; replace its body, not its route path,
@@ -125,7 +125,7 @@ back), and that the screen matches the design at a short screen width (375 px) a
 width. Add/update the screen's test file (`renderWithProviders`, `fireEvent`) and, if it introduces new
 routes, a route-tree test (see `authRoutes.test.tsx` / `onboardingRoutes.test.tsx`).
 
-Navigation checklist (`docs/DEVELOPMENT.md` → "Navigation back gesture", `DECISIONS.md` D-53):
+Navigation checklist ([`NAVIGATION.md`](NAVIGATION.md#native-back-gesture) → "Native back gesture", [`DECISIONS.md`](DECISIONS.md) D-53):
 
 - [ ] The native swipe-back gesture is disabled (the new route's `Stack.Screen` needs no
       `gestureEnabled` override) unless the screen has no back button of its own, in which case that's
@@ -138,11 +138,11 @@ Navigation checklist (`docs/DEVELOPMENT.md` → "Navigation back gesture", `DECI
 
 Update whichever of these actually changed:
 
-- `DEVELOPMENT.md` — new route(s)/screen in the relevant table, new convention if one was introduced;
-- `DECISIONS.md` — a new entry for any non-obvious choice (temporary asset, a design token change, a
+- the feature document in [`features/`](features/) — new route(s)/screen in the relevant table; [`CONVENTIONS.md`](CONVENTIONS.md) — new convention if one was introduced;
+- [`DECISIONS.md`](DECISIONS.md) — a new entry for any non-obvious choice (temporary asset, a design token change, a
   navigation choice not shown in the mockup…), following the existing numbering;
-- `08_AGENT_TODO.md` — check off the screen once it is done;
-- `docs/README.md` — the one-line "current status" if the sprint's overall state changed.
+- [`ROADMAP.md`](../../../appdocs/ROADMAP.md) — check off the screen once it is done;
+- [`README.md`](README.md) — the "Current state" table if the sprint's overall state changed.
 
 Keep it factual and only as long as needed — do not pad the docs.
 

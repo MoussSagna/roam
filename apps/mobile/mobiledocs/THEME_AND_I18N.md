@@ -1,213 +1,8 @@
-# ROAM — Theme & Internationalization
+# Mobile — Theme and i18n
 
-## Requirements
+Implementation of the shared requirements in [`appdocs/design/THEME_AND_I18N.md`](../../../appdocs/design/THEME_AND_I18N.md).
 
-ROAM must support:
-
-### Theme
-- Light
-- Dark
-- System (recommended, optional if desired)
-
-### Languages
-- French (`fr`)
-- English (`en`)
-
-Default language:
-- French.
-
-The language and theme preferences should be persisted.
-
-## Theme architecture
-
-Never use raw colors directly inside feature components.
-
-Use semantic tokens such as:
-
-```text
-background
-surface
-surfaceElevated
-text
-textSecondary
-border
-primary
-primaryForeground
-accent
-success
-warning
-error
-overlay
-```
-
-### Light theme
-
-Conceptual ROAM palette:
-
-```text
-background: cream
-surface: white
-text: ink
-textSecondary: stone
-primary: forest green
-accent: warm peach/sable
-```
-
-### Dark theme
-
-Create a genuine dark palette rather than simply inverting colors.
-
-Example direction:
-
-```text
-background: near-black green
-surface: deep green-gray
-surfaceElevated: dark slate/green
-text: warm off-white
-textSecondary: muted sage
-primary: lighter forest/sage
-accent: warm peach
-```
-
-Accessibility and contrast take priority over exact brand colors.
-
-## Theme behavior
-
-Preferred behavior:
-
-```text
-System
-   ↓
-OS light/dark preference
-
-Light
-   ↓
-always light
-
-Dark
-   ↓
-always dark
-```
-
-If only two modes are wanted in the first version, support:
-- Light
-- Dark
-
-## Persistence
-
-Persist the user's explicit theme choice.
-
-Suggested key:
-
-```text
-roam.theme
-```
-
-Suggested values:
-
-```text
-light
-dark
-system
-```
-
-Suggested language key:
-
-```text
-roam.language
-```
-
-Suggested values:
-
-```text
-fr
-en
-```
-
-## i18n rules
-
-- No hard-coded user-facing text in components.
-- Translation keys should be semantic, not screen-coordinate based.
-- Avoid keys such as `screen09Title`.
-- Prefer:
-  - `recommendations.title`
-  - `recommendations.subtitle`
-  - `recommendations.why`
-  - `common.continue`
-
-## Suggested namespace structure
-
-```text
-common
-navigation
-auth
-onboarding
-home
-context
-recommendations
-experience
-place
-itinerary
-map
-outing
-feedback
-favorites
-history
-profile
-settings
-errors
-validation
-```
-
-## Example usage
-
-```ts
-t("recommendations.title")
-```
-
-not:
-
-```ts
-t("ecran09.texte1")
-```
-
-## Language switching UX
-
-Profile/Settings should expose:
-
-```text
-Language
-○ Français
-○ English
-```
-
-Switching language should update visible UI without requiring a full app restart when technically possible.
-
-## Theme switching UX
-
-Profile/Settings:
-
-```text
-Appearance
-○ Light
-○ Dark
-○ System
-```
-
-The setting should immediately preview/apply.
-
-## Translation quality
-
-French is the primary product language.
-English must be natural product English, not word-for-word machine translation.
-
-Do not mix French and English in a single UI state.
-
----
-
-## Implementation notes (mobile, updated 2026-09-21)
-
-### Theme
+## Theme
 
 - Tokens: `apps/mobile/src/theme/tokens.ts` (light and dark values), raw colors in `palette.ts`.
   All 13 documented semantic tokens exist in both themes. Use them as NativeWind classes
@@ -218,13 +13,13 @@ Do not mix French and English in a single UI state.
 - Resulting dark palette: background `#0F1411`, surface `#161D19`, surfaceElevated `#1F2823`,
   text `#F1EDE4`, textSecondary `#A7B4AA`, primary `#86B096`, accent Peach `#E9CDB9`.
 - Light theme values changed to match the onboarding mockups: `primary` `#1A3E30`, `text` `#060A0E`,
-  `textSecondary` `#454F5B` (raw Stone is below AA on Cream) — see `DECISIONS.md` D-04 and D-19. A test asserts WCAG AA contrast in both themes.
+  `textSecondary` `#454F5B` (raw Stone is below AA on Cream) — see [`DECISIONS.md`](DECISIONS.md) D-04 and D-19. A test asserts WCAG AA contrast in both themes.
 - The Light / Dark / System switch has a real screen (`/profile/theme` → `ThemeScreen`, sprint 5,
-  `DECISIONS.md` D-61): a row per `THEME_PREFERENCES` entry, selecting one calls
+  [`DECISIONS.md`](DECISIONS.md) D-61): a row per `THEME_PREFERENCES` entry, selecting one calls
   `useTheme().setPreference` directly. The Français / English switch also has one — see "Langue
   screen" below.
 
-### i18n
+## i18n
 
 - Library: i18next + react-i18next. Resources: `apps/mobile/src/i18n/locales/{fr,en}.json` (moved
   from the repository root). French is the default; the language is persisted under `roam.language`.
@@ -237,7 +32,7 @@ Do not mix French and English in a single UI state.
   subtitle and handwritten line). The legacy `welcome` namespace already present in the files is used by the
   Welcome placeholder.
 
-### Langue screen (`/profile/language`, sprint 5, `DECISIONS.md` D-60)
+## Langue screen (`/profile/language`, sprint 5, [`DECISIONS.md`](DECISIONS.md) D-60)
 
 **The languages shown in this screen are derived from the i18n resources — never hardcoded in the
 screen.** `getAvailableLanguages()` (`apps/mobile/src/i18n/index.ts`) maps `SUPPORTED_LANGUAGES` to
@@ -260,3 +55,21 @@ per-language logic of its own.
    without an entry there still appears, just without a flag.
 
 Nothing in `LanguageScreen` or any other screen changes.
+
+## Theme provider (conventions)
+
+- `ThemeProvider` (mounted in `src/app/_layout.tsx`) resolves the preference, injects the theme as
+  CSS variables and syncs native chrome via `Appearance.setColorScheme`.
+- `useTheme()` returns `{ preference, scheme, isDark, colors, setPreference }`. Use `colors` only where
+  a class is impossible (icons, navigation theme).
+- The preference is persisted under `roam.theme` (`light` | `dark` | `system`).
+
+## i18n (conventions)
+
+- Every visible string comes from `src/i18n/locales/{fr,en}.json`; keys are semantic
+  (`recommendations.title`), never screen-coordinate based. French is the default language.
+- `const { t } = useTranslation(); t('common.continue')` — keys are type-checked against `fr.json`.
+- Interpolation uses **single braces**: `"{count} sélectionnés"` → `t('…', { count: 3 })`.
+- Add every key to **both** files; a test fails if they diverge.
+- Language is switched with `setLanguage('fr' | 'en')` (updates the UI immediately, persisted under
+  `roam.language`).

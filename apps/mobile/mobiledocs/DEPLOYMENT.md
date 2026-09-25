@@ -1,4 +1,4 @@
-# Deployment
+# Mobile — Deployment
 
 The mobile app (`apps/mobile`) is built and distributed with **Expo Application Services (EAS)**.
 Everything below runs from `apps/mobile`. EAS CLI is used through `npx` (no global install needed):
@@ -25,8 +25,8 @@ pnpm install                  # repository root
 pnpm --filter @roam/mobile start   # or: pnpm mobile:start — then Expo Go / simulator
 ```
 
-See `docs/DEVELOPMENT.md` for the full guide. The `development` EAS profile (a development client) is
-declared in `eas.json` but needs `npx expo install expo-dev-client` before its first build.
+See [`DEVELOPMENT.md`](DEVELOPMENT.md) for the full guide. The `development` EAS profile (a development client) is
+declared in `eas.json`; `expo-dev-client` is installed.
 
 ## Preview (test builds)
 
@@ -103,5 +103,5 @@ npx eas-cli@latest update --channel preview --message "What changed"
 
 Not configured yet. The `production` profile exists (channel `production`, remote build numbers
 auto-incremented), but store listing, final app icons (still placeholders — see
-`apps/mobile/assets/images/logo/README.md`), privacy details and submission (`eas submit`) will be set
+[`apps/mobile/assets/images/logo/README.md`](../assets/images/logo/README.md)), privacy details and submission (`eas submit`) will be set
 up later.

@@ -10,46 +10,45 @@ Status for **mobile** (2026-09-22). Web and API foundations are not started.
 - [ ] Environment variables
 - [ ] CI basics
 - [x] Theme system (Light / Dark / System, semantic tokens, persisted); `/profile/theme` (sprint 5)
-      exposes it, `DECISIONS.md` D-61
+      exposes it, [`DECISIONS.md`](../apps/mobile/mobiledocs/DECISIONS.md) D-61
 - [x] i18n system (FR/EN, persisted, typed keys); `/profile/language` (sprint 5) exposes it with a
-      dynamically derived language list, `DECISIONS.md` D-60
+      dynamically derived language list, [`DECISIONS.md`](../apps/mobile/mobiledocs/DECISIONS.md) D-60
 - [~] Shared UI primitives (mobile primitives exist in `apps/mobile/src/components/ui`; no shared `packages/ui` yet)
 - [x] Mock/repository architecture (interfaces + mock, no API)
 - [x] Unit test setup (Jest + RNTL)
 
 ## Phase B — Static UX prototype
 
-- [x] Splash (implemented from the mockup; native app icon still to migrate — see `DECISIONS.md` D-18)
-- [x] Welcome (first onboarding screen, see `DECISIONS.md` D-19)
-- [x] Onboarding (the 7 mockup screens plus the animated profile-creation simulation; the photos of the last screens are temporary — see `DECISIONS.md` D-19 to D-27)
+- [x] Splash (implemented from the mockup; native app icon still to migrate — see [`DECISIONS.md`](../apps/mobile/mobiledocs/DECISIONS.md) D-18)
+- [x] Welcome (first onboarding screen, see [`DECISIONS.md`](../apps/mobile/mobiledocs/DECISIONS.md) D-19)
+- [x] Onboarding (the 7 mockup screens plus the animated profile-creation simulation; the photos of the last screens are temporary — see [`DECISIONS.md`](../apps/mobile/mobiledocs/DECISIONS.md) D-19 to D-27)
 - [x] Home — real discovery screen (hero carousel, mood chips, popular/nearby/for-you sections),
-      built on the mock experience pool — `DECISIONS.md` D-45
+      built on the mock experience pool — [`DECISIONS.md`](../apps/mobile/mobiledocs/DECISIONS.md) D-45
 - [x] Discover — immersive editorial discovery page (Sélection ROAM, suggestions, an immersive
       experience block, nearby/trending experiences, editorial collections), built on the mock
-      experience and collection pools — `DECISIONS.md` D-65, D-66
-- [x] Main navigation — four tabs (Home, Discover, Favorites, Profile) behind a floating pill/bubble
-      tab bar that collapses on scroll and expands on tap; placeholder scrollable content on
-      Favorites/Profile — `DECISIONS.md` D-38 to D-43
-- [x] Authentication screens — **front-end only, simulated** (Login, Register, Forgot password + their states). All 7 screens done: Entry, Login, Register, Forgot password, Reset code, New password, Reset success — see `DECISIONS.md` D-28, D-29, D-31–D-36 and `docs/SCREEN_INTEGRATION_WORKFLOW.md`. The mockup's post-auth screens (welcome-back, location permission, "Tout est prêt") were never in this sprint's scope and remain undone.
+      experience and collection pools — [`DECISIONS.md`](../apps/mobile/mobiledocs/DECISIONS.md) D-65, D-66
+- [x] Main navigation — four tabs behind a floating pill/bubble tab bar that collapses on scroll and expands on
+      tap ([`DECISIONS.md`](../apps/mobile/mobiledocs/DECISIONS.md) D-38 to D-43): Home, Discover, Parcours (replaced Favorites in sprint 11, D-81), Profile
+- [x] Authentication screens — **front-end only, simulated** (Login, Register, Forgot password + their states). All 7 screens done: Entry, Login, Register, Forgot password, Reset code, New password, Reset success — see [`DECISIONS.md`](../apps/mobile/mobiledocs/DECISIONS.md) D-28, D-29, D-31–D-36 and [`SCREEN_INTEGRATION_WORKFLOW.md`](../apps/mobile/mobiledocs/SCREEN_INTEGRATION_WORKFLOW.md). The mockup's post-auth screens (welcome-back, location permission, "Tout est prêt") were never in this sprint's scope and remain undone.
 - [ ] Context flow
 - [~] Recommendation cards — `ExperienceCard` (reusable, `features/home/components/`) built and used
-      on Home; the dedicated Recommendations screen (`03_UX_SCREENS_AND_FLOWS.md` §09) is not built
+      on Home; the dedicated Recommendations screen ([`UX_SCREENS_AND_FLOWS.md`](product/UX_SCREENS_AND_FLOWS.md) §09) is not built
 - [x] Experience detail — real screen (`experience/[id]`) plus a dedicated full-screen gallery
-      (`gallery/[id]`) with a hero -> gallery Reanimated transition, sprint 5 — `DECISIONS.md` D-48
-- [x] Journey ("parcours") — creation flow `/journey/create/*` (intro, context, start, building — sprint 12, D-84 —, suggestions, builder — the last step since D-86) and active journey `/journey/[id]`; add from Experience detail — sprint 10, `DECISIONS.md` D-80
+      (`gallery/[id]`) with a hero -> gallery Reanimated transition, sprint 5 — [`DECISIONS.md`](../apps/mobile/mobiledocs/DECISIONS.md) D-48
+- [x] Journey ("parcours") — creation flow `/journey/create/*` (intro, context, start, building — sprint 12, D-84 —, suggestions, builder — the last step since D-86) and active journey `/journey/[id]`; add from Experience detail — sprint 10, [`DECISIONS.md`](../apps/mobile/mobiledocs/DECISIONS.md) D-80
 - [x] Parcours tab — journey hub `/journey` (in progress / history / empty), replaces Favoris in the tab bar
-      (the `/favorites` route is kept) — sprint 11, `DECISIONS.md` D-81
+      (the `/favorites` route is kept) — sprint 11, [`DECISIONS.md`](../apps/mobile/mobiledocs/DECISIONS.md) D-81
 - [x] Search — shared `SearchScreen` (`/search`) opened from both Home's and Discover's `SearchBar`;
       recent searches (persisted), trending chips, explore-by-mood, live suggestions, results
       (list/map), a sort sheet (Recommandé/Plus proche/Mieux noté/Prix), and a filters bottom sheet, all over the mock experience pool — no real query
-      engine yet, sprint 6 — `DECISIONS.md` D-68
+      engine yet, sprint 6 — [`DECISIONS.md`](../apps/mobile/mobiledocs/DECISIONS.md) D-68
 - [~] Map — sprint 7 replaces the illustrated maps with `react-native-maps` (`RoamMap`), one screen at a time
-      (`DECISIONS.md` D-70). [x] `/map` (Discover's "Voir la carte"); [x] Search's full-screen map
+      ([`DECISIONS.md`](../apps/mobile/mobiledocs/DECISIONS.md) D-70). [x] `/map` (Discover's "Voir la carte"); [x] Search's full-screen map
       (`/search/map`, sprint 8, D-71/D-72 — `ExperienceMapView` deleted); [x] Experience detail's map block + full-screen `/experience-map/[id]` (D-73; round photo markers, selection + camera focus on several experiences, sprint 9, D-75);
       [x] onboarding location (interactive `RoamMap`, real position on request, D-89)
 - [~] Feedback — after a completed journey: `/journey/[id]/feedback` (1–5 stars + optional comment, skip,
-      one per journey, mock repository) — sprint 12, `DECISIONS.md` D-83; the per-experience feedback of
-      `02_MVP_SCOPE.md` §9 (love/like/meh/not for me + reasons) is not built
+      one per journey, mock repository) — sprint 12, [`DECISIONS.md`](../apps/mobile/mobiledocs/DECISIONS.md) D-83; the per-experience feedback of
+      [`MVP_SCOPE.md`](product/MVP_SCOPE.md) §9 (love/like/meh/not for me + reasons) is not built
 
 Use mock data. The onboarding is complete on the front end (no backend, nothing saved: D-28).
 
@@ -77,7 +76,8 @@ Use mock data. The onboarding is complete on the front end (no backend, nothing 
 ## Phase E — Real integrations
 
 - [ ] Place provider
-- [ ] Geolocation
+- [~] Geolocation — device position on request in the onboarding location step only (`expo-location`, D-89);
+      the journey start point is still approximate
 - [~] Maps — `react-native-maps` on mock data (sprint 7, D-70); real place/routing data still to do
 - [ ] Routing
 - [ ] Opening hours where available
