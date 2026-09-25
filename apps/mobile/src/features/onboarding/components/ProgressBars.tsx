@@ -2,14 +2,21 @@ import { View } from 'react-native';
 
 import { cx } from '@/lib/cx';
 
+import { useOnboardingPagerIndex } from '../onboardingPagerContext';
+
 type ProgressBarsProps = {
   count: number;
-  /** 0-based index of the current step. */
+  /** 0-based index of the current step (inside the question pager, its `currentIndex` wins). */
   index: number;
 };
 
-/** Segmented progress bars shown under the onboarding questions (mood → interests). */
-export function ProgressBars({ count, index }: ProgressBarsProps) {
+/**
+ * Segmented progress bars shown under the onboarding questions (mood → interests). Inside the question
+ * pager the bars follow its `currentIndex` (one slide per question, same order), so they always show
+ * the slide actually on screen.
+ */
+export function ProgressBars({ count, index: fallbackIndex }: ProgressBarsProps) {
+  const index = useOnboardingPagerIndex() ?? fallbackIndex;
   return (
     <View
       accessible

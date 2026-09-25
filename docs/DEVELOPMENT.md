@@ -111,13 +111,14 @@ Path alias: `@/` → `src/` (TypeScript, Jest and Metro).
 | ---- | ------------------------------------------------------------- | ------------------- | -------------------------------------------------------------------------------- |
 | —    | `/`                                                           | Splash              | Goes to `/welcome` after 2.6 s (no session yet)                                  |
 | 1    | `/welcome`                                                    | Welcome             | Photo collage; no pagination dots (`PageDots` removed on purpose, do not re-add) |
-| 2–6  | `/onboarding/mood`, `time`, `budget`, `location`, `interests` | Questions           | "Suivant" / "Passer"; `ProgressBars`; answers are local state, not saved         |
+| 2–6  | `/onboarding/mood` (also `time`, `budget`, `location`, `interests`) | Questions (one pager) | Fullscreen slides of `OnboardingPager` (swipe or "Suivant"), D-87; "Passer"; `ProgressBars`; answers are local state, not saved |
 | 7    | `/onboarding/profile-creation`                                | Profile creation    | **Front-end simulation, about 10 s**, no button, moves on by itself (Moti)       |
 | 8    | `/onboarding/ready`                                           | "Prêt à explorer ?" | Reached after the simulation; "Commencer" enters the app                         |
 | —    | `/home`                                                       | Home                | End of the journey, now the first tab of the main navigation                     |
 
-The order and the routes live in `features/onboarding/onboardingFlow.ts`. "Passer" jumps to `ready`; "Commencer" and the
-profile creation use `router.replace`. Details: `DECISIONS.md` D-19 to D-28.
+The order and the routes live in `features/onboarding/onboardingFlow.ts`; the questions are one horizontal `FlatList`
+(`OnboardingPager`, `PAGER_STEPS`) on `/onboarding/mood`, the other question routes open it on their slide. "Passer" jumps to `ready`; "Commencer" and the
+profile creation use `router.replace`. Details: `DECISIONS.md` D-19 to D-28, D-87.
 
 ## Main navigation (current state)
 
@@ -456,8 +457,9 @@ other domain logic itself.
   (the mockup doesn't show one) and rely on the gesture — or, on Android, the hardware back button,
   which this setting never affects either way — as their only way back. Each keeps
   `options={{ gestureEnabled: true }}` on its own `Stack.Screen`, listed and reasoned about in
-  `AppRoutes.tsx`'s own comments: the onboarding question screens through "ready", and the
-  authentication entry screen. Do not add a new screen to that list; give it a back button instead.
+  `AppRoutes.tsx`'s own comments: the onboarding profile creation and "ready", and the
+  authentication entry screen. (The onboarding questions left that list with D-87: they are one
+  pager, whose own swipe goes back a question.) Do not add a new screen to that list; give it a back button instead.
 - **This only affects the Stack navigator's own edge-swipe gesture** — a completely separate system
   from `ScrollView`/`FlatList` horizontal scrolling, a carousel's paging `ScrollView` (Home's hero,
   the gallery's pager/thumbnail strip), or any `PanResponder`/Reanimated gesture (`Slider`). None of

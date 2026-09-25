@@ -1,5 +1,6 @@
-import { InterestsScreen } from '@/features/onboarding/InterestsScreen';
+import { OnboardingPager } from '@/features/onboarding/OnboardingPager';
 
+/** Opens the question pager directly on this slide. */
 export default function InterestsRoute() {
-  return <InterestsScreen />;
+  return <OnboardingPager initialStep="interests" />;
 }

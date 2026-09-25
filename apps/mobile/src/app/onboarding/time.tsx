@@ -1,5 +1,6 @@
-import { TimeScreen } from '@/features/onboarding/TimeScreen';
+import { OnboardingPager } from '@/features/onboarding/OnboardingPager';
 
+/** Opens the question pager directly on this slide. */
 export default function TimeRoute() {
-  return <TimeScreen />;
+  return <OnboardingPager initialStep="time" />;
 }

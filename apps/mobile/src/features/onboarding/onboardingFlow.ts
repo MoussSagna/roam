@@ -2,6 +2,8 @@ import { useRouter, type Href } from 'expo-router';
 
 import { useAuth } from '@/auth';
 
+import { useOnboardingPagerActions } from './onboardingPagerContext';
+
 /**
  * Onboarding journey (design mockup, "Home Onboarding"):
  * Splash → welcome → mood → time → budget → location → interests → profile → ready → app.
@@ -20,6 +22,14 @@ export const ONBOARDING_STEPS = [
 ] as const;
 
 export type OnboardingStep = (typeof ONBOARDING_STEPS)[number];
+
+/**
+ * The questions, shown as the slides of one horizontal pager (`OnboardingPager`, swipe or "Suivant").
+ * Welcome, the profile creation (a timed simulation) and "ready" stay separate screens.
+ */
+export const PAGER_STEPS = ['mood', 'time', 'budget', 'location', 'interests'] as const;
+
+export type PagerStep = (typeof PAGER_STEPS)[number];
 
 /** `welcome` keeps its original route so the splash → welcome transition is unchanged. */
 export const ROUTES: Record<OnboardingStep, string> = {
@@ -40,15 +50,21 @@ export function nextStep(step: OnboardingStep): OnboardingStep | null {
 /** Where the journey ends: the app itself (the home screen is still a placeholder). */
 export const HOME_ROUTE = '/home';
 
-/** "Suivant" goes to the next step, "Passer" jumps to the final "ready" screen, "Commencer" enters the app. */
+/**
+ * "Suivant" goes to the next step, "Passer" jumps to the final "ready" screen, "Commencer" enters the app.
+ * Inside the question pager (`OnboardingPager`), "Suivant" scrolls to the next slide instead of pushing a
+ * route; from the last slide (interests) it pushes the profile creation as before.
+ */
 export function useOnboardingNavigation(step: OnboardingStep) {
   const router = useRouter();
   const { login } = useAuth();
+  const pager = useOnboardingPagerActions();
 
   return {
     next: () => {
       const target = nextStep(step);
-      if (target) router.push(ROUTES[target] as Href);
+      if (!target || pager?.goToStep(target)) return;
+      router.push(ROUTES[target] as Href);
     },
     /** Replaces the current screen (the profile creation does not stay in the history). */
     replaceWithNext: () => {

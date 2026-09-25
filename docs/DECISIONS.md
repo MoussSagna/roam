@@ -2892,3 +2892,38 @@ Only what was asked; no new library, mock data, no Maps API.
   done, the next is current; always within the new steps (`replan` clamps too). `updateJourneySteps` keeps the same journey
   and its `active` status, drops duplicate ids and refuses an empty journey or another journey.
 - **Not verified on a device in this session** (no iOS simulator on the build machine).
+
+## Onboarding pager (2026-09-25)
+
+### D-87 — The onboarding questions become one fullscreen, swipeable `FlatList`
+
+Navigation-only change: no screen, copy, image, color or component design changed. The five questions (mood → time →
+budget → location → interests) are now the slides of one horizontal `FlatList` (`OnboardingPager`, `pagingEnabled`, one
+slide = the window's width × height from `useWindowDimensions`). Each slide renders the existing screen unchanged.
+
+- **What is a slide and what is not.** Only the questions: they share the same structure and the five `ProgressBars`.
+  Welcome stays its own route (the splash lands on it, it has no pagination and the "Se connecter" link), and so do the
+  profile creation (a timed simulation that must not start off screen, D-27) and "ready". Flow unchanged: Welcome →
+  questions → profile creation → ready → app.
+- **Routes.** Welcome's "Suivant" still pushes `/onboarding/mood`, which hosts the pager; moving between questions no longer
+  changes the route. `/onboarding/time`, `budget`, `location`, `interests` still exist and open the pager on their slide
+  (`initialStep`). No new route.
+- **One `currentIndex`.** Updated by the swipe (`onViewableItemsChanged`, 50 % visible) and by "Suivant"
+  (`goToStep` sets it and calls `scrollToIndex`). The pager provides it through `onboardingPagerContext.ts` (two
+  contexts: stable actions, and the index, so the screens do not re-render on a slide change). `useOnboardingNavigation`'s
+  `next` scrolls when the target is a slide and pushes the route otherwise (interests → profile creation); "Passer" and
+  "Commencer" are unchanged. `ProgressBars` shows the pager's index when inside it (its `index` prop elsewhere, e.g.
+  the journey flow).
+- **Animation.** Reanimated (already used under Moti): `Animated.FlatList` + `useAnimatedScrollHandler` feed the scroll
+  position to each slide's `useAnimatedStyle` — opacity 0.35 → 1, translateX ±32, scale 0.97 → 1 as a slide comes to
+  the center. Reduced motion keeps only the fade.
+- **Native swipe-back.** The question routes lost their `gestureEnabled: true` exception (D-53): the pager's own swipe goes
+  back a question, and an edge swipe-back would compete with it. Consequence: on iOS, the first question can no longer
+  swipe back to Welcome (Android's hardware back still does). `profile-creation` and `ready` keep their exception.
+- **Performance.** `getItemLayout`, `initialNumToRender={1}`, `windowSize={3}` (the slide and its neighbors),
+  `memo` on each slide's screen. No `removeClippedSubviews` (known blank-content issues with iOS pagers).
+  Only the slide on screen is exposed to assistive technologies.
+- **Tests.** `OnboardingPager.test.tsx` (full-size slides, swipe, index, bars, buttons, accessibility) and
+  `onboardingRoutes.test.tsx` (the journey through the slides, deep links, the native gesture off on the pager). Jest has
+  no native scrolling: the tests send the scroll events the list would report.
+- **Not verified on a device in this session** (no iOS simulator on the build machine).

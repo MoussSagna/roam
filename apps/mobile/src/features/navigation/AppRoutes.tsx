@@ -28,15 +28,17 @@ export function AppRoutes() {
 
       <Stack.Protected guard={!isLoggedIn}>
         <Stack.Screen name="welcome" />
-        {/* No back button on any of these (`onboarding.welcome.eyebrow`… through "ready"): the
-            mockup has none, and going back a step is the native gesture / hardware button only
-            (`DECISIONS.md` D-21). "ready" also relies on it to reach "interests" (D-27's "back from
-            ready goes to the interests", since "profile-creation" is `replace`d out of history). */}
-        <Stack.Screen name="onboarding/mood" options={{ gestureEnabled: true }} />
-        <Stack.Screen name="onboarding/time" options={{ gestureEnabled: true }} />
-        <Stack.Screen name="onboarding/budget" options={{ gestureEnabled: true }} />
-        <Stack.Screen name="onboarding/location" options={{ gestureEnabled: true }} />
-        <Stack.Screen name="onboarding/interests" options={{ gestureEnabled: true }} />
+        {/* The questions (mood → interests) are the slides of one horizontal pager
+            (`OnboardingPager`): going back a question is the pager's own swipe, so these keep the
+            default (gesture off) — an edge swipe-back would otherwise fight the pager's swipe. */}
+        <Stack.Screen name="onboarding/mood" />
+        <Stack.Screen name="onboarding/time" />
+        <Stack.Screen name="onboarding/budget" />
+        <Stack.Screen name="onboarding/location" />
+        <Stack.Screen name="onboarding/interests" />
+        {/* No back button on these two: the mockup has none, and going back is the native
+            gesture / hardware button only (`DECISIONS.md` D-21, D-27). "ready" relies on it to
+            return to the pager ("profile-creation" is `replace`d out of history). */}
         <Stack.Screen name="onboarding/profile-creation" options={{ gestureEnabled: true }} />
         <Stack.Screen name="onboarding/ready" options={{ gestureEnabled: true }} />
         {/* Also no back button (D-29: "the mockup's Login/Register/Forgot-password tiles all have

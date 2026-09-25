@@ -1,5 +1,6 @@
-import { BudgetScreen } from '@/features/onboarding/BudgetScreen';
+import { OnboardingPager } from '@/features/onboarding/OnboardingPager';
 
+/** Opens the question pager directly on this slide. */
 export default function BudgetRoute() {
-  return <BudgetScreen />;
+  return <OnboardingPager initialStep="budget" />;
 }
