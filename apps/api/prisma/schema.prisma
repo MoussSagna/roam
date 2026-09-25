@@ -1,0 +1,14 @@
+// ROAM database schema (PostgreSQL). API-02 sets up the foundation only: the datasource and the
+// generated client. Domain models (Experience, Place, Event, Journey…) are added by their own tasks,
+// following appdocs/domain/ — do not add them here ahead of time.
+// The connection URL lives in prisma.config.ts (Prisma 7), read from DATABASE_URL.
+
+generator client {
+  provider     = "prisma-client"
+  output       = "../src/generated/prisma"
+  moduleFormat = "esm"
+}
+
+datasource db {
+  provider = "postgresql"
+}

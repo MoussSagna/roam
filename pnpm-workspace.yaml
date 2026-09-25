@@ -4,7 +4,12 @@ packages:
 
 # Build scripts are opt-in with pnpm >= 10. unrs-resolver ships prebuilt binaries
 # (used by eslint-import-resolver-typescript), so its install script is not needed.
+# prisma / @prisma/engines (apps/api) download the schema engine used by migrations.
+# @scarf/scarf is usage telemetry pulled in by swagger-ui-dist (@nestjs/swagger): not run.
 allowBuilds:
+  '@prisma/engines': true
+  '@scarf/scarf': false
+  prisma: true
   unrs-resolver: false
 
 minimumReleaseAgeExclude:

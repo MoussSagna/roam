@@ -12,6 +12,8 @@
     "mobile:start": "pnpm --filter @roam/mobile start",
     "mobile:ios": "pnpm --filter @roam/mobile ios",
     "mobile:android": "pnpm --filter @roam/mobile android",
+    "api": "pnpm --filter @roam/api",
+    "api:start:dev": "pnpm --filter @roam/api start:dev",
     "lint": "pnpm -r --if-present lint",
     "typecheck": "pnpm -r --if-present typecheck",
     "test": "pnpm -r --if-present test",

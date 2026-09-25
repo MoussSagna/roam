@@ -54,8 +54,10 @@ Use mock data. The onboarding is complete on the front end (no backend, nothing 
 
 ## Phase C — Backend foundation
 
-- [ ] PostgreSQL
-- [ ] Prisma
+- [~] API foundation — NestJS + Prisma app, configuration, validation, errors, health check, tests (API-02,
+      `apps/api/apidocs/API_IMPLEMENTATION_ROADMAP.md`)
+- [~] PostgreSQL — datasource and connection layer ready; no database available yet
+- [~] Prisma — `PrismaService`, schema and config ready; no model yet
 - [ ] User model
 - [ ] Preferences
 - [ ] Places

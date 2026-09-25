@@ -5,8 +5,8 @@ location) into a realistic outing — not just a list of places.
 
 ## Status
 
-Mobile app only (Expo + React Native + TypeScript), a front-end prototype on mock data. `apps/api` holds the backend
-design (Data Foundation) but no code yet; there is no web app.
+Mobile app (Expo + React Native + TypeScript): a front-end prototype on mock data. API (`apps/api`, NestJS + Prisma +
+PostgreSQL): technical foundation only, no domain endpoint yet. No web app.
 
 ## Quick start
 
@@ -26,7 +26,7 @@ roam/
 ├── appdocs/        # Shared documentation: product, domain, design, architecture
 ├── apps/
 │   ├── mobile/     # React Native + Expo app (+ mobiledocs/)
-│   └── api/        # Backend design documents only (apidocs/)
+│   └── api/        # NestJS + Prisma backend (+ apidocs/)
 ```
 
 `apps/web` and `packages/*` are planned (see [`appdocs/architecture/ARCHITECTURE.md`](appdocs/architecture/ARCHITECTURE.md))

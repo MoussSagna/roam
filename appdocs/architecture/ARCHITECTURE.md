@@ -160,16 +160,17 @@ Prioritize tests for:
 
 ## Implementation status
 
-Only the **mobile** application exists (`apps/mobile`, see `apps/mobile/mobiledocs/`). `apps/api` holds **design
-documents only** (`apps/api/apidocs/`, the Data Foundation): no backend code, no database, no API. No web app and no
-shared `packages/*` yet.
+The **mobile** application is built (`apps/mobile`, see `apps/mobile/mobiledocs/`). `apps/api` is the backend
+**foundation** (API-02): a NestJS + Prisma application with configuration, database access layer, validation, errors,
+health check and tests, but no domain endpoint and no database connected yet (`apps/api/apidocs/BACKEND_FOUNDATION.md`).
+The mobile app does not call it yet. No web app and no shared `packages/*` yet.
 
 ```text
 roam/
 ├── appdocs/             # shared documentation (product, domain, design, architecture)
 ├── apps/
 │   ├── mobile/          # Expo app + mobiledocs/
-│   └── api/             # apidocs/ only — no code yet
+│   └── api/             # NestJS + Prisma backend (foundation) + apidocs/
 ├── pnpm-workspace.yaml  # apps/* and packages/*
 └── package.json         # root scripts (lint, typecheck, test, format, mobile:start)
 ```
@@ -185,6 +186,8 @@ types currently live in `apps/mobile/src/` and will be extracted into `packages/
 - **Place/event data (planned):** Google Places, Ticketmaster Discovery API and French open data, behind backend provider
   adapters ([`apps/api/apidocs/DATA_FOUNDATION.md`](../../apps/api/apidocs/DATA_FOUNDATION.md), [`apps/api/apidocs/PROVIDER_ARCHITECTURE.md`](../../apps/api/apidocs/PROVIDER_ARCHITECTURE.md)). Not implemented.
 - **Mobile tests:** Jest (`jest-expo`) + React Native Testing Library (mobile [`DECISIONS.md`](../../apps/mobile/mobiledocs/DECISIONS.md) D-11).
-- **Still open:** the backend framework. This document proposes Node.js + TypeScript + REST + Prisma + PostgreSQL; no
-  framework (e.g. NestJS) has been chosen in any document — see [`../DOCUMENTATION_RESTRUCTURE_REPORT.md`](../DOCUMENTATION_RESTRUCTURE_REPORT.md).
+- **Backend:** Node.js + TypeScript + **NestJS** + Prisma + PostgreSQL, REST under `/api/v1` (API-02, 2026-09-25 —
+  this settles the framework question left open by
+  [`../DOCUMENTATION_RESTRUCTURE_REPORT.md`](../DOCUMENTATION_RESTRUCTURE_REPORT.md)). Details:
+  [`apps/api/apidocs/BACKEND_FOUNDATION.md`](../../apps/api/apidocs/BACKEND_FOUNDATION.md).
 

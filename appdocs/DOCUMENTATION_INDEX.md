@@ -16,20 +16,20 @@ roam/
 │   └── architecture/                 stack and applications, data rules
 ├── apps/mobile/mobiledocs/           MOBILE — how the Expo app is built
 │   └── features/                     one document per feature
-└── apps/api/apidocs/                 API — backend design (Data Foundation; no code yet)
+└── apps/api/apidocs/                 API — backend foundation (NestJS + Prisma) and Data Foundation design
 ```
 
 | Folder | Role | README |
 | --- | --- | --- |
 | `appdocs/` | What ROAM is and must do, for every application | [`README.md`](README.md) |
 | `apps/mobile/mobiledocs/` | Mobile implementation (the only application built) | [`README.md`](../apps/mobile/mobiledocs/README.md) |
-| `apps/api/apidocs/` | API / backend implementation (design only today) | [`README.md`](../apps/api/apidocs/README.md) |
+| `apps/api/apidocs/` | API / backend implementation (foundation only today) | [`README.md`](../apps/api/apidocs/README.md) |
 
 ## Current state in one paragraph
 
 The **mobile app** is a front-end prototype on mock data (onboarding, simulated authentication, Home, Discover, Search,
-maps, Experience detail, journeys, Profile/Settings). **No backend, database or API exists**; the API folder holds the
-Data Foundation design. No web app. Details: [mobile README → Current state](../apps/mobile/mobiledocs/README.md#current-state-2026-09-25),
+maps, Experience detail, journeys, Profile/Settings). The **API** has its technical foundation (NestJS + Prisma, health
+check, no domain endpoint) and no connected database; the mobile app does not call it yet. No web app. Details: [mobile README → Current state](../apps/mobile/mobiledocs/README.md#current-state-2026-09-25),
 [`ROADMAP.md`](ROADMAP.md).
 
 ## Where to find…
