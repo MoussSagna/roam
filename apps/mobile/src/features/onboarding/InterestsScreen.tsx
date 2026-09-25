@@ -1,4 +1,3 @@
-import ArrowRight from 'lucide-react-native/icons/arrow-right';
 import CalendarDays from 'lucide-react-native/icons/calendar-days';
 import Landmark from 'lucide-react-native/icons/landmark';
 import Martini from 'lucide-react-native/icons/martini';
@@ -7,18 +6,16 @@ import TreeDeciduous from 'lucide-react-native/icons/tree-deciduous';
 import Utensils from 'lucide-react-native/icons/utensils';
 import { useState, type ComponentType } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Pressable, Text as RNText, useWindowDimensions, View } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { Text as RNText, useWindowDimensions, View } from 'react-native';
 
-import { Button, FadeInUp, Text } from '@/components/ui';
+import { FadeInUp, Text } from '@/components/ui';
 import { useTheme } from '@/theme';
 import { fontFamily } from '@/theme/typography';
 
 import { InterestTile } from './components/InterestTile';
-import { ProgressBars } from './components/ProgressBars';
 import { LotusIcon } from './components/LotusIcon';
 import { RunnerIcon } from './components/RunnerIcon';
-import { useOnboardingNavigation } from './onboardingFlow';
+import type { MultipleChoiceSlideProps } from './slideProps';
 
 const HORIZONTAL_MARGIN = 30.6;
 const GRID_MARGIN = 23;
@@ -53,24 +50,15 @@ const INTERESTS: readonly { id: string; key: string; icon: IconComponent; iconSc
 
 /**
  * Onboarding 6 — "Qu'est-ce qui t'intéresse ?" (design mockup "Home Onboarding", seventh tile).
- * Multiple choice; the mockup shows "Culture" selected, so it is the default. "At least 3" is a
- * recommendation (03_UX_SCREENS_AND_FLOWS.md), not a rule: "Suivant" is never blocked.
+ * Multiple choice, nothing selected at first; at least one interest is needed to move on (D-88), "at
+ * least 3" stays a recommendation (03_UX_SCREENS_AND_FLOWS.md). A slide of `OnboardingPager`, which
+ * holds the answers and shows "Passer", the progress bars and "Suivant".
  */
-export function InterestsScreen() {
+export function InterestsScreen({ selected, onToggle }: MultipleChoiceSlideProps) {
   const { t } = useTranslation();
   const { width } = useWindowDimensions();
-  const insets = useSafeAreaInsets();
   const { colors } = useTheme();
-  const { next, skip } = useOnboardingNavigation('interests');
-  const [selected, setSelected] = useState<ReadonlySet<string>>(new Set(['culture']));
   const [areaHeight, setAreaHeight] = useState<number | null>(null);
-
-  const toggle = (id: string) =>
-    setSelected((current) => {
-      const updated = new Set(current);
-      if (!updated.delete(id)) updated.add(id);
-      return updated;
-    });
 
   // The title must stay on one line on narrow screens (375 pt wide → 28 pt).
   const titleSize = Math.min(
@@ -95,20 +83,7 @@ export function InterestsScreen() {
 
   return (
     <View className="flex-1 bg-background">
-      <View style={{ paddingTop: insets.top }}>
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel={t('common.skip')}
-          onPress={skip}
-          hitSlop={12}
-          className="self-end active:opacity-60"
-          style={{ marginRight: 26, marginTop: 17 }}
-        >
-          <Text variant="small" tone="secondary">
-            {t('common.skip')}
-          </Text>
-        </Pressable>
-
+      <View>
         <FadeInUp>
           <RNText
             accessibilityRole="header"
@@ -158,23 +133,13 @@ export function InterestsScreen() {
                     selected={selected.has(interest.id)}
                     width={tileWidth}
                     height={tileHeight}
-                    onPress={() => toggle(interest.id)}
+                    onPress={() => onToggle(interest.id)}
                   />
                 ))}
               </View>
             ))}
           </View>
         </FadeInUp>
-      </View>
-
-      <View style={{ paddingBottom: Math.max(insets.bottom, 24), paddingHorizontal: 20 }}>
-        <ProgressBars count={5} index={4} />
-        <Button
-          label={t('common.next')}
-          trailingIcon={ArrowRight}
-          onPress={next}
-          className="mt-[21px]"
-        />
       </View>
     </View>
   );

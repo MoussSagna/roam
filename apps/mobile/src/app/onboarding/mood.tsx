@@ -1,6 +1,6 @@
 import { OnboardingPager } from '@/features/onboarding/OnboardingPager';
 
-/** Entry of the question pager (Welcome's "Suivant"): the first slide, mood. */
+/** The onboarding questions (Welcome's "Suivant"): one pager, header "Passer", footer "Suivant". */
 export default function MoodRoute() {
   return <OnboardingPager />;
 }

@@ -1,15 +1,22 @@
 import { act, fireEvent, screen } from '@testing-library/react-native';
+import { useState } from 'react';
 
 import i18n from '@/i18n';
 import { renderWithProviders } from '@/test/renderWithProviders';
 
 import { InterestsScreen } from './InterestsScreen';
 
-const mockPush = jest.fn();
-const mockReplace = jest.fn();
-jest.mock('expo-router', () => ({
-  useRouter: () => ({ push: mockPush, replace: mockReplace }),
-}));
+/** The pager holds the answers; this stands in for it. */
+function InterestsScreenWithState() {
+  const [selected, setSelected] = useState<ReadonlySet<string>>(new Set());
+  const toggle = (id: string) =>
+    setSelected((current) => {
+      const updated = new Set(current);
+      if (!updated.delete(id)) updated.add(id);
+      return updated;
+    });
+  return <InterestsScreen selected={selected} onToggle={toggle} />;
+}
 
 const FR_INTERESTS = [
   'Culture',
@@ -24,13 +31,11 @@ const FR_INTERESTS = [
 
 describe('InterestsScreen (onboarding 6)', () => {
   beforeEach(async () => {
-    mockPush.mockClear();
-    mockReplace.mockClear();
     await act(() => i18n.changeLanguage('fr'));
   });
 
   it('renders the title, the subtitle and the eight interests in French', async () => {
-    await renderWithProviders(<InterestsScreen />);
+    await renderWithProviders(<InterestsScreenWithState />);
 
     expect(screen.getByRole('header')).toHaveTextContent('Qu’est-ce qui t’intéresse ?');
     expect(
@@ -44,23 +49,22 @@ describe('InterestsScreen (onboarding 6)', () => {
 
   it('is localized in English', async () => {
     await act(() => i18n.changeLanguage('en'));
-    await renderWithProviders(<InterestsScreen />);
+    await renderWithProviders(<InterestsScreenWithState />);
 
     expect(screen.getByRole('header')).toHaveTextContent('What are you into?');
     expect(screen.getByRole('checkbox', { name: 'Wellness' })).toBeOnTheScreen();
-    expect(screen.getByRole('button', { name: 'Skip' })).toBeOnTheScreen();
   });
 
-  it('starts on "Culture", like the mockup', async () => {
-    await renderWithProviders(<InterestsScreen />);
+  it('starts with nothing selected', async () => {
+    await renderWithProviders(<InterestsScreenWithState />);
 
-    expect(screen.getAllByRole('checkbox', { checked: true })).toHaveLength(1);
-    expect(screen.getByRole('checkbox', { name: 'Culture' })).toBeChecked();
+    expect(screen.queryAllByRole('checkbox', { checked: true })).toHaveLength(0);
   });
 
   it('allows several interests, and unselecting them', async () => {
-    await renderWithProviders(<InterestsScreen />);
+    await renderWithProviders(<InterestsScreenWithState />);
 
+    await fireEvent.press(screen.getByRole('checkbox', { name: 'Culture' }));
     await fireEvent.press(screen.getByRole('checkbox', { name: 'Nature' }));
     await fireEvent.press(screen.getByRole('checkbox', { name: 'Shopping' }));
     expect(screen.getAllByRole('checkbox', { checked: true })).toHaveLength(3);
@@ -68,25 +72,5 @@ describe('InterestsScreen (onboarding 6)', () => {
     await fireEvent.press(screen.getByRole('checkbox', { name: 'Culture' }));
     expect(screen.getByRole('checkbox', { name: 'Culture' })).not.toBeChecked();
     expect(screen.getAllByRole('checkbox', { checked: true })).toHaveLength(2);
-  });
-
-  it('never blocks "Suivant", even with nothing selected', async () => {
-    await renderWithProviders(<InterestsScreen />);
-    await fireEvent.press(screen.getByRole('checkbox', { name: 'Culture' }));
-    expect(screen.queryAllByRole('checkbox', { checked: true })).toHaveLength(0);
-
-    await fireEvent.press(screen.getByRole('button', { name: 'Suivant' }));
-    expect(mockPush).toHaveBeenCalledWith('/onboarding/profile-creation');
-  });
-
-  it('shows the fifth of five progress bars as current', async () => {
-    await renderWithProviders(<InterestsScreen />);
-    expect(screen.getByRole('progressbar')).toHaveAccessibilityValue({ min: 1, max: 5, now: 5 });
-  });
-
-  it('jumps to the final screen with "Passer"', async () => {
-    await renderWithProviders(<InterestsScreen />);
-    await fireEvent.press(screen.getByRole('button', { name: 'Passer' }));
-    expect(mockReplace).toHaveBeenCalledWith('/onboarding/ready');
   });
 });

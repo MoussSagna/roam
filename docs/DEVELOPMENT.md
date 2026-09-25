@@ -111,14 +111,14 @@ Path alias: `@/` → `src/` (TypeScript, Jest and Metro).
 | ---- | ------------------------------------------------------------- | ------------------- | -------------------------------------------------------------------------------- |
 | —    | `/`                                                           | Splash              | Goes to `/welcome` after 2.6 s (no session yet)                                  |
 | 1    | `/welcome`                                                    | Welcome             | Photo collage; no pagination dots (`PageDots` removed on purpose, do not re-add) |
-| 2–6  | `/onboarding/mood` (also `time`, `budget`, `location`, `interests`) | Questions (one pager) | Fullscreen slides of `OnboardingPager` (swipe or "Suivant"), D-87; "Passer"; `ProgressBars`; answers are local state, not saved |
+| 2–6  | `/onboarding/mood` (also `time`, `budget`, `location`, `interests`) | Questions (one pager) | Slides of `OnboardingPager` between a fixed "Passer" and a fixed footer (animated bars, "Suivant"), D-87/D-88; an answer is required to move on (button and swipe); answers held by the pager, not saved |
 | 7    | `/onboarding/profile-creation`                                | Profile creation    | **Front-end simulation, about 10 s**, no button, moves on by itself (Moti)       |
 | 8    | `/onboarding/ready`                                           | "Prêt à explorer ?" | Reached after the simulation; "Commencer" enters the app                         |
 | —    | `/home`                                                       | Home                | End of the journey, now the first tab of the main navigation                     |
 
 The order and the routes live in `features/onboarding/onboardingFlow.ts`; the questions are one horizontal `FlatList`
-(`OnboardingPager`, `PAGER_STEPS`) on `/onboarding/mood`, the other question routes open it on their slide. "Passer" jumps to `ready`; "Commencer" and the
-profile creation use `router.replace`. Details: `DECISIONS.md` D-19 to D-28, D-87.
+(`OnboardingPager`, `PAGER_STEPS`) on `/onboarding/mood`; the other question routes redirect to it. "Passer" jumps to `ready`; "Commencer" and the
+profile creation use `router.replace`. Details: `DECISIONS.md` D-19 to D-28, D-87, D-88.
 
 ## Main navigation (current state)
 

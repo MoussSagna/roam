@@ -1,18 +1,15 @@
-import ArrowRight from 'lucide-react-native/icons/arrow-right';
 import Gift from 'lucide-react-native/icons/gift';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Pressable, Text as RNText, useWindowDimensions, View } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { Text as RNText, useWindowDimensions, View } from 'react-native';
 
-import { Button, FadeInUp, Text } from '@/components/ui';
+import { FadeInUp, Text } from '@/components/ui';
 import { useTheme } from '@/theme';
 import { fontFamily } from '@/theme/typography';
 
 import { ChoiceRow } from './components/ChoiceRow';
 import { EuroGlyph } from './components/EuroGlyph';
-import { ProgressBars } from './components/ProgressBars';
-import { useOnboardingNavigation } from './onboardingFlow';
+import type { SingleChoiceSlideProps } from './slideProps';
 
 const HORIZONTAL_MARGIN = 30.6;
 const LIST_MARGIN = 27;
@@ -42,15 +39,13 @@ const BUDGETS = [
 
 /**
  * Onboarding 4 — "Quel est ton budget ?" (design mockup "Home Onboarding", fifth tile).
- * Single choice; the mockup shows "Moins de 10 €" selected, so it is the default.
+ * Single choice, nothing selected at first (D-88). A slide of `OnboardingPager`, which holds the answer and
+ * shows "Passer", the progress bars and "Suivant".
  */
-export function BudgetScreen() {
+export function BudgetScreen({ selected, onSelect }: SingleChoiceSlideProps) {
   const { t } = useTranslation();
   const { width } = useWindowDimensions();
-  const insets = useSafeAreaInsets();
   const { colors } = useTheme();
-  const { next, skip } = useOnboardingNavigation('budget');
-  const [selected, setSelected] = useState<(typeof BUDGETS)[number]['id']>('under10');
   const [areaHeight, setAreaHeight] = useState<number | null>(null);
 
   // Title and subtitle lines must not wrap on narrow screens (375 pt wide → 32 pt and 17 pt).
@@ -72,20 +67,7 @@ export function BudgetScreen() {
 
   return (
     <View className="flex-1 bg-background">
-      <View style={{ paddingTop: insets.top }}>
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel={t('common.skip')}
-          onPress={skip}
-          hitSlop={12}
-          className="self-end active:opacity-60"
-          style={{ marginRight: 26, marginTop: 17 }}
-        >
-          <Text variant="small" tone="secondary">
-            {t('common.skip')}
-          </Text>
-        </Pressable>
-
+      <View>
         <FadeInUp>
           <RNText
             accessibilityRole="header"
@@ -134,21 +116,11 @@ export function BudgetScreen() {
                 accessibilityLabel={budget.id === 'free' ? undefined : `${t(budget.key)}\u00a0€`}
                 selected={selected === budget.id}
                 height={rowHeight}
-                onPress={() => setSelected(budget.id)}
+                onPress={() => onSelect(budget.id)}
               />
             ))}
           </View>
         </FadeInUp>
-      </View>
-
-      <View style={{ paddingBottom: Math.max(insets.bottom, 24), paddingHorizontal: 20 }}>
-        <ProgressBars count={5} index={2} />
-        <Button
-          label={t('common.next')}
-          trailingIcon={ArrowRight}
-          onPress={next}
-          className="mt-[21px]"
-        />
       </View>
     </View>
   );

@@ -1,4 +1,4 @@
-import { act, fireEvent, screen } from '@testing-library/react-native';
+import { act, fireEvent, screen, within } from '@testing-library/react-native';
 import { Dimensions, FlatList, StyleSheet } from 'react-native';
 
 import i18n from '@/i18n';
@@ -12,7 +12,9 @@ jest.mock('expo-router', () => ({
   useRouter: () => ({ push: mockPush, replace: mockReplace }),
 }));
 
-const { width, height } = Dimensions.get('window');
+const { width } = Dimensions.get('window');
+/** Height of the middle zone, as the native layout reports it (less than the window: header and footer). */
+const BODY_HEIGHT = 600;
 
 /**
  * What the native list reports while it scrolls to `index` (Jest has no native scrolling): a stream of
@@ -23,8 +25,8 @@ async function scrollToSlide(index: number) {
   const pager = screen.getByTestId('onboarding-pager');
   const nativeEvent = {
     contentOffset: { x: index * width, y: 0 },
-    contentSize: { width: width * 5, height },
-    layoutMeasurement: { width, height },
+    contentSize: { width: width * 5, height: BODY_HEIGHT },
+    layoutMeasurement: { width, height: BODY_HEIGHT },
   };
   for (let i = 0; i < 2; i++) {
     await fireEvent.scroll(pager, { nativeEvent });
@@ -32,18 +34,49 @@ async function scrollToSlide(index: number) {
   }
 }
 
-async function renderPager(ui = <OnboardingPager />) {
-  await renderWithProviders(ui);
+async function renderPager() {
+  await renderWithProviders(<OnboardingPager />);
   const pager = screen.getByTestId('onboarding-pager');
-  await fireEvent(pager, 'layout', { nativeEvent: { layout: { x: 0, y: 0, width, height } } });
-  await fireEvent(pager, 'contentSizeChange', width * 5, height);
+  await fireEvent(pager, 'layout', {
+    nativeEvent: { layout: { x: 0, y: 100, width, height: BODY_HEIGHT } },
+  });
+  await fireEvent(pager, 'contentSizeChange', width * 5, BODY_HEIGHT);
+}
+
+function header() {
+  return screen.getByRole('header');
+}
+
+function nextButton() {
+  return screen.getByRole('button', { name: 'Suivant' });
 }
 
 function progressNow() {
   return screen.getByRole('progressbar').props.accessibilityValue.now;
 }
 
-describe('OnboardingPager (onboarding questions as fullscreen slides)', () => {
+/** Whether slide `index` is in the list at all (mounted, even off screen). */
+function slideExists(index: number) {
+  return (
+    screen.queryByTestId(`onboarding-slide-${index}`, { includeHiddenElements: true }) !== null
+  );
+}
+
+/** Answers the current slide with `choice`, then "Suivant" and the scroll it triggers. */
+async function answerAndContinue(choice: string, toIndex: number) {
+  await fireEvent.press(screen.getByRole('radio', { name: choice }));
+  await fireEvent.press(nextButton());
+  await scrollToSlide(toIndex);
+}
+
+async function reachInterests() {
+  await answerAndContinue('Curieux', 1);
+  await answerAndContinue('1 à 2 h', 2);
+  await answerAndContinue('Gratuit', 3);
+  await answerAndContinue('Autour de moi', 4);
+}
+
+describe('OnboardingPager: fixed header and footer around the question slides', () => {
   beforeEach(async () => {
     jest.useFakeTimers();
     mockPush.mockClear();
@@ -55,104 +88,187 @@ describe('OnboardingPager (onboarding questions as fullscreen slides)', () => {
     jest.useRealTimers();
   });
 
-  it('shows the first slide (mood) first, as a horizontal paging list', async () => {
-    await renderPager();
+  describe('layout', () => {
+    it('stacks header, list and footer; the list holds the slides only', async () => {
+      await renderPager();
 
-    const pager = screen.getByTestId('onboarding-pager');
-    expect(pager.props.horizontal).toBe(true);
-    expect(pager.props.pagingEnabled).toBe(true);
-    expect(pager.props.showsHorizontalScrollIndicator).toBe(false);
-    expect(screen.getByRole('header')).toHaveTextContent('Quelle est ton humeur aujourd’hui ?');
-    expect(progressNow()).toBe(1);
+      const headerZone = screen.getByTestId('onboarding-header');
+      const pager = screen.getByTestId('onboarding-pager');
+      const footer = screen.getByTestId('onboarding-footer');
+      const zones = headerZone.parent?.children ?? [];
+      expect(zones[0]).toBe(headerZone);
+      expect(zones.at(-1)).toBe(footer);
+      expect(within(pager).queryByRole('button', { name: 'Passer' })).toBeNull();
+      expect(within(pager).queryByRole('button', { name: 'Suivant' })).toBeNull();
+      expect(within(pager).queryByRole('progressbar')).toBeNull();
+    });
+
+    it('shows "Passer" once, in the header, and keeps it there when the slide changes', async () => {
+      await renderPager();
+      const headerZone = screen.getByTestId('onboarding-header');
+
+      expect(screen.getAllByText('Passer', { includeHiddenElements: true })).toHaveLength(1);
+      expect(within(headerZone).getByRole('button', { name: 'Passer' })).toBeOnTheScreen();
+
+      await answerAndContinue('Curieux', 1);
+
+      expect(header()).toHaveTextContent('Combien de temps as-tu ?');
+      expect(screen.getAllByText('Passer', { includeHiddenElements: true })).toHaveLength(1);
+      expect(within(headerZone).getByRole('button', { name: 'Passer' })).toBeOnTheScreen();
+    });
+
+    it('puts the progress bars, then "Suivant", in the footer, which stays out of the list', async () => {
+      await renderPager();
+      const footer = screen.getByTestId('onboarding-footer');
+
+      expect(within(footer).getByRole('progressbar')).toBeOnTheScreen();
+      expect(within(footer).getByRole('button', { name: 'Suivant' })).toBeOnTheScreen();
+      expect(screen.getAllByRole('progressbar', { includeHiddenElements: true })).toHaveLength(1);
+
+      await answerAndContinue('Curieux', 1);
+      expect(within(footer).getByRole('progressbar')).toBeOnTheScreen();
+      expect(within(footer).getByRole('button', { name: 'Suivant' })).toBeOnTheScreen();
+    });
+
+    it('sizes each slide to the middle zone: full width, the height left by header and footer', async () => {
+      await renderPager();
+
+      const pager = screen.getByTestId('onboarding-pager');
+      expect(pager.props.horizontal).toBe(true);
+      expect(pager.props.pagingEnabled).toBe(true);
+      expect(pager.props.showsHorizontalScrollIndicator).toBe(false);
+      const style = StyleSheet.flatten(screen.getByTestId('onboarding-slide-0').props.style);
+      expect(style.width).toBe(width);
+      expect(style.height).toBe(BODY_HEIGHT);
+    });
   });
 
-  it('gives every slide the whole window: full width and full height', async () => {
-    await renderPager();
+  describe('progress bars', () => {
+    it('follow the current index, whether it moves by "Suivant" or by a swipe', async () => {
+      await renderPager();
+      expect(progressNow()).toBe(1);
 
-    const style = StyleSheet.flatten(screen.getByTestId('onboarding-slide-0').props.style);
-    expect(style.width).toBe(width);
-    expect(style.height).toBe(height);
+      await answerAndContinue('Curieux', 1);
+      expect(progressNow()).toBe(2);
+
+      await scrollToSlide(0);
+      expect(progressNow()).toBe(1);
+      expect(header()).toHaveTextContent('Quelle est ton humeur aujourd’hui ?');
+    });
+
+    it('animate the current bar (wider), driven by the same index', async () => {
+      await renderPager();
+      const barWidth = (i: number) =>
+        StyleSheet.flatten(screen.getByTestId(`progress-bar-${i}`).props.style).width;
+      expect(barWidth(0)).toBeGreaterThan(barWidth(1));
+
+      await answerAndContinue('Curieux', 1);
+      await act(() => jest.advanceTimersByTimeAsync(500));
+
+      expect(barWidth(1)).toBeGreaterThan(barWidth(0));
+    });
   });
 
-  it('a swipe moves to the next slide and updates the progress bars', async () => {
-    await renderPager();
+  describe('canGoNext: "Suivant" and the swipe follow the same rule', () => {
+    it('with nothing selected: "Suivant" is disabled and there is no next slide to swipe to', async () => {
+      const scrollToIndex = jest.spyOn(FlatList.prototype, 'scrollToIndex');
+      await renderPager();
+      await act(() => jest.advanceTimersByTimeAsync(500));
 
-    await scrollToSlide(1);
+      expect(screen.queryAllByRole('radio', { checked: true })).toHaveLength(0);
+      expect(nextButton()).toBeDisabled();
+      expect(slideExists(1)).toBe(false);
 
-    expect(screen.getByRole('header')).toHaveTextContent('Combien de temps as-tu ?');
-    expect(progressNow()).toBe(2);
+      await fireEvent.press(nextButton());
+      await scrollToSlide(1);
 
-    await scrollToSlide(2);
-    expect(screen.getByRole('header')).toHaveTextContent('Quel est ton budget ?');
-    expect(progressNow()).toBe(3);
+      expect(scrollToIndex).not.toHaveBeenCalled();
+      expect(header()).toHaveTextContent('Quelle est ton humeur aujourd’hui ?');
+      expect(progressNow()).toBe(1);
+      scrollToIndex.mockRestore();
+    });
 
-    // Swiping back works the same way.
-    await scrollToSlide(1);
-    expect(screen.getByRole('header')).toHaveTextContent('Combien de temps as-tu ?');
-    expect(progressNow()).toBe(2);
+    it('once a choice is made: "Suivant" is enabled and the next slide can be swiped to', async () => {
+      await renderPager();
+
+      await fireEvent.press(screen.getByRole('radio', { name: 'Festif' }));
+      // The list mounts the slide it now holds in its next render batch.
+      await act(() => jest.advanceTimersByTimeAsync(100));
+
+      expect(nextButton()).toBeEnabled();
+      expect(slideExists(1)).toBe(true);
+      await scrollToSlide(1);
+      expect(header()).toHaveTextContent('Combien de temps as-tu ?');
+      // The new slide has no answer yet: blocked again, and still no slide after it.
+      expect(nextButton()).toBeDisabled();
+      expect(slideExists(2)).toBe(false);
+    });
+
+    it('"Suivant" moves one slide forward, without a route change', async () => {
+      const scrollToIndex = jest.spyOn(FlatList.prototype, 'scrollToIndex');
+      await renderPager();
+      await fireEvent.press(screen.getByRole('radio', { name: 'Curieux' }));
+
+      await fireEvent.press(nextButton());
+
+      expect(scrollToIndex).toHaveBeenCalledWith({ index: 1, animated: true });
+      expect(progressNow()).toBe(2);
+      expect(mockPush).not.toHaveBeenCalled();
+      scrollToIndex.mockRestore();
+    });
+
+    it('going back stays possible, and answers are kept', async () => {
+      await renderPager();
+      await answerAndContinue('Curieux', 1);
+
+      await scrollToSlide(0);
+
+      expect(screen.getByRole('radio', { name: 'Curieux' })).toBeChecked();
+      expect(nextButton()).toBeEnabled();
+    });
   });
 
-  it('"Suivant" moves one slide forward, without a route change', async () => {
-    const scrollToIndex = jest.spyOn(FlatList.prototype, 'scrollToIndex');
-    await renderPager();
+  describe('last slide', () => {
+    it('needs at least one interest, then "Suivant" opens the profile creation', async () => {
+      await renderPager();
+      await reachInterests();
 
-    await fireEvent.press(screen.getByRole('button', { name: 'Suivant' }));
+      expect(header()).toHaveTextContent('Qu’est-ce qui t’intéresse ?');
+      expect(progressNow()).toBe(5);
+      expect(nextButton()).toBeDisabled();
 
-    // The index moves at once (single source of truth for the bars and the list)…
-    expect(scrollToIndex).toHaveBeenCalledWith({ index: 1, animated: true });
-    expect(
-      screen.getByTestId('onboarding-slide-0', { includeHiddenElements: true }).props
-        .accessibilityElementsHidden,
-    ).toBe(true);
-    // …and, once the list has scrolled, the time slide is the one on screen.
-    await scrollToSlide(1);
-    expect(progressNow()).toBe(2);
-    expect(screen.getByRole('header')).toHaveTextContent('Combien de temps as-tu ?');
-    expect(mockPush).not.toHaveBeenCalled();
-    scrollToIndex.mockRestore();
+      await fireEvent.press(screen.getByRole('checkbox', { name: 'Nature' }));
+      expect(nextButton()).toBeEnabled();
+      expect(slideExists(5)).toBe(false);
+
+      // Unselecting the only interest blocks it again.
+      await fireEvent.press(screen.getByRole('checkbox', { name: 'Nature' }));
+      expect(nextButton()).toBeDisabled();
+
+      await fireEvent.press(screen.getByRole('checkbox', { name: 'Culture' }));
+      await fireEvent.press(nextButton());
+      expect(mockPush).toHaveBeenCalledWith('/onboarding/profile-creation');
+    });
   });
 
-  it('"Suivant" after a swipe continues from the swiped slide', async () => {
-    await renderPager();
-    await scrollToSlide(1);
-    await scrollToSlide(2);
+  describe('"Passer"', () => {
+    it('jumps to the final screen even when the current slide has no answer', async () => {
+      await renderPager();
+      expect(nextButton()).toBeDisabled();
 
-    await fireEvent.press(screen.getByRole('button', { name: 'Suivant' }));
-    await scrollToSlide(3);
+      await fireEvent.press(screen.getByRole('button', { name: 'Passer' }));
 
-    expect(screen.getByRole('header')).toHaveTextContent('Où souhaites-tu sortir ?');
-    expect(progressNow()).toBe(4);
-  });
-
-  it('"Suivant" on the last slide opens the profile creation', async () => {
-    await renderPager(<OnboardingPager initialStep="interests" />);
-
-    expect(screen.getByRole('header')).toHaveTextContent('Qu’est-ce qui t’intéresse ?');
-    expect(progressNow()).toBe(5);
-    await fireEvent.press(screen.getByRole('button', { name: 'Suivant' }));
-
-    expect(mockPush).toHaveBeenCalledWith('/onboarding/profile-creation');
-  });
-
-  it('"Passer" still jumps to the final screen, from any slide', async () => {
-    await renderPager();
-    await scrollToSlide(1);
-
-    await fireEvent.press(screen.getByRole('button', { name: 'Passer' }));
-
-    expect(mockReplace).toHaveBeenCalledWith('/onboarding/ready');
-    expect(mockPush).not.toHaveBeenCalled();
+      expect(mockReplace).toHaveBeenCalledWith('/onboarding/ready');
+    });
   });
 
   it('only exposes the slide on screen to assistive technologies', async () => {
     await renderPager();
-    await scrollToSlide(1);
+    await answerAndContinue('Curieux', 1);
 
-    // Its neighbors are mounted (swipe-ready) but hidden: queries and screen readers skip them.
-    expect(screen.getByTestId('onboarding-slide-0', { includeHiddenElements: true })).toBeTruthy();
+    expect(slideExists(0)).toBe(true);
     expect(screen.queryByTestId('onboarding-slide-0')).toBeNull();
     expect(screen.getByTestId('onboarding-slide-1')).toBeOnTheScreen();
-    expect(screen.getAllByRole('button', { name: 'Suivant' })).toHaveLength(1);
     expect(screen.getAllByRole('header')).toHaveLength(1);
   });
 });

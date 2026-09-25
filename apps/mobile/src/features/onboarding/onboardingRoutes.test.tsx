@@ -52,20 +52,23 @@ async function openWelcomeFromSplash() {
 }
 
 /**
- * The questions are the slides of one pager on `/onboarding/mood`: "Suivant" scrolls the list instead of
- * pushing a route. Jest has no native scrolling, so this sends what the list reports once it has
- * scrolled (a stream of scroll events; the new slide renders and becomes "viewable" on timers).
+ * The questions are the slides of one pager on `/onboarding/mood`, between a fixed "Passer" and a fixed
+ * footer. Jest has no native layout or scrolling, so these send what the list reports: its size, then a
+ * stream of scroll events (the new slide renders and becomes "viewable" on timers).
  */
-async function pressNextInPager(toIndex: number) {
-  await fireEvent.press(screen.getByRole('button', { name: 'Suivant' }));
+async function layOutPager() {
   const { width, height } = Dimensions.get('window');
   const pager = screen.getByTestId('onboarding-pager');
   await fireEvent(pager, 'layout', { nativeEvent: { layout: { x: 0, y: 0, width, height } } });
   await fireEvent(pager, 'contentSizeChange', width * PAGER_STEPS.length, height);
+}
+
+async function scrollPagerTo(index: number) {
+  const { width, height } = Dimensions.get('window');
   for (let i = 0; i < 2; i++) {
-    await fireEvent.scroll(pager, {
+    await fireEvent.scroll(screen.getByTestId('onboarding-pager'), {
       nativeEvent: {
-        contentOffset: { x: toIndex * width, y: 0 },
+        contentOffset: { x: index * width, y: 0 },
         contentSize: { width: width * PAGER_STEPS.length, height },
         layoutMeasurement: { width, height },
       },
@@ -73,6 +76,9 @@ async function pressNextInPager(toIndex: number) {
     await act(() => jest.advanceTimersByTimeAsync(500));
   }
 }
+
+/** One answer per question slide, in order (each question needs one to move on, D-88). */
+const ANSWERS = ['Curieux', '1 à 2 h', 'Gratuit', 'Autour de moi'];
 
 type JsonNode = { type: string; props: Record<string, unknown>; children: JsonNode[] | null };
 
@@ -93,12 +99,20 @@ function topScreenGestureEnabled() {
   return nativeScreens.at(-1)?.props.gestureEnabled;
 }
 
-/** Welcome → the pager, then "Suivant" through the slides up to `step`. */
-async function openSlide(step: (typeof PAGER_STEPS)[number]) {
+async function openPager() {
   const utils = await openWelcomeFromSplash();
   await fireEvent.press(screen.getByRole('button', { name: 'Suivant' }));
+  await layOutPager();
+  return utils;
+}
+
+/** Welcome → the pager, then answer and "Suivant" through the slides up to `step`. */
+async function openSlide(step: (typeof PAGER_STEPS)[number]) {
+  const utils = await openPager();
   for (let index = 1; index <= PAGER_STEPS.indexOf(step); index++) {
-    await pressNextInPager(index);
+    await fireEvent.press(screen.getByRole('radio', { name: ANSWERS[index - 1] }));
+    await fireEvent.press(screen.getByRole('button', { name: 'Suivant' }));
+    await scrollPagerTo(index);
   }
   return utils;
 }
@@ -118,15 +132,15 @@ describe('onboarding routes', () => {
 
     for (const step of ONBOARDING_STEPS) {
       await act(() => router.navigate(ROUTES[step] as Href));
-      expect(utils.getPathname()).toBe(ROUTES[step]);
+      // The questions after the first one bring back to the start of the pager (D-88).
+      const inPagerAfterFirst = (PAGER_STEPS as readonly string[]).indexOf(step) > 0;
+      expect(utils.getPathname()).toBe(inPagerAfterFirst ? ROUTES.mood : ROUTES[step]);
       expect(screen.queryByText(/Unmatched Route/i)).toBeNull();
     }
   });
 
   it('splash → welcome → "Suivant" shows the second onboarding screen', async () => {
-    const utils = await openWelcomeFromSplash();
-
-    await fireEvent.press(screen.getByRole('button', { name: 'Suivant' }));
+    const utils = await openPager();
 
     expect(utils.getPathname()).toBe('/onboarding/mood');
     expect(screen.getByRole('header')).toHaveTextContent('Quelle est ton humeur aujourd’hui ?');
@@ -186,15 +200,13 @@ describe('onboarding routes', () => {
     expect(screen.getAllByRole('checkbox')).toHaveLength(8);
   });
 
-  it('each question route still opens the pager on its own slide', async () => {
-    await renderApp();
+  it('the other question routes bring back to the start of the pager', async () => {
+    const utils = await renderApp();
 
     for (const step of PAGER_STEPS.slice(1)) {
       await act(() => router.navigate(ROUTES[step] as Href));
+      expect(utils.getPathname()).toBe('/onboarding/mood');
       expect(screen.getByTestId('onboarding-pager')).toBeOnTheScreen();
-      expect(screen.getByRole('progressbar').props.accessibilityValue.now).toBe(
-        PAGER_STEPS.indexOf(step) + 1,
-      );
     }
   });
 
@@ -227,6 +239,7 @@ describe('onboarding routes', () => {
 
   it('interests (last slide) → "Suivant" shows the profile creation, which needs nothing from the user', async () => {
     const utils = await openSlide('interests');
+    await fireEvent.press(screen.getByRole('checkbox', { name: 'Nature' }));
     await fireEvent.press(screen.getByRole('button', { name: 'Suivant' }));
 
     expect(utils.getPathname()).toBe('/onboarding/profile-creation');
@@ -238,6 +251,7 @@ describe('onboarding routes', () => {
   it('walks the whole journey: through the slides to the profile creation, then it moves on by itself', async () => {
     const utils = await openSlide('interests');
     expect(utils.getPathname()).toBe('/onboarding/mood');
+    await fireEvent.press(screen.getByRole('checkbox', { name: 'Nature' }));
     await fireEvent.press(screen.getByRole('button', { name: 'Suivant' }));
     expect(utils.getPathname()).toBe(ROUTES.profile);
 
@@ -256,8 +270,7 @@ describe('onboarding routes', () => {
   });
 
   it('keeps the native swipe-back off on the pager (its own horizontal swipe moves between slides)', async () => {
-    await openWelcomeFromSplash();
-    await fireEvent.press(screen.getByRole('button', { name: 'Suivant' }));
+    await openPager();
     expect(topScreenGestureEnabled()).toBe(false);
 
     for (const step of PAGER_STEPS.slice(1)) {

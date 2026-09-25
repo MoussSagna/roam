@@ -1,6 +1,9 @@
-import { OnboardingPager } from '@/features/onboarding/OnboardingPager';
+import { Redirect } from 'expo-router';
 
-/** Opens the question pager directly on this slide. */
+/**
+ * The questions are one pager on `/onboarding/mood`, and each needs the previous answers (D-88): this
+ * route only brings back to its start.
+ */
 export default function LocationRoute() {
-  return <OnboardingPager initialStep="location" />;
+  return <Redirect href="/onboarding/mood" />;
 }

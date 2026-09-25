@@ -1,20 +1,17 @@
-import ArrowRight from 'lucide-react-native/icons/arrow-right';
 import LocateFixed from 'lucide-react-native/icons/locate-fixed';
 import Navigation from 'lucide-react-native/icons/navigation';
 import Search from 'lucide-react-native/icons/search';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Pressable, Text as RNText, useWindowDimensions, View } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { Text as RNText, useWindowDimensions, View } from 'react-native';
 
-import { Button, FadeInUp, Text } from '@/components/ui';
+import { FadeInUp, Text } from '@/components/ui';
 import { useTheme } from '@/theme';
 import { fontFamily } from '@/theme/typography';
 
 import { ChoiceRow } from './components/ChoiceRow';
 import { MAP_ASPECT, MapPreview } from './components/MapPreview';
-import { ProgressBars } from './components/ProgressBars';
-import { useOnboardingNavigation } from './onboardingFlow';
+import type { SingleChoiceSlideProps } from './slideProps';
 
 const HORIZONTAL_MARGIN = 28;
 const LIST_MARGIN = 23;
@@ -43,16 +40,14 @@ const PLACES = [
 
 /**
  * Onboarding 5 — "Où souhaites-tu sortir ?" (design mockup "Home Onboarding", sixth tile).
- * Single choice; the mockup shows "Ma position actuelle" selected, so it is the default. Nothing asks
- * for the position yet: the choice is local, and the map is an illustration (see D-24).
+ * Single choice, nothing selected at first (D-88). Nothing asks for the position yet: the choice is
+ * local, and the map is an illustration (see D-24). A slide of `OnboardingPager`, which holds the answer
+ * and shows "Passer", the progress bars and "Suivant".
  */
-export function LocationScreen() {
+export function LocationScreen({ selected, onSelect }: SingleChoiceSlideProps) {
   const { t } = useTranslation();
   const { width } = useWindowDimensions();
-  const insets = useSafeAreaInsets();
   const { colors } = useTheme();
-  const { next, skip } = useOnboardingNavigation('location');
-  const [selected, setSelected] = useState<(typeof PLACES)[number]['id']>('current');
   const [areaHeight, setAreaHeight] = useState<number | null>(null);
 
   // The title must stay on one line on narrow screens (375 pt wide → 27 pt).
@@ -80,20 +75,7 @@ export function LocationScreen() {
 
   return (
     <View className="flex-1 bg-background">
-      <View style={{ paddingTop: insets.top }}>
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel={t('common.skip')}
-          onPress={skip}
-          hitSlop={12}
-          className="self-end active:opacity-60"
-          style={{ marginRight: 26, marginTop: 17 }}
-        >
-          <Text variant="small" tone="secondary">
-            {t('common.skip')}
-          </Text>
-        </Pressable>
-
+      <View>
         <FadeInUp>
           <RNText
             accessibilityRole="header"
@@ -143,7 +125,7 @@ export function LocationScreen() {
                 labelSize={17}
                 selected={selected === place.id}
                 height={rowHeight}
-                onPress={() => setSelected(place.id)}
+                onPress={() => onSelect(place.id)}
               />
             ))}
           </View>
@@ -156,16 +138,6 @@ export function LocationScreen() {
             />
           </View>
         </FadeInUp>
-      </View>
-
-      <View style={{ paddingBottom: Math.max(insets.bottom, 24), paddingHorizontal: 20 }}>
-        <ProgressBars count={5} index={3} />
-        <Button
-          label={t('common.next')}
-          trailingIcon={ArrowRight}
-          onPress={next}
-          className="mt-[21px]"
-        />
       </View>
     </View>
   );

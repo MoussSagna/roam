@@ -1,17 +1,14 @@
-import ArrowRight from 'lucide-react-native/icons/arrow-right';
 import Clock from 'lucide-react-native/icons/clock';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Pressable, Text as RNText, useWindowDimensions, View } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { Text as RNText, useWindowDimensions, View } from 'react-native';
 
-import { Button, FadeInUp, Text } from '@/components/ui';
+import { FadeInUp, Text } from '@/components/ui';
 import { useTheme } from '@/theme';
 import { fontFamily } from '@/theme/typography';
 
 import { ChoiceRow } from './components/ChoiceRow';
-import { ProgressBars } from './components/ProgressBars';
-import { useOnboardingNavigation } from './onboardingFlow';
+import type { SingleChoiceSlideProps } from './slideProps';
 
 const HORIZONTAL_MARGIN = 30.6;
 const LIST_MARGIN = 27;
@@ -37,15 +34,13 @@ const TIMES = [
 
 /**
  * Onboarding 3 — "Combien de temps as-tu ?" (design mockup "Home Onboarding", fourth tile).
- * Single choice; the mockup shows "1 à 2 h" selected, so it is the default.
+ * Single choice, nothing selected at first (D-88). A slide of `OnboardingPager`, which holds the answer and
+ * shows "Passer", the progress bars and "Suivant".
  */
-export function TimeScreen() {
+export function TimeScreen({ selected, onSelect }: SingleChoiceSlideProps) {
   const { t } = useTranslation();
   const { width } = useWindowDimensions();
-  const insets = useSafeAreaInsets();
   const { colors } = useTheme();
-  const { next, skip } = useOnboardingNavigation('time');
-  const [selected, setSelected] = useState<(typeof TIMES)[number]['id']>('oneToTwoH');
   const [areaHeight, setAreaHeight] = useState<number | null>(null);
 
   // The longer subtitle line must stay on one line on narrow screens (375 pt wide → 16 pt).
@@ -64,20 +59,7 @@ export function TimeScreen() {
 
   return (
     <View className="flex-1 bg-background">
-      <View style={{ paddingTop: insets.top }}>
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel={t('common.skip')}
-          onPress={skip}
-          hitSlop={12}
-          className="self-end active:opacity-60"
-          style={{ marginRight: 26, marginTop: 17 }}
-        >
-          <Text variant="small" tone="secondary">
-            {t('common.skip')}
-          </Text>
-        </Pressable>
-
+      <View>
         <FadeInUp>
           <RNText
             accessibilityRole="header"
@@ -124,21 +106,11 @@ export function TimeScreen() {
                 selected={selected === time.id}
                 iconSize={iconSize}
                 height={rowHeight}
-                onPress={() => setSelected(time.id)}
+                onPress={() => onSelect(time.id)}
               />
             ))}
           </View>
         </FadeInUp>
-      </View>
-
-      <View style={{ paddingBottom: Math.max(insets.bottom, 24), paddingHorizontal: 20 }}>
-        <ProgressBars count={5} index={1} />
-        <Button
-          label={t('common.next')}
-          trailingIcon={ArrowRight}
-          onPress={next}
-          className="mt-[21px]"
-        />
       </View>
     </View>
   );

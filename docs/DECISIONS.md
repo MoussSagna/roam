@@ -2927,3 +2927,26 @@ slide = the window's width × height from `useWindowDimensions`). Each slide ren
   `onboardingRoutes.test.tsx` (the journey through the slides, deep links, the native gesture off on the pager). Jest has
   no native scrolling: the tests send the scroll events the list would report.
 - **Not verified on a device in this session** (no iOS simulator on the build machine).
+
+### D-88 — Onboarding questions: fixed "Passer" and footer, animated bars, an answer required to move on
+
+Layout and navigation only; the slides' content and design are unchanged. Supersedes the default selections of D-21 to
+D-25 and D-25's "Suivant is never blocked", on the product owner's decision.
+
+- **Three zones in `OnboardingPager`:** a fixed header (the only "Passer", same place and style as before, under the top
+  safe area), the horizontal `FlatList` in the middle (each slide = window width × the measured height of that zone), and a
+  fixed footer (progress bars, then "Suivant", above the bottom safe area). The screens (`MoodScreen`…`InterestsScreen`) no
+  longer render "Passer", the bars or "Suivant": they are slide content, with their answer as props (`slideProps.ts`).
+  Positions on screen are the same as before (the header takes the top inset and "Passer", the footer the same padding).
+- **Answers are held by the pager** (`onboardingAnswers.ts`), still for the prototype only (nothing saved, D-28). **Nothing
+  is selected at first** (the mockups' defaults are gone), and at least one interest is needed.
+- **One rule, `isStepComplete`**, gives `canGoNext` for the current slide: "Suivant" is `disabled` (the `Button`'s own
+  disabled look) when it is false. The same rule decides which slides the list holds: up to the first unanswered question
+  (`lastReachableIndex`), so a swipe cannot go past it — the list simply ends there — while going back stays possible.
+  "Passer" is never blocked. "Suivant" on the last question opens the profile creation, as before.
+- **Bars:** `ProgressBars` gained an opt-in `animated` prop (Moti: the current bar widens 14 → 18 and fills in over
+  250 ms), used by the pager's footer with its `currentIndex` — no second state. The journey flow's bars are unchanged.
+- **Routes:** `/onboarding/time`, `budget`, `location` and `interests` now redirect to `/onboarding/mood` (a later question
+  cannot be opened before the earlier ones are answered). The pager's `initialStep` prop is gone.
+- **Keyboard:** no slide has a text field, so there is nothing to handle.
+- **Not verified on a device in this session** (no iOS simulator on the build machine).
