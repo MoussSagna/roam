@@ -6,9 +6,9 @@ import { Pressable, View } from 'react-native';
 import { ProgressBars } from '@/features/onboarding/components/ProgressBars';
 import { useTheme } from '@/theme';
 
-/** Steps of the creation flow drawn by the progress bars (context ×3, location, suggestions, builder,
- * summary). */
-export const JOURNEY_FLOW_STEPS = 7;
+/** Steps of the creation flow drawn by the progress bars (context ×3, location, suggestions, builder —
+ * the builder is the last one since sprint 12, D-86). */
+export const JOURNEY_FLOW_STEPS = 6;
 
 type JourneyFlowHeaderProps = {
   onBack: () => void;

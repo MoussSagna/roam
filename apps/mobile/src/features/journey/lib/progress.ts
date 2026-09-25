@@ -42,3 +42,19 @@ export function completedStepCount(journey: Journey): number {
   if (journey.status === 'completed') return journey.steps.length;
   return journey.startedAt ? journey.currentStep : 0;
 }
+
+/**
+ * The current step once the steps are edited (sprint 12, `/journey/[id]/edit`): the current experience
+ * stays current wherever it moved; if it was removed, the first step not done yet (as many done steps
+ * as are still there). Always within `experienceIds` (0 when empty or not started).
+ */
+export function currentStepAfterEdit(journey: Journey, experienceIds: readonly string[]): number {
+  if (!journey.startedAt || experienceIds.length === 0) return 0;
+  const before = journey.steps.map((step) => step.experienceId);
+  const stillCurrent = experienceIds.indexOf(before[journey.currentStep] ?? '');
+  if (stillCurrent >= 0) return stillCurrent;
+  const doneStillThere = before
+    .slice(0, journey.currentStep)
+    .filter((id) => experienceIds.includes(id)).length;
+  return Math.min(doneStillThere, experienceIds.length - 1);
+}

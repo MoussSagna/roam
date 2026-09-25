@@ -13,6 +13,10 @@ type ExperienceMapFooterProps = {
   experience: Experience;
   /** Already-resolved "Café · Paris 3e"-style line (the screen owns the category lookup). */
   subtitle?: string | null;
+  /** Small status pill above the name — a journey step's "Étape actuelle" / "Étape 2" (sprint 12). */
+  badge?: string | null;
+  /** `primary` pill (the current step) instead of a neutral one. */
+  badgeHighlighted?: boolean;
   onPressView: (experience: Experience) => void;
 };
 
@@ -27,6 +31,8 @@ type ExperienceMapFooterProps = {
 export function ExperienceMapFooter({
   experience,
   subtitle,
+  badge,
+  badgeHighlighted = false,
   onPressView,
 }: ExperienceMapFooterProps) {
   const { t } = useTranslation();
@@ -57,6 +63,25 @@ export function ExperienceMapFooter({
         </View>
 
         <View className="flex-1 gap-1">
+          {badge ? (
+            <View
+              testID="experience-map-footer-badge"
+              className={
+                badgeHighlighted
+                  ? 'flex-row items-center gap-1.5 self-start rounded-pill bg-primary/10 px-2.5 py-1'
+                  : 'flex-row items-center gap-1.5 self-start rounded-pill bg-surfaceElevated px-2.5 py-1'
+              }
+            >
+              {badgeHighlighted ? <View className="h-1.5 w-1.5 rounded-pill bg-primary" /> : null}
+              <Text
+                variant="caption"
+                tone={badgeHighlighted ? 'primary' : 'secondary'}
+                className="font-bodySemibold"
+              >
+                {badge}
+              </Text>
+            </View>
+          ) : null}
           <Text variant="h4" numberOfLines={2}>
             {experience.title}
           </Text>

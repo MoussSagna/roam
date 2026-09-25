@@ -21,6 +21,15 @@ export const ONBOARDING_STEPS = [
 
 export type OnboardingStep = (typeof ONBOARDING_STEPS)[number];
 
+/**
+ * The questions, shown as the slides of one horizontal pager (`OnboardingPager`, swipe or "Suivant") under
+ * one fixed "Passer" and one fixed footer. Welcome, the profile creation (a timed simulation) and "ready"
+ * stay separate screens.
+ */
+export const PAGER_STEPS = ['mood', 'time', 'budget', 'location', 'interests'] as const;
+
+export type PagerStep = (typeof PAGER_STEPS)[number];
+
 /** `welcome` keeps its original route so the splash → welcome transition is unchanged. */
 export const ROUTES: Record<OnboardingStep, string> = {
   welcome: '/welcome',
@@ -40,7 +49,10 @@ export function nextStep(step: OnboardingStep): OnboardingStep | null {
 /** Where the journey ends: the app itself (the home screen is still a placeholder). */
 export const HOME_ROUTE = '/home';
 
-/** "Suivant" goes to the next step, "Passer" jumps to the final "ready" screen, "Commencer" enters the app. */
+/**
+ * "Suivant" goes to the next step, "Passer" jumps to the final "ready" screen, "Commencer" enters the app.
+ * Between the questions, the pager (`OnboardingPager`) scrolls itself; it uses `next` from the last one.
+ */
 export function useOnboardingNavigation(step: OnboardingStep) {
   const router = useRouter();
   const { login } = useAuth();

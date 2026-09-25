@@ -12,6 +12,8 @@ export const STORAGE_KEYS = {
   journey: 'roam.journey.current',
   /** Completed journeys, most recent first (sprint 11, same mock repository). */
   journeyHistory: 'roam.journey.history',
+  /** Feedback given after a completed journey, by journey id (sprint 12, mock repository). */
+  journeyFeedback: 'roam.journey.feedback',
 } as const;
 
 /** Storage failures must never crash the app: preferences simply fall back to defaults. */

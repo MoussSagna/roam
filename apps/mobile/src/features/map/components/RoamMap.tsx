@@ -1,11 +1,12 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import type { LayoutChangeEvent, StyleProp, ViewStyle } from 'react-native';
 import { View } from 'react-native';
-import MapView, { type MapPressEvent } from 'react-native-maps';
+import MapView, { type MapPressEvent, Polyline } from 'react-native-maps';
 
 import { useReduceMotion } from '@/hooks/useReduceMotion';
 import { cx } from '@/lib/cx';
 import { useTheme } from '@/theme';
+import type { Coordinates } from '@/types';
 
 import { FOCUS_DELTA, getFocusedRegion, getRegionForCoordinates } from '../lib/region';
 import type { MapFocusInsets, MapMarkerData, MapRegion } from '../types/map.types';
@@ -42,6 +43,9 @@ type RoamMapProps = {
    * keeping the current zoom and centering it in the area left between these insets — so it never
    * ends up under a floating header or footer. Without it the map never moves by itself (D-70). */
   focusInsets?: MapFocusInsets;
+  /** Ordered points joined by a line under the markers — a journey's route (sprint 12). Straight
+   * segments between steps: there is no routing/Directions API (D-70, D-80). */
+  route?: readonly Coordinates[];
   style?: StyleProp<ViewStyle>;
   testID?: string;
 };
@@ -62,21 +66,26 @@ export function RoamMap({
   rounded = true,
   interactive = true,
   focusInsets,
+  route,
   style,
   testID = 'roam-map',
 }: RoamMapProps) {
-  const { scheme } = useTheme();
+  const { scheme, colors } = useTheme();
   const reduceMotion = useReduceMotion();
   const mapRef = useRef<MapView>(null);
   const [mapHeight, setMapHeight] = useState(0);
-  // Framed once, on mount: later marker changes must not yank the camera from under the user. A
+  // Framed once, on mount (markers and route together): later changes must not yank the camera from
+  // under the user. A
   // focused map opens on its selected marker instead (re-centered for the insets once laid out).
   const [initialRegion] = useState<MapRegion>(() => {
     const focused = focusInsets && markers.find((marker) => marker.id === selectedMarkerId);
     if (focused) {
       return { ...focused.coordinate, latitudeDelta: FOCUS_DELTA, longitudeDelta: FOCUS_DELTA };
     }
-    return getRegionForCoordinates(markers.map((marker) => marker.coordinate));
+    return getRegionForCoordinates([
+      ...markers.map((marker) => marker.coordinate),
+      ...(route ?? []),
+    ]);
   });
   // Where the camera currently is (updated after every pan/zoom), so focusing keeps the user's zoom.
   const regionRef = useRef(initialRegion);
@@ -178,6 +187,16 @@ export function RoamMap({
         scrollEnabled={interactive}
         zoomEnabled={interactive}
       >
+        {route && route.length > 1 ? (
+          <Polyline
+            testID="roam-map-route"
+            coordinates={[...route]}
+            strokeColor={colors.primary}
+            strokeWidth={4}
+            lineCap="round"
+            lineJoin="round"
+          />
+        ) : null}
         {markers.map((marker) => (
           <ExperienceMarker
             key={marker.id}

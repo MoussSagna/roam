@@ -124,10 +124,14 @@
       "title": "Where do you want to go out?",
       "subtitle": "We suggest outings near you.",
       "current": "My current location",
-      "city": "Choose a city",
-      "nearby": "Around me",
-      "previewCity": "Paris",
-      "previewCountry": "France"
+      "place": "Choose a place",
+      "currentLabel": "My location",
+      "explain": "Use your current location to find outings near you.",
+      "locating": "Finding your location…",
+      "denied": "No problem, you can choose your spot manually.",
+      "blocked": "Location is turned off. You can allow it in Settings or choose a spot manually.",
+      "openSettings": "Open Settings",
+      "unavailable": "Your location isn’t available right now. Try again or choose a spot."
     },
     "distance": {
       "title": "How far do you want to go?",
@@ -752,6 +756,17 @@
       "addressPlaceholder": "12 rue de la Paix, Paris",
       "startPoint": "Starting point"
     },
+    "building": {
+      "title": "We're preparing your journey",
+      "subtitle": "Putting together the best experiences for you…",
+      "waiting": "One moment…",
+      "start": "Starting point: {place}",
+      "mood": "{mood} vibe",
+      "duration": "Time available: {duration}",
+      "building": "Building your journey",
+      "ready": "Your journey is ready",
+      "accessibility": "ROAM is preparing your journey"
+    },
     "suggestions": {
       "title": "Here's what we came up with",
       "subtitleOne": "A one-experience journey near you",
@@ -775,9 +790,12 @@
     "builder": {
       "title": "Your journey",
       "addExperience": "Add an experience",
-      "viewJourney": "See my journey",
       "emptyTitle": "Your journey is empty",
-      "emptySubtitle": "Add at least one experience to continue."
+      "emptySubtitle": "Add at least one experience to continue.",
+      "create": "Create my journey",
+      "createError": "Couldn't create your journey. Try again.",
+      "alreadyActive": "You already have a journey in progress.",
+      "viewActive": "See my journey"
     },
     "step": {
       "moveUp": "Move {title} up",
@@ -790,21 +808,9 @@
       "metro": "{duration} by metro"
     },
     "stats": {
-      "experiences": "Experiences",
       "duration": "Total time",
       "budget": "Estimated budget",
-      "distance": "Distance",
-      "start": "Start",
-      "end": "End"
-    },
-    "summary": {
-      "title": "Your journey is ready",
-      "encouragementTitle": "A route made for you",
-      "encouragement": "Based on what you want, your budget and your time. Enjoy it!",
-      "create": "Create my journey",
-      "createError": "Couldn't create your journey. Try again.",
-      "alreadyActive": "You already have a journey in progress.",
-      "viewActive": "See my journey"
+      "distance": "Distance"
     },
     "active": {
       "title": "My journey",
@@ -813,7 +819,7 @@
       "current": "Right now",
       "start": "Start",
       "continue": "Continue my journey",
-      "finish": "Finish my journey",
+      "finish": "Finish the journey",
       "addExperience": "Add an experience",
       "completedTitle": "Journey complete",
       "completedSubtitle": "Well done, you lived your whole outing.",
@@ -822,6 +828,21 @@
       "emptySubtitle": "Add experiences from Discover.",
       "notFound": "This journey no longer exists.",
       "error": "Couldn't load your journey."
+    },
+    "edit": {
+      "action": "Edit",
+      "title": "Edit the journey",
+      "subtitle": "Reorder your stops, add or remove experiences.",
+      "save": "Save",
+      "suggestionsTitle": "Add an experience",
+      "noSuggestions": "No other ideas for now.",
+      "savedTitle": "Journey updated",
+      "savedMessage": "Your changes have been saved.",
+      "saveError": "Couldn't save your changes.",
+      "quitTitle": "Leave without saving?",
+      "quitDescription": "Your changes will be lost.",
+      "quitStay": "Keep editing",
+      "quitLeave": "Leave"
     },
     "added": {
       "title": "Added to your journey ✓",
@@ -833,19 +854,12 @@
     },
     "hub": {
       "eyebrow": "Journeys",
-      "activeTitle": "My journey",
       "historyTitle": "My journeys",
       "historySubtitle": "Look back on the outings you’ve lived.",
-      "currentLabel": "In progress",
-      "readyLabel": "Ready to go",
       "currentStep": "Current stop",
       "firstStep": "First stop",
-      "next": "Next",
       "lastStep": "Last stop, enjoy it!",
       "stepsDone": "{done} / {total} stops",
-      "remainingTime": "Time left",
-      "remainingDistance": "Distance left",
-      "steps": "Stops",
       "continue": "Continue my journey",
       "createNew": "Create a new journey",
       "previousTitle": "My past journeys",
@@ -859,7 +873,53 @@
       "emptyCta": "Create my journey",
       "emptyStepMood": "Pick what you’re in the mood for",
       "emptyStepPlan": "ROAM plans your route",
-      "emptyStepGo": "Head out and enjoy every stop"
+      "emptyStepGo": "Head out and enjoy every stop",
+      "inProgress": "Journey in progress",
+      "nextStep": "Next stop"
+    },
+    "map": {
+      "title": "Journey in progress",
+      "completedTitle": "Journey completed",
+      "open": "See the journey map",
+      "step": "Stop {number}",
+      "visit": "{duration} visit",
+      "arrival": "Arrives {time}",
+      "notFound": "This journey no longer exists."
+    },
+    "feedback": {
+      "skip": "Skip",
+      "eyebrow": "Journey completed ✨",
+      "heroTitle": "So, how was it?",
+      "heroSubtitle": "Your feedback helps us suggest outings that suit you even better.",
+      "ratingTitle": "How did you find this outing?",
+      "ratingSubtitle": "Give your journey an overall rating.",
+      "ratingHint": "Tap a star to rate",
+      "ratingValue": "{rating}/5",
+      "rating1": "Disappointing",
+      "rating2": "Meh",
+      "rating3": "Decent",
+      "rating4": "Really good!",
+      "rating5": "Unforgettable!",
+      "starOne": "1 star",
+      "stars": "{count} stars",
+      "commentTitle": "Anything to add?",
+      "optional": "(optional)",
+      "commentPlaceholder": "Share your experience...",
+      "commentCounter": "{count}/{max}",
+      "submit": "Send my feedback",
+      "errorTitle": "Couldn't send",
+      "errorMessage": "Your feedback couldn't be sent. Try again in a moment.",
+      "thanksTitle": "Thanks for your feedback ✨",
+      "thanksSubtitle": "It will help us make your next experiences even better.",
+      "alreadyTitle": "You already gave your feedback",
+      "alreadySubtitle": "Thanks! Here's what you shared about this journey.",
+      "viewJourney": "See my journey",
+      "backToJourneys": "Back to my journeys",
+      "notCompleted": "This journey isn't finished yet: you can give your feedback at the end.",
+      "skipConfirmTitle": "Skip without sending?",
+      "skipConfirmDescription": "Your rating and comment won't be saved.",
+      "skipConfirmLeave": "Skip",
+      "skipConfirmStay": "Stay"
     }
   }
 }

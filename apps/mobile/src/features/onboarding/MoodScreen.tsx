@@ -1,4 +1,3 @@
-import ArrowRight from 'lucide-react-native/icons/arrow-right';
 import Binoculars from 'lucide-react-native/icons/binoculars';
 import Heart from 'lucide-react-native/icons/heart';
 import Landmark from 'lucide-react-native/icons/landmark';
@@ -9,17 +8,15 @@ import Users from 'lucide-react-native/icons/users';
 import UsersRound from 'lucide-react-native/icons/users-round';
 import { useState, type ComponentType } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Pressable, Text as RNText, useWindowDimensions, View } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { Text as RNText, useWindowDimensions, View } from 'react-native';
 
-import { Button, FadeInUp, Text } from '@/components/ui';
+import { FadeInUp, Text } from '@/components/ui';
 import { moodAccents, useTheme, type MoodAccent } from '@/theme';
 import { fontFamily } from '@/theme/typography';
 
 import { MoodTile } from './components/MoodTile';
-import { ProgressBars } from './components/ProgressBars';
 import { RunnerIcon } from './components/RunnerIcon';
-import { useOnboardingNavigation } from './onboardingFlow';
+import type { SingleChoiceSlideProps } from './slideProps';
 
 const HORIZONTAL_MARGIN = 30.6;
 const GRID_MARGIN = 16.5;
@@ -59,15 +56,13 @@ const COLUMNS = 3;
 
 /**
  * Onboarding 2 — "Quelle est ton humeur aujourd'hui ?" (design mockup "Home Onboarding", third tile).
- * Single choice; the mockup shows "Curieux" selected, so it is the default.
+ * Single choice, nothing selected at first (D-88). A slide of `OnboardingPager`, which holds the answer and
+ * shows "Passer", the progress bars and "Suivant".
  */
-export function MoodScreen() {
+export function MoodScreen({ selected, onSelect }: SingleChoiceSlideProps) {
   const { t } = useTranslation();
   const { width } = useWindowDimensions();
-  const insets = useSafeAreaInsets();
   const { colors, scheme } = useTheme();
-  const { next, skip } = useOnboardingNavigation('mood');
-  const [selected, setSelected] = useState('curious');
   const [areaHeight, setAreaHeight] = useState<number | null>(null);
 
   // The longest title line must stay on one line on narrow screens (375 pt wide → 26 pt).
@@ -91,20 +86,7 @@ export function MoodScreen() {
 
   return (
     <View className="flex-1 bg-background">
-      <View style={{ paddingTop: insets.top }}>
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel={t('common.skip')}
-          onPress={skip}
-          hitSlop={12}
-          className="self-end active:opacity-60"
-          style={{ marginRight: 26, marginTop: 17 }}
-        >
-          <Text variant="small" tone="secondary">
-            {t('common.skip')}
-          </Text>
-        </Pressable>
-
+      <View>
         <FadeInUp>
           <RNText
             accessibilityRole="header"
@@ -158,7 +140,7 @@ export function MoodScreen() {
                     warm={mood.warm}
                     width={tileWidth}
                     height={tileHeight}
-                    onPress={() => setSelected(mood.id)}
+                    onPress={() => onSelect(mood.id)}
                   />
                 ))}
               </View>
@@ -166,16 +148,6 @@ export function MoodScreen() {
           </View>
         </FadeInUp>
         <View style={{ flexGrow: 2, minHeight: GRID_MIN_FREE_SPACE * 0.4 }} />
-      </View>
-
-      <View style={{ paddingBottom: Math.max(insets.bottom, 24), paddingHorizontal: 20 }}>
-        <ProgressBars count={5} index={0} />
-        <Button
-          label={t('common.next')}
-          trailingIcon={ArrowRight}
-          onPress={next}
-          className="mt-[21px]"
-        />
       </View>
     </View>
   );

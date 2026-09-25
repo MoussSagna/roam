@@ -3,6 +3,8 @@ import type {
   Collection,
   Experience,
   Journey,
+  JourneyFeedback,
+  JourneyFeedbackInput,
   Place,
   SearchFilters,
   SearchSuggestion,
@@ -73,6 +75,18 @@ export interface JourneyRepository {
   clear(): Promise<void>;
 }
 
+/**
+ * Feedback on a completed journey (sprint 12): one per journey. `submit` is idempotent per journey —
+ * a second submission returns the feedback already saved instead of creating a duplicate (a backend
+ * would answer the same way to a retried request).
+ */
+export interface JourneyFeedbackRepository {
+  getForJourney(journeyId: string): Promise<JourneyFeedback | null>;
+  submit(input: JourneyFeedbackInput): Promise<JourneyFeedback>;
+  /** Forgets every feedback (tests). */
+  clear(): Promise<void>;
+}
+
 export type Repositories = {
   categories: CategoryRepository;
   places: PlaceRepository;
@@ -82,4 +96,5 @@ export type Repositories = {
   users: UserRepository;
   search: SearchRepository;
   journeys: JourneyRepository;
+  journeyFeedback: JourneyFeedbackRepository;
 };

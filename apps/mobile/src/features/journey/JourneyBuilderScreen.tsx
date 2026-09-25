@@ -1,15 +1,21 @@
 import { useRouter } from 'expo-router';
-import ArrowRight from 'lucide-react-native/icons/arrow-right';
 import Clock from 'lucide-react-native/icons/clock';
 import Coins from 'lucide-react-native/icons/coins';
 import MapIcon from 'lucide-react-native/icons/map';
+import Play from 'lucide-react-native/icons/play';
 import Plus from 'lucide-react-native/icons/plus';
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Pressable, ScrollView, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { FadeInUp, STICKY_FOOTER_CLEARANCE, StickyActionFooter, Text } from '@/components/ui';
+import {
+  Button,
+  FadeInUp,
+  STICKY_FOOTER_CLEARANCE,
+  StickyActionFooter,
+  Text,
+} from '@/components/ui';
 import { useTheme } from '@/theme';
 import { fontFamily } from '@/theme/typography';
 import type { Experience } from '@/types';
@@ -20,13 +26,18 @@ import { JourneyTimeline } from './components/JourneyTimeline';
 import { useJourneyExperiences } from './hooks/useJourneyExperiences';
 import { useLeaveCreation } from './hooks/useLeaveCreation';
 import { useJourneyDraft } from './JourneyDraftContext';
+import { ActiveJourneyExistsError, createJourney, useJourney } from './journeyStore';
 import { formatBudget, formatDistance, formatDuration } from './lib/format';
 import { buildPlan } from './lib/plan';
 
+type CreateError = 'alreadyActive' | 'failed' | null;
+
 /**
- * Journey creation 5/6 — builder (`/journey/create/builder`): the selection as a vertical timeline
- * (arrival times, travel between steps), recomputed live by `buildPlan` as steps are moved up / down or
- * removed. "+ Ajouter une expérience" goes back to the suggestions (the draft keeps everything).
+ * Journey creation — builder, "Ton parcours" (`/journey/create/builder`), the LAST step (sprint 12,
+ * D-86): the selection as a vertical timeline (arrival times, travel between steps), recomputed live by
+ * `buildPlan` as steps are moved up / down or removed. "+ Ajouter une expérience" goes back to the
+ * suggestions (the draft keeps everything). "Créer mon parcours" is the one moment the draft becomes
+ * the `active` journey (saved through the repository); the flow then gives way to `/journey/[id]`.
  */
 export function JourneyBuilderScreen() {
   const { t, i18n } = useTranslation();
@@ -35,6 +46,9 @@ export function JourneyBuilderScreen() {
   const draft = useJourneyDraft();
   const { requestLeave, quitModal } = useLeaveCreation();
   const { byId, isLoading, categoryLabelFor } = useJourneyExperiences();
+  const { journey: current } = useJourney();
+  const [creating, setCreating] = useState(false);
+  const [createError, setCreateError] = useState<CreateError>(null);
 
   const ordered = useMemo(
     () =>
@@ -53,6 +67,24 @@ export function JourneyBuilderScreen() {
   const addExperience = () => router.navigate('/journey/create/suggestions');
 
   const isEmpty = !isLoading && ordered.length === 0;
+
+  const create = async () => {
+    const journeyDraft = draft.toDraft();
+    if (!journeyDraft || creating) return;
+    setCreating(true);
+    setCreateError(null);
+    try {
+      const created = await createJourney(
+        journeyDraft,
+        t('journey.defaultTitle', { mood: t(`journey.moods.${journeyDraft.context.mood}`) }),
+      );
+      // The flow is done: its whole stack gives way to the journey's own screen.
+      router.replace({ pathname: '/journey/[id]', params: { id: created.id } });
+    } catch (error) {
+      setCreating(false);
+      setCreateError(error instanceof ActiveJourneyExistsError ? 'alreadyActive' : 'failed');
+    }
+  };
 
   return (
     <View className="flex-1 bg-background">
@@ -133,15 +165,37 @@ export function JourneyBuilderScreen() {
               {t('journey.builder.addExperience')}
             </Text>
           </Pressable>
+
+          {createError ? (
+            <View accessibilityRole="alert" className="gap-3 rounded-large bg-error/10 p-4">
+              <Text variant="body" tone="error">
+                {t(
+                  createError === 'alreadyActive'
+                    ? 'journey.builder.alreadyActive'
+                    : 'journey.builder.createError',
+                )}
+              </Text>
+              {createError === 'alreadyActive' && current ? (
+                <Button
+                  label={t('journey.builder.viewActive')}
+                  variant="secondary"
+                  onPress={() =>
+                    router.replace({ pathname: '/journey/[id]', params: { id: current.id } })
+                  }
+                />
+              ) : null}
+            </View>
+          ) : null}
         </ScrollView>
       </SafeAreaView>
 
       <StickyActionFooter
         visible
-        label={t('journey.builder.viewJourney')}
-        icon={ArrowRight}
-        disabled={ordered.length === 0}
-        onPress={() => router.push('/journey/create/summary')}
+        label={t('journey.builder.create')}
+        icon={Play}
+        loading={creating}
+        disabled={ordered.length === 0 || !draft.toDraft()}
+        onPress={() => void create()}
       />
       {quitModal}
     </View>

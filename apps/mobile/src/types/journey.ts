@@ -32,12 +32,15 @@ export type JourneyContext = {
   budget: JourneyBudget;
 };
 
-export type JourneyStartKind = 'current' | 'place' | 'address';
+/** `experience`: the experience the flow was opened from (sprint 12, D-86). */
+export type JourneyStartKind = 'current' | 'place' | 'address' | 'experience';
 
 export type JourneyStartLocation = {
   kind: JourneyStartKind;
-  /** Display label ("Ma position", "République", a typed address). */
+  /** Display label ("Ma position", "République", a typed address, an experience's name). */
   label: string;
+  /** Secondary line — the experience's address for `experience`. */
+  detail?: string;
   coordinates: Coordinates;
 };
 

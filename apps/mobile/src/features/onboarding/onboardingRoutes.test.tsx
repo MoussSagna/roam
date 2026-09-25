@@ -1,5 +1,6 @@
 import { router, type Href } from 'expo-router';
 import { act, fireEvent, renderRouter, screen } from 'expo-router/testing-library';
+import { Dimensions } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { AuthProvider } from '@/auth';
@@ -7,7 +8,7 @@ import { AppRoutes } from '@/features/navigation/AppRoutes';
 import i18n from '@/i18n';
 import { ThemeProvider } from '@/theme';
 
-import { ONBOARDING_STEPS, ROUTES } from './onboardingFlow';
+import { ONBOARDING_STEPS, PAGER_STEPS, ROUTES } from './onboardingFlow';
 import { PROFILE_TIMELINE } from './profileCreation';
 
 /**
@@ -50,6 +51,83 @@ async function openWelcomeFromSplash() {
   return utils;
 }
 
+/**
+ * The questions are the slides of one pager on `/onboarding/mood`, between a fixed "Passer" and a fixed
+ * footer. Jest has no native layout or scrolling, so these send what the list reports: its size, then a
+ * stream of scroll events (the new slide renders and becomes "viewable" on timers).
+ */
+async function layOutPager() {
+  const { width, height } = Dimensions.get('window');
+  const pager = screen.getByTestId('onboarding-pager');
+  await fireEvent(pager, 'layout', { nativeEvent: { layout: { x: 0, y: 0, width, height } } });
+  await fireEvent(pager, 'contentSizeChange', width * PAGER_STEPS.length, height);
+}
+
+async function scrollPagerTo(index: number) {
+  const { width, height } = Dimensions.get('window');
+  for (let i = 0; i < 2; i++) {
+    await fireEvent.scroll(screen.getByTestId('onboarding-pager'), {
+      nativeEvent: {
+        contentOffset: { x: index * width, y: 0 },
+        contentSize: { width: width * PAGER_STEPS.length, height },
+        layoutMeasurement: { width, height },
+      },
+    });
+    await act(() => jest.advanceTimersByTimeAsync(500));
+  }
+}
+
+/**
+ * How to answer each question slide, in order (each needs an answer to move on, D-88). The location is
+ * a spot picked by hand (D-89), so no device position is needed.
+ */
+const ANSWERS: readonly (() => Promise<void>)[] = [
+  () => fireEvent.press(screen.getByRole('radio', { name: 'Curieux' })),
+  () => fireEvent.press(screen.getByRole('radio', { name: '1 à 2 h' })),
+  () => fireEvent.press(screen.getByRole('radio', { name: 'Gratuit' })),
+  async () => {
+    await fireEvent.press(screen.getByRole('radio', { name: 'Choisir un lieu' }));
+    await fireEvent.press(screen.getByRole('button', { name: 'Bastille' }));
+  },
+];
+
+type JsonNode = { type: string; props: Record<string, unknown>; children: JsonNode[] | null };
+
+/**
+ * `gestureEnabled` of the screen on top of the stack, as handed to the native screen
+ * (`react-native-screens`' `RNSScreen`: one per mounted screen, the top one last).
+ */
+function topScreenGestureEnabled() {
+  const nativeScreens: JsonNode[] = [];
+  const walk = (node: unknown) => {
+    if (Array.isArray(node)) return node.forEach(walk);
+    if (!node || typeof node !== 'object') return;
+    const element = node as JsonNode;
+    if (element.type === 'RNSScreen') nativeScreens.push(element);
+    element.children?.forEach(walk);
+  };
+  walk(screen.toJSON());
+  return nativeScreens.at(-1)?.props.gestureEnabled;
+}
+
+async function openPager() {
+  const utils = await openWelcomeFromSplash();
+  await fireEvent.press(screen.getByRole('button', { name: 'Suivant' }));
+  await layOutPager();
+  return utils;
+}
+
+/** Welcome → the pager, then answer and "Suivant" through the slides up to `step`. */
+async function openSlide(step: (typeof PAGER_STEPS)[number]) {
+  const utils = await openPager();
+  for (let index = 1; index <= PAGER_STEPS.indexOf(step); index++) {
+    await ANSWERS[index - 1]();
+    await fireEvent.press(screen.getByRole('button', { name: 'Suivant' }));
+    await scrollPagerTo(index);
+  }
+  return utils;
+}
+
 describe('onboarding routes', () => {
   beforeEach(async () => {
     jest.useFakeTimers();
@@ -65,15 +143,15 @@ describe('onboarding routes', () => {
 
     for (const step of ONBOARDING_STEPS) {
       await act(() => router.navigate(ROUTES[step] as Href));
-      expect(utils.getPathname()).toBe(ROUTES[step]);
+      // The questions after the first one bring back to the start of the pager (D-88).
+      const inPagerAfterFirst = (PAGER_STEPS as readonly string[]).indexOf(step) > 0;
+      expect(utils.getPathname()).toBe(inPagerAfterFirst ? ROUTES.mood : ROUTES[step]);
       expect(screen.queryByText(/Unmatched Route/i)).toBeNull();
     }
   });
 
   it('splash → welcome → "Suivant" shows the second onboarding screen', async () => {
-    const utils = await openWelcomeFromSplash();
-
-    await fireEvent.press(screen.getByRole('button', { name: 'Suivant' }));
+    const utils = await openPager();
 
     expect(utils.getPathname()).toBe('/onboarding/mood');
     expect(screen.getByRole('header')).toHaveTextContent('Quelle est ton humeur aujourd’hui ?');
@@ -100,47 +178,58 @@ describe('onboarding routes', () => {
     expect(screen.getByRole('button', { name: 'Suivant' })).toBeOnTheScreen();
   });
 
-  it('mood → "Suivant" shows the time screen', async () => {
-    const utils = await openWelcomeFromSplash();
-    await fireEvent.press(screen.getByRole('button', { name: 'Suivant' }));
-    await fireEvent.press(screen.getByRole('button', { name: 'Suivant' }));
+  it('mood → "Suivant" shows the time slide, on the same route', async () => {
+    const utils = await openSlide('time');
 
-    expect(utils.getPathname()).toBe('/onboarding/time');
+    // One pager for every question: the route does not change, the slide does.
+    expect(utils.getPathname()).toBe('/onboarding/mood');
     expect(screen.getByRole('header')).toHaveTextContent('Combien de temps as-tu ?');
     expect(screen.getAllByRole('radio')).toHaveLength(4);
   });
 
-  it('time → "Suivant" shows the budget screen', async () => {
-    const utils = await openWelcomeFromSplash();
-    for (let i = 0; i < 3; i++) {
-      await fireEvent.press(screen.getByRole('button', { name: 'Suivant' }));
-    }
+  it('time → "Suivant" shows the budget slide', async () => {
+    const utils = await openSlide('budget');
 
-    expect(utils.getPathname()).toBe('/onboarding/budget');
+    expect(utils.getPathname()).toBe('/onboarding/mood');
     expect(screen.getByRole('header')).toHaveTextContent('Quel est ton budget ?');
     expect(screen.getAllByRole('radio')).toHaveLength(5);
   });
 
-  it('budget → "Suivant" shows the location screen', async () => {
-    const utils = await openWelcomeFromSplash();
-    for (let i = 0; i < 4; i++) {
-      await fireEvent.press(screen.getByRole('button', { name: 'Suivant' }));
-    }
+  it('budget → "Suivant" shows the location slide', async () => {
+    const utils = await openSlide('location');
 
-    expect(utils.getPathname()).toBe('/onboarding/location');
+    expect(utils.getPathname()).toBe('/onboarding/mood');
     expect(screen.getByRole('header')).toHaveTextContent('Où souhaites-tu sortir ?');
-    expect(screen.getAllByRole('radio')).toHaveLength(3);
+    // The journey's two choices over the map (D-89).
+    expect(screen.getAllByRole('radio')).toHaveLength(2);
+    expect(screen.getByTestId('onboarding-location-map')).toBeOnTheScreen();
   });
 
-  it('location → "Suivant" shows the interests screen', async () => {
-    const utils = await openWelcomeFromSplash();
-    for (let i = 0; i < 5; i++) {
-      await fireEvent.press(screen.getByRole('button', { name: 'Suivant' }));
-    }
+  it('location → "Suivant" shows the interests slide', async () => {
+    const utils = await openSlide('interests');
 
-    expect(utils.getPathname()).toBe('/onboarding/interests');
+    expect(utils.getPathname()).toBe('/onboarding/mood');
     expect(screen.getByRole('header')).toHaveTextContent('Qu’est-ce qui t’intéresse ?');
     expect(screen.getAllByRole('checkbox')).toHaveLength(8);
+  });
+
+  it('the other question routes bring back to the start of the pager', async () => {
+    const utils = await renderApp();
+
+    for (const step of PAGER_STEPS.slice(1)) {
+      await act(() => router.navigate(ROUTES[step] as Href));
+      expect(utils.getPathname()).toBe('/onboarding/mood');
+      expect(screen.getByTestId('onboarding-pager')).toBeOnTheScreen();
+    }
+  });
+
+  it('"Passer" from a slide still shows the final onboarding screen', async () => {
+    const utils = await openSlide('budget');
+
+    await fireEvent.press(screen.getByRole('button', { name: 'Passer' }));
+
+    expect(utils.getPathname()).toBe('/onboarding/ready');
+    expect(screen.getByRole('header')).toHaveTextContent('Prêt à explorer ?');
   });
 
   it('"Commencer" ends the onboarding on the home screen', async () => {
@@ -161,11 +250,10 @@ describe('onboarding routes', () => {
     expect(router.canGoBack()).toBe(false);
   });
 
-  it('interests → "Suivant" shows the profile creation, which needs nothing from the user', async () => {
-    const utils = await openWelcomeFromSplash();
-    for (let i = 0; i < 6; i++) {
-      await fireEvent.press(screen.getByRole('button', { name: 'Suivant' }));
-    }
+  it('interests (last slide) → "Suivant" shows the profile creation, which needs nothing from the user', async () => {
+    const utils = await openSlide('interests');
+    await fireEvent.press(screen.getByRole('checkbox', { name: 'Nature' }));
+    await fireEvent.press(screen.getByRole('button', { name: 'Suivant' }));
 
     expect(utils.getPathname()).toBe('/onboarding/profile-creation');
     expect(screen.getByText('On crée ton profil\nsur mesure')).toBeOnTheScreen();
@@ -173,13 +261,12 @@ describe('onboarding routes', () => {
     expect(screen.queryByRole('button', { name: 'Passer' })).toBeNull();
   });
 
-  it('walks the whole journey: "Suivant" to the profile creation, then it moves on by itself', async () => {
-    const utils = await openWelcomeFromSplash();
-
-    for (const step of ONBOARDING_STEPS.slice(1, ONBOARDING_STEPS.indexOf('profile') + 1)) {
-      await fireEvent.press(screen.getByRole('button', { name: 'Suivant' }));
-      expect(utils.getPathname()).toBe(ROUTES[step]);
-    }
+  it('walks the whole journey: through the slides to the profile creation, then it moves on by itself', async () => {
+    const utils = await openSlide('interests');
+    expect(utils.getPathname()).toBe('/onboarding/mood');
+    await fireEvent.press(screen.getByRole('checkbox', { name: 'Nature' }));
+    await fireEvent.press(screen.getByRole('button', { name: 'Suivant' }));
+    expect(utils.getPathname()).toBe(ROUTES.profile);
 
     await act(() => jest.advanceTimersByTimeAsync(PROFILE_TIMELINE.navigate - 1));
     expect(utils.getPathname()).toBe('/onboarding/profile-creation');
@@ -188,8 +275,24 @@ describe('onboarding routes', () => {
     expect(utils.getPathname()).toBe('/onboarding/ready');
     expect(screen.getByRole('header')).toHaveTextContent('Prêt à explorer ?');
     expect(screen.queryByRole('button', { name: 'Suivant' })).toBeNull();
-    // The profile creation replaced itself: back from "ready" goes to the interests, not to the loader.
+    // The profile creation replaced itself: back from "ready" returns to the pager, still on the
+    // interests slide, not to the loader.
     await act(() => router.back());
-    expect(utils.getPathname()).toBe('/onboarding/interests');
+    expect(utils.getPathname()).toBe('/onboarding/mood');
+    expect(screen.getByRole('header')).toHaveTextContent('Qu’est-ce qui t’intéresse ?');
+  });
+
+  it('keeps the native swipe-back off on the pager (its own horizontal swipe moves between slides)', async () => {
+    await openPager();
+    expect(topScreenGestureEnabled()).toBe(false);
+
+    for (const step of PAGER_STEPS.slice(1)) {
+      await act(() => router.navigate(ROUTES[step] as Href));
+      expect(topScreenGestureEnabled()).toBe(false);
+    }
+
+    // The screens outside the pager keep their documented exception (no back button, D-53).
+    await act(() => router.navigate(ROUTES.ready as Href));
+    expect(topScreenGestureEnabled()).toBe(true);
   });
 });

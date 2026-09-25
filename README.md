@@ -5,8 +5,8 @@ location) into a realistic outing — not just a list of places.
 
 ## Status
 
-Mobile foundation only (Expo + React Native + TypeScript). The web app and the API are not started.
-Product features are built sprint by sprint on top of mock data.
+Mobile app only (Expo + React Native + TypeScript), a front-end prototype on mock data. `apps/api` holds the backend
+design (Data Foundation) but no code yet; there is no web app.
 
 ## Quick start
 
@@ -23,15 +23,17 @@ Requirements: Node ≥ 22.13 and pnpm ≥ 10 (developed with Node 24 and pnpm 12
 
 ```text
 roam/
+├── appdocs/        # Shared documentation: product, domain, design, architecture
 ├── apps/
-│   └── mobile/     # React Native + Expo app
-└── docs/           # Product, UX, design and technical documentation
+│   ├── mobile/     # React Native + Expo app (+ mobiledocs/)
+│   └── api/        # Backend design documents only (apidocs/)
 ```
 
-`apps/web`, `apps/api` and `packages/*` are planned (see `docs/04_TECH_STACK.md`) and do not exist yet.
+`apps/web` and `packages/*` are planned (see [`appdocs/architecture/ARCHITECTURE.md`](appdocs/architecture/ARCHITECTURE.md))
+and do not exist yet.
 
 ## Documentation
 
-Start with [`docs/README.md`](docs/README.md). Day-to-day commands and conventions are in
-[`docs/DEVELOPMENT.md`](docs/DEVELOPMENT.md); technical decisions are in
-[`docs/DECISIONS.md`](docs/DECISIONS.md).
+Start with [`appdocs/DOCUMENTATION_INDEX.md`](appdocs/DOCUMENTATION_INDEX.md). Mobile commands and conventions:
+[`apps/mobile/mobiledocs/DEVELOPMENT.md`](apps/mobile/mobiledocs/DEVELOPMENT.md); mobile decisions:
+[`apps/mobile/mobiledocs/DECISIONS.md`](apps/mobile/mobiledocs/DECISIONS.md).

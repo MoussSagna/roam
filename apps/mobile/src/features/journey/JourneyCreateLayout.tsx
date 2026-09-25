@@ -19,9 +19,9 @@ export function JourneyCreateLayout() {
         <Stack.Screen name="index" />
         <Stack.Screen name="context" />
         <Stack.Screen name="location" />
+        <Stack.Screen name="building" options={{ animation: 'fade' }} />
         <Stack.Screen name="suggestions" />
         <Stack.Screen name="builder" />
-        <Stack.Screen name="summary" />
       </Stack>
     </JourneyDraftProvider>
   );

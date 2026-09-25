@@ -16,6 +16,7 @@ import {
   resetJourneyStoreForTests,
   startJourney,
 } from './journeyStore';
+import { BUILD_TIMELINE } from './lib/building';
 
 /** Real route tree (same harness as `journeyRoutes.test.tsx`): the Parcours tab's hub, sprint 11. */
 function TestLayout() {
@@ -74,6 +75,19 @@ const topButton = (name: string | RegExp) => screen.getAllByRole('button', { nam
 const press = (name: string | RegExp) => fireEvent.press(topButton(name));
 const pressRadio = (name: string) => fireEvent.press(screen.getByRole('radio', { name }));
 
+/** "On prépare ton parcours" (sprint 12, D-84) plays ~3.6 s before the suggestions: "Continuer" on
+ * "On part d'où ?", then fast-forward it (fake timers only for that step). */
+async function continueThroughBuilding() {
+  jest.useFakeTimers();
+  try {
+    await press('Continuer');
+    expect(screen.getByTestId('journey-building')).toBeOnTheScreen();
+    await act(() => jest.advanceTimersByTimeAsync(BUILD_TIMELINE.navigate));
+  } finally {
+    jest.useRealTimers();
+  }
+}
+
 /** The whole creation flow with its defaults, from the intro to "Créer mon parcours". */
 async function createThroughFlow() {
   await press('Commencer');
@@ -84,10 +98,9 @@ async function createThroughFlow() {
   await pressRadio('Budget moyen');
   await press('Continuer');
   await pressRadio('Ma position actuelle');
-  await press('Continuer');
+  await continueThroughBuilding();
   await screen.findByTestId('journey-suggestions-list');
   await press('Construire mon parcours');
-  await press('Voir mon parcours');
   await press('Créer mon parcours');
 }
 
@@ -129,13 +142,16 @@ describe('Parcours tab — journey hub (sprint 11)', () => {
 
     const card = await screen.findByTestId('current-journey-card');
     expect(screen.getByRole('header')).toHaveTextContent('Paris au coucher du soleil');
-    expect(within(card).getByText('Mon parcours')).toBeOnTheScreen();
-    // Edge-to-edge hero from the very top: its height includes the status bar (top inset 47).
-    expect(within(card).getByTestId('current-journey-hero')).toHaveStyle({ height: 47 + 300 });
-    expect(within(card).getByText('Étape actuelle')).toBeOnTheScreen();
-    expect(within(card).getByText('Temps restant')).toBeOnTheScreen();
+    // Hero (sprint 12, D-85): state, title, experiences · duration · distance, progress.
+    expect(within(card).getByText('Parcours en cours')).toBeOnTheScreen();
+    expect(within(card).getByText('2 expériences')).toBeOnTheScreen();
     expect(within(card).getByText('0 / 2 étapes')).toBeOnTheScreen();
-    expect(within(card).getByTestId('journey-map')).toBeOnTheScreen();
+    expect(within(card).getByTestId('journey-progress-bar')).toBeOnTheScreen();
+    // Edge-to-edge hero from the very top: its height includes the status bar (top inset 47).
+    expect(within(card).getByTestId('current-journey-hero')).toHaveStyle({ height: 47 + 320 });
+    expect(within(card).getByText('Étape actuelle')).toBeOnTheScreen();
+    expect(within(card).getByTestId('journey-mini-map')).toBeOnTheScreen();
+    expect(within(card).getByText('Prochaine étape')).toBeOnTheScreen();
     expect(screen.queryByTestId('journey-hub-empty')).toBeNull();
 
     await fireEvent.press(within(card).getByRole('button', { name: 'Continuer mon parcours' }));

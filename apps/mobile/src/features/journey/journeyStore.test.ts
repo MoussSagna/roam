@@ -11,10 +11,13 @@ import {
   completeCurrentStep,
   createJourney,
   findJourney,
+  JourneyUpdateError,
+  isExperienceInJourney,
   moveJourneyStep,
   removeJourneyStep,
   resetJourneyStoreForTests,
   startJourney,
+  updateJourneySteps,
   useJourney,
 } from './journeyStore';
 
@@ -46,7 +49,9 @@ describe('journeyStore', () => {
     expect(journey.steps.map((step) => step.experienceId)).toEqual(DRAFT.experienceIds);
     expect(journey.steps[0].estimatedArrival).toBe('18:00');
     expect(journey.estimatedDurationMin).toBeGreaterThan(0);
-    expect(journey.startedAt).toBeNull();
+    // Sprint 12 (D-86): a journey starts at its first step as soon as it is created.
+    expect(journey.startedAt).not.toBeNull();
+    expect(journey.currentStep).toBe(0);
     expect((await repositories.journeys.getCurrent())?.id).toBe(journey.id);
   });
 
@@ -85,12 +90,11 @@ describe('journeyStore', () => {
     expect(await ids()).toEqual(['exp-jazz-night', 'exp-picnic-park']);
   });
 
-  it('starts, walks through the steps and completes', async () => {
+  it('walks through the steps from creation (progress persisted) and completes', async () => {
     await createJourney(DRAFT, 'A');
-    await completeCurrentStep();
-    expect((await repositories.journeys.getCurrent())?.currentStep).toBe(0);
-
+    // Already started: "Commencer" is a no-op, the first "Continuer" moves to step 2.
     await startJourney();
+    expect((await repositories.journeys.getCurrent())?.currentStep).toBe(0);
     await completeCurrentStep();
     expect((await repositories.journeys.getCurrent())?.currentStep).toBe(1);
     await completeCurrentStep();
@@ -197,6 +201,90 @@ describe('journeyStore', () => {
 
       const fresh = createMockJourneyRepository();
       expect((await fresh.listCompleted()).map((j) => j.id)).toEqual([created.id]);
+    });
+  });
+
+  it('isExperienceInJourney: by step id, as strings; false without a journey or an id', async () => {
+    const journey = await createJourney(DRAFT, 'A');
+
+    expect(isExperienceInJourney(journey, 'exp-slow-afternoon')).toBe(true);
+    expect(isExperienceInJourney(journey, 'exp-rooftop-sunset')).toBe(false);
+    expect(isExperienceInJourney(null, 'exp-slow-afternoon')).toBe(false);
+    expect(isExperienceInJourney(journey, undefined)).toBe(false);
+    // A numeric-looking id coming from elsewhere as a number still matches its string step id.
+    const numeric = { ...journey, steps: [{ ...journey.steps[0], experienceId: '42' }] };
+    expect(isExperienceInJourney(numeric, 42 as unknown as string)).toBe(true);
+  });
+
+  it('a journey saved before sprint 12 (not started) still needs "Commencer"', async () => {
+    const journey = await createJourney(DRAFT, 'Ancien');
+    await repositories.journeys.save({ ...journey, startedAt: null });
+    resetJourneyStoreForTests();
+
+    await completeCurrentStep();
+    expect((await repositories.journeys.getCurrent())?.currentStep).toBe(0);
+    await startJourney();
+    await completeCurrentStep();
+    expect((await repositories.journeys.getCurrent())?.currentStep).toBe(1);
+  });
+
+  describe('updateJourneySteps (editing, sprint 12)', () => {
+    const THREE = ['exp-slow-afternoon', 'exp-picnic-park', 'exp-jazz-night'];
+
+    async function atSecondStep() {
+      const journey = await createJourney({ ...DRAFT, experienceIds: THREE }, 'Trois');
+      await completeCurrentStep();
+      return journey;
+    }
+
+    it('saves the new steps on the same journey, still active, replanned', async () => {
+      const journey = await atSecondStep();
+      const saved = await updateJourneySteps(journey.id, [
+        THREE[1],
+        THREE[0],
+        'exp-rooftop-sunset',
+      ]);
+
+      expect(saved.id).toBe(journey.id);
+      expect(saved.status).toBe('active');
+      expect(saved.steps.map((step) => step.experienceId)).toEqual([
+        THREE[1],
+        THREE[0],
+        'exp-rooftop-sunset',
+      ]);
+      // Replanned from the same start time: arrivals follow the new order.
+      expect(saved.startTime).toBe('18:00');
+      expect(saved.steps[0].estimatedArrival < saved.steps[1].estimatedArrival).toBe(true);
+      expect((await repositories.journeys.getCurrent())?.steps).toHaveLength(3);
+      expect(await repositories.journeys.listCompleted()).toEqual([]);
+    });
+
+    it('keeps the current step current wherever it moved', async () => {
+      const journey = await atSecondStep(); // current = THREE[1]
+      const saved = await updateJourneySteps(journey.id, [THREE[2], THREE[0], THREE[1]]);
+      expect(saved.currentStep).toBe(2);
+      expect(saved.steps[saved.currentStep].experienceId).toBe(THREE[1]);
+    });
+
+    it('current step removed: the next one not done yet becomes current, never past the end', async () => {
+      const journey = await atSecondStep(); // done: THREE[0]; current: THREE[1]
+      const saved = await updateJourneySteps(journey.id, [THREE[0], THREE[2]]);
+      expect(saved.currentStep).toBe(1);
+      expect(saved.steps[saved.currentStep].experienceId).toBe(THREE[2]);
+
+      const last = await updateJourneySteps(journey.id, [THREE[0]]);
+      expect(last.currentStep).toBe(0);
+      expect(last.currentStep).toBeLessThan(last.steps.length);
+    });
+
+    it('ignores duplicate ids, refuses an empty journey or one that is not the active one', async () => {
+      const journey = await atSecondStep();
+      const saved = await updateJourneySteps(journey.id, [THREE[0], THREE[0], THREE[1]]);
+      expect(saved.steps.map((step) => step.experienceId)).toEqual([THREE[0], THREE[1]]);
+
+      await expect(updateJourneySteps(journey.id, [])).rejects.toBeInstanceOf(JourneyUpdateError);
+      await expect(updateJourneySteps('other', THREE)).rejects.toBeInstanceOf(JourneyUpdateError);
+      expect((await repositories.journeys.getCurrent())?.steps).toHaveLength(2);
     });
   });
 });

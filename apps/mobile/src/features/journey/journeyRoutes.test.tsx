@@ -9,7 +9,13 @@ import i18n from '@/i18n';
 import { repositories } from '@/services';
 import { ThemeProvider } from '@/theme';
 
-import { createJourney, removeJourneyStep, resetJourneyStoreForTests } from './journeyStore';
+import {
+  addExperienceToJourney,
+  createJourney,
+  removeJourneyStep,
+  resetJourneyStoreForTests,
+} from './journeyStore';
+import { BUILD_TIMELINE } from './lib/building';
 
 /** Real route tree (same harness as `searchRoutes.test.tsx`), sprint 10 journey flow. */
 function TestLayout() {
@@ -48,8 +54,21 @@ async function goToSuggestions() {
   await pressRadio('Budget moyen');
   await press('Continuer');
   await pressRadio('Ma position actuelle');
-  await press('Continuer');
+  await continueThroughBuilding();
   await screen.findByTestId('journey-suggestions-list');
+}
+
+/** "On prépare ton parcours" (sprint 12, D-84) plays ~3.6 s before the suggestions: "Continuer" on
+ * "On part d'où ?", then fast-forward it (fake timers only for that step). */
+async function continueThroughBuilding() {
+  jest.useFakeTimers();
+  try {
+    await press('Continuer');
+    expect(screen.getByTestId('journey-building')).toBeOnTheScreen();
+    await act(() => jest.advanceTimersByTimeAsync(BUILD_TIMELINE.navigate));
+  } finally {
+    jest.useRealTimers();
+  }
 }
 
 const selectedSuggestions = () =>
@@ -95,7 +114,7 @@ describe('Journey creation flow (sprint 10)', () => {
     await pressRadio('Choisir un lieu');
     await press('République');
     expect(screen.getByTestId('journey-map')).toBeOnTheScreen();
-    await press('Continuer');
+    await continueThroughBuilding();
 
     // Suggestions: ROAM pre-selects some, each card explains why.
     expect(utils.getPathname()).toBe('/journey/create/suggestions');
@@ -122,11 +141,9 @@ describe('Journey creation flow (sprint 10)', () => {
       preselected + 1,
     );
 
-    await press('Voir mon parcours');
-    expect(utils.getPathname()).toBe('/journey/create/summary');
-    expect(screen.getByText('Ton parcours est prêt')).toBeOnTheScreen();
-    expect(screen.getByTestId('journey-map')).toBeOnTheScreen();
-
+    // Sprint 12 (D-86): "Ton parcours" is the last step — its CTA creates the journey.
+    expect(screen.getByText('Ton parcours')).toBeOnTheScreen();
+    expect(screen.queryByRole('button', { name: 'Voir mon parcours' })).toBeNull();
     await press('Créer mon parcours');
 
     await waitFor(() => expect(utils.getPathname()).toMatch(/^\/journey\/journey-/));
@@ -136,9 +153,12 @@ describe('Journey creation flow (sprint 10)', () => {
     expect(saved?.startLocation.label).toBe('République');
     expect(saved?.context).toEqual({ mood: 'calm', duration: 'halfDay', budget: 'medium' });
     expect(await screen.findByText('Mon parcours')).toBeOnTheScreen();
-    expect(screen.getByRole('button', { name: 'Commencer' })).toBeOnTheScreen();
+    // Started at creation: step 1 is current, no "Commencer".
+    expect(screen.getByText(`Étape 1 sur ${preselected + 1}`)).toBeOnTheScreen();
+    expect(screen.queryByRole('button', { name: 'Commencer' })).toBeNull();
+    expect(screen.getByRole('button', { name: 'Continuer mon parcours' })).toBeOnTheScreen();
 
-    // The creation flow is gone from history: back returns to Home, not to the summary.
+    // The creation flow is gone from history: back returns to Home, not to the builder.
     await press('Retour');
     expect(utils.getPathname()).toBe('/home');
   });
@@ -214,7 +234,6 @@ describe('Journey creation flow (sprint 10)', () => {
     await act(() => router.push('/journey/create'));
     await goToSuggestions();
     await press('Construire mon parcours');
-    await press('Voir mon parcours');
     await press('Créer mon parcours');
     await waitFor(() => expect(utils.getPathname()).toMatch(/^\/journey\/journey-/));
     const journey = await repositories.journeys.getCurrent();
@@ -233,11 +252,12 @@ describe('Journey creation flow (sprint 10)', () => {
     expect((await repositories.journeys.getCurrent())?.steps).toHaveLength(stepsBefore + 1);
     expect((await repositories.journeys.getCurrent())?.id).toBe(journey!.id);
 
-    // Close, then try again: not added twice.
-    await press('Fermer');
-    await waitFor(() => expect(screen.queryByText('Ajouté à ton parcours ✓')).toBeNull());
-    await press('Ajouter au parcours');
-    expect(await screen.findByText('Déjà dans ton parcours')).toBeOnTheScreen();
+    // Now in the journey: the CTA is gone (sprint 12), so it can't be offered twice; the store
+    // refuses a duplicate anyway.
+    await waitFor(() =>
+      expect(screen.queryByRole('button', { name: 'Ajouter au parcours' })).toBeNull(),
+    );
+    expect(await addExperienceToJourney(outsider)).toBe('alreadyAdded');
     expect((await repositories.journeys.getCurrent())?.steps).toHaveLength(stepsBefore + 1);
 
     await press('Voir mon parcours');
@@ -246,25 +266,33 @@ describe('Journey creation flow (sprint 10)', () => {
     expect(screen.getByTestId(`journey-step-${outsider}`)).toBeOnTheScreen();
   });
 
-  it('active journey: Commencer → Continuer → Terminer → completed', async () => {
+  it('active journey: Continuer → … → Terminer le parcours → completed → feedback', async () => {
     const utils = await renderApp();
     await act(() => router.push('/journey/create'));
     await goToSuggestions();
     await press('Construire mon parcours');
-    await press('Voir mon parcours');
     await press('Créer mon parcours');
     await waitFor(() => expect(utils.getPathname()).toMatch(/^\/journey\/journey-/));
     const total = (await repositories.journeys.getCurrent())!.steps.length;
+    expect(total).toBeGreaterThan(1);
 
-    await fireEvent.press(await screen.findByRole('button', { name: 'Commencer' }));
+    // Each "Continuer mon parcours" moves one step on, persisted in the journey.
     expect(await screen.findByText(`Étape 1 sur ${total}`)).toBeOnTheScreen();
     for (let step = 1; step < total; step += 1) {
       await press('Continuer mon parcours');
+      expect(await screen.findByText(`Étape ${step + 1} sur ${total}`)).toBeOnTheScreen();
+      expect((await repositories.journeys.getCurrent())?.currentStep).toBe(step);
     }
-    await press('Terminer mon parcours');
+    // Last step: no more "Continuer", "Terminer le parcours" instead.
+    expect(screen.queryByRole('button', { name: 'Continuer mon parcours' })).toBeNull();
+    await press('Terminer le parcours');
 
-    expect(await screen.findAllByText('Parcours terminé')).not.toHaveLength(0);
+    // Sprint 12: finishing opens the feedback; skipping it lands on the completed journey.
+    await waitFor(() => expect(utils.getPathname()).toMatch(/\/feedback$/));
     expect((await repositories.journeys.getCurrent())?.status).toBe('completed');
+    await press('Passer');
+    await waitFor(() => expect(utils.getPathname()).not.toMatch(/\/feedback$/));
+    expect(await screen.findAllByText('Parcours terminé')).not.toHaveLength(0);
     expect(screen.getByRole('button', { name: 'Créer un nouveau parcours' })).toBeOnTheScreen();
   });
 
@@ -281,7 +309,7 @@ describe('Journey creation flow (sprint 10)', () => {
     await pressRadio('Gratuit');
     await press('Continuer');
     await pressRadio('Ma position actuelle');
-    await press('Continuer');
+    await continueThroughBuilding();
 
     expect(await screen.findByText('Impossible de charger les idées.')).toBeOnTheScreen();
     list.mockResolvedValueOnce([]);

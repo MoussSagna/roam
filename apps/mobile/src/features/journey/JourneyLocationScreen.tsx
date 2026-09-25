@@ -2,6 +2,7 @@ import { useRouter } from 'expo-router';
 import LocateFixed from 'lucide-react-native/icons/locate-fixed';
 import MapIcon from 'lucide-react-native/icons/map';
 import MapPin from 'lucide-react-native/icons/map-pin';
+import MapPinCheck from 'lucide-react-native/icons/map-pin-check';
 import Navigation from 'lucide-react-native/icons/navigation';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -31,8 +32,10 @@ const APPROXIMATE_POSITION = {
 const MIN_ADDRESS_LENGTH = 3;
 
 /**
- * Journey creation 3/6 — starting point (`/journey/create/location`): my position, a place (a short
- * list of well-known spots) or an address. A small static `RoamMap` shows the chosen point.
+ * Journey creation — starting point (`/journey/create/location`): my position, a place (a short list
+ * of well-known spots) or an address. A small static `RoamMap` shows the chosen point. Opened from an
+ * experience (sprint 12, D-86), that experience comes first and is pre-selected — its name, its address
+ * and its photo marker, the map centred on it — and any other choice replaces it.
  */
 export function JourneyLocationScreen() {
   const { t } = useTranslation();
@@ -40,7 +43,12 @@ export function JourneyLocationScreen() {
   const { colors } = useTheme();
   const draft = useJourneyDraft();
   const { requestLeave, quitModal } = useLeaveCreation();
-  const [kind, setKind] = useState<JourneyStartKind | null>(draft.startLocation?.kind ?? null);
+  // The user's pick; until then, whatever the draft already holds (the experience pre-fill arrives
+  // asynchronously, after the first render).
+  const [pickedKind, setKind] = useState<JourneyStartKind | null>(null);
+  const kind = pickedKind ?? draft.startLocation?.kind ?? null;
+  const experienceStart = draft.experienceStart;
+  const seedExperience = draft.seedExperience;
   const [address, setAddress] = useState(
     draft.startLocation?.kind === 'address' ? draft.startLocation.label : '',
   );
@@ -52,6 +60,12 @@ export function JourneyLocationScreen() {
       label: t('journey.location.currentLabel'),
       coordinates: APPROXIMATE_POSITION,
     });
+  };
+
+  const chooseExperience = () => {
+    if (!experienceStart) return;
+    setKind('experience');
+    draft.setStartLocation(experienceStart);
   };
 
   const choosePlace = (spot: (typeof START_SPOTS)[number]) => {
@@ -71,7 +85,8 @@ export function JourneyLocationScreen() {
 
   const goNext = () => {
     if (kind === 'address') draft.setStartLocation(addressLocation());
-    router.push('/journey/create/suggestions');
+    // "On prépare ton parcours" first (sprint 12, D-84); it replaces itself with the suggestions.
+    router.push('/journey/create/building');
   };
 
   const preview =
@@ -115,6 +130,19 @@ export function JourneyLocationScreen() {
           </FadeInUp>
 
           <View accessibilityRole="radiogroup" className="gap-3">
+            {experienceStart ? (
+              <ChoiceRow
+                label={experienceStart.label}
+                icon={MapPinCheck}
+                iconColor={colors.primary}
+                selectedIconColor={colors.primaryForeground}
+                iconSize={24}
+                slotWidth={32}
+                selected={kind === 'experience'}
+                height={60}
+                onPress={chooseExperience}
+              />
+            ) : null}
             <ChoiceRow
               label={t('journey.location.current')}
               icon={Navigation}
@@ -149,6 +177,23 @@ export function JourneyLocationScreen() {
               onPress={() => setKind('address')}
             />
           </View>
+
+          {kind === 'experience' && experienceStart ? (
+            <View
+              testID="journey-start-experience"
+              className="gap-0.5 rounded-large bg-surface p-4"
+            >
+              <Text variant="caption" tone="primary" className="uppercase tracking-[1.5px]">
+                {t('journey.location.startPoint')}
+              </Text>
+              <Text variant="label">{experienceStart.label}</Text>
+              {experienceStart.detail ? (
+                <Text variant="small" tone="secondary">
+                  {experienceStart.detail}
+                </Text>
+              ) : null}
+            </View>
+          ) : null}
 
           {kind === 'current' ? (
             <Text variant="small" tone="secondary">
@@ -191,7 +236,12 @@ export function JourneyLocationScreen() {
 
           {preview ? (
             <View className="overflow-hidden rounded-large">
-              <JourneyMapPreview experiences={[]} start={preview} height={160} />
+              {preview.kind === 'experience' && seedExperience ? (
+                // The experience's own photo marker, the map centred on it.
+                <JourneyMapPreview experiences={[seedExperience]} height={160} />
+              ) : (
+                <JourneyMapPreview experiences={[]} start={preview} height={160} />
+              )}
             </View>
           ) : null}
         </ScrollView>
