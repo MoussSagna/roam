@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 
 import { pageArgs, type Page, type PageRequest, toPage } from '../../database/pagination.js';
-import { persist } from '../../database/persistence-errors.js';
+import { persist, UniqueConstraintError } from '../../database/persistence-errors.js';
 import { PrismaService } from '../../database/prisma.service.js';
 import type { Favorite as FavoriteRow } from '../../generated/prisma/client.js';
 
@@ -22,24 +22,34 @@ const toFavorite = ({ id, userId, experienceId, createdAt }: FavoriteRow): Favor
 
 /**
  * The user's favorites: a set of experiences. `add` and `remove` are idempotent, so a double tap or a retried
- * request never fails and concurrent adds never create a duplicate (the unique `(userId, experienceId)` key
- * does the work, through `INSERT … ON CONFLICT`).
+ * request never fails and concurrent adds never create a duplicate: the unique `(userId, experienceId)` key does the
+ * work. (Prisma runs this upsert as a read then an insert, not as `INSERT … ON CONFLICT`: a concurrent add can lose the
+ * insert, and then reads the favorite the other one created — API-10.)
  */
 @Injectable()
 export class FavoriteRepository {
   constructor(private readonly prisma: PrismaService) {}
 
   /** Saves the experience (or returns the existing favorite). Unknown user or experience: foreign key error. */
-  add(userId: string, experienceId: string): Promise<Favorite> {
-    return persist(async () =>
-      toFavorite(
-        await this.prisma.favorite.upsert({
-          where: { userId_experienceId: { userId, experienceId } },
-          create: { userId, experienceId },
-          update: {},
-        }),
-      ),
-    );
+  async add(userId: string, experienceId: string): Promise<Favorite> {
+    const where = { userId_experienceId: { userId, experienceId } };
+    try {
+      return await persist(async () =>
+        toFavorite(
+          await this.prisma.favorite.upsert({
+            where,
+            create: { userId, experienceId },
+            update: {},
+          }),
+        ),
+      );
+    } catch (error) {
+      // Saved concurrently between the upsert's read and its insert: the favorite exists — return it.
+      if (!(error instanceof UniqueConstraintError)) throw error;
+      return persist(async () =>
+        toFavorite(await this.prisma.favorite.findUniqueOrThrow({ where })),
+      );
+    }
   }
 
   /** `true` when a favorite was removed, `false` when there was none. */

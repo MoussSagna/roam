@@ -341,9 +341,41 @@ Done:
 - "Passer" needs no endpoint (nothing is saved).
 - The author id is not returned.
 
-## API-10 — next (to be defined)
+## API-10 — Favorites API — **COMPLETED** (backend; mobile not wired)
 
-Likely candidates: favorites (repository ready), rate limiting (required before any public deployment), or the mobile
-integration (auth, profile, catalog, journeys, feedback — it needs an API repository and an API → mobile adapter). Open product decisions: above, plus
+Branch `api-10` (from `develop`, which holds API-02 → API-09 and DATA-1). Details: [`FAVORITES_API.md`](FAVORITES_API.md).
+
+Done:
+
+- **Test infrastructure first**: the intermittent HTTP test failure (a 401 instead of the expected answer, seen in
+  `catalog.e2e` and `journeys.e2e`, about 1 run in 15–30) came from supertest's per-request servers and Node's keep-alive
+  global agent shared across the test files of a worker; keep-alive is turned off in `test/setup-env.ts`. The 401 did not
+  come back in 80 full runs; a rarer timeout remains (see "Known issues");
+- audit: the `Favorite` model covers the contract — no Prisma change, no migration; `FavoriteRepository.add` fixed: under
+  concurrency its upsert (a read then an insert in Prisma) could fail on the unique key — it now returns the favorite
+  created meanwhile (5 concurrent adds: 5 × 201, one row; the API-04 test now races 5 adds);
+- `FavoritesService` + `FavoritesController` in the `favorites` module: `GET /favorites` (most recently saved first,
+  keyset pagination, each favorite with its experience), `POST /favorites` (idempotent, 201), `DELETE
+/favorites/:experienceId` (idempotent, 204); owner from the session only;
+- inactive experiences: kept in favorites (listed with `isActive: false`), not newly savable (422
+  `FAVORITE_EXPERIENCE_INACTIVE`); unknown → 404;
+- measured: GET 8 SQL statements whatever the number of favorites (1, 10, 14), POST 12, DELETE 3;
+- tests: 249 unit/HTTP tests (+18), 105 database tests (+7), run twice.
+
+### Decisions taken
+
+- No check endpoint: the app marks favorites from one set of ids (`GET /favorites`), not per experience.
+- POST answers 201 with the same favorite when it already exists; DELETE answers 204 either way.
+
+### Known issues
+
+- A rare timeout (a request or an Argon2 test exceeding 5 s) was still seen about once in 30–50 back-to-back full runs,
+  with and without the fix; its cause is not identified (CPU saturation during the loops is the likeliest). Not the
+  cross-application 401.
+
+## API-11 — next (to be defined)
+
+Likely candidates: rate limiting (required before any public deployment), or the mobile integration (auth, profile,
+catalog, journeys, feedback, favorites — it needs an API repository and an API → mobile adapter). Open product decisions: above, plus
 `appdocs/DOCUMENTATION_RESTRUCTURE_REPORT.md`, `DATABASE_SCHEMA.md` ("Consistency audit"), the preference shape
 (`USER_PROFILE_AND_PREFERENCES.md`).

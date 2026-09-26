@@ -10,7 +10,7 @@ the repositories are ready for the domain modules that come next.
 ```text
 Controller (HTTP, DTOs)          — later
    ↓
-Service (rules, transitions)     — AuthService (API-05), UsersService (API-06), ExperiencesService and RecommendationsService (API-07), JourneysService (API-08), JourneyFeedbackService (API-09)
+Service (rules, transitions)     — AuthService (API-05), UsersService (API-06), ExperiencesService and RecommendationsService (API-07), JourneysService (API-08), JourneyFeedbackService (API-09), FavoritesService (API-10)
    ↓
 Repository (persistence)         — API-04: src/modules/<domain>/*.repository.ts
    ↓
@@ -118,16 +118,16 @@ and are not in any query.
 
 ## Business rules vs. persistence
 
-| Rule (JOURNEY.md, FEEDBACK.md)             | Service (later)                                 | Repository / PostgreSQL (now)                                                                                |
-| ------------------------------------------ | ----------------------------------------------- | ------------------------------------------------------------------------------------------------------------ |
-| At most one ACTIVE journey per user        | checks `findActiveByUserId` first → clear error | `create` translates the partial unique index violation into `ActiveJourneyExistsError` (the concurrent case) |
-| Draft never saved; created ACTIVE          | builds the journey from the draft               | `create` always stores `ACTIVE`                                                                              |
-| ACTIVE → COMPLETED once                    | decides when (last step done)                   | `complete` is a conditional update (`WHERE status = 'ACTIVE'`): `null` if already completed                  |
-| `currentStep` within the steps, edit rules | computes it                                     | `updateProgress` / `replaceSteps` only write an ACTIVE journey                                               |
-| Each experience once per journey           | drops duplicates (`isExperienceInJourney`)      | unique `(journeyId, experienceId)` → `UniqueConstraintError`, whole edit rolled back                         |
-| Feedback: completed journey, same user     | checks it                                       | —                                                                                                            |
-| Feedback: one per journey, rating 1–5      | validates (DTO, `isValidJourneyRating`)         | `JourneyFeedbackExistsError` (unique), `CheckConstraintError` (CHECK)                                        |
-| Favorites are a set                        | —                                               | `add` / `remove` idempotent (`INSERT … ON CONFLICT`, `deleteMany`)                                           |
+| Rule (JOURNEY.md, FEEDBACK.md)             | Service (later)                                 | Repository / PostgreSQL (now)                                                                                                 |
+| ------------------------------------------ | ----------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------- |
+| At most one ACTIVE journey per user        | checks `findActiveByUserId` first → clear error | `create` translates the partial unique index violation into `ActiveJourneyExistsError` (the concurrent case)                  |
+| Draft never saved; created ACTIVE          | builds the journey from the draft               | `create` always stores `ACTIVE`                                                                                               |
+| ACTIVE → COMPLETED once                    | decides when (last step done)                   | `complete` is a conditional update (`WHERE status = 'ACTIVE'`): `null` if already completed                                   |
+| `currentStep` within the steps, edit rules | computes it                                     | `updateProgress` / `replaceSteps` only write an ACTIVE journey                                                                |
+| Each experience once per journey           | drops duplicates (`isExperienceInJourney`)      | unique `(journeyId, experienceId)` → `UniqueConstraintError`, whole edit rolled back                                          |
+| Feedback: completed journey, same user     | checks it                                       | —                                                                                                                             |
+| Feedback: one per journey, rating 1–5      | validates (DTO, `isValidJourneyRating`)         | `JourneyFeedbackExistsError` (unique), `CheckConstraintError` (CHECK)                                                         |
+| Favorites are a set                        | —                                               | `add` / `remove` idempotent (upsert on the unique key, a lost concurrent insert returns the saved row — API-10; `deleteMany`) |
 
 A conditional update returning `null` is a fact ("not ACTIVE any more"), not a decision: the service turns it into
 its answer (404, 409…).
@@ -141,7 +141,7 @@ its answer (404, 409…).
   (update journey → delete steps → insert steps → read back). Its first statement, a conditional `UPDATE` on the
   journey row, takes the row lock: concurrent edits of one journey run one after the other and never interleave.
 - **PostgreSQL arbitrates races, not memory:** two concurrent journey creations (partial unique index), two concurrent
-  favorites (unique key + `ON CONFLICT`), two feedbacks (unique `journeyId`), a completion racing an edit (conditional
+  favorites (unique key; a concurrent add that loses the insert returns the saved favorite — API-10), two feedbacks (unique `journeyId`), a completion racing an edit (conditional
   updates). Concurrent calls are tested for journey creations and favorites; the completion/edit race relies on the
   row lock and the `WHERE status = 'ACTIVE'` condition (tested sequentially).
 - **Not needed yet:** a transaction spanning several repositories (e.g. complete a journey and write its feedback in
