@@ -101,5 +101,8 @@ Path alias: `@/` → `src/` (TypeScript, Jest and Metro).
   dependency of `apps/mobile` (pnpm's strict resolution).
 - **`ERR_PNPM_IGNORED_BUILDS`:** pnpm ≥ 10 blocks dependency build scripts; decisions are recorded in
   `pnpm-workspace.yaml` (`allowBuilds`).
+- **`No such file or directory: …/Mouss` during `expo run:ios`:** an iOS build script split the project path on a
+  space. The fixes are the pnpm patches (`patches/`) and `plugins/withQuotedBundleScript.js` (D-97): run `pnpm install`,
+  then `pnpm exec expo prebuild --platform ios` so CocoaPods and the Xcode project pick them up.
 - **Peer dependency warnings from `pnpm install`:** `react-reconciler` (via the testing library) and
   `@react-native/metro-config` are transitive and pinned by Expo SDK 57; nothing to act on today.
