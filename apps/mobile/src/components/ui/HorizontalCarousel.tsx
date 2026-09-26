@@ -9,19 +9,26 @@ export type HorizontalCarouselProps<T> = Omit<
   FlatListProps<T>,
   'horizontal' | 'showsHorizontalScrollIndicator' | 'contentContainerStyle'
 > & {
-  /** Width (px) of one item — must match what the item itself actually renders at (a fixed constant,
-   * or a value derived from `useWindowDimensions` the same way the item derives it), otherwise the
-   * snap points drift out of sync with the cards. */
-  itemWidth: number;
   /** Gap (px) between items, also folded into `snapToInterval` (`itemWidth + spacing`). */
   spacing: number;
   /** Horizontal inset (px) to bleed past. Defaults to the page's own `px-6` padding — override only if
    * the carousel sits inside a container with a different one. */
   sidePadding?: number;
-  /** `false` renders a plain (non-snapping) full-bleed carousel — no known caller needs this yet, but
-   * a future non-card carousel (e.g. free-scrolling thumbnails) might. */
-  snapEnabled?: boolean;
-};
+} & (
+    | {
+        /** Width (px) of one item — must match what the item itself actually renders at (a fixed constant,
+         * or a value derived from `useWindowDimensions` the same way the item derives it), otherwise the
+         * snap points drift out of sync with the cards. */
+        itemWidth: number;
+        snapEnabled?: true;
+      }
+    | {
+        /** A plain (non-snapping) full-bleed list — e.g. items of varying width (Home's mood chips), which
+         * have no single width to snap on; `itemWidth` is then optional and unused. */
+        snapEnabled: false;
+        itemWidth?: number;
+      }
+  );
 
 /**
  * Full-bleed, snapping horizontal carousel (`docs/DECISIONS.md` — Discover carousel full-bleed/snap
@@ -48,7 +55,7 @@ export function HorizontalCarousel<T>({
       showsHorizontalScrollIndicator={false}
       style={[{ marginHorizontal: -sidePadding }, style]}
       contentContainerStyle={{ paddingHorizontal: sidePadding, gap: spacing }}
-      snapToInterval={snapEnabled ? itemWidth + spacing : undefined}
+      snapToInterval={snapEnabled && itemWidth !== undefined ? itemWidth + spacing : undefined}
       snapToAlignment="start"
       decelerationRate={snapEnabled ? 'fast' : 'normal'}
       {...props}

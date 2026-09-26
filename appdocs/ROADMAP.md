@@ -7,14 +7,15 @@ Status for **mobile** (2026-09-22). Web and API foundations are not started.
 - [x] Monorepo/app structure (pnpm workspace, `apps/mobile`; `apps/web`, `apps/api`, `packages/*` not created)
 - [x] TypeScript configuration (strict)
 - [x] Linting/formatting (ESLint + Prettier)
-- [ ] Environment variables
+- [~] Environment variables — mobile: `EXPO_PUBLIC_DATA_SOURCE` / `EXPO_PUBLIC_API_URL` (`apps/mobile/.env.example`,
+      DATA-8); API: `apps/api/.env.example`
 - [ ] CI basics
 - [x] Theme system (Light / Dark / System, semantic tokens, persisted); `/profile/theme` (sprint 5)
       exposes it, [`DECISIONS.md`](../apps/mobile/mobiledocs/DECISIONS.md) D-61
 - [x] i18n system (FR/EN, persisted, typed keys); `/profile/language` (sprint 5) exposes it with a
       dynamically derived language list, [`DECISIONS.md`](../apps/mobile/mobiledocs/DECISIONS.md) D-60
 - [~] Shared UI primitives (mobile primitives exist in `apps/mobile/src/components/ui`; no shared `packages/ui` yet)
-- [x] Mock/repository architecture (interfaces + mock, no API)
+- [x] Mock/repository architecture (interfaces + mock; API implementations since DATA-8, one switch)
 - [x] Unit test setup (Jest + RNTL)
 
 ## Phase B — Static UX prototype
@@ -66,16 +67,27 @@ Use mock data. The onboarding is complete on the front end (no backend, nothing 
       them ("Mes préférences" vs. onboarding) is an open product decision
 - [~] Places — stored; the 2 mock places migrated (DATA-1); no endpoint of their own (served inside an experience)
 - [~] Experiences — catalog served (API-07: `GET /experiences`, `/experiences/:id`) on the 14 experiences migrated from
-      the mobile mock data (DATA-1, `apps/api/apidocs/DATA_1_MIGRATION_REPORT.md`); the mobile app still reads its mocks
+      the mobile mock data (DATA-1, `apps/api/apidocs/DATA_1_MIGRATION_REPORT.md`); the mobile app reads it in API mode
+      (DATA-8: list, detail, search — `apps/mobile/mobiledocs/MOBILE_API_INTEGRATION.md`), its mocks in mock mode
 - [~] Itineraries — journeys served (API-08: create, active, history, edit, progress, complete —
       `apps/api/apidocs/JOURNEY_API.md`); mobile not wired
-- [~] Favorites — served (API-10: list, save, remove, idempotent — `apps/api/apidocs/FAVORITES_API.md`); mobile not
-      wired (local state)
+- [~] Favorites — served (API-10: list, save, remove, idempotent — `apps/api/apidocs/FAVORITES_API.md`); mobile
+      repository ready (DATA-8), screens still on local state
 - [~] Feedback — journey feedback served (API-09: 1–5 stars + comment, one per completed journey,
       `apps/api/apidocs/JOURNEY_FEEDBACK_API.md`); mobile not wired; per-experience feedback not built
 - [~] Auth — backend done (API-05: register, login, sessions, logout, password reset by code;
-      `apps/api/apidocs/AUTHENTICATION.md`); mobile not wired yet, no email provider for reset codes; rate-limited
-      since API-11 (`apps/api/apidocs/RATE_LIMITING.md`)
+      `apps/api/apidocs/AUTHENTICATION.md`); rate-limited since API-11 (`apps/api/apidocs/RATE_LIMITING.md`); mobile
+      wired in API mode (DATA-8: login, register, session in `expo-secure-store`, `/auth/me` at startup, logout, 401 →
+      Login, 429 message); password reset still simulated on mobile (no email provider)
+
+## Phase C′ — Mobile ↔ API integration (DATA-8)
+
+- [x] One API client (`/api/v1`, JSON, bearer, timeout, typed `ApiError`, `{ data }` / `{ error }` envelopes, no retry)
+- [x] Secure session (`expo-secure-store`), 401 → session cleared once → Login, 429 → typed error with `Retry-After`
+- [x] Mock / API source switch at composition (`EXPO_PUBLIC_DATA_SOURCE`), no silent fallback
+- [x] Adapters API → app types (experience, user); experience catalog, detail and search on the API
+- [ ] Checked on a simulator/device in API mode (not possible on the DATA-8 build machine)
+- [ ] Recommendations, preferences, profile editing, favorites UI, journeys, journey feedback on the API
 
 ## Phase D — Recommendation engine
 

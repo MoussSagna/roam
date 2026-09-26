@@ -2991,6 +2991,70 @@ open contradiction is listed in [`appdocs/DOCUMENTATION_RESTRUCTURE_REPORT.md`](
 intent and now covers `appdocs/**/*.md`. Code comments still cite the former `docs/…` paths (not changed: documentation
 only); the report maps each old path to its new one. Decision numbers are unchanged.
 
+## DATA-8 — mobile ↔ API integration (2026-09-26)
+
+Full description: [`MOBILE_API_INTEGRATION.md`](MOBILE_API_INTEGRATION.md).
+
+### D-91 — One source switch, chosen at bundle time: `mock` or `api`, never a fallback
+
+`EXPO_PUBLIC_DATA_SOURCE` (`mock` by default) and `EXPO_PUBLIC_API_URL` (the origin; the client adds `/api/v1`) are read
+once in `config/dataSource.ts`; `services/index.ts` builds `createMockRepositories()` or `createApiRepositories()` from
+them. Screens keep importing `repositories` and never learn the source; no `if (USE_API)` anywhere else. An invalid
+configuration throws at startup, and an API failure is an error in API mode — never mock data: a silent fallback would
+hide backend problems. `createApiRepositories()` lists every domain with its source, so "still local" (categories,
+collections, places, journeys, journey feedback) is explicit, not accidental. One HTTP client (`services/api/apiClient.ts`)
+is the only `fetch` of the app: no per-domain client, no retry, a 15 s timeout, typed `ApiError`s. Rejected: a runtime
+toggle (a data source that changes under loaded screens), per-domain variables (combinations nobody tests), React Query
+(no documented decision; in-flight sharing in the experience repository covers the duplicate requests of today).
+
+### D-92 — The session belongs to `AuthRepository`; the token lives in `expo-secure-store`
+
+The contract became `restoreSession()`, `login(credentials)`, `register(input)`, `logout()`, `onSessionExpired(listener)`.
+The repository decides how a session is kept — a secure-store token (API) or the former persisted flag (mock, moved
+from `auth/session.ts`, deleted) — so `AuthProvider`, `useBootstrap` and screens never handle a token or storage.
+`expo-secure-store` (added, with its config plugin) holds the token behind `SessionStorage`; never AsyncStorage, never
+logged; the password is never stored. At startup, a token the server refuses (401) is forgotten; a server that cannot be
+reached does **not** sign the user out (their next request will tell) — signing out on every offline launch would be
+worse. A 401 on a request that carried a token clears it once and reports `onSessionExpired`; `AuthProvider` then signs
+out, goes to Login and shows one toast (only the first of parallel 401s acts). Logout clears the token even when the
+server cannot be told. Password reset stays simulated (no email provider in the API yet).
+
+### D-93 — Onboarding "Commencer" opens Register (supersedes the sprint 3 §17 behavior)
+
+Finishing onboarding used to grant the mocked session directly. A real session needs credentials, so "Commencer" now
+**pushes** `/auth/register` (back returns to "Tout est prêt"), in both modes — the screen does not know the source.
+Register then signs in and lands on Home as before. The onboarding answers are still not saved (preference shape: open
+product decision).
+
+### D-94 — API → app adapters; unknown values stay unknown; `Experience.estimatedDurationMin`/`estimatedBudget` optional
+
+The API's DTOs stay inside `services/api/`; `mapExperienceDto` / `mapUserDto` produce the app's existing types, so no
+screen changed shape. Mapped from real fields or formatted from them (duration and price labels, bracket from the price
+bounds — the inverse of DATA-1's mapping, so every migrated experience gets its original bracket back); everything the
+API does not serve (moods, distance, hours label, transport, highlights, reviews, similar ids, hero/popular/favorite
+flags, history) is left absent. API experiences have no image today: the cards' existing no-photo state is used, no URL
+or bundled photo is substituted. `estimatedDurationMin` and `estimatedBudget` became optional because the canonical model
+allows them to be unknown; their consumers follow the API's rule "an unknown fact never excludes" (price sort: last;
+journey suggestions: accepted; journey plan: adds nothing).
+
+### D-95 — Search moves with the catalog; favorites prepared but not wired; recommendations, preferences, journeys left
+
+Search must read the API catalog in API mode (a mock result would open an id the API does not know): `GET
+/experiences?q=&category=&budget=`, unsupported filters not sent (distance, when, open now, walkable), suggestions from
+one request. `FavoriteRepository` (list of ids as the source of truth, idempotent add/remove, no check endpoint) exists in
+both modes for the Favorites UI migration, no screen uses it yet. Recommendations are not migrated: the app has no
+recommendation repository and its two local rankings carry a mood term the API lacks — a refactor for its own step.
+Preferences wait for the product decision on their shape; journeys and feedback for their own sprint.
+
+### D-96 — Home without editorial flags; error states where loading could hang
+
+The API serves no `isHero`/`isPopular`: `features/home/lib/pickFeatured.ts` keeps the flagged experiences when any exist
+(mock mode unchanged) and otherwise shows the best-rated five in the hero and the most reviewed in "Populaires" — a
+presentation rule on real facts, not an invented flag. Hooks without a `catch` could stay in "Chargement…" forever on a
+failed request: Home now has an error state (message + "Réessayer", the only new UI), the detail's existing "not found"
+layout shows the error message, search reports it with a toast, the other loaders end on failure. Messages come from one
+mapping (`errorMessageKey`: network, too many requests, session expired, generic).
+
 ## iOS build — project path with spaces (2026-09-26)
 
 ### D-97 — Quote the iOS build scripts at their source: pnpm patches + one config plugin
@@ -3035,3 +3099,34 @@ applies that SDK 58 wiring at every prebuild:
 The plugin throws on an `AppDelegate` it does not recognize rather than leave a half-migrated app that would start React
 Native twice. Remove it when the project moves to a template that adopts scenes itself (SDK 58). Test:
 `plugins/__tests__/withIOSSceneLifecycle.test.js`.
+
+## API-12 — recommendations API on Home (2026-09-26)
+
+### D-99 — "Des idées pour toi" through a `RecommendationRepository`; Home sends only the context it really has
+
+Home's "Des idées pour toi" now asks `RecommendationRepository.recommend(context)`: `GET /recommendations` in API mode
+(ranked, filtered and explained by the API — the app ranks nothing again), `pickForYou` unchanged in mock mode. The
+context is what Home knows, nothing invented: the position only when the location permission is **already** granted
+(Home is not the place to ask — onboarding and the journey start explain why before prompting), the mood (mock only:
+no mood model in the API), 4 ideas. Budget, time and company are unknown on Home, so they are not sent and the API
+completes them from the saved preferences. The request waits for the position read (one request, not one without then
+one with a position) and is repeated only when the context changes or on "Réessayer"; a mood change still asks the API
+again, which ignores it — accepted rather than a cache (D-91). Loading, error + retry and empty live inside the section,
+so a failed recommendation never hides the rest of Home and never falls back to the mock pool. Rejected: prompting for
+the location on Home; a default budget or company; moving `pickForYou` into the API repository; journey suggestions
+and Discover "Près de toi" in the same step (their own contexts and screens).
+
+### D-100 — One loading system (spinner → skeletons), a progressive Home, its horizontal lists on `HorizontalCarousel`
+
+No loading component existed (a `Button` spinner, texts "Chargement…"). `LoadingSpinner` and `Skeleton` join
+`components/ui/`, both on theme tokens (`textSecondary`, `border`) so light and dark need no second color; the skeleton
+pulse is a slow Moti opacity loop, static under reduce motion (`useReduceMotion`), and hidden from screen readers — the
+loading state is announced once. A wait starts discreet (spinner) and becomes skeletons after 300 ms
+(`useDelayedFlag`), so a fast answer never flashes a skeleton. Skeletons copy the real component from its own exported
+dimensions (`CARD_WIDTH`, `CARD_IMAGE_HEIGHT`, `getHeroHeight`), and a carousel of skeletons is the same
+`HorizontalCarousel` as the real one, so nothing moves when the content arrives. Home no longer waits full-screen: only
+a failed experience load replaces the page. Its four horizontal `ScrollView`s became `HorizontalCarousel`s (D-67's
+`FlatList` pattern, already used by Discover): full-bleed past `px-6`, snap on the card's exported width plus the same
+gaps as before (cards 16, tiles 18, `NEARBY_CARD_WIDTH` newly exported); the mood chips, of varying widths, bleed
+without snap (`snapEnabled={false}`, `itemWidth` now optional there). Rejected: a skeleton library, a shimmer gradient
+(a new dependency for little gain), a generic grey rectangle per section, snapping chips on an average width.

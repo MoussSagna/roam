@@ -46,7 +46,9 @@ export function SuggestionCard({
 
   const meta = [
     distanceM !== null ? formatDistance(distanceM, i18n.language) : null,
-    formatDuration(experience.estimatedDurationMin),
+    experience.estimatedDurationMin !== undefined
+      ? formatDuration(experience.estimatedDurationMin)
+      : null,
     experience.priceLabel,
   ].filter(Boolean);
 

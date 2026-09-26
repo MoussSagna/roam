@@ -14,6 +14,8 @@ import type { Experience } from '@/types';
 /** Exported so a carousel rendering this card (Home, and Discover's `NearbySection`/`TrendingSection`)
  * can compute its own `snapToInterval` from the exact same width — no separate hardcoded copy. */
 export const CARD_WIDTH = 260;
+/** Height of the card's image area — shared with `ExperienceCardSkeleton`. */
+export const CARD_IMAGE_HEIGHT = 160;
 
 type ExperienceCardProps = {
   experience: Experience;
@@ -43,7 +45,7 @@ export function ExperienceCard({
       style={{ width: CARD_WIDTH }}
       className="overflow-hidden rounded-card border border-border bg-surface active:opacity-90"
     >
-      <View style={{ height: 160 }} className="bg-surfaceElevated">
+      <View style={{ height: CARD_IMAGE_HEIGHT }} className="bg-surfaceElevated">
         {experience.coverImage ? (
           <Image
             source={experience.coverImage}

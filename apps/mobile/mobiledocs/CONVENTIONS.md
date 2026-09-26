@@ -57,7 +57,8 @@ A carousel of partial-width "peek" cards sitting inside a page's own horizontal 
 visually boxed in: cards near either edge are clipped by that padding instead of bleeding to the screen's
 physical edge, and nothing about `ScrollView`/`FlatList` prevents that on its own. `components/ui/`'s
 `HorizontalCarousel` (all of Discover's own carousels use it, `RoamSelectionSection` /
-`SuggestionsSection` / `NearbySection` / `TrendingSection` / `CollectionsSection`) is the reusable fix:
+`SuggestionsSection` / `NearbySection` / `TrendingSection` / `CollectionsSection`, and Home's four horizontal
+sections since API-12, D-100) is the reusable fix:
 
 - **Full bleed**: `marginHorizontal: -sidePadding` on the `FlatList` itself cancels the parent's padding
   (`sidePadding` defaults to 24, matching `px-6`), while `contentContainerStyle`'s matching
@@ -75,10 +76,20 @@ physical edge, and nothing about `ScrollView`/`FlatList` prevents that on its ow
   `windowWidth - 2 * sidePadding` — narrower than the frame — so paging (which pages by the scroll view's
   own frame width) would drift out of alignment after a few swipes; `snapToInterval` computed from the
   card's real width doesn't have that problem.
-- **Not every horizontal list needs this**: `HorizontalCarousel` takes `snapEnabled` (default `true`) for
-  a future non-snapping full-bleed use, and `DiscoverTabs` (the secondary-nav chip row) was deliberately
-  left as a plain, padded `FlatList` — it's a navigation control, not a "peek card" carousel, and bleeding
-  it to the edges wasn't asked for.
+-  **Not every horizontal list needs this**: `HorizontalCarousel` takes `snapEnabled` (default `true`); `false` is a
+  full-bleed list without snap for items of varying width (Home's mood chips — `itemWidth` is then optional), and
+  `DiscoverTabs` (the secondary-nav chip row) was deliberately left as a plain, padded `FlatList` — it's a navigation
+  control, not a "peek card" carousel, and bleeding it to the edges wasn't asked for.
+
+## Loading states
+
+`components/ui/`: `LoadingSpinner` (the platform spinner in `textSecondary`, announced "Chargement…") for a short
+wait, `Skeleton` (a block in the `border` token with a slow Moti opacity pulse, static under reduce motion, hidden from
+screen readers) for a longer one; `hooks/useDelayedFlag` switches from one to the other after a delay. A skeleton
+reproduces the component it stands for — built from the same exported dimensions (`ExperienceCardSkeleton` from
+`CARD_WIDTH`/`CARD_IMAGE_HEIGHT`, `HeroSkeleton` from `getHeroHeight`) and, for a carousel, laid out by the same
+`HorizontalCarousel` with the same `itemWidth`/`spacing` — so the real content replaces it without moving the page. A
+section loads on its own: never a full-screen wait when only part of the page is missing (D-100).
 
 ## Animation (Moti)
 

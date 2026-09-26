@@ -12,26 +12,36 @@ import Animated, {
 } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { Chip, SearchBar, Text } from '@/components/ui';
+import { Button, Chip, HorizontalCarousel, SearchBar, Text } from '@/components/ui';
 import { useTabBarScrollHandler } from '@/features/navigation/TabBarCollapseContext';
 import { TAB_BAR_CLEARANCE } from '@/features/navigation/tabBarConfig';
 import { useScrollDirection } from '@/hooks/useScrollDirection';
+import { errorMessageKey } from '@/services';
 import { useTheme } from '@/theme';
 import type { Experience, Mood } from '@/types';
 
-import { ExperienceCard } from './components/ExperienceCard';
+import { CARD_WIDTH, ExperienceCard } from './components/ExperienceCard';
+import { ExperienceCarouselLoading } from './components/ExperienceCarouselLoading';
 import { HeroCarousel } from './components/HeroCarousel';
+import { HeroSkeleton } from './components/HeroSkeleton';
 import { HEADER_HEIGHT, HomeHeader } from './components/HomeHeader';
-import { NearbyCard } from './components/NearbyCard';
+import { NEARBY_CARD_WIDTH, NearbyCard } from './components/NearbyCard';
 import { SectionHeader } from './components/SectionHeader';
 import { HOME_MOODS } from './data/moods';
 import { NEARBY_CATEGORIES } from './data/nearbyCategories';
 import { getHeroHeight } from './lib/heroHeight';
-import { pickForYou } from './lib/pickForYou';
+import { pickHeroExperiences, pickPopularExperiences } from './lib/pickFeatured';
 import { useFavoriteExperienceIds } from './useFavoriteExperienceIds';
+import { useForYouRecommendations } from './useForYouRecommendations';
 import { useHomeExperiences } from './useHomeExperiences';
 
 const DEFAULT_MOOD: Mood = 'calm';
+
+/** Gaps of the horizontal lists (unchanged from the ScrollViews they replace); the card lists snap on
+ * `CARD_WIDTH + CARD_SPACING`, the nearby tiles on `NEARBY_CARD_WIDTH + NEARBY_SPACING`. */
+const MOOD_SPACING = 10;
+const CARD_SPACING = 16;
+const NEARBY_SPACING = 18;
 
 /** How far (px) of overscroll counts as a "full" pull-to-stretch. */
 const HERO_OVERSCROLL_RANGE = 120;
@@ -112,22 +122,13 @@ export function HomeScreen() {
     };
   });
 
-  const { experiences, isLoading } = useHomeExperiences();
+  const { experiences, isLoading, error, retry } = useHomeExperiences();
   const { favoriteIds, toggleFavorite } = useFavoriteExperienceIds(experiences);
   const [selectedMood, setSelectedMood] = useState<Mood>(DEFAULT_MOOD);
 
-  const heroExperiences = useMemo(
-    () => experiences.filter((experience) => experience.isHero),
-    [experiences],
-  );
-  const popularExperiences = useMemo(
-    () => experiences.filter((experience) => experience.isPopular),
-    [experiences],
-  );
-  const forYouExperiences = useMemo(
-    () => pickForYou(experiences, selectedMood),
-    [experiences, selectedMood],
-  );
+  const heroExperiences = useMemo(() => pickHeroExperiences(experiences), [experiences]);
+  const popularExperiences = useMemo(() => pickPopularExperiences(experiences), [experiences]);
+  const forYou = useForYouRecommendations(selectedMood);
 
   const goToExperience = useCallback(
     (experience: Experience) => {
@@ -152,12 +153,15 @@ export function HomeScreen() {
     router.push({ pathname: '/search', params: { context: 'home', openFilters: '1' } });
   }, [router]);
 
-  if (isLoading) {
+  // The page shows progressively: what does not need the experiences (mood chips, nearby tiles) at once,
+  // skeletons where the experiences will be. Only a failed load of the experiences replaces the page.
+  if (error) {
     return (
-      <View className="flex-1 items-center justify-center bg-background">
-        <Text variant="body" tone="secondary">
-          {t('common.loading')}
+      <View className="flex-1 items-center justify-center gap-4 bg-background px-6">
+        <Text variant="body" tone="secondary" className="text-center">
+          {t(errorMessageKey(error))}
         </Text>
+        <Button label={t('common.retry')} onPress={retry} />
       </View>
     );
   }
@@ -173,11 +177,15 @@ export function HomeScreen() {
         contentContainerStyle={{ paddingBottom: insets.bottom + TAB_BAR_CLEARANCE }}
       >
         <Animated.View style={heroAnimatedStyle}>
-          <HeroCarousel
-            experiences={heroExperiences}
-            onPressExperience={goToExperience}
-            topInset={insets.top}
-          />
+          {isLoading ? (
+            <HeroSkeleton />
+          ) : (
+            <HeroCarousel
+              experiences={heroExperiences}
+              onPressExperience={goToExperience}
+              topInset={insets.top}
+            />
+          )}
         </Animated.View>
 
         <View className="gap-8 px-6 pt-6">
@@ -190,16 +198,18 @@ export function HomeScreen() {
 
           <View className="gap-3" testID="home-section-moods">
             <SectionHeader title={t('home.sections.moods')} onSeeAll={goToDiscover} />
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              contentContainerStyle={{ gap: 10, paddingRight: 24 }}
-            >
-              {HOME_MOODS.map((mood) => {
+            {/* Chips of varying widths: a full-bleed list without snap. */}
+            <HorizontalCarousel
+              testID="home-moods-list"
+              data={HOME_MOODS}
+              keyExtractor={(mood) => mood.id}
+              extraData={selectedMood}
+              spacing={MOOD_SPACING}
+              snapEnabled={false}
+              renderItem={({ item: mood }) => {
                 const isSelected = mood.id === selectedMood;
                 return (
                   <Chip
-                    key={mood.id}
                     label={t(mood.labelKey)}
                     selected={isSelected}
                     onPress={() => setSelectedMood(mood.id)}
@@ -212,59 +222,81 @@ export function HomeScreen() {
                     }
                   />
                 );
-              })}
-            </ScrollView>
+              }}
+            />
           </View>
 
           <View className="gap-3" testID="home-section-popular">
             <SectionHeader title={t('home.sections.popular')} onSeeAll={goToDiscover} />
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              contentContainerStyle={{ gap: 16, paddingRight: 24 }}
-            >
-              {popularExperiences.map((experience) => (
-                <ExperienceCard
-                  key={experience.id}
-                  experience={experience}
-                  isFavorite={favoriteIds.has(experience.id)}
-                  onToggleFavorite={toggleFavorite}
-                  onPress={goToExperience}
-                />
-              ))}
-            </ScrollView>
+            {isLoading ? (
+              <ExperienceCarouselLoading spacing={CARD_SPACING} testID="home-popular-loading" />
+            ) : (
+              <HorizontalCarousel
+                testID="home-popular-list"
+                data={popularExperiences}
+                keyExtractor={(experience) => experience.id}
+                extraData={favoriteIds}
+                itemWidth={CARD_WIDTH}
+                spacing={CARD_SPACING}
+                renderItem={({ item: experience }) => (
+                  <ExperienceCard
+                    experience={experience}
+                    isFavorite={favoriteIds.has(experience.id)}
+                    onToggleFavorite={toggleFavorite}
+                    onPress={goToExperience}
+                  />
+                )}
+              />
+            )}
           </View>
 
           <View className="gap-3" testID="home-section-nearby">
             <SectionHeader title={t('home.sections.nearby')} onSeeAll={goToDiscover} />
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              contentContainerStyle={{ gap: 18, paddingRight: 24 }}
-            >
-              {NEARBY_CATEGORIES.map((category) => (
-                <NearbyCard key={category.id} category={category} onPress={goToNearbyCategory} />
-              ))}
-            </ScrollView>
+            <HorizontalCarousel
+              testID="home-nearby-list"
+              data={NEARBY_CATEGORIES}
+              keyExtractor={(category) => category.id}
+              itemWidth={NEARBY_CARD_WIDTH}
+              spacing={NEARBY_SPACING}
+              renderItem={({ item: category }) => (
+                <NearbyCard category={category} onPress={goToNearbyCategory} />
+              )}
+            />
           </View>
 
           <View className="gap-3" testID="home-section-forYou">
             <SectionHeader title={t('home.sections.forYou')} onSeeAll={goToDiscover} />
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              contentContainerStyle={{ gap: 16, paddingRight: 24 }}
-            >
-              {forYouExperiences.map((experience) => (
-                <ExperienceCard
-                  key={experience.id}
-                  experience={experience}
-                  isFavorite={favoriteIds.has(experience.id)}
-                  onToggleFavorite={toggleFavorite}
-                  onPress={goToExperience}
-                />
-              ))}
-            </ScrollView>
+            {forYou.error ? (
+              <View className="items-start gap-3">
+                <Text variant="body" tone="secondary">
+                  {t(errorMessageKey(forYou.error))}
+                </Text>
+                <Button label={t('common.retry')} onPress={forYou.retry} />
+              </View>
+            ) : forYou.isLoading ? (
+              <ExperienceCarouselLoading spacing={CARD_SPACING} testID="home-forYou-loading" />
+            ) : forYou.experiences.length === 0 ? (
+              <Text variant="body" tone="secondary">
+                {t('home.forYouEmpty')}
+              </Text>
+            ) : (
+              <HorizontalCarousel
+                testID="home-forYou-list"
+                data={forYou.experiences}
+                keyExtractor={(experience) => experience.id}
+                extraData={favoriteIds}
+                itemWidth={CARD_WIDTH}
+                spacing={CARD_SPACING}
+                renderItem={({ item: experience }) => (
+                  <ExperienceCard
+                    experience={experience}
+                    isFavorite={favoriteIds.has(experience.id)}
+                    onToggleFavorite={toggleFavorite}
+                    onPress={goToExperience}
+                  />
+                )}
+              />
+            )}
           </View>
         </View>
       </ScrollView>

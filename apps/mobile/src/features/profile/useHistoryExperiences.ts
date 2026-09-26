@@ -14,12 +14,17 @@ export function useHistoryExperiences() {
 
   useEffect(() => {
     let active = true;
-    void repositories.experiences.list().then((result) => {
-      if (active) {
+    repositories.experiences
+      .list()
+      .then((result) => {
+        if (!active) return;
         setExperiences(result);
         setIsLoading(false);
-      }
-    });
+      })
+      .catch(() => {
+        // Ends loading on a failed request (API mode); the screen shows its empty state.
+        if (active) setIsLoading(false);
+      });
     return () => {
       active = false;
     };

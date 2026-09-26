@@ -5,8 +5,8 @@
 The canonical models (Experience, Event, Place, location, pricing, atmosphere/enrichment, source metadata) and the
 repositories were built by API-03/API-04 ([`DATABASE_SCHEMA.md`](DATABASE_SCHEMA.md),
 [`REPOSITORY_ARCHITECTURE.md`](REPOSITORY_ARCHITECTURE.md)). DATA-1 migrated the mobile mock data into that canonical
-catalog ([`DATA_1_MIGRATION_REPORT.md`](DATA_1_MIGRATION_REPORT.md)): the API now serves it, the mobile app keeps its mocks
-until DATA-8. Provider interfaces come with their first adapter (DATA-2). DATA-1 is not provider ingestion.
+catalog ([`DATA_1_MIGRATION_REPORT.md`](DATA_1_MIGRATION_REPORT.md)): the API now serves it, the mobile app reads it in API
+mode since DATA-8. Provider interfaces come with their first adapter (DATA-2). DATA-1 is not provider ingestion.
 
 ## DATA-2 — Google Places
 
@@ -39,9 +39,12 @@ Implement database models, upsert, deduplication, cache, sync, TTL strategy and 
 
 Implement context filtering, matching, configurable scoring and truthful recommendation explanations.
 
-## DATA-8 — Mobile integration
+## DATA-8 — Mobile integration — **first step done** (API integration layer)
 
-Mobile calls only ROAM APIs. Existing screens continue using canonical ROAM models.
+Mobile calls only ROAM APIs. Existing screens continue using canonical ROAM models, through adapters. Done: one API
+client, secure session, typed errors (401, 429), the mock/API switch, authentication, the current user, the experience
+catalog and search. Still on the mobile's local data: recommendations, preferences, favorites UI, journeys, feedback —
+[`apps/mobile/mobiledocs/MOBILE_API_INTEGRATION.md`](../../mobile/mobiledocs/MOBILE_API_INTEGRATION.md).
 
 ## Development rule
 

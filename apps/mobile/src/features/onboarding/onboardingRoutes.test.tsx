@@ -232,22 +232,16 @@ describe('onboarding routes', () => {
     expect(screen.getByRole('header')).toHaveTextContent('Prêt à explorer ?');
   });
 
-  it('"Commencer" ends the onboarding on the home screen', async () => {
+  it('"Commencer" ends the onboarding on account creation, still signed out (DATA-8)', async () => {
     const utils = await openWelcomeFromSplash();
     await fireEvent.press(screen.getByRole('button', { name: 'Passer' }));
 
-    // Single `act()`: "Commencer" now also grants the mocked session (`useAuth().login()`), which
-    // awaits a fake timer — awaiting the press alone would deadlock on it.
-    await act(async () => {
-      fireEvent.press(screen.getByRole('button', { name: 'Commencer' }));
-      await jest.advanceTimersByTimeAsync(1000);
-    });
+    await fireEvent.press(screen.getByRole('button', { name: 'Commencer' }));
 
-    expect(utils.getPathname()).toBe('/home');
-    // Two live `SearchBar`s on Home since sticky search (D-69) — in-flow + `HomeHeader`'s docked one.
-    expect(screen.getAllByText('Explorer un lieu, une activité…').length).toBeGreaterThan(0);
-    // The onboarding is replaced, not stacked: back does not return to it.
-    expect(router.canGoBack()).toBe(false);
+    expect(utils.getPathname()).toBe('/auth/register');
+    expect(screen.getByRole('header')).toHaveTextContent('Créer un compte');
+    // Pushed: back returns to "Tout est prêt".
+    expect(router.canGoBack()).toBe(true);
   });
 
   it('interests (last slide) → "Suivant" shows the profile creation, which needs nothing from the user', async () => {

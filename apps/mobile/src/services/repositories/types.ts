@@ -6,6 +6,8 @@ import type {
   JourneyFeedback,
   JourneyFeedbackInput,
   Place,
+  RecommendationContext,
+  Recommendations,
   SearchFilters,
   SearchSuggestion,
   User,
@@ -38,15 +40,68 @@ export interface CollectionRepository {
   getById(id: string): Promise<Collection | null>;
 }
 
+export type LoginCredentials = {
+  email: string;
+  password: string;
+};
+
+export type RegisterInput = {
+  /** The Register screen's first name. */
+  displayName: string;
+  email: string;
+  password: string;
+};
+
+/**
+ * The session (DATA-8). The repository owns how a session is kept on the device — a secure-store token
+ * for the API, a persisted flag for the mock — so the auth context and screens never see a token.
+ * Failures reject with an `ApiError` (API) — e.g. `AUTH_INVALID_CREDENTIALS`, `AUTH_EMAIL_ALREADY_EXISTS`,
+ * `TOO_MANY_REQUESTS` — for the screen to show.
+ */
 export interface AuthRepository {
-  /** Simulates a login request (no backend yet): always succeeds after a short delay. */
-  login(): Promise<void>;
+  /**
+   * At startup: whether a session is kept on the device and still valid. A session the server refuses
+   * (401) is forgotten and answers `false`; when the server cannot be reached the kept session is trusted
+   * (`true`) — its next request will tell.
+   */
+  restoreSession(): Promise<boolean>;
+  login(credentials: LoginCredentials): Promise<void>;
+  /** Creates the account and opens its session (the Register screen lands signed in). */
+  register(input: RegisterInput): Promise<void>;
+  /** Always ends the local session, even when the server cannot be told (expired token, offline). */
   logout(): Promise<void>;
+  /**
+   * Notifies when the server refused the session during the app's life (401 on any request). The
+   * session is already forgotten when the listener runs. Returns the unsubscribe function.
+   */
+  onSessionExpired(listener: () => void): () => void;
 }
 
 export interface UserRepository {
-  /** No real session/user endpoint yet: always returns the same mocked profile. */
+  /** The signed-in user's profile (API: `GET /auth/me`; mock: the same mocked profile). */
   getCurrentUser(): Promise<User>;
+}
+
+/**
+ * The signed-in user's favorite experiences (API-10), prepared in DATA-8 but not used by a screen yet:
+ * Home, Discover and "Mes favoris" still keep their local favorite state (`useFavoriteExperienceIds`,
+ * `useFavoriteExperiences`). The source of truth is the list — there is no per-experience check.
+ */
+export interface FavoriteRepository {
+  /** Ids of every favorite experience, most recently saved first. */
+  listExperienceIds(): Promise<string[]>;
+  /** Idempotent: saving a favorite twice keeps one. */
+  add(experienceId: string): Promise<void>;
+  /** Idempotent: removing what is not a favorite succeeds. */
+  remove(experienceId: string): Promise<void>;
+}
+
+/**
+ * Recommendations for the user's situation (Home "Des idées pour toi"). API: `GET /recommendations`, ranked and
+ * explained server-side; mock: the deterministic pool the app had before (`features/home/lib/pickForYou.ts`).
+ */
+export interface RecommendationRepository {
+  recommend(context: RecommendationContext): Promise<Recommendations>;
 }
 
 export interface SearchRepository {
@@ -94,7 +149,9 @@ export type Repositories = {
   collections: CollectionRepository;
   auth: AuthRepository;
   users: UserRepository;
+  favorites: FavoriteRepository;
   search: SearchRepository;
+  recommendations: RecommendationRepository;
   journeys: JourneyRepository;
   journeyFeedback: JourneyFeedbackRepository;
 };
