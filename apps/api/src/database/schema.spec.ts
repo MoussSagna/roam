@@ -1,4 +1,3 @@
-import { execFileSync } from 'node:child_process';
 import { readdirSync, readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -22,6 +21,7 @@ describe('ROAM data model (API-03)', () => {
   it('defines exactly the documented models', () => {
     expect(Object.keys(Prisma.ModelName).sort()).toEqual(
       [
+        'AuthSession',
         'Category',
         'Event',
         'Experience',
@@ -33,6 +33,7 @@ describe('ROAM data model (API-03)', () => {
         'JourneyFeedback',
         'JourneyStep',
         'Place',
+        'PasswordResetCode',
         'PlaceCategory',
         'Provider',
         'RoamEnrichment',
@@ -144,8 +145,12 @@ describe('ROAM data model (API-03)', () => {
     .map((entry) => entry.name)
     .sort();
 
-  it('commits the initial migration and the CHECK constraints, in that order', () => {
-    expect(migrations).toEqual(['20260926000000_init', '20260926002147_check_constraints']);
+  it('commits the migrations in order: init, CHECK constraints, authentication', () => {
+    expect(migrations).toEqual([
+      '20260926000000_init',
+      '20260926002147_check_constraints',
+      '20260926011137_authentication',
+    ]);
 
     const checks = readFileSync(join(migrationsDir, migrations[1], 'migration.sql'), 'utf8');
     for (const name of [
@@ -157,30 +162,23 @@ describe('ROAM data model (API-03)', () => {
     }
   });
 
-  it('the initial migration is exactly what Prisma generates from the schema (no drift)', () => {
-    // `migrate diff` from an empty schema needs no database.
-    const generated = execFileSync(
-      'pnpm',
-      [
-        'exec',
-        'prisma',
-        'migrate',
-        'diff',
-        '--from-empty',
-        '--to-schema',
-        'prisma/schema.prisma',
-        '--script',
-      ],
-      {
-        cwd: apiRoot,
-        env: { ...process.env, CHECKPOINT_DISABLE: '1' },
-        encoding: 'utf8',
-        stdio: ['ignore', 'pipe', 'ignore'],
-      },
-    );
-    const committed = readFileSync(join(migrationsDir, migrations[0], 'migration.sql'), 'utf8');
-    expect(committed.trim()).toBe(generated.trim());
-  }, 60_000);
+  it('every table of the schema is created by a committed migration', () => {
+    // Exact equality (no drift) needs a database: test/database/migrations.db-spec.ts runs
+    // `prisma migrate diff --from-config-datasource --to-schema --exit-code` after `migrate deploy`.
+    const schema = readFileSync(join(apiRoot, 'prisma', 'schema.prisma'), 'utf8');
+    const tables = [...schema.matchAll(/@@map\("([a-z_]+)"\)/g)].map((match) => match[1]).sort();
+    const created = migrations
+      .flatMap((name) => [
+        ...readFileSync(join(migrationsDir, name, 'migration.sql'), 'utf8').matchAll(
+          /CREATE TABLE "([a-z_]+)"/g,
+        ),
+      ])
+      .map((match) => match[1])
+      .sort();
+
+    expect(tables).toHaveLength(18);
+    expect(created).toEqual(tables);
+  });
 
   it('keeps a single PrismaService shared by every module', async () => {
     const moduleRef = await Test.createTestingModule({ imports: [AppModule] }).compile();

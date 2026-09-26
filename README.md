@@ -6,7 +6,8 @@ location) into a realistic outing — not just a list of places.
 ## Status
 
 Mobile app (Expo + React Native + TypeScript): a front-end prototype on mock data. API (`apps/api`, NestJS + Prisma +
-PostgreSQL): technical foundation only, no domain endpoint yet. No web app.
+PostgreSQL): authentication, profile, experience catalog and recommendations, on a catalog migrated from the mobile mock
+data (DATA-1); no provider connected, not called by the mobile app yet. No web app.
 
 ## Quick start
 

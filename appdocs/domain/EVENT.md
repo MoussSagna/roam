@@ -37,5 +37,6 @@ Support start/end, timezone and duration when explicitly available or safely der
 ## Current implementation
 
 No `Event` type exists in the mobile app. The backend stores this model (`Event`, venue as a `Place`, provenance in
-`ExternalSource`) — `apps/api/apidocs/DATABASE_SCHEMA.md` (API-03); no endpoint, no provider sync yet.
+`ExternalSource`) — `apps/api/apidocs/DATABASE_SCHEMA.md` (API-03); no endpoint, no provider sync yet. No event was
+migrated by DATA-1: none of the mobile mocks is dated.
 

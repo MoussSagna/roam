@@ -18,6 +18,7 @@ import { AppModule } from '../src/app.module.js';
 import { configureApp } from '../src/bootstrap/configure-app.js';
 import { ApiException, type ErrorResponseBody } from '../src/common/errors/api-error.js';
 import { PrismaService } from '../src/database/prisma.service.js';
+import { Public } from '../src/modules/auth/auth.guard.js';
 
 /** A test-only module standing in for a future domain module, to exercise the conventions end to end. */
 class CreateProbeDto {
@@ -26,6 +27,7 @@ class CreateProbeDto {
   name!: string;
 }
 
+@Public()
 @Controller('probes')
 class ProbeController {
   @Get(':id')

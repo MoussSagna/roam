@@ -103,8 +103,9 @@ Do not couple the recommendation domain to an AI provider.
 Use a standard secure authentication strategy compatible with the chosen web/mobile architecture.
 Do not build password cryptography manually.
 
-Prototype status: there is no authentication yet. The screens come first, front-end only and simulated;
-real authentication (backend, sessions/tokens) is done later, after all the front-end screens ([`DECISIONS.md`](../../apps/mobile/mobiledocs/DECISIONS.md) D-28).
+Status: the mobile screens are built and still simulated ([`DECISIONS.md`](../../apps/mobile/mobiledocs/DECISIONS.md) D-28). The backend
+authentication exists since API-05 — email + password (Argon2id), opaque bearer sessions stored hashed in PostgreSQL,
+password reset by code — and the mobile app is not wired to it yet ([`apps/api/apidocs/AUTHENTICATION.md`](../../apps/api/apidocs/AUTHENTICATION.md)).
 
 ## Data domains
 
@@ -165,8 +166,11 @@ Prioritize tests for:
 
 The **mobile** application is built (`apps/mobile`, see `apps/mobile/mobiledocs/`). `apps/api` is the backend
 **foundation** (API-02): a NestJS + Prisma application with configuration, database access layer, validation, errors,
-health check and tests, and its data model (API-03, `apps/api/apidocs/DATABASE_SCHEMA.md`), but no domain endpoint and no
-database connected yet (`apps/api/apidocs/BACKEND_FOUNDATION.md`).
+health check and tests, its data model on PostgreSQL (API-03, `apps/api/apidocs/DATABASE_SCHEMA.md`) and its
+repositories (API-04, `apps/api/apidocs/REPOSITORY_ARCHITECTURE.md`), authentication (API-05) and the user's profile and
+preferences endpoints (API-06, `apps/api/apidocs/USER_PROFILE_AND_PREFERENCES.md`), the experience catalog and a first
+recommendation layer (API-07, `apps/api/apidocs/EXPERIENCE_CATALOG_API.md`); no journey endpoint yet
+(`apps/api/apidocs/BACKEND_FOUNDATION.md`).
 The mobile app does not call it yet. No web app and no shared `packages/*` yet.
 
 ```text

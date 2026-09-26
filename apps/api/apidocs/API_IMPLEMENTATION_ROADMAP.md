@@ -98,11 +98,195 @@ local PostgreSQL); no CI runs it yet.
   the schema and never seen as drift.
 - Integration tests on a dedicated `_test` database, never on `roam`; `migrate deploy` (never reset) before the run.
 
-## API-04 — next (to be defined)
+## API-04 — Repository layer — **COMPLETED**
 
-Ready for it: the generated client and models on a migrated PostgreSQL, `PrismaService`, the constraint helpers,
-`ApiException`, the `src/modules/<domain>/` layout, `/api/v1` routing, DTO validation, OpenAPI, the e2e test pattern,
-the database test setup (`test/database/`). Likely candidates:
-DATA-1 (map the mobile mock data to the canonical models, provider interfaces — `DATA_IMPLEMENTATION_PLAN.md`) or the
-first domain module (repositories on top of the schema). Open product decisions that affect the data: `appdocs/DOCUMENTATION_RESTRUCTURE_REPORT.md` ("Decisions needed")
-and `DATABASE_SCHEMA.md` ("Consistency audit").
+Branch `api-04` (from `develop`; API steps now get their own `api-NN` branch). The roadmap left API-04 "to be
+defined"; its scope was set by the API-04 brief: the data access layer, no service, no endpoint.
+
+Done ([`REPOSITORY_ARCHITECTURE.md`](REPOSITORY_ARCHITECTURE.md)):
+
+- 8 repositories on the aggregates, in 4 modules imported by `AppModule`: `users` (`UserRepository`), `catalog`
+  (`ExperienceRepository`, `PlaceRepository`, `EventRepository`, `CategoryRepository`), `journeys`
+  (`JourneyRepository`, `JourneyFeedbackRepository`), `favorites` (`FavoriteRepository`); no repository for join
+  tables, steps, sources, providers or enrichment (handled through their owner, or deferred);
+- domain types separate from Prisma, one mapping function per shape; the Prisma boundary enforced by ESLint;
+- persistence errors (`src/database/persistence-errors.ts`) translated from Prisma 7's real error shapes; domain
+  translations `ActiveJourneyExistsError`, `JourneyFeedbackExistsError`; the global filter maps what is left to generic
+  404/409/422/400/503 — and an unreachable database during a request now answers **503** (it was a 500 with the `pg`
+  adapter's `P1001`);
+- keyset pagination (`src/database/pagination.ts`) for the unbounded lists;
+- transactions: nested writes (atomic), `replaceSteps` as an explicit transaction; concurrency arbitrated by
+  PostgreSQL (partial unique index, unique keys with `ON CONFLICT`, conditional updates);
+- tests: 80 unit tests (+27), 47 database tests (+18: every repository on `roam_test`, concurrent journey creations
+  and favorites, transaction rollback); `prisma validate` / `generate`, typecheck, lint.
+
+Not done on purpose: domain services and endpoints, authentication, provider adapters and sync bookkeeping (DATA-2 →
+DATA-6), enrichment writes (DATA-5), recommendation queries (DATA-7), a cross-repository unit of work (added when a
+service needs one), catalog/user deletion flows.
+
+### Decisions taken
+
+- Concrete repository classes as DI tokens, no interfaces (one implementation; mock the class in service tests).
+- Domain types instead of Prisma types, explicit mappers; generated enums reused as the vocabulary.
+- One `replaceSteps` write for every journey edit (the service replans the whole list anyway).
+- Idempotent favorites (`add` / `remove`); a repeated feedback is an error the service can turn into "return the saved
+  one" (mobile behavior).
+- Conditional writes (`WHERE status = 'ACTIVE'`) return `null` instead of throwing: the service decides the answer.
+
+## API-05 — Authentication & user account — **COMPLETED** (backend; mobile not wired)
+
+Branch `api-05` (from `develop`, which holds API-02 → API-04). Details: [`AUTHENTICATION.md`](AUTHENTICATION.md).
+
+Done:
+
+- audit: no authentication existed in the API (only an unused `AUTH_JWT_SECRET`, now removed); the mobile flow is fully
+  mocked — its screens define the contract;
+- email + password accounts through `UserRepository` (`create` with a hash, `findCredentialsByEmail`); emails
+  normalized (trim, lower case); passwords hashed with **Argon2id** (`@node-rs/argon2`, OWASP parameters);
+- **opaque bearer sessions** (256-bit random token, SHA-256 stored in `auth_sessions`, `AUTH_SESSION_TTL_DAYS`, default
+  30): real revocation on logout;
+- global `AuthGuard` — every route requires a session unless `@Public()` (health, register, login, logout, reset) —
+  and `@CurrentUser()`;
+- endpoints under `/api/v1/auth`: `register` (signs in), `login`, `me`, `logout` (idempotent), `password/forgot`,
+  `password/verify-code`, `password/reset` (6-digit code, 15 min, 5 attempts counted atomically; reset revokes every
+  session) — documented in Swagger with a bearer scheme and fictional examples;
+- no account enumeration by login or reset (same answer, dummy verification for unknown emails);
+- migration `20260926011137_authentication` (additive: `users.passwordHash`, `auth_sessions`,
+  `password_reset_codes`), applied to `roam` and `roam_test`;
+- tests: 108 unit tests (+28), 58 database tests (+11: the whole flow over HTTP on `roam_test`, concurrent
+  registrations, reset limits, no secret in logs); build; the built API started on `roam` (health, Swagger) and run
+  through register → me → login → logout → forgot on `roam_test`.
+
+Not done on purpose (see `AUTHENTICATION.md` → "Deferred"): rate limiting of the auth endpoints (**needed before any
+public deployment**), an email provider for reset codes (the reset works end to end in tests but a real user cannot
+receive a code yet), Google/Apple sign-in, sliding sessions and device management, account deletion, profile and
+preferences endpoints, the mobile integration.
+
+### Decisions taken
+
+- Opaque server-side sessions rather than JWT (one mechanism, immediate revocation, no signing secret); no auth
+  framework (Better Auth would impose its own tables, routes and error format).
+- Protected by default (global guard + `@Public()`), not opt-in per route.
+- Register opens a session (the mobile Register screen lands on Home); login failures and reset failures each share one
+  error code.
+- The reset code is never returned or logged in any environment, including development: delivery goes through
+  `PasswordResetDelivery`, unconfigured for now.
+
+## API-06 — User profile & preferences — **COMPLETED** (backend; mobile not wired)
+
+Branch `api-06` (from `develop`, which holds API-02 → API-05). Details:
+[`USER_PROFILE_AND_PREFERENCES.md`](USER_PROFILE_AND_PREFERENCES.md).
+
+Done:
+
+- `UsersService` + `UsersController` in the existing `users` module, on the existing `UserRepository` (no new
+  repository, no new method) — the first domain service;
+- `PATCH /api/v1/users/me` (partial profile update: `displayName`, `avatarUrl`, `age`, `city`, `bio`; not the email),
+  `GET` / `PATCH /api/v1/users/me/preferences` (defaults when never saved; created on first save; partial);
+  profile read stays `GET /api/v1/auth/me` (no duplicate route);
+- identity from the session only (`@CurrentUser()`), no route or body taking a user id; isolation tested with two
+  accounts;
+- mobile vocabularies (`under10`, `friends`…) mapped to the database enums in the DTOs; response DTOs only;
+- no Prisma change, no migration;
+- tests: 129 unit/HTTP tests (+21), 64 database tests (+6); build; the built API started on `roam` (health, Swagger,
+  401 without a session) and run through register → profile → preferences on `roam_test`.
+
+Not done on purpose (see the document's "Deferred"): email change (needs address verification), the preference shape
+decision (MVP `UserPreference` vs. "Mes préférences" vs. onboarding answers), `User.stats`, avatar upload, rate
+limiting (still required before any public deployment), the mobile integration.
+
+### Decisions taken
+
+- No `GET /users/me`: `GET /auth/me` already is the profile read.
+- Never-saved preferences answer 200 with empty defaults and `updatedAt: null`, not 404.
+- One `UsersService` for profile and preferences (both are the user's own account data; a separate service would hold
+  two methods).
+- A write failing because the account was deleted after the session check answers `AUTH_SESSION_INVALID`.
+
+## API-07 — Experience catalog & recommendations — **COMPLETED** (backend; no catalog data yet)
+
+Branch `api-07` (from `develop`, which holds API-02 → API-06). Details: [`EXPERIENCE_CATALOG_API.md`](EXPERIENCE_CATALOG_API.md).
+
+Done:
+
+- `GET /api/v1/experiences` (active, stable order, keyset pagination `{ items, nextCursor }` — now the public format;
+  filters `category`, `city`, `budget`, `q`) and `GET /api/v1/experiences/:id` (with ordered places; 404; inactive
+  still readable);
+- responses keep **provider facts at the top level and ROAM enrichment under `roam`**; provenance, rule confidence,
+  popularity, provider attributes stay internal; enum values in the apps' camelCase;
+- `GET /api/v1/recommendations`: the session user's context completed by their saved preferences → candidates (one
+  query, ≤ 200, SQL pre-filters: category, budget ceiling, bounding box) → hard filters (exact distance, duration,
+  company; unknown facts never exclude) → the mobile journey ranking without mood (proximity + rating, stable ties) →
+  matched reasons → one-constraint-at-a-time relaxation (`relaxed`);
+- `ExperienceRepository`: filters `maxPrice`, `text`, `area` and `findCandidates` (no new repository, no ranking in it);
+  `UsersService` exported for the recommendations;
+- signed-in only (global AuthGuard); no `userId` accepted anywhere;
+- no Prisma change, no migration, no provider, no new dependency;
+- measured: 5 SQL queries per list page or candidate set whatever its size, 9 for a detail (no N+1);
+- tests: 160 unit/HTTP tests (+31), 72 database tests (+8, run twice); build; the built API on `roam` (health,
+  Swagger, 401s, empty catalog) and on `roam_test` with a small SQL-seeded catalog (list, detail 200/404/400,
+  recommendations with and without relaxation), then emptied.
+
+Not done on purpose (see the document's "Deferred"): mood matching and opening hours (**product/data decisions**),
+preference matching, calibrated weights, search suggestions and accent-insensitive search, collections, events in
+responses, provider attribution, rate limiting (still required before any public deployment), catalog data (DATA-1),
+the mobile integration.
+
+### Decisions taken
+
+- Recommendations as `GET /api/v1/recommendations` with the context in the query (no document fixed the route).
+- Catalog endpoints signed-in only, like the mobile screens that use them.
+- The public pagination format is the repositories' `{ items, nextCursor }` inside `{ data }` (no second format).
+- Ranking reuses the rule already implemented by the mobile suggestions (minus mood) rather than the uncalibrated
+  conceptual weights; relaxation tries each constraint alone before all together.
+- Budget brackets compare the experience's lowest price (`priceMin`) with the bracket ceiling (0 / 10 / 25 / 50 €);
+  an unknown price never excludes; the catalog is assumed in euros (Paris MVP).
+
+### Decisions needed (product)
+
+1. **Mood ↔ experience**: which mood vocabulary, and how moods map to experiences (a field, or `atmosphere` /
+   `energyLevel`)? Mood is the heaviest documented scoring dimension and the Home entry point.
+2. **Opening hours**: a normalized hours model (needed for "closed at the relevant time", `openNow`, `when`).
+3. **Preferences ↔ catalog**: how `interests` / `activities` (or "Mes préférences" types/ambiance) relate to categories
+   or tags.
+
+## DATA-1 — Initial catalog from the mobile mock data — **COMPLETED** (backend; mobile unchanged)
+
+Branch `data-01` (from `develop`, which holds API-02 → API-07). Details, numbers and verifications:
+[`DATA_1_MIGRATION_REPORT.md`](DATA_1_MIGRATION_REPORT.md). **A data migration, not provider ingestion**: no provider,
+no network call, no sync.
+
+Done:
+
+- the mobile mock catalog (`apps/mobile/src/services/mock/data.ts`: 7 categories, 2 places, 14 experiences, no event)
+  migrated into the canonical model: categories (identity slug mapping), places, experiences with their ordered places
+  and categories, ROAM enrichment (tags, estimated duration marked derived, `CURATED`), provenance (internal provider
+  `mobile_mock_migration`, one `ExternalSource` per record); nothing invented — moods, images, opening hours, labels,
+  reviews and the other UI fields are reported, not migrated;
+- `src/database/catalog-seed/`: migration source (checked against the mobile file by a test), pure mapping, idempotent
+  writer (deterministic UUID v5 ids, upsert by provenance, records edited elsewhere skipped, one transaction, nothing
+  deleted); `pnpm db:seed` → `prisma db seed`;
+- `roam` and `roam_test` seeded and checked (twice: the second run writes nothing); API-07 verified on the catalog;
+- no Prisma change, no migration, no new dependency, no mobile change;
+- tests: 180 unit/HTTP tests (+20), 84 database tests (+12).
+
+### Decisions taken
+
+- The mobile mocks are migrated through a transcribed source with a parity test, not by importing the React Native file.
+- Migrated rows get deterministic UUID v5 ids (the schema default stays UUID v7 for everything else).
+- Provenance of migrated data through the existing `Provider`/`ExternalSource` tables, with an explicitly internal
+  provider — never presented as provider data.
+- A budget bracket is stored as its bounds (`priceMin`/`priceMax`); only `free` sets a price level.
+
+### Decisions needed (product)
+
+Mood, opening hours and preferences (API-07, unchanged), plus: budget brackets ↔ price level and shared bounds, images,
+collections/reviews/highlights, retired mocks — [`DATA_1_MIGRATION_REPORT.md`](DATA_1_MIGRATION_REPORT.md) → "Decisions
+still needed".
+
+## API-08 — next (to be defined)
+
+Likely candidates: journeys and journey feedback (the core loop, now that experiences are served), favorites, rate
+limiting, or the mobile integration (auth, profile, catalog — it needs an API → mobile `Experience` adapter). Open product decisions: above, plus
+`appdocs/DOCUMENTATION_RESTRUCTURE_REPORT.md`, `DATABASE_SCHEMA.md` ("Consistency audit"), the preference shape
+(`USER_PROFILE_AND_PREFERENCES.md`).

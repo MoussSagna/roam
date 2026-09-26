@@ -74,8 +74,8 @@ export class AppConfigService {
     };
   }
 
-  /** Future authentication settings. Never log these values. */
+  /** Authentication settings (AUTHENTICATION.md). */
   get auth() {
-    return { jwtSecret: this.get('AUTH_JWT_SECRET') };
+    return { sessionTtlDays: this.get('AUTH_SESSION_TTL_DAYS') };
   }
 }

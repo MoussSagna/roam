@@ -36,7 +36,8 @@ Do not present ROAM enrichment as provider facts.
 ## Current implementation
 
 **Backend (API-03):** `Place` table (provider facts), provenance in `ExternalSource`, ROAM enrichment in
-`RoamEnrichment` — `apps/api/apidocs/DATABASE_SCHEMA.md`. No endpoint yet.
+`RoamEnrichment` — `apps/api/apidocs/DATABASE_SCHEMA.md`. Served inside an experience's detail (API-07); the 2 mobile mock
+places are migrated (DATA-1, `apps/api/apidocs/DATA_1_MIGRATION_REPORT.md`).
 
 **Mobile (mock data):**
 

@@ -59,21 +59,25 @@ Use mock data. The onboarding is complete on the front end (no backend, nothing 
 - [x] PostgreSQL — local PostgreSQL 18.6 (`roam`, `roam_test`), connection checked by `/health/database` (API-03)
 - [x] Prisma — `PrismaService`, the data model and its migrations, applied and tested on PostgreSQL (API-03)
 - [~] User model, preferences, places, experiences, journeys (itineraries), favorites, feedback — stored in PostgreSQL
-      (`apps/api/apidocs/DATABASE_SCHEMA.md`); no repository, no endpoint yet
-- [ ] User model
-- [ ] Preferences
-- [ ] Places
-- [ ] Experiences
+      (`apps/api/apidocs/DATABASE_SCHEMA.md`), with their repositories (API-04,
+      `apps/api/apidocs/REPOSITORY_ARCHITECTURE.md`); no service, no endpoint yet
+- [x] User model — accounts and profile (API-05, API-06: `PATCH /users/me`)
+- [~] Preferences — MVP preferences stored and served (API-06: `/users/me/preferences`); which mobile screen writes
+      them ("Mes préférences" vs. onboarding) is an open product decision
+- [~] Places — stored; the 2 mock places migrated (DATA-1); no endpoint of their own (served inside an experience)
+- [~] Experiences — catalog served (API-07: `GET /experiences`, `/experiences/:id`) on the 14 experiences migrated from
+      the mobile mock data (DATA-1, `apps/api/apidocs/DATA_1_MIGRATION_REPORT.md`); the mobile app still reads its mocks
 - [ ] Itineraries
 - [ ] Favorites
 - [ ] Feedback
-- [ ] Auth (real authentication, session/JWT: **after** all the front-end screens; the front-end auth screens are in Phase B)
+- [~] Auth — backend done (API-05: register, login, sessions, logout, password reset by code;
+      `apps/api/apidocs/AUTHENTICATION.md`); mobile not wired yet, no email provider for reset codes, no rate limiting
 
 ## Phase D — Recommendation engine
 
-- [ ] Candidate filtering
-- [ ] Deterministic scoring
-- [ ] Explainable recommendation reasons
+- [~] Candidate filtering — budget, distance, duration, company (API-07, `GET /recommendations`); no mood, no opening hours
+- [~] Deterministic scoring — proximity + rating (the mobile suggestion rule without mood); weighted score not calibrated
+- [x] Explainable recommendation reasons — reason codes of actually matched constraints, relaxation when nothing fits
 - [ ] Experience composition
 - [ ] Itinerary validation
 

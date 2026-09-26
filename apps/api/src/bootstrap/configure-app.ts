@@ -37,6 +37,8 @@ export function configureApp(app: INestApplication): AppConfigService {
         .setTitle('ROAM API')
         .setDescription('ROAM backend. Endpoints are documented as their modules are built.')
         .setVersion(API_DEFAULT_VERSION)
+        // Sessions: `Authorization: Bearer <token>` (AUTHENTICATION.md).
+        .addBearerAuth()
         .build(),
     );
     SwaggerModule.setup(config.swagger.path, app, document);

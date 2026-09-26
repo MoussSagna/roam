@@ -16,6 +16,10 @@
 ## Provenance
 Retain provider, external ID, retrieval time and source URL when available.
 
+Internal data keeps provenance too: the catalog migrated from the mobile mock data (DATA-1) is tagged with the internal
+provider `mobile_mock_migration` and never presented as provider data
+([`apps/api/apidocs/DATA_1_MIGRATION_REPORT.md`](../../apps/api/apidocs/DATA_1_MIGRATION_REPORT.md)).
+
 ## Licensing
 Before production ingestion, review provider terms, content/photo usage, attribution, caching restrictions and dataset licenses.
 

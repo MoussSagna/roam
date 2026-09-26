@@ -8,6 +8,16 @@ import {
 } from '@nestjs/common';
 import type { Request, Response } from 'express';
 
+import {
+  CheckConstraintError,
+  DatabaseUnavailableError,
+  ForeignKeyConstraintError,
+  InvalidCursorError,
+  PersistenceError,
+  RecordNotFoundError,
+  toPersistenceError,
+  UniqueConstraintError,
+} from '../../database/persistence-errors.js';
 import { ApiException, ErrorCode, type ErrorResponseBody } from '../errors/api-error.js';
 
 const CODE_BY_STATUS: Partial<Record<number, string>> = {
@@ -25,9 +35,46 @@ const CODE_BY_STATUS: Partial<Record<number, string>> = {
 
 const GENERIC_MESSAGE = 'An unexpected error occurred.';
 
-/** Prisma errors are recognized by name, so this filter does not depend on the generated client. */
-function isPrismaError(exception: unknown): exception is Error {
-  return exception instanceof Error && exception.name.startsWith('PrismaClient');
+/**
+ * A persistence error no service turned into a domain error: a generic answer, never the constraint, the SQL
+ * or the data (REPOSITORY_ARCHITECTURE.md → "Errors"). Services normally catch these first and throw an
+ * `ApiException` with a domain code (e.g. JOURNEY_ALREADY_ACTIVE).
+ */
+function persistenceBody(error: PersistenceError): [number, ErrorResponseBody['error']] {
+  if (error instanceof DatabaseUnavailableError) {
+    return [
+      HttpStatus.SERVICE_UNAVAILABLE,
+      { code: ErrorCode.DatabaseUnavailable, message: 'The database is unavailable.' },
+    ];
+  }
+  if (error instanceof RecordNotFoundError) {
+    return [HttpStatus.NOT_FOUND, { code: ErrorCode.NotFound, message: 'Resource not found.' }];
+  }
+  if (error instanceof UniqueConstraintError) {
+    return [
+      HttpStatus.CONFLICT,
+      { code: ErrorCode.Conflict, message: 'The resource already exists.' },
+    ];
+  }
+  if (error instanceof ForeignKeyConstraintError) {
+    return [
+      HttpStatus.CONFLICT,
+      { code: ErrorCode.Conflict, message: 'The operation conflicts with related data.' },
+    ];
+  }
+  if (error instanceof CheckConstraintError) {
+    return [
+      HttpStatus.UNPROCESSABLE_ENTITY,
+      { code: ErrorCode.UnprocessableEntity, message: 'The data breaks an integrity rule.' },
+    ];
+  }
+  if (error instanceof InvalidCursorError) {
+    return [HttpStatus.BAD_REQUEST, { code: ErrorCode.BadRequest, message: 'Invalid cursor.' }];
+  }
+  return [
+    HttpStatus.INTERNAL_SERVER_ERROR,
+    { code: ErrorCode.InternalError, message: GENERIC_MESSAGE },
+  ];
 }
 
 function httpBody(exception: HttpException): ErrorResponseBody['error'] {
@@ -58,8 +105,9 @@ function httpBody(exception: HttpException): ErrorResponseBody['error'] {
 /**
  * The one global error handler: every error leaves the API as `{ error: { code, message, details? } }`.
  * Expected errors (`HttpException`, `ApiException`, validation) keep their status and message.
- * Anything else — a bug, a database error — becomes a generic 500 (or 503 when the database is
- * unreachable): the stack trace and driver details are logged server-side, never sent to the client.
+ * Persistence errors (from the repositories, or a raw Prisma error translated here as a safety net) get a
+ * generic status and message. Anything else — a bug, an unexpected database error — becomes a generic 500:
+ * the stack trace is logged server-side, never sent to the client.
  */
 @Catch()
 export class AllExceptionsFilter implements ExceptionFilter {
@@ -73,6 +121,7 @@ export class AllExceptionsFilter implements ExceptionFilter {
 
     let status: number;
     let error: ErrorResponseBody['error'];
+    const persistence = toPersistenceError(exception);
 
     if (exception instanceof HttpException) {
       status = exception.getStatus();
@@ -84,10 +133,12 @@ export class AllExceptionsFilter implements ExceptionFilter {
       } else if (status >= 500) {
         this.logger.error(`${route} → ${status} ${error.code}`, exception.stack);
       }
-    } else if (isPrismaError(exception) && exception.name === 'PrismaClientInitializationError') {
-      status = HttpStatus.SERVICE_UNAVAILABLE;
-      error = { code: ErrorCode.DatabaseUnavailable, message: 'The database is unavailable.' };
-      this.logger.error(`${route} → 503 database unavailable (${exception.name})`);
+    } else if (persistence instanceof PersistenceError) {
+      [status, error] = persistenceBody(persistence);
+      // The class name only: a Prisma/driver message can carry the host or the rejected row.
+      const line = `${route} → ${status} ${error.code} (${persistence.name})`;
+      if (status >= 500) this.logger.error(line);
+      else this.logger.warn(line);
     } else {
       status = HttpStatus.INTERNAL_SERVER_ERROR;
       error = { code: ErrorCode.InternalError, message: GENERIC_MESSAGE };
