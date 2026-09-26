@@ -191,9 +191,8 @@ No new error code.
 - Candidates are capped at 200 per query (`CANDIDATE_LIMIT`), in id order, pre-filtered in SQL (category, budget, box).
   With no location and no category on a large catalog, the cap can hide candidates: acceptable for the Paris MVP,
   to revisit with real data (e.g. require a location, or a geographic index).
-- **Rate limiting is still not implemented.** Search and recommendations are the most expensive reads of the API
-  (up to 6 queries for a recommendation) and the auth endpoints are already flagged (AUTHENTICATION.md → "Security"):
-  rate limiting is required before any public deployment; it stays a separate task.
+- **Rate limiting** (API-11, [`RATE_LIMITING.md`](RATE_LIMITING.md)): search and recommendations — the most expensive reads (up to 6 queries for a
+  recommendation) — count in the per-session and per-IP tiers like every route.
 
 ## Tests
 
@@ -221,4 +220,3 @@ No new error code.
   `pnpm db:seed`); real data comes with the providers (DATA-2 →). The migrated ids are UUID v5, so the list order (by id)
   is stable but not the creation order. With bracket-derived prices, `budget=10to25` also returns `25to50` experiences
   (shared bound) and `budget=free` the `under10` ones (lowest price unknown) — DATA-1 report → "Budget".
-- Rate limiting (see "Performance").

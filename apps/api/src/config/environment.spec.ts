@@ -32,6 +32,37 @@ describe('validateEnvironment', () => {
     expect(env.AUTH_SESSION_TTL_DAYS).toBe(30);
   });
 
+  it('rate limiting: on by default with its default limits; configurable; invalid values refused', () => {
+    const defaults = validateEnvironment(VALID);
+    expect(defaults).toMatchObject({
+      RATE_LIMIT_ENABLED: true,
+      RATE_LIMIT_IP_LIMIT: 300,
+      RATE_LIMIT_CLIENT_LIMIT: 120,
+      RATE_LIMIT_AUTH_LIMIT: 10,
+      RATE_LIMIT_AUTH_TTL_SECONDS: 900,
+      RATE_LIMIT_MUTATION_LIMIT: 30,
+      TRUST_PROXY: 0,
+    });
+
+    const custom = validateEnvironment({
+      ...VALID,
+      RATE_LIMIT_ENABLED: 'false',
+      RATE_LIMIT_AUTH_LIMIT: '3',
+      RATE_LIMIT_AUTH_TTL_SECONDS: '',
+      TRUST_PROXY: '1',
+    });
+    expect(custom).toMatchObject({
+      RATE_LIMIT_ENABLED: false,
+      RATE_LIMIT_AUTH_LIMIT: 3,
+      RATE_LIMIT_AUTH_TTL_SECONDS: 900,
+      TRUST_PROXY: 1,
+    });
+
+    expect(() =>
+      validateEnvironment({ ...VALID, RATE_LIMIT_IP_LIMIT: '0', TRUST_PROXY: 'all' }),
+    ).toThrow(/RATE_LIMIT_IP_LIMIT[\s\S]*TRUST_PROXY/);
+  });
+
   it('fails clearly when DATABASE_URL is missing', () => {
     expect(() => validateEnvironment({})).toThrow(/Invalid API configuration:\n\s+- DATABASE_URL:/);
   });

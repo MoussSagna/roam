@@ -1,5 +1,6 @@
 import { type INestApplication, Logger, RequestMethod, VersioningType } from '@nestjs/common';
-import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import type { NestExpressApplication } from '@nestjs/platform-express';
+import { DocumentBuilder, type OpenAPIObject, SwaggerModule } from '@nestjs/swagger';
 import helmet from 'helmet';
 
 import { requestLogger } from '../common/logging/request-logger.middleware.js';
@@ -15,6 +16,11 @@ export const API_DEFAULT_VERSION = '1';
  */
 export function configureApp(app: INestApplication): AppConfigService {
   const config = app.get(AppConfigService);
+
+  // The client IP (rate limiting): the TCP peer, unless reverse proxies are declared trusted (RATE_LIMITING.md).
+  if (config.http.trustProxy > 0) {
+    (app as NestExpressApplication).set('trust proxy', config.http.trustProxy);
+  }
 
   // Security headers. The CSP is left out while Swagger UI is served (it needs inline scripts); the
   // API itself only returns JSON.
@@ -41,9 +47,44 @@ export function configureApp(app: INestApplication): AppConfigService {
         .addBearerAuth()
         .build(),
     );
-    SwaggerModule.setup(config.swagger.path, app, document);
+    SwaggerModule.setup(config.swagger.path, app, documentRateLimit(document));
   }
 
   app.enableShutdownHooks();
   return config;
+}
+
+/** The 429 every rate-limited operation can answer (every route but the health probes — RATE_LIMITING.md). */
+const TOO_MANY_REQUESTS = {
+  description: 'Rate limit exceeded: retry after the `Retry-After` delay (RATE_LIMITING.md).',
+  headers: {
+    'Retry-After': {
+      description: 'Seconds before a new request is accepted.',
+      schema: { type: 'integer', example: 42 },
+    },
+  },
+  content: {
+    'application/json': {
+      example: {
+        error: {
+          code: 'TOO_MANY_REQUESTS',
+          message: 'Too many requests: try again later.',
+          details: { retryAfterSeconds: 42 },
+        },
+      },
+    },
+  },
+};
+
+function documentRateLimit(document: OpenAPIObject): OpenAPIObject {
+  for (const [path, item] of Object.entries(document.paths)) {
+    if (path.startsWith('/health')) continue;
+    for (const operation of Object.values(item)) {
+      if (operation && typeof operation === 'object' && 'responses' in operation) {
+        (operation as { responses: Record<string, unknown> }).responses['429'] ??=
+          TOO_MANY_REQUESTS;
+      }
+    }
+  }
+  return document;
 }

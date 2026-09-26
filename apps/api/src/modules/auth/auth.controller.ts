@@ -11,6 +11,7 @@ import {
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
 
+import { AuthRateLimit } from '../../common/rate-limit/rate-limit.options.js';
 import type { User } from '../users/user.repository.js';
 import { CurrentUser, Public } from './auth.guard.js';
 import { AuthService } from './auth.service.js';
@@ -37,6 +38,7 @@ export class AuthController {
   constructor(private readonly auth: AuthService) {}
 
   @Public()
+  @AuthRateLimit()
   @Post('register')
   @ApiOperation({ summary: 'Create an account and sign in' })
   @ApiCreatedResponse({ type: SignedInResponse, description: 'In `{ data }`.' })
@@ -47,6 +49,7 @@ export class AuthController {
   }
 
   @Public()
+  @AuthRateLimit()
   @Post('login')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Sign in with email and password' })
@@ -79,6 +82,7 @@ export class AuthController {
   }
 
   @Public()
+  @AuthRateLimit()
   @Post('password/forgot')
   @HttpCode(HttpStatus.ACCEPTED)
   @ApiOperation({
@@ -90,6 +94,7 @@ export class AuthController {
   }
 
   @Public()
+  @AuthRateLimit()
   @Post('password/verify-code')
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiOperation({ summary: 'Check a reset code (counts as an attempt)' })
@@ -100,6 +105,7 @@ export class AuthController {
   }
 
   @Public()
+  @AuthRateLimit()
   @Post('password/reset')
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiOperation({ summary: 'Set a new password with a reset code; signs out every device' })

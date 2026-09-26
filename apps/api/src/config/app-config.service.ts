@@ -78,4 +78,24 @@ export class AppConfigService {
   get auth() {
     return { sessionTtlDays: this.get('AUTH_SESSION_TTL_DAYS') };
   }
+
+  /** Rate limiting (RATE_LIMITING.md): one limit and window per tier, windows in milliseconds. */
+  get rateLimit() {
+    const tier = (limit: number, ttlSeconds: number) => ({ limit, ttlMs: ttlSeconds * 1000 });
+    return {
+      enabled: this.get('RATE_LIMIT_ENABLED'),
+      ip: tier(this.get('RATE_LIMIT_IP_LIMIT'), this.get('RATE_LIMIT_IP_TTL_SECONDS')),
+      client: tier(this.get('RATE_LIMIT_CLIENT_LIMIT'), this.get('RATE_LIMIT_CLIENT_TTL_SECONDS')),
+      auth: tier(this.get('RATE_LIMIT_AUTH_LIMIT'), this.get('RATE_LIMIT_AUTH_TTL_SECONDS')),
+      mutation: tier(
+        this.get('RATE_LIMIT_MUTATION_LIMIT'),
+        this.get('RATE_LIMIT_MUTATION_TTL_SECONDS'),
+      ),
+    };
+  }
+
+  /** HTTP settings: trusted reverse proxies (the client IP used by rate limiting). */
+  get http() {
+    return { trustProxy: this.get('TRUST_PROXY') };
+  }
 }

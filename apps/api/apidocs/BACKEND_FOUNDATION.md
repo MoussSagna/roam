@@ -182,8 +182,10 @@ tokens, API keys, `DATABASE_URL`.
 - `helmet` security headers; `X-Powered-By` removed. The Content-Security-Policy is disabled while Swagger UI is served
   (it needs inline scripts); the API itself only returns JSON.
 - Authentication (API-05): a global guard requires a bearer session on every route not marked `@Public()` —
-  [`AUTHENTICATION.md`](AUTHENTICATION.md). Not yet: rate limiting (first on the auth endpoints, then the public or
-  provider-backed ones, `SYNC_CACHE_AND_COST_CONTROL.md`).
+  [`AUTHENTICATION.md`](AUTHENTICATION.md).
+- Rate limiting (API-11): a global guard ahead of authentication, four configurable tiers (per IP, per session, auth
+  routes, writes), in-memory counters (one instance) — [`RATE_LIMITING.md`](RATE_LIMITING.md). `TRUST_PROXY` declares trusted reverse proxies for the
+  client IP.
 
 ## Health check
 
@@ -206,7 +208,8 @@ DTOs (`@ApiTags`, `@ApiOperation`, response decorators) when it is built.
   accidental connection fails fast) and turns HTTP keep-alive off for the tests' requests (API-10): supertest starts a
   server per request, and a kept-alive socket in Node's global agent — shared by the test files a worker process runs in
   turn — could carry a later request to the previous file's application when the OS handed out the same port again (an
-  intermittent 401 instead of the expected answer);
+  intermittent 401 instead of the expected answer). API-11 found a second cause, not fixed yet (roadmap → API-11 →
+  "Known issues"); the rate-limit limits are set to 100 000 there so no suite hits them;
 - unit tests next to the code: configuration validation and defaults, CORS, the error filter, the validation pipe,
   `PrismaService` lifecycle (its queries are mocked);
 - `test/app.e2e.spec.ts`: the whole `AppModule` with `configureApp`, `PrismaService` replaced by a mock, and a test-only

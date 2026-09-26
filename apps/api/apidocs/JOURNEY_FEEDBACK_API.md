@@ -105,7 +105,7 @@ Measured on `roam_test` (SQL statements sent by the `pg` driver for the whole re
 - Identity from the session only; no user id accepted anywhere; another user's journey indistinguishable from an unknown
   one; the author id never returned.
 - Nothing is sent anywhere (no email, notification, analytics); feedback is not used by the recommendations.
-- **Rate limiting is still not implemented**: `POST …/feedback` must be limited before any public deployment.
+- Rate-limited since API-11 ([`RATE_LIMITING.md`](RATE_LIMITING.md)): `POST …/feedback` counts in the `mutation` tier.
 
 ## Tests
 
@@ -136,4 +136,4 @@ Measured on `roam_test` (SQL statements sent by the `pg` driver for the whole re
   journey feedback is an open product decision (FEEDBACK.md).
 - Listing a user's feedbacks (no screen needs it); feedback in the journey response (the app asks for it separately).
 - Using feedback for recommendations (RECOMMENDATION.md "Feedback learning").
-- Rate limiting; the mobile integration.
+- The mobile integration.

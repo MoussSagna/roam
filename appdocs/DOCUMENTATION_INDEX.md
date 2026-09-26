@@ -60,6 +60,7 @@ no provider is connected and the mobile app does not call it yet. No web app. De
 | Database schema (Prisma models, constraints, deferred items) | [`apidocs/DATABASE_SCHEMA.md`](../apps/api/apidocs/DATABASE_SCHEMA.md) |
 | Backend experience catalog and recommendations (endpoints, filters, ranking, mobile gaps) | [`apidocs/EXPERIENCE_CATALOG_API.md`](../apps/api/apidocs/EXPERIENCE_CATALOG_API.md) |
 | Backend journeys (create, active, history, edit, progress, complete; ownership, planning) | [`apidocs/JOURNEY_API.md`](../apps/api/apidocs/JOURNEY_API.md) |
+| Backend rate limiting (tiers, keys, 429 + Retry-After, configuration, single-instance limits) | [`apidocs/RATE_LIMITING.md`](../apps/api/apidocs/RATE_LIMITING.md) |
 | Backend favorites (save, list, remove experiences; idempotence, inactive experiences) | [`apidocs/FAVORITES_API.md`](../apps/api/apidocs/FAVORITES_API.md) |
 | Backend journey feedback (1–5 stars + comment, one per completed journey) | [`apidocs/JOURNEY_FEEDBACK_API.md`](../apps/api/apidocs/JOURNEY_FEEDBACK_API.md) |
 | How the mobile mock data became the backend catalog (DATA-1: mapping, provenance, what is not migrated) | [`apidocs/DATA_1_MIGRATION_REPORT.md`](../apps/api/apidocs/DATA_1_MIGRATION_REPORT.md) |

@@ -74,7 +74,8 @@ Use mock data. The onboarding is complete on the front end (no backend, nothing 
 - [~] Feedback — journey feedback served (API-09: 1–5 stars + comment, one per completed journey,
       `apps/api/apidocs/JOURNEY_FEEDBACK_API.md`); mobile not wired; per-experience feedback not built
 - [~] Auth — backend done (API-05: register, login, sessions, logout, password reset by code;
-      `apps/api/apidocs/AUTHENTICATION.md`); mobile not wired yet, no email provider for reset codes, no rate limiting
+      `apps/api/apidocs/AUTHENTICATION.md`); mobile not wired yet, no email provider for reset codes; rate-limited
+      since API-11 (`apps/api/apidocs/RATE_LIMITING.md`)
 
 ## Phase D — Recommendation engine
 

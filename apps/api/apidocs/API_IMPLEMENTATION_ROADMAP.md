@@ -373,9 +373,50 @@ Done:
   with and without the fix; its cause is not identified (CPU saturation during the loops is the likeliest). Not the
   cross-application 401.
 
-## API-11 — next (to be defined)
+## API-11 — Rate limiting — **COMPLETED**
 
-Likely candidates: rate limiting (required before any public deployment), or the mobile integration (auth, profile,
-catalog, journeys, feedback, favorites — it needs an API repository and an API → mobile adapter). Open product decisions: above, plus
+Branch `api-11` (from `develop`, which holds API-02 → API-10 and DATA-1). Details: [`RATE_LIMITING.md`](RATE_LIMITING.md).
+
+Done:
+
+- `@nestjs/throttler` 6.7 (the library AUTHENTICATION.md planned; the only new dependency) behind ROAM's own
+  `RateLimitModule` / `RateLimitGuard` (global, registered before the AuthGuard) and `InMemoryRateLimitStore` (fixed
+  window, block for one window once over, swept, on the injectable `Clock`);
+- four tiers: `ip` (every request, per IP), `client` (per session — the token's SHA-256 — or IP), `auth` (login,
+  register, password reset: one budget per IP, 10 / 15 min by default), `mutation` (writes, per session); health exempt;
+- 429 `TOO_MANY_REQUESTS` (the existing code) in the API's error format with the standard `Retry-After`; no information
+  on whether an account exists; logs with the tier and route only; Swagger documents the 429 on every API operation;
+- configuration validated at startup (`RATE_LIMIT_*`, `TRUST_PROXY` — the client IP is the TCP peer unless proxies are
+  trusted), documented in `.env.example`; tests keep it on with high limits;
+- no Prisma change, no migration, no Redis, no mobile change;
+- tests: 273 unit/HTTP tests (+24), 105 database tests (unchanged, run twice with rate limiting on).
+
+### Decisions taken
+
+- Rate limit before authentication, per IP and per session (made-up tokens are capped by the per-IP tier).
+- Auth routes keyed by IP, never by email (no victim lock-out, no enumeration).
+- Fixed window + block, in memory: correct for one instance; a shared store (Redis) before scaling out.
+- `TOO_MANY_REQUESTS` rather than a new `RATE_LIMIT_EXCEEDED` (the code already existed for 429).
+
+### Known issues (not fixed in API-11)
+
+- **Intermittent HTTP test failures remain** (2 in 30 full runs during API-11: one 401 in `users.e2e`, one timeout in
+  the new 45-request rate-limit test — that test now has a 20 s timeout). No false 429 in those runs. A deeper cause was
+  found: supertest makes the app listen on the IPv6 wildcard (`::`) on a random port per request and connects to
+  127.0.0.1, and on macOS a socket another program bound to 127.0.0.1 on the same port takes precedence (reproduced on
+  the development machine, where several local tools listen on 127.0.0.1). The fix is to make each test file's server
+  listen on 127.0.0.1 (then the kernel never hands out a port held there) — i.e. one listening port per test file, which
+  was ruled out after API-10; binding 127.0.0.1 per request is not possible with supertest (it needs the port
+  synchronously). **Decision needed** before changing the test servers again. The API-10 keep-alive setting stays.
+- **Configuration trap (pre-existing)**: an optional variable without a default (`LOG_LEVEL`, `SWAGGER_ENABLED`,
+  `CORS_ORIGINS`…) that is present but _empty in the process environment_ reaches the app as `""` (`ConfigService.get`
+  falls back to the raw `process.env` when the validated value is undefined): `LOG_LEVEL=""` silences every log,
+  `SWAGGER_ENABLED=""` turns Swagger off. The rate-limit variables are not affected (they always have a validated value).
+
+## API-12 — next
+
+The mobile integration: replace the mock repositories with API repositories (auth, profile, catalog, recommendations,
+journeys, feedback, favorites) and add adapters from the API DTOs to the mobile models, screen by screen, handling 401
+and 429 (`Retry-After`). Open product decisions: above, plus
 `appdocs/DOCUMENTATION_RESTRUCTURE_REPORT.md`, `DATABASE_SCHEMA.md` ("Consistency audit"), the preference shape
 (`USER_PROFILE_AND_PREFERENCES.md`).
