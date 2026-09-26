@@ -250,10 +250,43 @@ the mobile integration.
 3. **Preferences ↔ catalog**: how `interests` / `activities` (or "Mes préférences" types/ambiance) relate to categories
    or tags.
 
+## DATA-1 — Initial catalog from the mobile mock data — **COMPLETED** (backend; mobile unchanged)
+
+Branch `data-01` (from `develop`, which holds API-02 → API-07). Details, numbers and verifications:
+[`DATA_1_MIGRATION_REPORT.md`](DATA_1_MIGRATION_REPORT.md). **A data migration, not provider ingestion**: no provider,
+no network call, no sync.
+
+Done:
+
+- the mobile mock catalog (`apps/mobile/src/services/mock/data.ts`: 7 categories, 2 places, 14 experiences, no event)
+  migrated into the canonical model: categories (identity slug mapping), places, experiences with their ordered places
+  and categories, ROAM enrichment (tags, estimated duration marked derived, `CURATED`), provenance (internal provider
+  `mobile_mock_migration`, one `ExternalSource` per record); nothing invented — moods, images, opening hours, labels,
+  reviews and the other UI fields are reported, not migrated;
+- `src/database/catalog-seed/`: migration source (checked against the mobile file by a test), pure mapping, idempotent
+  writer (deterministic UUID v5 ids, upsert by provenance, records edited elsewhere skipped, one transaction, nothing
+  deleted); `pnpm db:seed` → `prisma db seed`;
+- `roam` and `roam_test` seeded and checked (twice: the second run writes nothing); API-07 verified on the catalog;
+- no Prisma change, no migration, no new dependency, no mobile change;
+- tests: 180 unit/HTTP tests (+20), 84 database tests (+12).
+
+### Decisions taken
+
+- The mobile mocks are migrated through a transcribed source with a parity test, not by importing the React Native file.
+- Migrated rows get deterministic UUID v5 ids (the schema default stays UUID v7 for everything else).
+- Provenance of migrated data through the existing `Provider`/`ExternalSource` tables, with an explicitly internal
+  provider — never presented as provider data.
+- A budget bracket is stored as its bounds (`priceMin`/`priceMax`); only `free` sets a price level.
+
+### Decisions needed (product)
+
+Mood, opening hours and preferences (API-07, unchanged), plus: budget brackets ↔ price level and shared bounds, images,
+collections/reviews/highlights, retired mocks — [`DATA_1_MIGRATION_REPORT.md`](DATA_1_MIGRATION_REPORT.md) → "Decisions
+still needed".
+
 ## API-08 — next (to be defined)
 
-Likely candidates: DATA-1 (seed the canonical catalog from the mobile mock data — the endpoints have nothing to serve
-in development until then), journeys and journey feedback (the core loop, now that experiences are served),
-favorites, rate limiting, or the mobile integration (auth, profile, catalog). Open product decisions: above, plus
+Likely candidates: journeys and journey feedback (the core loop, now that experiences are served), favorites, rate
+limiting, or the mobile integration (auth, profile, catalog — it needs an API → mobile `Experience` adapter). Open product decisions: above, plus
 `appdocs/DOCUMENTATION_RESTRUCTURE_REPORT.md`, `DATABASE_SCHEMA.md` ("Consistency audit"), the preference shape
 (`USER_PROFILE_AND_PREFERENCES.md`).

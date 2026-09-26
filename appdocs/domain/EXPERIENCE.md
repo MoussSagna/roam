@@ -116,5 +116,7 @@ The mobile `Experience` type (`apps/mobile/src/types/experience.ts`) predates th
 shape: `id`, `title`, `description`, `moods`, `categoryIds`, ordered `placeIds`, `estimatedDurationMin`,
 `estimatedBudget` (`BudgetRange`), optional `coordinates`, plus display fields added screen by screen
 (already-formatted labels, images, reviews, highlights, history fields — mobile D-45, D-48, D-58). It has no source
-metadata, no ROAM context enums and no pricing min/max. Mapping it to the canonical model above is DATA-1
-([`apps/api/apidocs/DATA_IMPLEMENTATION_PLAN.md`](../../apps/api/apidocs/DATA_IMPLEMENTATION_PLAN.md)); existing mock data must keep working during the migration.
+metadata, no ROAM context enums and no pricing min/max. DATA-1 mapped it to the canonical model above and stored the 14
+mock experiences in the backend catalog ([`apps/api/apidocs/DATA_1_MIGRATION_REPORT.md`](../../apps/api/apidocs/DATA_1_MIGRATION_REPORT.md)):
+bracket → price bounds, duration and tags → ROAM context, provenance kept; moods and display fields not migrated. The
+mobile app still reads its mock data until the mobile integration.

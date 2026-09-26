@@ -64,8 +64,9 @@ Use mock data. The onboarding is complete on the front end (no backend, nothing 
 - [x] User model — accounts and profile (API-05, API-06: `PATCH /users/me`)
 - [~] Preferences — MVP preferences stored and served (API-06: `/users/me/preferences`); which mobile screen writes
       them ("Mes préférences" vs. onboarding) is an open product decision
-- [ ] Places
-- [~] Experiences — catalog served (API-07: `GET /experiences`, `/experiences/:id`); no catalog data until DATA-1
+- [~] Places — stored; the 2 mock places migrated (DATA-1); no endpoint of their own (served inside an experience)
+- [~] Experiences — catalog served (API-07: `GET /experiences`, `/experiences/:id`) on the 14 experiences migrated from
+      the mobile mock data (DATA-1, `apps/api/apidocs/DATA_1_MIGRATION_REPORT.md`); the mobile app still reads its mocks
 - [ ] Itineraries
 - [ ] Favorites
 - [ ] Feedback

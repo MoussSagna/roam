@@ -166,8 +166,10 @@ context (query) + saved preferences (session user)
 **Shape differences** (already documented in EXPERIENCE.md → "Current implementation"): the mobile `Experience` is a
 mock shape — `moods`, `estimatedBudget` (a bracket), top-level `estimatedDurationMin`, pre-formatted labels
 (`distanceLabel`, `priceLabel`…), `isHero` / `isPopular`, reviews. The API follows the **canonical** model
-(price level and amounts, `roam.estimatedDurationMin`, coordinates, raw values the app formats). Mapping the mock data
-to the canonical model is DATA-1; the mobile integration will format labels itself.
+(price level and amounts, `roam.estimatedDurationMin`, coordinates, raw values the app formats). DATA-1 migrated the mock
+data to this model ([`DATA_1_MIGRATION_REPORT.md`](DATA_1_MIGRATION_REPORT.md)): a bracket becomes `priceMin`/`priceMax`,
+the duration and tags go under `roam`, moods and display fields are not migrated. The mobile integration needs an API →
+mobile `Experience` adapter (none exists yet) and will format labels itself.
 
 ## Errors
 
@@ -215,6 +217,8 @@ No new error code.
 - Search suggestions, accent-insensitive search (`unaccent` extension or a normalized column), full-text ranking.
 - Collections (no model), events in responses, "trending" as a defined signal.
 - Provider attribution and licensing in responses (DATA_RULES.md → "Licensing") before real provider data is served.
-- Data: the development database has no catalog until DATA-1 (mobile mock data → canonical model) — the endpoints
-  answer empty lists there.
+- Data: since DATA-1 the development database holds the migrated mobile mock catalog (14 experiences, 2 places —
+  `pnpm db:seed`); real data comes with the providers (DATA-2 →). The migrated ids are UUID v5, so the list order (by id)
+  is stable but not the creation order. With bracket-derived prices, `budget=10to25` also returns `25to50` experiences
+  (shared bound) and `budget=free` the `under10` ones (lowest price unknown) — DATA-1 report → "Budget".
 - Rate limiting (see "Performance").

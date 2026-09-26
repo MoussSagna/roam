@@ -86,6 +86,10 @@ No repository for: `ExperiencePlace`, `PlaceCategory`, `ExperienceCategory`, `Jo
 aggregate), `ExternalSource` and `Provider` (written with the record they describe; a provider is registered on first
 use by its adapter key), `RoamEnrichment` (read with its place/experience; its writes belong to DATA-5).
 
+The DATA-1 catalog migration (`src/database/catalog-seed/`) is a database-layer tool, like the migrations: it writes
+with Prisma directly (inside `src/database/`, where the Prisma boundary allows it), in one transaction, and is run by
+`prisma db seed` — not by a service ([`DATA_1_MIGRATION_REPORT.md`](DATA_1_MIGRATION_REPORT.md)).
+
 ### Methods
 
 | Repository                  | Methods                                                                                                                                                                                                                        |

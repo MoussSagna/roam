@@ -189,10 +189,10 @@ itself).
 The official development database for now: a **local PostgreSQL 18.6** (EDB installer, `/Library/PostgreSQL/18`,
 port 5432) — **no Docker**.
 
-| Database    | Used by                                                       | Content                                   |
-| ----------- | ------------------------------------------------------------- | ----------------------------------------- |
-| `roam`      | the API in development (`DATABASE_URL`), `prisma migrate dev` | development data — never emptied by tests |
-| `roam_test` | `pnpm test:db` only (`DATABASE_TEST_URL`)                     | emptied before each integration test      |
+| Database    | Used by                                                       | Content                                                                                  |
+| ----------- | ------------------------------------------------------------- | ---------------------------------------------------------------------------------------- |
+| `roam`      | the API in development (`DATABASE_URL`), `prisma migrate dev` | development data, including the DATA-1 catalog (`pnpm db:seed`) — never emptied by tests |
+| `roam_test` | `pnpm test:db` only (`DATABASE_TEST_URL`)                     | emptied before each integration test                                                     |
 
 Setup: create both databases once (`createdb roam`, `createdb roam_test`, or `CREATE DATABASE` in `psql`), copy
 `.env.example` to `apps/api/.env` and fill both URLs (password URL-encoded), then `pnpm --filter @roam/api
@@ -232,7 +232,9 @@ Divergences found and how the schema handles them — none silently resolved; th
 8. **Journey ownership** — the mobile `Journey` has no user (single-device store); the backend needs `userId`
    (JourneyFeedback already carries one).
 9. **Mobile `Experience` shape** (moods, labels, reviews, history fields) differs from the canonical model: the schema
-   follows the canonical model; mapping the mock data is DATA-1.
+   follows the canonical model; DATA-1 mapped the mock data to it without a schema change
+   ([`DATA_1_MIGRATION_REPORT.md`](DATA_1_MIGRATION_REPORT.md)) — migrated rows use deterministic UUID v5 ids instead of
+   the default v7.
 10. **Energy / audience `UNKNOWN`** — EXPERIENCE.md lists `UNKNOWN` in both enums, NORMALIZATION_AND_ENRICHMENT.md
     does not: the schema keeps `UNKNOWN` (the superset, and DATA_RULES.md "use `UNKNOWN`/null rather than fabricated
     precision").

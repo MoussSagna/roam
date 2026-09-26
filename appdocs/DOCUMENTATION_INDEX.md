@@ -28,8 +28,9 @@ roam/
 ## Current state in one paragraph
 
 The **mobile app** is a front-end prototype on mock data (onboarding, simulated authentication, Home, Discover, Search,
-maps, Experience detail, journeys, Profile/Settings). The **API** has its technical foundation (NestJS + Prisma, health
-check, no domain endpoint) and no connected database; the mobile app does not call it yet. No web app. Details: [mobile README → Current state](../apps/mobile/mobiledocs/README.md#current-state-2026-09-25),
+maps, Experience detail, journeys, Profile/Settings). The **API** (NestJS + Prisma + PostgreSQL) serves authentication,
+profile/preferences, the experience catalog and recommendations, on a catalog migrated from the mobile mock data (DATA-1);
+no provider is connected and the mobile app does not call it yet. No web app. Details: [mobile README → Current state](../apps/mobile/mobiledocs/README.md#current-state-2026-09-25),
 [`ROADMAP.md`](ROADMAP.md).
 
 ## Where to find…
@@ -58,6 +59,7 @@ check, no domain endpoint) and no connected database; the mobile app does not ca
 | Builds, EAS Update, testers | [`mobiledocs/DEPLOYMENT.md`](../apps/mobile/mobiledocs/DEPLOYMENT.md) |
 | Database schema (Prisma models, constraints, deferred items) | [`apidocs/DATABASE_SCHEMA.md`](../apps/api/apidocs/DATABASE_SCHEMA.md) |
 | Backend experience catalog and recommendations (endpoints, filters, ranking, mobile gaps) | [`apidocs/EXPERIENCE_CATALOG_API.md`](../apps/api/apidocs/EXPERIENCE_CATALOG_API.md) |
+| How the mobile mock data became the backend catalog (DATA-1: mapping, provenance, what is not migrated) | [`apidocs/DATA_1_MIGRATION_REPORT.md`](../apps/api/apidocs/DATA_1_MIGRATION_REPORT.md) |
 | Backend user profile and preferences (endpoints, validation, mobile mapping) | [`apidocs/USER_PROFILE_AND_PREFERENCES.md`](../apps/api/apidocs/USER_PROFILE_AND_PREFERENCES.md) |
 | Backend authentication (register, login, sessions, password reset, mobile contract) | [`apidocs/AUTHENTICATION.md`](../apps/api/apidocs/AUTHENTICATION.md) |
 | Backend data access (repositories, Prisma boundary, transactions, errors, pagination) | [`apidocs/REPOSITORY_ARCHITECTURE.md`](../apps/api/apidocs/REPOSITORY_ARCHITECTURE.md) |

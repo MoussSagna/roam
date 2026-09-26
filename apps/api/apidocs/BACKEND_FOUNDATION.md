@@ -115,7 +115,8 @@ Provider keys stay on the server (`appdocs/architecture/DATA_RULES.md`): never i
   - `isReachable()` for health checks (never throws);
   - `$disconnect()` on shutdown.
 - Scripts: `prisma:generate` (run automatically by `build`, `typecheck`, `test`), `prisma:validate`,
-  `prisma:migrate:dev`, `prisma:migrate:deploy` (the last two need a PostgreSQL).
+  `prisma:migrate:dev`, `prisma:migrate:deploy` (the last two need a PostgreSQL), `db:seed` (builds, then
+  `prisma db seed`: the DATA-1 catalog migration — [`DATA_1_MIGRATION_REPORT.md`](DATA_1_MIGRATION_REPORT.md)).
 
 ## Routing and versioning
 
@@ -228,6 +229,7 @@ cp apps/api/.env.example apps/api/.env        # then edit the placeholders
 pnpm --filter @roam/api start:dev             # watch mode (nest start --watch)
 pnpm --filter @roam/api build && pnpm --filter @roam/api start:prod
 pnpm --filter @roam/api prisma:migrate:dev    # apply the migrations to the development database
+pnpm --filter @roam/api db:seed               # DATA-1: migrate the mobile mock catalog (idempotent)
 pnpm --filter @roam/api test | test:db | lint | typecheck
 ```
 

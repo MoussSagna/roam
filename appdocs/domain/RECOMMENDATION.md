@@ -156,7 +156,8 @@ Recommendations should eventually support truthful user-facing explanations such
 `GET /api/v1/recommendations` (API-07, [`apps/api/apidocs/EXPERIENCE_CATALOG_API.md`](../../apps/api/apidocs/EXPERIENCE_CATALOG_API.md)): the signed-in user's context
 completed by their saved preferences → candidates → hard filters (budget, distance, duration, company; unknown facts
 never exclude) → the mobile journey ranking below **without mood** (no shared mood vocabulary yet) → reasons actually
-matched → one-constraint-at-a-time relaxation when nothing fits. No opening-hours check, no weighted score yet.
+matched → one-constraint-at-a-time relaxation when nothing fits. No opening-hours check, no weighted score yet. Since
+DATA-1 it runs on the catalog migrated from the mobile mock data (still no mood on it: the mock moods are not migrated).
 
 ## Current implementation (mobile, mock data)
 
