@@ -1,4 +1,4 @@
-import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { ApiProperty } from '@nestjs/swagger';
 import { Transform } from 'class-transformer';
 import {
   IsEmail,
@@ -10,8 +10,10 @@ import {
   MinLength,
 } from 'class-validator';
 
-import type { User } from '../../users/user.repository.js';
+import { UserResponse } from '../../users/dto/user.dto.js';
 import type { SignedIn } from '../auth.service.js';
+
+export { UserResponse };
 
 /**
  * Request and response bodies of `/api/v1/auth/*`. Examples are fictional. Passwords are never trimmed or
@@ -89,22 +91,6 @@ export class ResetPasswordDto extends VerifyResetCodeDto {
   })
   @apply(...PASSWORD_RULES)
   newPassword!: string;
-}
-
-/** The public view of a user: what the mobile `User` type holds. Never credentials, never timestamps. */
-export class UserResponse {
-  @ApiProperty({ example: '01a0db2f-89ae-7189-8984-1a667beee5bb' }) id!: string;
-  @ApiProperty({ example: 'lea@example.com' }) email!: string;
-  @ApiProperty({ example: 'Léa' }) displayName!: string;
-  @ApiPropertyOptional({ type: String, nullable: true }) avatarUrl!: string | null;
-  @ApiPropertyOptional({ type: Number, nullable: true }) age!: number | null;
-  @ApiPropertyOptional({ type: String, nullable: true }) city!: string | null;
-  @ApiPropertyOptional({ type: String, nullable: true }) bio!: string | null;
-
-  static from(user: User): UserResponse {
-    const { id, email, displayName, avatarUrl, age, city, bio } = user;
-    return { id, email, displayName, avatarUrl, age, city, bio };
-  }
 }
 
 export class SessionResponse {

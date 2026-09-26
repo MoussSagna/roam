@@ -61,8 +61,9 @@ Use mock data. The onboarding is complete on the front end (no backend, nothing 
 - [~] User model, preferences, places, experiences, journeys (itineraries), favorites, feedback — stored in PostgreSQL
       (`apps/api/apidocs/DATABASE_SCHEMA.md`), with their repositories (API-04,
       `apps/api/apidocs/REPOSITORY_ARCHITECTURE.md`); no service, no endpoint yet
-- [ ] User model
-- [ ] Preferences
+- [x] User model — accounts and profile (API-05, API-06: `PATCH /users/me`)
+- [~] Preferences — MVP preferences stored and served (API-06: `/users/me/preferences`); which mobile screen writes
+      them ("Mes préférences" vs. onboarding) is an open product decision
 - [ ] Places
 - [ ] Experiences
 - [ ] Itineraries

@@ -172,10 +172,42 @@ preferences endpoints, the mobile integration.
 - The reset code is never returned or logged in any environment, including development: delivery goes through
   `PasswordResetDelivery`, unconfigured for now.
 
-## API-06 — next (to be defined)
+## API-06 — User profile & preferences — **COMPLETED** (backend; mobile not wired)
 
-Ready for it: authenticated routes (`@CurrentUser()`), the repositories, persistence errors, pagination, the database
-test setup. Likely candidates: the first domain services and endpoints on top of the session (journeys and journey
-feedback, favorites, profile/preferences), DATA-1 (seed the catalog from the mobile mock data), rate limiting of the
-auth endpoints, or the mobile integration of authentication. Open product decisions that affect the data:
-`appdocs/DOCUMENTATION_RESTRUCTURE_REPORT.md` ("Decisions needed") and `DATABASE_SCHEMA.md` ("Consistency audit").
+Branch `api-06` (from `develop`, which holds API-02 → API-05). Details:
+[`USER_PROFILE_AND_PREFERENCES.md`](USER_PROFILE_AND_PREFERENCES.md).
+
+Done:
+
+- `UsersService` + `UsersController` in the existing `users` module, on the existing `UserRepository` (no new
+  repository, no new method) — the first domain service;
+- `PATCH /api/v1/users/me` (partial profile update: `displayName`, `avatarUrl`, `age`, `city`, `bio`; not the email),
+  `GET` / `PATCH /api/v1/users/me/preferences` (defaults when never saved; created on first save; partial);
+  profile read stays `GET /api/v1/auth/me` (no duplicate route);
+- identity from the session only (`@CurrentUser()`), no route or body taking a user id; isolation tested with two
+  accounts;
+- mobile vocabularies (`under10`, `friends`…) mapped to the database enums in the DTOs; response DTOs only;
+- no Prisma change, no migration;
+- tests: 129 unit/HTTP tests (+21), 64 database tests (+6); build; the built API started on `roam` (health, Swagger,
+  401 without a session) and run through register → profile → preferences on `roam_test`.
+
+Not done on purpose (see the document's "Deferred"): email change (needs address verification), the preference shape
+decision (MVP `UserPreference` vs. "Mes préférences" vs. onboarding answers), `User.stats`, avatar upload, rate
+limiting (still required before any public deployment), the mobile integration.
+
+### Decisions taken
+
+- No `GET /users/me`: `GET /auth/me` already is the profile read.
+- Never-saved preferences answer 200 with empty defaults and `updatedAt: null`, not 404.
+- One `UsersService` for profile and preferences (both are the user's own account data; a separate service would hold
+  two methods).
+- A write failing because the account was deleted after the session check answers `AUTH_SESSION_INVALID`.
+
+## API-07 — next (to be defined)
+
+Ready for it: an authenticated domain module end to end (controller → service → repository, `@CurrentUser()`, DTO
+mapping, HTTP and PostgreSQL tests). Likely candidates: journeys and journey feedback (the core loop the mobile app
+runs on mocks), favorites, DATA-1 (seed the catalog from the mobile mock data, needed by journeys and favorites), rate
+limiting of the auth endpoints, or the mobile integration of authentication and profile. Open product decisions:
+`appdocs/DOCUMENTATION_RESTRUCTURE_REPORT.md` ("Decisions needed"), `DATABASE_SCHEMA.md` ("Consistency audit"),
+the preference shape (`USER_PROFILE_AND_PREFERENCES.md`).

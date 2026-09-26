@@ -111,8 +111,8 @@ answers 204 — the app then forgets its token and shows Login (mobile D-62). Ot
 
 ### Current user
 
-`GET /auth/me` returns the user loaded by the guard (no extra query). Profile edits and preferences get their own
-endpoints later (`UserRepository.updateProfile` / `savePreference` are ready).
+`GET /auth/me` returns the user loaded by the guard (no extra query). It is also the profile read of API-06; profile
+edits and preferences are `/users/me` ([`USER_PROFILE_AND_PREFERENCES.md`](USER_PROFILE_AND_PREFERENCES.md)).
 
 ### Password reset
 
@@ -236,5 +236,5 @@ password for a future social sign-in), `auth_sessions`, `password_reset_codes`; 
 - Google / Apple sign-in (the mobile buttons are visual only; `passwordHash` is nullable for it).
 - Sliding session renewal, "sign out everywhere" endpoint, listing devices; periodic cleanup of expired
   `auth_sessions` rows (they are ignored, not deleted, until then).
-- Account deactivation or deletion (not documented), password change while signed in, profile/preferences endpoints.
+- Account deactivation or deletion (not documented), password change while signed in. (Profile and preferences endpoints: done in API-06.)
 - Authorization beyond "signed in" (roles): not needed by any documented feature.

@@ -46,7 +46,7 @@ src/
 └── modules/
     ├── health/                 GET /health, GET /health/database (public)
     ├── auth/                   register, login, me, logout, password reset; AuthGuard (API-05)
-    ├── users/                  UserRepository (API-04)
+    ├── users/                  UserRepository (API-04); PATCH /users/me, /users/me/preferences (API-06)
     ├── catalog/                Experience/Place/Event/Category repositories (API-04)
     ├── journeys/               Journey and JourneyFeedback repositories (API-04)
     └── favorites/              FavoriteRepository (API-04)
