@@ -50,7 +50,8 @@
           "isAndroidForegroundServiceEnabled": false
         }
       ],
-      "./plugins/withQuotedBundleScript"
+      "./plugins/withQuotedBundleScript",
+      "./plugins/withIOSSceneLifecycle"
     ],
     "experiments": {
       "typedRoutes": true
