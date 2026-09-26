@@ -2990,3 +2990,24 @@ documents lost their "Implementation notes (mobile)" sections, which moved into 
 open contradiction is listed in [`appdocs/DOCUMENTATION_RESTRUCTURE_REPORT.md`](../../../appdocs/DOCUMENTATION_RESTRUCTURE_REPORT.md). D-14's Prettier exclusion keeps its
 intent and now covers `appdocs/**/*.md`. Code comments still cite the former `docs/…` paths (not changed: documentation
 only); the report maps each old path to its new one. Decision numbers are unchanged.
+
+## iOS build — project path with spaces (2026-09-26)
+
+### D-97 — Quote the iOS build scripts at their source: pnpm patches + one config plugin
+
+The repository lives in `…/Mouss coding/roam`; three iOS build phases split that path on the space and `expo run:ios`
+failed with `No such file or directory: /Users/…/Mouss`. None is fixed in a published release (`expo-constants`
+57.0.19 is `latest`), and `ios/` is generated (CNG), so each fix lives where the phase comes from, is committed, and is
+reapplied automatically:
+
+- `expo-constants` and `expo-updates` podspecs ran their script through `bash -l -c "$PODS_TARGET_SRCROOT/…"`: the
+  path is expanded before the inner shell splits it. They now run the file directly (`bash -l "$PODS_TARGET_SRCROOT/…"`)
+  and shell-escape `PROJECT_ROOT`. `get-app-config-ios.sh` also used `basename $PROJECT_DIR` unquoted, which silently
+  skipped writing `app.config` (empty `Constants.expoConfig` in embedded builds). Patches: `patches/*.patch`, declared
+  in `pnpm-workspace.yaml` (`patchedDependencies`) and applied by `pnpm install`.
+- The "Bundle React Native code and images" phase of Expo's iOS template executed the printed `react-native-xcode.sh`
+  path unquoted; `plugins/withQuotedBundleScript.js` quotes it at every `expo prebuild` (it warns, without failing, if
+  the template changes).
+
+Drop a patch when the package version is bumped (pnpm then refuses to apply it): check whether the new release quotes
+its paths, and regenerate with `pnpm patch` if not. Test: `plugins/__tests__/withQuotedBundleScript.test.js`.

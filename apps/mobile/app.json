@@ -48,7 +48,8 @@
           "isAndroidBackgroundLocationEnabled": false,
           "isAndroidForegroundServiceEnabled": false
         }
-      ]
+      ],
+      "./plugins/withQuotedBundleScript"
     ],
     "experiments": {
       "typedRoutes": true
