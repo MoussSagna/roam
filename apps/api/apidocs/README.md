@@ -8,7 +8,8 @@ Documentation of the **API / backend**. Start from
 `apps/api` is a NestJS 12 + Prisma 7 application: technical base (API-02, [`BACKEND_FOUNDATION.md`](BACKEND_FOUNDATION.md)),
 database schema (API-03), repositories (API-04), authentication (API-05), profile and preferences (API-06), experience
 catalog and recommendations (API-07), a catalog migrated from the mobile mock data (DATA-1), journeys (API-08), their feedback (API-09) favorites (API-10) and rate limiting (API-11) —
-[`API_IMPLEMENTATION_ROADMAP.md`](API_IMPLEMENTATION_ROADMAP.md). No provider is connected yet. The schema is migrated on a local PostgreSQL 18.6
+[`API_IMPLEMENTATION_ROADMAP.md`](API_IMPLEMENTATION_ROADMAP.md). The first provider adapter, Google Places (DATA-2,
+[`GOOGLE_PLACES_PROVIDER.md`](GOOGLE_PLACES_PROVIDER.md)), exists but is not connected to any endpoint or sync yet. The schema is migrated on a local PostgreSQL 18.6
 (`roam`) and tested on a dedicated test database (`roam_test`, `pnpm test:db`).
 
 The Data Foundation documents below are the target design of the data layer (how external data — Google Places,
@@ -49,6 +50,7 @@ deployment.
 | [`JOURNEY_API.md`](JOURNEY_API.md)                                                     | Journeys: lifecycle, endpoints, planning, validation, ownership, concurrency, errors, performance                                               |
 | [`API_IMPLEMENTATION_ROADMAP.md`](API_IMPLEMENTATION_ROADMAP.md)                       | API steps (API-01 → API-11 and DATA-1 done, next), deferred items, decisions                                                                    |
 | [`DATA_1_MIGRATION_REPORT.md`](DATA_1_MIGRATION_REPORT.md)                             | DATA-1: mobile mock data → canonical catalog — sources, mapping, ids, idempotence, provenance, what is not migrated, verifications              |
+| [`GOOGLE_PLACES_PROVIDER.md`](GOOGLE_PLACES_PROVIDER.md)                               | DATA-2: provider contract, Google client/adapter, field mask, errors, mapping, identity, ownership, tests, real check                           |
 | [`DATA_FOUNDATION.md`](DATA_FOUNDATION.md)                                             | Objective, pipeline (sources → adapters → normalization → enrichment → database/cache → engine → app), initial sources, MVP scope (Paris)       |
 | [`PROVIDER_ARCHITECTURE.md`](PROVIDER_ARCHITECTURE.md)                                 | Layers from the mobile app to provider adapters, adapter responsibilities, failures, secrets                                                    |
 | [`NORMALIZATION_AND_ENRICHMENT.md`](NORMALIZATION_AND_ENRICHMENT.md)                   | Pipeline, pricing normalization, enrichment enums, confidence, rule-based first version                                                         |

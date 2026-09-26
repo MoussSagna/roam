@@ -63,6 +63,24 @@ describe('validateEnvironment', () => {
     ).toThrow(/RATE_LIMIT_IP_LIMIT[\s\S]*TRUST_PROXY/);
   });
 
+  it('Google Places key: optional (the API starts without it), a single token when set, never printed', () => {
+    expect(validateEnvironment(VALID).GOOGLE_PLACES_API_KEY).toBeUndefined();
+    expect(
+      validateEnvironment({ ...VALID, GOOGLE_PLACES_API_KEY: 'AIzaFAKE-key_0123' })
+        .GOOGLE_PLACES_API_KEY,
+    ).toBe('AIzaFAKE-key_0123');
+
+    const malformed = 'AIzaFAKE key with spaces';
+    let message = '';
+    try {
+      validateEnvironment({ ...VALID, GOOGLE_PLACES_API_KEY: malformed });
+    } catch (error) {
+      message = (error as Error).message;
+    }
+    expect(message).toMatch(/GOOGLE_PLACES_API_KEY: GOOGLE_PLACES_API_KEY must be a single token/);
+    expect(message).not.toContain(malformed);
+  });
+
   it('fails clearly when DATABASE_URL is missing', () => {
     expect(() => validateEnvironment({})).toThrow(/Invalid API configuration:\n\s+- DATABASE_URL:/);
   });

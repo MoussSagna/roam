@@ -13,6 +13,7 @@ import { ExperiencesModule } from './modules/experiences/experiences.module.js';
 import { FavoritesModule } from './modules/favorites/favorites.module.js';
 import { HealthModule } from './modules/health/health.module.js';
 import { JourneysModule } from './modules/journeys/journeys.module.js';
+import { ProvidersModule } from './modules/providers/providers.module.js';
 import { RecommendationsModule } from './modules/recommendations/recommendations.module.js';
 import { UsersModule } from './modules/users/users.module.js';
 
@@ -36,6 +37,7 @@ import { UsersModule } from './modules/users/users.module.js';
     FavoritesModule,
     ExperiencesModule,
     RecommendationsModule,
+    ProvidersModule,
   ],
   providers: [
     { provide: APP_PIPE, useFactory: createValidationPipe },

@@ -66,7 +66,7 @@ export class AppConfigService {
     return { enabled: this.get('SWAGGER_ENABLED') ?? !this.app.isProduction, path: 'docs' };
   }
 
-  /** Future provider credentials (Data Foundation). Never log these values. */
+  /** Provider credentials (Data Foundation): Google Places (DATA-2), Ticketmaster (later). Never log these values. */
   get providers() {
     return {
       googlePlacesApiKey: this.get('GOOGLE_PLACES_API_KEY'),

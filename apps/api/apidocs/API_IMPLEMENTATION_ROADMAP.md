@@ -413,6 +413,15 @@ Done:
   falls back to the raw `process.env` when the validated value is undefined): `LOG_LEVEL=""` silences every log,
   `SWAGGER_ENABLED=""` turns Swagger off. The rate-limit variables are not affected (they always have a validated value).
 
+## DATA-2 — Google Places provider — **COMPLETED** (backend layer; not connected; real check blocked)
+
+Branch `data-02-google-places` (from `develop`). Details: [`GOOGLE_PLACES_PROVIDER.md`](GOOGLE_PLACES_PROVIDER.md).
+Provider contract and typed errors, Google Places API (New) client (Nearby Search, Place Details, explicit field mask,
+5 s timeout, no retry), mapper, adapter, `PlaceIngestionService` (idempotent upsert by provider id, ROAM data never
+overwritten), `PlaceRepository.updateFromSource`. No endpoint, no sync, no Prisma change, no new dependency, no mobile
+change, recommendations unchanged. Tests never hold a real key (the setup files remove provider keys). Known issue: the
+intermittent HTTP test failures of API-11 still occur, also on `develop` without DATA-2.
+
 ## API-12 — next
 
 The mobile integration: replace the mock repositories with API repositories (auth, profile, catalog, recommendations,

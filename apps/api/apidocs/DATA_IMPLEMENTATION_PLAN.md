@@ -8,9 +8,12 @@ repositories were built by API-03/API-04 ([`DATABASE_SCHEMA.md`](DATABASE_SCHEMA
 catalog ([`DATA_1_MIGRATION_REPORT.md`](DATA_1_MIGRATION_REPORT.md)): the API now serves it, the mobile app reads it in API
 mode since DATA-8. Provider interfaces come with their first adapter (DATA-2). DATA-1 is not provider ingestion.
 
-## DATA-2 — Google Places
+## DATA-2 — Google Places — **done** (provider layer; not connected yet)
 
 Implement backend adapter, place search/details, required fields, validation, normalization and source metadata.
+Done: the provider contract, Google Places API (New) Nearby Search and Place Details with an explicit field mask, typed
+errors, normalization, idempotent upsert by provider id — [`GOOGLE_PLACES_PROVIDER.md`](GOOGLE_PLACES_PROVIDER.md). Not
+connected to an endpoint, a sync or the recommendations. The real Google check is blocked by the key's API restrictions.
 
 ## DATA-3 — Ticketmaster
 
