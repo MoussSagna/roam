@@ -15,6 +15,12 @@ Done: the provider contract, Google Places API (New) Nearby Search and Place Det
 errors, normalization, idempotent upsert by provider id — [`GOOGLE_PLACES_PROVIDER.md`](GOOGLE_PLACES_PROVIDER.md). Not
 connected to an endpoint, a sync or the recommendations. The real Google check is blocked by the key's API restrictions.
 
+## DATA-2.1 — Geoapify — **done** (second place provider; not connected yet)
+
+A `PlaceProvider` on the DATA-2 contract, usable without Google billing (free plan): Places and Place Details,
+OpenStreetMap identity, explicit category table, same errors and ingestion — [`GEOAPIFY_PROVIDER.md`](GEOAPIFY_PROVIDER.md).
+Real check passed. Not connected to an endpoint, a sync or the recommendations.
+
 ## DATA-3 — Ticketmaster
 
 Implement event search/details where needed, normalization, pricing when available and graceful missing-price handling.

@@ -25,6 +25,12 @@ ROAM-owned does not mean invented. Derived values must come from explicit rules,
 
 Missing factual data stays `null`, `UNKNOWN`, or equivalent.
 
+## Geoapify (DATA-2.1)
+
+A second place source ([`GEOAPIFY_PROVIDER.md`](GEOAPIFY_PROVIDER.md)), OpenStreetMap data: name, address, GPS and
+categories (normalized by an explicit table). No rating, reviews or price: they stay `null`/`UNKNOWN`. Opening hours,
+website and facilities exist but are not read yet. Nothing ROAM-owned comes from it.
+
 ## Internal source: mobile mock migration (DATA-1)
 
 Until the providers are connected, the catalog holds the mobile mock data, migrated once by DATA-1

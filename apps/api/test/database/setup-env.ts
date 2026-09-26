@@ -12,6 +12,7 @@ delete process.env.SWAGGER_ENABLED;
 // Tests never hold a real provider key (testDatabaseUrl() loads apps/api/.env into the environment): a suite that
 // needs one sets a fictional value itself. No test calls a provider.
 delete process.env.GOOGLE_PLACES_API_KEY;
+delete process.env.GEOAPIFY_API_KEY;
 delete process.env.TICKETMASTER_API_KEY;
 
 // Rate limiting stays on in the tests, with limits no suite reaches: every request of a test file comes from one IP

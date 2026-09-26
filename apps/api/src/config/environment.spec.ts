@@ -81,6 +81,25 @@ describe('validateEnvironment', () => {
     expect(message).not.toContain(malformed);
   });
 
+  it('Geoapify key: optional, a single token when set, never printed', () => {
+    expect(
+      validateEnvironment({ ...VALID, GEOAPIFY_API_KEY: '' }).GEOAPIFY_API_KEY,
+    ).toBeUndefined();
+    expect(
+      validateEnvironment({ ...VALID, GEOAPIFY_API_KEY: 'geoFAKE0123abcd' }).GEOAPIFY_API_KEY,
+    ).toBe('geoFAKE0123abcd');
+
+    const malformed = 'geoFAKE key&with=chars';
+    let message = '';
+    try {
+      validateEnvironment({ ...VALID, GEOAPIFY_API_KEY: malformed });
+    } catch (error) {
+      message = (error as Error).message;
+    }
+    expect(message).toMatch(/GEOAPIFY_API_KEY: GEOAPIFY_API_KEY must be a single token/);
+    expect(message).not.toContain(malformed);
+  });
+
   it('fails clearly when DATABASE_URL is missing', () => {
     expect(() => validateEnvironment({})).toThrow(/Invalid API configuration:\n\s+- DATABASE_URL:/);
   });
