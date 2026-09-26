@@ -3011,3 +3011,27 @@ reapplied automatically:
 
 Drop a patch when the package version is bumped (pnpm then refuses to apply it): check whether the new release quotes
 its paths, and regenerate with `pnpm patch` if not. Test: `plugins/__tests__/withQuotedBundleScript.test.js`.
+
+## iOS 27 — scene life cycle (2026-09-26)
+
+### D-98 — Adopt the UIScene life cycle with a config plugin that applies Expo's SDK 58 template wiring
+
+Built with the iOS 27 SDK, an app that has not adopted the scene life cycle is stopped at launch: UIKit traps in
+`_UIApplicationEvaluateRuntimeIssueForNoSceneLifecycleAdoption` (SIGTRAP), before any JavaScript runs. `expo` 57.0.25
+already ships the runtime for it (`ExpoAppSceneDelegate`, `ExpoReactNativeFactoryProvider`), but the SDK 57 iOS
+template (up to `expo-template-bare-minimum@57.0.27`, used by `expo prebuild`) still creates the window in
+`AppDelegate` and declares no scene; the SDK 58 template is the first to adopt it. `plugins/withIOSSceneLifecycle.js`
+applies that SDK 58 wiring at every prebuild:
+
+- `Info.plist`: a `UIApplicationSceneManifest` with one application scene whose delegate is
+  `$(PRODUCT_MODULE_NAME).SceneDelegate` (left untouched if a manifest already exists);
+- `ios/ROAM/SceneDelegate.swift`: `class SceneDelegate: ExpoAppSceneDelegate {}`, added to the Xcode target with
+  Expo's `withBuildSourceFile` (no duplicate on a second prebuild);
+- `AppDelegate.swift`: conforms to `ExpoReactNativeFactoryProvider` and no longer creates the window nor starts React
+  Native — `ExpoAppSceneDelegate` does both from the connecting scene. The template's Linking overrides stay:
+  `ExpoAppSceneDelegate` forwards scene links to them and dedupes the `RCTLinkingManager` call (documented for SDK 57
+  app delegates in `SceneEventForwarder.swift`).
+
+The plugin throws on an `AppDelegate` it does not recognize rather than leave a half-migrated app that would start React
+Native twice. Remove it when the project moves to a template that adopts scenes itself (SDK 58). Test:
+`plugins/__tests__/withIOSSceneLifecycle.test.js`.
