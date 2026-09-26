@@ -1,8 +1,8 @@
 import { Injectable, Logger, type OnModuleDestroy, type OnModuleInit } from '@nestjs/common';
-import { PrismaPg } from '@prisma/adapter-pg';
 
 import { AppConfigService } from '../config/app-config.service.js';
 import { PrismaClient } from '../generated/prisma/client.js';
+import { createPrismaAdapter } from './prisma-adapter.js';
 
 /** How long a connectivity check may take before the database is reported unavailable. */
 export const DATABASE_PING_TIMEOUT_MS = 3000;
@@ -30,7 +30,7 @@ export class PrismaService extends PrismaClient implements OnModuleInit, OnModul
   private readonly requiredAtStartup: boolean;
 
   constructor(config: AppConfigService) {
-    super({ adapter: new PrismaPg({ connectionString: config.database.url }) });
+    super({ adapter: createPrismaAdapter(config.database.url) });
     this.requiredAtStartup = config.database.requiredAtStartup;
   }
 

@@ -225,10 +225,11 @@ password for a future social sign-in), `auth_sessions`, `password_reset_codes`; 
   HTTP (`test/auth.e2e.spec.ts`: responses, validation of every body, protected `/me`, idempotent logout, public health
   and docs, OpenAPI).
 - **PostgreSQL** (`pnpm test:db`, `test/database/auth.db-spec.ts`, on `roam_test` only): the whole flow over HTTP
-  (register → me → logout → token refused; login; expired session), hashes actually stored, duplicate emails in any
-  case and **concurrent registrations**, identical login failures, reset (code hashed, verify, reset, sessions revoked,
-  old password refused, no replay), attempt limit, expired and replaced codes, cascades — and no password or hash in
-  the logs of the run.
+  (register → me → logout → token refused; login; expired session, including expiries written by PostgreSQL itself
+  — 1 s, 1 min, 3 h ago — and the strict `expiresAt > now` boundary; the connection runs in UTC), hashes actually
+  stored, duplicate emails in any case and **concurrent registrations**, identical login failures, reset (code hashed,
+  verify, reset, sessions revoked, old password refused, no replay), attempt limit, expired (also by the database clock)
+  and replaced codes, cascades — and no password or hash in the logs of the run.
 
 ## Deferred
 

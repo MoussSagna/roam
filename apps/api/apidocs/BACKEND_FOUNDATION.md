@@ -109,7 +109,11 @@ Provider keys stay on the server (`appdocs/architecture/DATA_RULES.md`): never i
 - `prisma.config.ts` (Prisma 7) holds the schema path, the migrations folder (`prisma/migrations`) and `DATABASE_URL`
   (loaded from `.env` when present). `prisma generate` and `prisma validate` need no database.
 - **`PrismaService`** extends the generated `PrismaClient` with the `pg` driver adapter; `DatabaseModule` is global and
-  provides this single instance to every module. Lifecycle:
+  provides this single instance to every module. The adapter comes from `createPrismaAdapter`
+  (`src/database/prisma-adapter.ts`, also used by the seed and the database tests), which opens every connection with
+  `-c TimeZone=UTC`: `@prisma/adapter-pg` sends and reads `timestamptz` values as UTC wall-clock time, so on a server
+  whose time zone is not UTC every instant was shifted by the offset (sessions and reset codes expired hours late).
+  `DATABASE_URL` must not set `TimeZone` in an `options` parameter: it would override this one. Lifecycle:
   - startup: `SELECT 1` with a 3 s timeout. Reachable → "Database connection established". Unreachable → **production**:
     the startup fails (clean error, no driver details); **elsewhere**: a warning, and the API starts without it;
   - `isReachable()` for health checks (never throws);
