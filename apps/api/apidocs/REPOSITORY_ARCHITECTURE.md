@@ -10,7 +10,7 @@ the repositories are ready for the domain modules that come next.
 ```text
 Controller (HTTP, DTOs)          — later
    ↓
-Service (rules, transitions)     — AuthService (API-05), UsersService (API-06), ExperiencesService and RecommendationsService (API-07); journeys, feedback… later
+Service (rules, transitions)     — AuthService (API-05), UsersService (API-06), ExperiencesService and RecommendationsService (API-07), JourneysService (API-08); feedback… later
    ↓
 Repository (persistence)         — API-04: src/modules/<domain>/*.repository.ts
    ↓
@@ -99,7 +99,7 @@ with Prisma directly (inside `src/database/`, where the Prisma boundary allows i
 | `PlaceRepository`           | `findById`, `findBySource(providerKey, externalId)`, `create` (categories + source), `update`                                                                                                                                  |
 | `EventRepository`           | `findById`, `findBySource`, `listUpcoming({ from, to }, page)`, `create`, `update`                                                                                                                                             |
 | `CategoryRepository`        | `list`                                                                                                                                                                                                                         |
-| `JourneyRepository`         | `findById`, `findActiveByUserId`, `listCompletedByUserId(page)`, `create`, `replaceSteps`, `updateProgress`, `complete`                                                                                                        |
+| `JourneyRepository`         | `findById`, `findActiveByUserId`, `listCompletedByUserId(page)`, `create`, `replaceSteps`, `updateProgress`, `complete` — the last three optionally conditioned on `expectedCurrentStep` (API-08)                              |
 | `JourneyFeedbackRepository` | `findByJourneyId`, `create`                                                                                                                                                                                                    |
 | `FavoriteRepository`        | `add`, `remove`, `isFavorite`, `listByUserId(page)`                                                                                                                                                                            |
 

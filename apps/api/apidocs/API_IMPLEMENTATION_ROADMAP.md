@@ -284,9 +284,41 @@ Mood, opening hours and preferences (API-07, unchanged), plus: budget brackets �
 collections/reviews/highlights, retired mocks — [`DATA_1_MIGRATION_REPORT.md`](DATA_1_MIGRATION_REPORT.md) → "Decisions
 still needed".
 
-## API-08 — next (to be defined)
+## API-08 — Journey API — **COMPLETED** (backend; mobile not wired)
 
-Likely candidates: journeys and journey feedback (the core loop, now that experiences are served), favorites, rate
-limiting, or the mobile integration (auth, profile, catalog — it needs an API → mobile `Experience` adapter). Open product decisions: above, plus
+Branch `api-08` (from `develop`, which holds API-02 → API-07 and DATA-1). Details: [`JOURNEY_API.md`](JOURNEY_API.md).
+
+Done:
+
+- `JourneysService` + `JourneysController` in the existing `journeys` module, on `JourneyRepository` and
+  `ExperienceRepository.findManyByIds` (no new repository, no new model, no Prisma change, no migration):
+  `GET /journeys/active` (`null` when none), `GET /journeys` (completed, most recent first, keyset pagination),
+  `GET /journeys/:id`, `POST /journeys` (the mobile draft → ACTIVE, started, step 0), `PATCH /journeys/:id` (replace the
+  steps), `POST /journeys/:id/progress` (next step only), `POST /journeys/:id/complete` (from the last step);
+- the server owns the owner, status, progress, timestamps and plan (the mobile `plan.ts` rules ported: legs, arrivals,
+  totals, bracket-based budget); server-controlled fields refused (400); another user's journey → 404;
+- experiences checked against the canonical catalog (unknown, inactive for a new step, without duration → 422);
+- one active journey per user, also under concurrency (partial unique index → 409); stale writes guarded by an optional
+  `expectedCurrentStep` on the repository's conditional updates;
+- measured: 9 SQL statements per request (session included) whatever the number of steps or journeys;
+- 4 new error codes: `JOURNEY_ALREADY_ACTIVE`, `JOURNEY_NOT_ACTIVE`, `JOURNEY_INVALID_STEP`,
+  `JOURNEY_EXPERIENCE_UNAVAILABLE`;
+- tests: 215 unit/HTTP tests (+35), 91 database tests (+7), run twice; the built API run through the whole flow on
+  `roam_test`.
+
+### Decisions taken
+
+- **No stored draft**: the brief's `DRAFT` state contradicts JOURNEY.md and the schema; the draft is the create body.
+- Paths `/api/v1/journeys…` (no document fixed them; ARCHITECTURE.md's `/itineraries` example predates the Journey name).
+- Progress moves to the next step only (repeating the current one is a no-op); completing is a separate call, allowed
+  from the last step only.
+- An inactive experience can stay in a journey that already has it, but cannot be added.
+- An experience without a known duration cannot be planned (422) rather than getting an invented duration.
+- A journey's budget: mobile bracket midpoints on the bracket read from the canonical price range; unknown price adds 0.
+
+## API-09 — next (to be defined)
+
+Likely candidates: journey feedback (the model and repository exist: closes the core loop), favorites, rate limiting, or
+the mobile integration (auth, profile, catalog, journeys — it needs an API → mobile adapter). Open product decisions: above, plus
 `appdocs/DOCUMENTATION_RESTRUCTURE_REPORT.md`, `DATABASE_SCHEMA.md` ("Consistency audit"), the preference shape
 (`USER_PROFILE_AND_PREFERENCES.md`).
