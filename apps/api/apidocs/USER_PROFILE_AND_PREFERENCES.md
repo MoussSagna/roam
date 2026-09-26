@@ -150,8 +150,8 @@ préférences" types/ambiance to `interests`, or add `experienceTypes` / `ambian
 - Responses built from explicit DTOs (`UserResponse`, `PreferencesResponse`): no Prisma row, hash, session, token,
   internal id or timestamp other than `updatedAt`. Checked in tests.
 - Validation: whitelist + forbid unknown fields (API-02), values never echoed back.
-- Not changed: CORS, headers, logs (no bodies logged). **Rate limiting is still not implemented** (see
-  AUTHENTICATION.md → "Security"): required before any public deployment.
+- Not changed: CORS, headers, logs (no bodies logged). Rate-limited since API-11 ([`RATE_LIMITING.md`](RATE_LIMITING.md)): the `PATCH` routes count in
+  the `mutation` tier.
 
 ## Tests
 
@@ -172,4 +172,3 @@ préférences" types/ambiance to `interests`, or add `experienceTypes` / `ambian
 - The preference shape decision above; persisting onboarding answers.
 - `User.stats` (needs journeys and favorites APIs).
 - Account deletion, password change while signed in.
-- Rate limiting (auth endpoints first).

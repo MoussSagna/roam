@@ -7,6 +7,8 @@ import { Text } from '@/components/ui';
 import type { NearbyCategory } from '../data/nearbyCategories';
 
 const TILE_SIZE = 84;
+/** The tile's full width (photo + a little room for its label) — what Home's carousel snaps on. */
+export const NEARBY_CARD_WIDTH = TILE_SIZE + 8;
 
 type NearbyCardProps = {
   category: NearbyCategory;
@@ -24,7 +26,7 @@ export function NearbyCard({ category, onPress }: NearbyCardProps) {
       accessibilityLabel={label}
       onPress={() => onPress(category)}
       className="items-center gap-2 active:opacity-80"
-      style={{ width: TILE_SIZE + 8 }}
+      style={{ width: NEARBY_CARD_WIDTH }}
     >
       <Image
         source={category.image}

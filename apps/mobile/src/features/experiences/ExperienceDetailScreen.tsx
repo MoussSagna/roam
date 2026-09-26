@@ -18,6 +18,7 @@ import { useJourneyCta } from '@/features/journey/hooks/useJourneyCta';
 import { useCategories } from '@/hooks/useCategories';
 import { useCtaVisibility } from '@/hooks/useCtaVisibility';
 import type { Experience, GalleryOpenRect } from '@/types';
+import { errorMessageKey } from '@/services';
 import { useTheme } from '@/theme';
 
 import { Badge } from './components/Badge';
@@ -49,7 +50,7 @@ export function ExperienceDetailScreen({ experienceId }: ExperienceDetailScreenP
   const { height: windowHeight } = useWindowDimensions();
   const categories = useCategories();
 
-  const { experience, similarExperiences, isLoading } = useExperienceDetail(experienceId);
+  const { experience, similarExperiences, isLoading, error } = useExperienceDetail(experienceId);
   const { favoriteIds, toggleFavorite } = useFavoriteExperienceIds(experience ? [experience] : []);
   const { favoriteIds: similarFavoriteIds, toggleFavorite: toggleSimilarFavorite } =
     useFavoriteExperienceIds(similarExperiences);
@@ -167,8 +168,8 @@ export function ExperienceDetailScreen({ experienceId }: ExperienceDetailScreenP
   if (!experience) {
     return (
       <View className="flex-1 items-center justify-center gap-4 bg-background px-6">
-        <Text variant="h3" accessibilityRole="header">
-          {t('common.comingSoon')}
+        <Text variant="h3" accessibilityRole="header" className="text-center">
+          {error ? t(errorMessageKey(error)) : t('common.comingSoon')}
         </Text>
         <Button label={t('common.back')} onPress={() => router.back()} />
       </View>

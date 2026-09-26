@@ -8,6 +8,8 @@ import { KeyboardAvoidingView, Platform, ScrollView, Text as RNText, View } from
 
 import { useAuth } from '@/auth';
 import { Button, FadeInUp, Screen, Text, TextField } from '@/components/ui';
+import { showToast } from '@/lib/toast';
+import { API_ERROR_CODES, errorMessageKey, isApiError } from '@/services';
 import { useTheme } from '@/theme';
 import { derived } from '@/theme/palette';
 import { fontFamily } from '@/theme/typography';
@@ -32,16 +34,16 @@ type FormErrors = {
 };
 
 /**
- * Register screen (design mockup "Authentification", tile 3 "Inscription") — front-end only.
- * There is no backend to create an account against, so a well-formed submission validates
- * locally, then `useAuth().login()` simulates the request and marks the mocked session as active,
- * same as `LoginScreen` (`DECISIONS.md` D-32, and the sprint 3 mocked-auth-session pass).
+ * Register screen (design mockup "Authentification", tile 3 "Inscription"). A well-formed submission
+ * validates locally, then `useAuth().register()` creates the account through `repositories.auth` — the
+ * ROAM API in API mode (first name → `displayName`; an email already used → a field error), a simulated
+ * request in mock mode — and lands signed in on Home (`DECISIONS.md` D-32, DATA-8).
  */
 export function RegisterScreen() {
   const { t } = useTranslation();
   const router = useRouter();
   const { scheme, colors } = useTheme();
-  const { login } = useAuth();
+  const { register } = useAuth();
   const [firstName, setFirstName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -72,7 +74,18 @@ export function RegisterScreen() {
   const handleSignUp = async () => {
     if (loading || !validate()) return;
     setLoading(true);
-    await login();
+    try {
+      await register({ displayName: firstName, email, password });
+    } catch (error) {
+      setLoading(false);
+      // An email already used is the form's own error; anything else (offline, 429…) is a toast.
+      if (isApiError(error) && error.code === API_ERROR_CODES.emailAlreadyExists) {
+        setErrors({ email: t('auth.errors.emailTaken') });
+      } else {
+        showToast('error', { title: t(errorMessageKey(error)) });
+      }
+      return;
+    }
     setLoading(false);
     router.replace('/home');
   };

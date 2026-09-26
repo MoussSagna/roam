@@ -163,6 +163,7 @@
       "nearby": "Lieux proches de toi",
       "forYou": "Des idées pour toi"
     },
+    "forYouEmpty": "Pas d'idée pour le moment. Reviens un peu plus tard.",
     "moods": {
       "calm": "Calme",
       "food": "Food",
@@ -410,7 +411,13 @@
       "coordinatesCopied": "Coordonnées copiées",
       "openError": "Impossible d'ouvrir l'application"
     },
-    "addToJourney": "Ajouter au parcours"
+    "addToJourney": "Ajouter au parcours",
+    "price": {
+      "free": "Gratuit",
+      "range": "{min}–{max} {currency}",
+      "upTo": "Jusqu'à {max} {currency}",
+      "from": "À partir de {min} {currency}"
+    }
   },
   "itinerary": {
     "title": "Ta sortie est prête",
@@ -668,6 +675,10 @@
     "resetSuccess": {
       "title": "Mot de passe mis à jour !",
       "subtitle": "Ton mot de passe a bien été réinitialisé.\nTu peux maintenant te connecter."
+    },
+    "errors": {
+      "invalidCredentials": "Email ou mot de passe incorrect.",
+      "emailTaken": "Un compte existe déjà avec cet email."
     }
   },
   "validation": {
@@ -682,7 +693,9 @@
     "network": "Vérifie ta connexion puis réessaie.",
     "location": "Nous n'avons pas pu récupérer ta position.",
     "recommendations": "Impossible de charger les recommandations.",
-    "feedback": "Impossible d'envoyer ton feedback."
+    "feedback": "Impossible d'envoyer ton feedback.",
+    "tooManyRequests": "Trop de tentatives. Patiente un peu avant de réessayer.",
+    "sessionExpired": "Ta session a expiré. Reconnecte-toi."
   },
   "journey": {
     "defaultTitle": "Sortie {mood}",

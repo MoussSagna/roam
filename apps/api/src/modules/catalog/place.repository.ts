@@ -1,10 +1,10 @@
 import { Injectable } from '@nestjs/common';
 
 import { jsonInput } from '../../database/json.js';
-import { persist } from '../../database/persistence-errors.js';
+import { persist, RecordNotFoundError } from '../../database/persistence-errors.js';
 import { PrismaService } from '../../database/prisma.service.js';
 import { categoryLinks, PLACE_INCLUDE, sourceCreate, toPlace } from './catalog.mappers.js';
-import type { NewPlace, Place, PlaceChange } from './catalog.types.js';
+import type { NewPlace, Place, PlaceChange, SourceInput } from './catalog.types.js';
 
 /**
  * Places (PLACE.md): provider facts, their categories and provenance. Written by the provider pipeline
@@ -70,5 +70,49 @@ export class PlaceRepository {
         }),
       ),
     );
+  }
+
+  /**
+   * A provider refresh (DATA-2): updates the provider facts and that provider record's provenance (`fetchedAt`,
+   * URL, classification) in one write (atomic). Never touches the ROAM enrichment, categories or other sources.
+   * Throws `RecordNotFoundError` when the place does not exist.
+   */
+  updateFromSource(id: string, change: PlaceChange, source: SourceInput): Promise<Place> {
+    const { openingHours, attributes, ...fields } = change;
+    return persist(async () => {
+      // Nested writes filter on scalars only: resolve the provider (an immutable row) first.
+      const provider = await this.prisma.provider.findUnique({
+        where: { key: source.provider.key },
+        select: { id: true },
+      });
+      if (!provider) throw new RecordNotFoundError('Provider');
+      return toPlace(
+        await this.prisma.place.update({
+          where: { id },
+          data: {
+            ...fields,
+            openingHours: jsonInput(openingHours),
+            attributes: jsonInput(attributes),
+            sources: {
+              updateMany: {
+                where: {
+                  entityType: 'PLACE',
+                  externalId: source.externalId,
+                  providerId: provider.id,
+                },
+                data: {
+                  externalUrl: source.externalUrl ?? null,
+                  providerCategories: source.providerCategories ?? [],
+                  confidence: source.confidence ?? null,
+                  fetchedAt: source.fetchedAt,
+                  providerUpdatedAt: source.providerUpdatedAt ?? null,
+                },
+              },
+            },
+          },
+          include: PLACE_INCLUDE,
+        }),
+      );
+    });
   }
 }

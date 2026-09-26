@@ -30,7 +30,8 @@ roam/
 The **mobile app** is a front-end prototype on mock data (onboarding, simulated authentication, Home, Discover, Search,
 maps, Experience detail, journeys, Profile/Settings). The **API** (NestJS + Prisma + PostgreSQL) serves authentication,
 profile/preferences, the experience catalog, recommendations, journeys, journey feedback and favorites, on a catalog migrated from the mobile mock data (DATA-1);
-no provider is connected and the mobile app does not call it yet. No web app. Details: [mobile README → Current state](../apps/mobile/mobiledocs/README.md#current-state-2026-09-25),
+no provider is connected. Since DATA-8 the mobile app can run on the API (`EXPO_PUBLIC_DATA_SOURCE=api`: authentication,
+current user, catalog, search) or on its mocks (the default). No web app. Details: [mobile README → Current state](../apps/mobile/mobiledocs/README.md#current-state-2026-09-25),
 [`ROADMAP.md`](ROADMAP.md).
 
 ## Where to find…
@@ -54,12 +55,14 @@ no provider is connected and the mobile app does not call it yet. No web app. De
 | Install, run, commands, source structure (mobile) | [`mobiledocs/DEVELOPMENT.md`](../apps/mobile/mobiledocs/DEVELOPMENT.md) |
 | Mobile conventions, navigation, theme/i18n implementation | [`mobiledocs/CONVENTIONS.md`](../apps/mobile/mobiledocs/CONVENTIONS.md), [`NAVIGATION.md`](../apps/mobile/mobiledocs/NAVIGATION.md), [`THEME_AND_I18N.md`](../apps/mobile/mobiledocs/THEME_AND_I18N.md) |
 | How a mobile feature is built | [`mobiledocs/features/`](../apps/mobile/mobiledocs/features/) |
-| Why something was built that way (mobile) | [`mobiledocs/DECISIONS.md`](../apps/mobile/mobiledocs/DECISIONS.md) (D-01 → D-90) |
+| Why something was built that way (mobile) | [`mobiledocs/DECISIONS.md`](../apps/mobile/mobiledocs/DECISIONS.md) (D-01 → D-96) |
+| How the mobile app calls the API (client, secure session, 401/429, mock/API switch, adapters, what is migrated — DATA-8) | [`mobiledocs/MOBILE_API_INTEGRATION.md`](../apps/mobile/mobiledocs/MOBILE_API_INTEGRATION.md) |
 | Integrating a new screen | [`mobiledocs/SCREEN_INTEGRATION_WORKFLOW.md`](../apps/mobile/mobiledocs/SCREEN_INTEGRATION_WORKFLOW.md) |
 | Builds, EAS Update, testers | [`mobiledocs/DEPLOYMENT.md`](../apps/mobile/mobiledocs/DEPLOYMENT.md) |
 | Database schema (Prisma models, constraints, deferred items) | [`apidocs/DATABASE_SCHEMA.md`](../apps/api/apidocs/DATABASE_SCHEMA.md) |
 | Backend experience catalog and recommendations (endpoints, filters, ranking, mobile gaps) | [`apidocs/EXPERIENCE_CATALOG_API.md`](../apps/api/apidocs/EXPERIENCE_CATALOG_API.md) |
 | Backend journeys (create, active, history, edit, progress, complete; ownership, planning) | [`apidocs/JOURNEY_API.md`](../apps/api/apidocs/JOURNEY_API.md) |
+| Backend rate limiting (tiers, keys, 429 + Retry-After, configuration, single-instance limits) | [`apidocs/RATE_LIMITING.md`](../apps/api/apidocs/RATE_LIMITING.md) |
 | Backend favorites (save, list, remove experiences; idempotence, inactive experiences) | [`apidocs/FAVORITES_API.md`](../apps/api/apidocs/FAVORITES_API.md) |
 | Backend journey feedback (1–5 stars + comment, one per completed journey) | [`apidocs/JOURNEY_FEEDBACK_API.md`](../apps/api/apidocs/JOURNEY_FEEDBACK_API.md) |
 | How the mobile mock data became the backend catalog (DATA-1: mapping, provenance, what is not migrated) | [`apidocs/DATA_1_MIGRATION_REPORT.md`](../apps/api/apidocs/DATA_1_MIGRATION_REPORT.md) |

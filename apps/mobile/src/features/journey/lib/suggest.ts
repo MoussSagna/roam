@@ -53,10 +53,13 @@ export type JourneySuggestions = {
   relaxed: boolean;
 };
 
+/** An unknown budget or duration never excludes (the API's rule, EXPERIENCE_CATALOG_API.md). */
 function fits(experience: Experience, context: JourneyContext, distanceM: number | null): boolean {
   return (
-    BUDGET_ACCEPTS[context.budget].includes(experience.estimatedBudget) &&
-    experience.estimatedDurationMin <= JOURNEY_DURATION_MIN[context.duration] &&
+    (experience.estimatedBudget === undefined ||
+      BUDGET_ACCEPTS[context.budget].includes(experience.estimatedBudget)) &&
+    (experience.estimatedDurationMin === undefined ||
+      experience.estimatedDurationMin <= JOURNEY_DURATION_MIN[context.duration]) &&
     (distanceM === null || distanceM <= MAX_DISTANCE_M[context.duration])
   );
 }
@@ -144,9 +147,10 @@ export function defaultSelection(
   let used = 0;
   for (const { experience } of suggestions) {
     if (selected.length >= DEFAULT_SELECTION_MAX) break;
-    if (selected.length > 0 && used + experience.estimatedDurationMin > available) continue;
+    const visitMin = experience.estimatedDurationMin ?? 0;
+    if (selected.length > 0 && used + visitMin > available) continue;
     selected.push(experience.id);
-    used += experience.estimatedDurationMin;
+    used += visitMin;
   }
   return selected;
 }

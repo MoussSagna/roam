@@ -117,8 +117,8 @@ created; the count does not depend on the number of favorites.
 ## Security
 
 - Identity from the session only; another user's favorites are never listed, removed or revealed.
-- **Rate limiting is still not implemented**: `POST /favorites` must be limited before any public deployment (the
-  authentication already protects every route; global rate limiting stays to do).
+- Rate-limited since API-11 ([`RATE_LIMITING.md`](RATE_LIMITING.md)): `POST` / `DELETE` count in the `mutation` tier, every route in the `client` and `ip`
+  tiers.
 
 ## Tests
 
@@ -137,4 +137,4 @@ created; the count does not depend on the number of favorites.
 - A per-experience check or `isFavorite` on experience responses (decide with the mobile integration).
 - Favorites of places or journeys (the mobile `FavoriteTarget` type; built favorites are experiences only — D-57).
 - Using favorites in recommendations.
-- Rate limiting; the mobile integration (the app's favorites are local state today).
+- The mobile integration (the app's favorites are local state today).

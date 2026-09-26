@@ -163,6 +163,7 @@
       "nearby": "Places near you",
       "forYou": "Picked for you"
     },
+    "forYouEmpty": "No ideas right now. Check back a little later.",
     "moods": {
       "calm": "Calm",
       "food": "Food",
@@ -410,7 +411,13 @@
       "coordinatesCopied": "Coordinates copied",
       "openError": "Couldn't open the app"
     },
-    "addToJourney": "Add to journey"
+    "addToJourney": "Add to journey",
+    "price": {
+      "free": "Free",
+      "range": "{min}–{max} {currency}",
+      "upTo": "Up to {max} {currency}",
+      "from": "From {min} {currency}"
+    }
   },
   "itinerary": {
     "title": "Your outing is ready",
@@ -668,6 +675,10 @@
     "resetSuccess": {
       "title": "Password updated!",
       "subtitle": "Your password has been reset.\nYou can now sign in."
+    },
+    "errors": {
+      "invalidCredentials": "Incorrect email or password.",
+      "emailTaken": "An account already exists with this email."
     }
   },
   "validation": {
@@ -682,7 +693,9 @@
     "network": "Check your connection and try again.",
     "location": "We couldn't get your location.",
     "recommendations": "We couldn't load recommendations.",
-    "feedback": "We couldn't send your feedback."
+    "feedback": "We couldn't send your feedback.",
+    "tooManyRequests": "Too many attempts. Please wait a moment before trying again.",
+    "sessionExpired": "Your session has expired. Please sign in again."
   },
   "journey": {
     "defaultTitle": "{mood} outing",

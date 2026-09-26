@@ -27,8 +27,11 @@ export type Experience = {
   categoryIds: string[];
   /** Ordered ids of the places it is made of. */
   placeIds: string[];
-  estimatedDurationMin: number;
-  estimatedBudget: BudgetRange;
+  /** Minutes. Unset when the catalog does not know it (API: `roam.estimatedDurationMin` null) — an
+   * unknown duration never excludes an experience (EXPERIENCE_CATALOG_API.md). */
+  estimatedDurationMin?: number;
+  /** Price bracket. Unset when no price is known (API: no price bounds) — unknown is not "free". */
+  estimatedBudget?: BudgetRange;
   coverImage?: ImageSourcePropType;
   /**
    * Discovery-card display fields (Home, sprint 5). Plain, already-formatted strings, like the rest

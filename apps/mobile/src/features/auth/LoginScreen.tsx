@@ -14,6 +14,8 @@ import {
 
 import { useAuth } from '@/auth';
 import { Button, FadeInUp, Screen, Text, TextField } from '@/components/ui';
+import { showToast } from '@/lib/toast';
+import { API_ERROR_CODES, errorMessageKey, isApiError } from '@/services';
 import { useTheme } from '@/theme';
 import { derived } from '@/theme/palette';
 import { fontFamily } from '@/theme/typography';
@@ -28,10 +30,10 @@ const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 type FormErrors = { email?: string; password?: string };
 
 /**
- * Login screen (design mockup "Authentification", tile 2 "Connexion") — front-end only. There is
- * no backend to check credentials against, so any well-formed, non-empty input "succeeds": the
- * screen validates locally, then `useAuth().login()` simulates the request and marks the mocked
- * session as active (`DECISIONS.md` D-31, and the sprint 3 mocked-auth-session pass).
+ * Login screen (design mockup "Authentification", tile 2 "Connexion"). The screen validates locally,
+ * then `useAuth().login()` signs in through `repositories.auth`: the ROAM API in API mode (wrong
+ * credentials → a field error), a simulated request that always succeeds in mock mode (`DECISIONS.md`
+ * D-31, DATA-8).
  */
 export function LoginScreen() {
   const { t } = useTranslation();
@@ -58,7 +60,18 @@ export function LoginScreen() {
   const handleSignIn = async () => {
     if (loading || !validate()) return;
     setLoading(true);
-    await login();
+    try {
+      await login({ email, password });
+    } catch (error) {
+      setLoading(false);
+      // Wrong email or password is the form's own error; anything else (offline, 429…) is a toast.
+      if (isApiError(error) && error.code === API_ERROR_CODES.invalidCredentials) {
+        setErrors({ password: t('auth.errors.invalidCredentials') });
+      } else {
+        showToast('error', { title: t(errorMessageKey(error)) });
+      }
+      return;
+    }
     setLoading(false);
     router.replace('/home');
   };

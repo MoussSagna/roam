@@ -1,15 +1,14 @@
 import { createRequire } from 'node:module';
 import { fileURLToPath } from 'node:url';
 
-import { PrismaPg } from '@prisma/adapter-pg';
-
+import { createPrismaAdapter } from '../../src/database/prisma-adapter.js';
 import { PrismaClient } from '../../src/generated/prisma/client.js';
 
 /** A Prisma client on the test database (set as DATABASE_URL by setup-env.ts). */
 export function createTestClient(): PrismaClient {
-  return new PrismaClient({
-    adapter: new PrismaPg({ connectionString: process.env.DATABASE_URL }),
-  });
+  const url = process.env.DATABASE_URL;
+  if (!url) throw new Error('DATABASE_URL is not set (test/database/setup-env.ts).');
+  return new PrismaClient({ adapter: createPrismaAdapter(url) });
 }
 
 /**

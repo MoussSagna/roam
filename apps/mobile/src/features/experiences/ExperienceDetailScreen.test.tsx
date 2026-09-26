@@ -2,6 +2,7 @@ import { act, fireEvent, screen, within } from '@testing-library/react-native';
 import { View } from 'react-native';
 
 import i18n from '@/i18n';
+import { ApiError, repositories } from '@/services';
 import { renderWithProviders } from '@/test/renderWithProviders';
 
 import { ExperienceDetailScreen } from './ExperienceDetailScreen';
@@ -188,6 +189,20 @@ describe('ExperienceDetailScreen (sprint 5)', () => {
     await renderDetail('does-not-exist');
 
     expect(screen.getByText('Cet écran arrive bientôt.')).toBeOnTheScreen();
+  });
+
+  it('a failed request (API mode) says why instead of "not found" or an endless loading', async () => {
+    const getById = jest
+      .spyOn(repositories.experiences, 'getById')
+      .mockRejectedValue(new ApiError({ status: 429, code: 'TOO_MANY_REQUESTS', message: '' }));
+
+    await renderDetail();
+
+    expect(
+      screen.getByText('Trop de tentatives. Patiente un peu avant de réessayer.'),
+    ).toBeOnTheScreen();
+    expect(screen.queryByText('Chargement…')).toBeNull();
+    getById.mockRestore();
   });
 
   describe('map block (D-73)', () => {

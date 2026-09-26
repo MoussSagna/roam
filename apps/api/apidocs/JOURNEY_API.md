@@ -198,8 +198,8 @@ The rules of the mobile `features/journey/lib/plan.ts`, ported as they are (JOUR
 - No route, query or body takes a user id. Another user's journey — read, edit, progress, complete — answers **404
   `NOT_FOUND`**, exactly like an unknown id (its existence is never disclosed); nothing is written. A `userId` in the
   query of the list is refused (400); on routes without a query DTO it is ignored, never read.
-- Signed-in only (global AuthGuard). **Rate limiting is still not implemented**: create, edit and progress must be
-  limited before any public deployment (as for the auth and recommendation endpoints).
+- Signed-in only (global AuthGuard). Rate-limited since API-11 ([`RATE_LIMITING.md`](RATE_LIMITING.md)): create, edit, progress and complete count in the
+  `mutation` tier.
 
 ## Pagination
 
@@ -264,5 +264,4 @@ steps; the experiences of all steps are one `findManyByIds` — no query per ste
   documented action); a "restart" of a completed journey (not a documented transition).
 - Server-side suggestions for the builder (the app uses its own rules; API-07 `/recommendations` exists).
 - Opening-hours validity of a plan, real routing — need an hours model and a routing provider.
-- Rate limiting (required before any public deployment).
 - The mobile integration (an API repository and the API → mobile adapter).

@@ -42,15 +42,17 @@ While a journey is active, the Parcours icon carries a small `accent` dot (`jour
 list in `(tabs)/_layout.tsx` in the order it should appear; replace the screen's placeholder body, not its
 route.
 
-## Mocked session and route protection
+## Session and route protection
 
-No backend yet, so "being signed in" is simulated end to end — see [`DECISIONS.md`](DECISIONS.md) for the
-full rationale. Summary:
+"Being signed in" goes through `repositories.auth` (DATA-8, [`MOBILE_API_INTEGRATION.md`](MOBILE_API_INTEGRATION.md),
+D-92): a real API session in API mode, the former simulation in mock mode. Summary:
 
 - **`isLoggedIn`** (`apps/mobile/src/auth/AuthContext.tsx`, `AuthProvider`/`useAuth`) is the single
-  source of truth. `login()`/`logout()` simulate a request (`repositories.auth`, ~900 ms delay) then
-  flip it; it is persisted (`apps/mobile/src/auth/session.ts`, reusing the theme/language storage
-  abstraction) so a restart returns to the same session.
+  source of truth. `login(credentials)`/`register(input)`/`logout()` call `repositories.auth` then
+  flip it. At startup `useBootstrap` asks `repositories.auth.restoreSession()` (API: the secure-store
+  token checked with `GET /auth/me`; mock: a persisted flag), so a restart returns to the same session.
+- **Session refused by the server (401)**: the token is forgotten, `isLoggedIn` flips to false, the app
+  replaces the screen with `/auth/login` and shows one toast — no retry, no loop.
 - **Public flow** (`isLoggedIn === false`): Welcome, the whole onboarding journey (mood → … → ready),
   and the whole `/auth/*` sub-flow (entry, login, register, forgot password, reset code, new
   password, reset success).
@@ -58,13 +60,12 @@ full rationale. Summary:
   `favorites`, still declared but out of the tab bar since D-81) and every screen pushed from them.
 - Both flows are declared once in `apps/mobile/src/features/navigation/AppRoutes.tsx`, gated with
   `Stack.Protected`, and reused by the app and its route tests alike.
-- **Becoming "signed in"**: Login, Register, and finishing onboarding ("Commencer") all call the
-  same `login()` — the brief behind this treats them as equally valid ways to enter the app for the
-  first time, matching what each already did (land on Home) before route protection existed.
+- **Becoming "signed in"**: Login (`login()`) and Register (`register()`). Finishing onboarding
+  ("Commencer") opens Register since DATA-8 (D-93) — it used to sign in directly.
 - **Logout**: `SettingsScreen`'s "Se déconnecter" (after a `ConfirmationModal`, D-62/D-63) calls `logout()`, then
   navigates to `/auth/login`.
 - **No way back once switched**: `Stack.Protected` removes the other flow's screens from history the
-  moment `isLoggedIn` flips (Login/Register/finish-onboarding → Home, or logout → Login) — the back
+  moment `isLoggedIn` flips (Login/Register → Home, or logout / expired session → Login) — the back
   button/gesture cannot reach them. Welcome specifically also can't be reached from the auth flow
   it leads into, even though both stay on the _public_ side of that guard (unaffected by
   `Stack.Protected`): choosing "Se connecter" from Welcome `replace`s it instead of pushing.

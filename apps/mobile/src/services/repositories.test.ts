@@ -37,3 +37,118 @@ describe('repositories (mock implementation)', () => {
     expect(again.title).not.toBe('mutated');
   });
 });
+
+describe('mock auth repository (DATA-8 contract)', () => {
+  beforeEach(() => {
+    jest.useFakeTimers();
+  });
+
+  afterEach(() => {
+    jest.useRealTimers();
+  });
+
+  it('keeps a "signed in" flag only — any credentials succeed — until logout', async () => {
+    await repositories.auth.logout();
+    await expect(repositories.auth.restoreSession()).resolves.toBe(false);
+
+    const login = repositories.auth.login({ email: 'any@thing.test', password: 'whatever' });
+    await jest.advanceTimersByTimeAsync(1000);
+    await login;
+    await expect(repositories.auth.restoreSession()).resolves.toBe(true);
+
+    await repositories.auth.logout();
+    await expect(repositories.auth.restoreSession()).resolves.toBe(false);
+  });
+
+  it('never stores a password or a token', async () => {
+    const AsyncStorage = jest.requireMock('@react-native-async-storage/async-storage');
+    const register = repositories.auth.register({
+      displayName: 'Léa',
+      email: 'lea@example.com',
+      password: 'secret123',
+    });
+    await jest.advanceTimersByTimeAsync(1000);
+    await register;
+
+    const keys: string[] = await AsyncStorage.getAllKeys();
+    const values: [string, string | null][] = await AsyncStorage.multiGet(keys);
+    expect(JSON.stringify(values)).not.toContain('secret123');
+    expect(keys.some((key) => /token/i.test(key))).toBe(false);
+  });
+
+  it('never reports an expired session', () => {
+    const unsubscribe = repositories.auth.onSessionExpired(jest.fn());
+    expect(typeof unsubscribe).toBe('function');
+  });
+});
+
+describe('mock favorite repository', () => {
+  it('is seeded from the mock flags, idempotent both ways', async () => {
+    const seeded = await repositories.favorites.listExperienceIds();
+    expect(seeded.length).toBeGreaterThan(0);
+
+    await repositories.favorites.add('exp-lake-hike');
+    await repositories.favorites.add('exp-lake-hike');
+    expect((await repositories.favorites.listExperienceIds())[0]).toBe('exp-lake-hike');
+    expect(
+      (await repositories.favorites.listExperienceIds()).filter((id) => id === 'exp-lake-hike'),
+    ).toHaveLength(1);
+
+    await repositories.favorites.remove('exp-lake-hike');
+    await repositories.favorites.remove('exp-lake-hike');
+    expect(await repositories.favorites.listExperienceIds()).toEqual(seeded);
+  });
+});
+
+describe('mock recommendation repository (API-12)', () => {
+  it('is the pool Home computed before: pickForYou on the mood, four by default, no reasons', async () => {
+    const { pickForYou } = jest.requireActual<typeof import('@/features/home/lib/pickForYou')>(
+      '@/features/home/lib/pickForYou',
+    );
+    const pool = await repositories.experiences.list();
+
+    const result = await repositories.recommendations.recommend({ mood: 'festive' });
+
+    expect(result.relaxed).toEqual([]);
+    expect(result.items.map((item) => item.experience.id)).toEqual(
+      pickForYou(pool, 'festive').map((experience) => experience.id),
+    );
+    expect(result.items).toHaveLength(4);
+    expect(result.items.every((item) => item.reasons.length === 0)).toBe(true);
+  });
+
+  it('honours the limit and returns copies', async () => {
+    const first = await repositories.recommendations.recommend({ mood: 'calm', limit: 2 });
+    expect(first.items).toHaveLength(2);
+
+    first.items[0].experience.title = 'mutated';
+    const again = await repositories.recommendations.recommend({ mood: 'calm', limit: 2 });
+    expect(again.items[0].experience.title).not.toBe('mutated');
+  });
+});
+
+describe('createRepositories (the single source switch)', () => {
+  it('mock: the in-app pools; api: every API domain on the API, never the mocks', async () => {
+    const { createRepositories } = jest.requireActual<typeof import('./index')>('./index');
+
+    const mock = createRepositories({ source: 'mock' });
+    await expect(mock.experiences.getById('exp-jazz-night')).resolves.not.toBeNull();
+
+    const fetchSpy = jest.fn().mockRejectedValue(new TypeError('Network request failed'));
+    const originalFetch = globalThis.fetch;
+    globalThis.fetch = fetchSpy;
+    try {
+      const api = createRepositories({ source: 'api', apiUrl: 'http://api.test' });
+      // A failed API call is an error — not the mock data.
+      await expect(api.experiences.list()).rejects.toMatchObject({ code: 'NETWORK_ERROR' });
+      await expect(api.search.search('jazz')).rejects.toMatchObject({ code: 'NETWORK_ERROR' });
+      await expect(api.recommendations.recommend({})).rejects.toMatchObject({
+        code: 'NETWORK_ERROR',
+      });
+      expect(fetchSpy).toHaveBeenCalled();
+      expect(String(fetchSpy.mock.calls[0][0])).toMatch(/^http:\/\/api\.test\/api\/v1\//);
+    } finally {
+      globalThis.fetch = originalFetch;
+    }
+  });
+});

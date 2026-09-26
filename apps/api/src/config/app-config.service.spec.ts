@@ -40,6 +40,18 @@ describe('AppConfigService', () => {
     expect(config.cors.origins).toEqual([]);
   });
 
+  it('exposes the Google Places key only through providers (absent → undefined)', () => {
+    expect(configFor({}).providers.googlePlacesApiKey).toBeUndefined();
+    expect(configFor({ GOOGLE_PLACES_API_KEY: 'AIzaFAKE' }).providers.googlePlacesApiKey).toBe(
+      'AIzaFAKE',
+    );
+  });
+
+  it('exposes the Geoapify key only through providers (absent → undefined)', () => {
+    expect(configFor({}).providers.geoapifyApiKey).toBeUndefined();
+    expect(configFor({ GEOAPIFY_API_KEY: 'geoFAKE' }).providers.geoapifyApiKey).toBe('geoFAKE');
+  });
+
   it('explicit settings win over the environment defaults', () => {
     const config = configFor({
       NODE_ENV: 'production',

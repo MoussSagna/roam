@@ -7,8 +7,10 @@ Documentation of the **API / backend**. Start from
 
 `apps/api` is a NestJS 12 + Prisma 7 application: technical base (API-02, [`BACKEND_FOUNDATION.md`](BACKEND_FOUNDATION.md)),
 database schema (API-03), repositories (API-04), authentication (API-05), profile and preferences (API-06), experience
-catalog and recommendations (API-07), a catalog migrated from the mobile mock data (DATA-1), journeys (API-08), their feedback (API-09) and favorites (API-10) —
-[`API_IMPLEMENTATION_ROADMAP.md`](API_IMPLEMENTATION_ROADMAP.md). No provider is connected yet. The schema is migrated on a local PostgreSQL 18.6
+catalog and recommendations (API-07), a catalog migrated from the mobile mock data (DATA-1), journeys (API-08), their feedback (API-09) favorites (API-10) and rate limiting (API-11) —
+[`API_IMPLEMENTATION_ROADMAP.md`](API_IMPLEMENTATION_ROADMAP.md). The first provider adapter, Google Places (DATA-2,
+[`GOOGLE_PLACES_PROVIDER.md`](GOOGLE_PLACES_PROVIDER.md)), and the second, Geoapify (DATA-2.1,
+[`GEOAPIFY_PROVIDER.md`](GEOAPIFY_PROVIDER.md)), exist but are not connected to any endpoint or sync yet. The schema is migrated on a local PostgreSQL 18.6
 (`roam`) and tested on a dedicated test database (`roam_test`, `pnpm test:db`).
 
 The Data Foundation documents below are the target design of the data layer (how external data — Google Places,
@@ -43,11 +45,14 @@ deployment.
 | [`AUTHENTICATION.md`](AUTHENTICATION.md)                                               | Authentication: strategy, endpoints, sessions, password reset, validation, errors, security, mobile contract, deferred                          |
 | [`USER_PROFILE_AND_PREFERENCES.md`](USER_PROFILE_AND_PREFERENCES.md)                   | The signed-in user's profile and preferences: endpoints, validation, isolation, mobile contract, open preference decision                       |
 | [`EXPERIENCE_CATALOG_API.md`](EXPERIENCE_CATALOG_API.md)                               | Experience catalog and recommendations: endpoints, pagination, filters, facts vs. ROAM context, ranking, relaxation, mobile gaps                |
+| [`RATE_LIMITING.md`](RATE_LIMITING.md)                                                 | Rate limiting: tiers, keys, algorithm, in-memory store, 429 + Retry-After, configuration, limits                                                |
 | [`FAVORITES_API.md`](FAVORITES_API.md)                                                 | Favorites: endpoints, idempotence, inactive experiences, pagination, concurrency, errors, performance                                           |
 | [`JOURNEY_FEEDBACK_API.md`](JOURNEY_FEEDBACK_API.md)                                   | Journey feedback: rules, endpoints, rating/comment validation, one per journey, concurrency, errors                                             |
 | [`JOURNEY_API.md`](JOURNEY_API.md)                                                     | Journeys: lifecycle, endpoints, planning, validation, ownership, concurrency, errors, performance                                               |
-| [`API_IMPLEMENTATION_ROADMAP.md`](API_IMPLEMENTATION_ROADMAP.md)                       | API steps (API-01 → API-10 and DATA-1 done, next), deferred items, decisions                                                                    |
+| [`API_IMPLEMENTATION_ROADMAP.md`](API_IMPLEMENTATION_ROADMAP.md)                       | API steps (API-01 → API-11 and DATA-1 done, next), deferred items, decisions                                                                    |
 | [`DATA_1_MIGRATION_REPORT.md`](DATA_1_MIGRATION_REPORT.md)                             | DATA-1: mobile mock data → canonical catalog — sources, mapping, ids, idempotence, provenance, what is not migrated, verifications              |
+| [`GOOGLE_PLACES_PROVIDER.md`](GOOGLE_PLACES_PROVIDER.md)                               | DATA-2: provider contract, Google client/adapter, field mask, errors, mapping, identity, ownership, tests, real check                           |
+| [`GEOAPIFY_PROVIDER.md`](GEOAPIFY_PROVIDER.md)                                         | DATA-2.1: Geoapify client/adapter on the DATA-2 contract, OpenStreetMap identity, categories, limits, free plan, tests, real check              |
 | [`DATA_FOUNDATION.md`](DATA_FOUNDATION.md)                                             | Objective, pipeline (sources → adapters → normalization → enrichment → database/cache → engine → app), initial sources, MVP scope (Paris)       |
 | [`PROVIDER_ARCHITECTURE.md`](PROVIDER_ARCHITECTURE.md)                                 | Layers from the mobile app to provider adapters, adapter responsibilities, failures, secrets                                                    |
 | [`NORMALIZATION_AND_ENRICHMENT.md`](NORMALIZATION_AND_ENRICHMENT.md)                   | Pipeline, pricing normalization, enrichment enums, confidence, rule-based first version                                                         |

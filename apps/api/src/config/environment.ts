@@ -25,6 +25,12 @@ export enum LogLevel {
   Verbose = 'verbose',
 }
 
+/** A number from the environment, `fallback` when unset. */
+const positiveInt =
+  (fallback: number) =>
+  ({ value }: { value: unknown }) =>
+    value === undefined || value === '' ? fallback : Number(value);
+
 const emptyToUndefined = ({ value }: { value: unknown }) =>
   typeof value === 'string' && value.trim() === '' ? undefined : value;
 
@@ -65,12 +71,27 @@ export class EnvironmentVariables {
   @IsBoolean()
   SWAGGER_ENABLED?: boolean;
 
-  // Future providers (Data Foundation). Optional until their adapters exist.
+  // Providers (Data Foundation). Optional: the API starts without them; an adapter called without its key fails
+  // with ProviderConfigurationError before any request (GOOGLE_PLACES_PROVIDER.md, GEOAPIFY_PROVIDER.md).
+  /** Google Places API (New) key — backend only, restricted to that API. Never logged. */
   @Transform(emptyToUndefined)
   @IsOptional()
   @IsString()
+  @Matches(/^[\w-]+$/, {
+    message: 'GOOGLE_PLACES_API_KEY must be a single token (letters, digits, - or _)',
+  })
   GOOGLE_PLACES_API_KEY?: string;
 
+  /** Geoapify Places API key (GEOAPIFY_PROVIDER.md) — backend only. Never logged. */
+  @Transform(emptyToUndefined)
+  @IsOptional()
+  @IsString()
+  @Matches(/^[\w-]+$/, {
+    message: 'GEOAPIFY_API_KEY must be a single token (letters, digits, - or _)',
+  })
+  GEOAPIFY_API_KEY?: string;
+
+  // Future provider (DATA-3). Optional until its adapter exists.
   @Transform(emptyToUndefined)
   @IsOptional()
   @IsString()
@@ -82,6 +103,66 @@ export class EnvironmentVariables {
   @Min(1)
   @Max(365)
   AUTH_SESSION_TTL_DAYS = 30;
+
+  // Rate limiting (RATE_LIMITING.md). Limits are counted per process (in-memory store).
+  /** Master switch; on by default in every environment (tests use high limits instead of turning it off). */
+  @Transform(({ value }) => (value === undefined || value === '' ? true : value === 'true'))
+  @IsBoolean()
+  RATE_LIMIT_ENABLED = true;
+
+  /** Every request, per client IP: a coarse ceiling (also caps clients that rotate fake tokens). */
+  @Transform(positiveInt(300))
+  @IsInt()
+  @Min(1)
+  RATE_LIMIT_IP_LIMIT = 300;
+
+  @Transform(positiveInt(60))
+  @IsInt()
+  @Min(1)
+  RATE_LIMIT_IP_TTL_SECONDS = 60;
+
+  /** Every request, per session (bearer token) or, without one, per IP. */
+  @Transform(positiveInt(120))
+  @IsInt()
+  @Min(1)
+  RATE_LIMIT_CLIENT_LIMIT = 120;
+
+  @Transform(positiveInt(60))
+  @IsInt()
+  @Min(1)
+  RATE_LIMIT_CLIENT_TTL_SECONDS = 60;
+
+  /** Login, register and password reset, together, per IP: brute force and enumeration guard. */
+  @Transform(positiveInt(10))
+  @IsInt()
+  @Min(1)
+  RATE_LIMIT_AUTH_LIMIT = 10;
+
+  @Transform(positiveInt(900))
+  @IsInt()
+  @Min(1)
+  RATE_LIMIT_AUTH_TTL_SECONDS = 900;
+
+  /** Writes (POST, PATCH, PUT, DELETE) outside the auth routes, per session or IP. */
+  @Transform(positiveInt(30))
+  @IsInt()
+  @Min(1)
+  RATE_LIMIT_MUTATION_LIMIT = 30;
+
+  @Transform(positiveInt(60))
+  @IsInt()
+  @Min(1)
+  RATE_LIMIT_MUTATION_TTL_SECONDS = 60;
+
+  /**
+   * Reverse proxies in front of the API whose `X-Forwarded-For` is trusted (Express `trust proxy`, number of hops).
+   * 0 (default): the client IP is the TCP peer — a client cannot pick its IP by sending the header.
+   */
+  @Transform(({ value }) => (value === undefined || value === '' ? 0 : Number(value)))
+  @IsInt()
+  @Min(0)
+  @Max(10)
+  TRUST_PROXY = 0;
 }
 
 /**

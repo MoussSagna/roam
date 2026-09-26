@@ -20,7 +20,16 @@ In the Expo terminal: `i` opens the iOS simulator, `a` the Android emulator, or 
 with Expo Go. `pnpm mobile:ios` / `pnpm mobile:android` start Expo and open the platform directly.
 
 > If Expo Go does not support the SDK version or a native module added later, use a development
-> build instead (`npx expo run:ios|android`, needs Xcode / Android Studio).
+> build instead (`npx expo run:ios|android`, needs Xcode / Android Studio). `expo-secure-store` (DATA-8) is such a
+> native module: rebuild the development client once.
+
+### Data source (mock or API)
+
+The app runs on its mock data by default. To use the ROAM API, copy `apps/mobile/.env.example` to `apps/mobile/.env`
+(never committed) and set `EXPO_PUBLIC_DATA_SOURCE=api` and `EXPO_PUBLIC_API_URL` (the API origin: `localhost` on the iOS
+simulator, `10.0.2.2` on the Android emulator, the computer's LAN IP on a phone), start the API
+(`apps/api/apidocs/BACKEND_FOUNDATION.md`), then `pnpm mobile:start --clear`. Details and validation:
+[`MOBILE_API_INTEGRATION.md`](MOBILE_API_INTEGRATION.md).
 
 ## Commands
 
@@ -72,8 +81,10 @@ apps/mobile/
     │   └── recommendations, outing, feedback
     ├── hooks/               # Cross-feature hooks (useBootstrap, useReduceMotion, useCtaVisibility, useCurrentLocation)
     ├── i18n/                # i18next setup + locales/fr.json, locales/en.json
+    ├── auth/                # AuthProvider / useAuth: isLoggedIn over repositories.auth
     ├── lib/                 # Small framework-agnostic helpers (storage, cx, toast)
-    ├── services/            # Data access: repository interfaces + mock implementation
+    ├── config/              # dataSource.ts: EXPO_PUBLIC_DATA_SOURCE / EXPO_PUBLIC_API_URL (DATA-8)
+    ├── services/            # Data access: repository interfaces + mock/ and api/ implementations (DATA-8)
     ├── theme/               # Tokens, palette, typography, ThemeProvider
     ├── types/               # Domain types (User, Place, Experience, Itinerary…)
     ├── constants/
@@ -90,5 +101,11 @@ Path alias: `@/` → `src/` (TypeScript, Jest and Metro).
   dependency of `apps/mobile` (pnpm's strict resolution).
 - **`ERR_PNPM_IGNORED_BUILDS`:** pnpm ≥ 10 blocks dependency build scripts; decisions are recorded in
   `pnpm-workspace.yaml` (`allowBuilds`).
+- **`No such file or directory: …/Mouss` during `expo run:ios`:** an iOS build script split the project path on a
+  space. The fixes are the pnpm patches (`patches/`) and `plugins/withQuotedBundleScript.js` (D-97): run `pnpm install`,
+  then `pnpm exec expo prebuild --platform ios` so CocoaPods and the Xcode project pick them up.
+- **iOS app closes right after the launch screen (`_UIApplicationEvaluateRuntimeIssueForNoSceneLifecycleAdoption` in
+  the crash report):** the iOS 27 SDK requires the scene life cycle, added by `plugins/withIOSSceneLifecycle.js` (D-98).
+  Run `pnpm exec expo prebuild --platform ios` so `SceneDelegate.swift` and the scene manifest are generated.
 - **Peer dependency warnings from `pnpm install`:** `react-reconciler` (via the testing library) and
   `@react-native/metro-config` are transitive and pinned by Expo SDK 57; nothing to act on today.

@@ -96,7 +96,7 @@ with Prisma directly (inside `src/database/`, where the Prisma boundary allows i
 | --------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | `UserRepository`            | `findById`, `findByEmail`, `create` (optionally with a password hash), `findCredentialsByEmail` (login only), `updateProfile`, `findPreference`, `savePreference` (upsert)                                                     |
 | `ExperienceRepository`      | `findById` (with places), `findManyByIds` (in the given order), `listActive(filter, page)` — filters `city`, `categorySlug`, `maxPrice`, `text`, `area` (API-07) —, `findCandidates(filter, max)` (API-07), `create`, `update` |
-| `PlaceRepository`           | `findById`, `findBySource(providerKey, externalId)`, `create` (categories + source), `update`                                                                                                                                  |
+| `PlaceRepository`           | `findById`, `findBySource(providerKey, externalId)`, `create` (categories + source), `update`, `updateFromSource` (facts + provenance refresh, DATA-2)                                                                         |
 | `EventRepository`           | `findById`, `findBySource`, `listUpcoming({ from, to }, page)`, `create`, `update`                                                                                                                                             |
 | `CategoryRepository`        | `list`                                                                                                                                                                                                                         |
 | `JourneyRepository`         | `findById`, `findActiveByUserId`, `listCompletedByUserId(page)`, `create`, `replaceSteps`, `updateProgress`, `complete` — the last three optionally conditioned on `expectedCurrentStep` (API-08)                              |
@@ -104,7 +104,7 @@ with Prisma directly (inside `src/database/`, where the Prisma boundary allows i
 | `FavoriteRepository`        | `add`, `remove`, `isFavorite`, `listByUserId(page)`                                                                                                                                                                            |
 
 Only what a documented flow needs. Not added on purpose: deletes of catalog records (they are deactivated —
-DATABASE_SCHEMA.md), user deletion (no account deletion flow yet), provider upsert/refresh bookkeeping (DATA-6),
+DATABASE_SCHEMA.md), user deletion (no account deletion flow yet), sync bookkeeping (TTLs, deactivation of records no longer found — DATA-6; the per-record refresh `updateFromSource` came with DATA-2),
 enrichment writes (DATA-5), recommendation queries (DATA-7).
 
 **Journey edits.** The mobile store edits a journey in several ways (add, remove, move a step, reorder — then replans

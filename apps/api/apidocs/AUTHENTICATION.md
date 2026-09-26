@@ -3,7 +3,8 @@
 Accounts and sessions of the ROAM backend (task API-05): register, login, authenticated requests, logout, password
 reset. Built on the foundation ([`BACKEND_FOUNDATION.md`](BACKEND_FOUNDATION.md)), the data model
 ([`DATABASE_SCHEMA.md`](DATABASE_SCHEMA.md)) and the repositories ([`REPOSITORY_ARCHITECTURE.md`](REPOSITORY_ARCHITECTURE.md)).
-The mobile app still runs on its mocked session; this document is the contract that will replace it.
+Since DATA-8 the mobile app uses this contract in API mode (`apps/mobile/mobiledocs/MOBILE_API_INTEGRATION.md`); its
+mock mode keeps the simulated session.
 
 ## Starting point (audit)
 
@@ -174,10 +175,11 @@ less.
 - **Never logged or returned:** passwords, tokens (except the new one, once, to its owner), codes, hashes. The request
   log has no bodies or headers; validation errors never echo values. Checked in tests (logs of a full run, responses).
 - **Enumeration:** login and reset give the same answer and similar timing for unknown accounts; register must say an
-  email is taken (usual trade-off; mitigated by rate limiting later).
-- **Brute force — not rate-limited yet.** Argon2id makes each guess cost ~20 ms of CPU, reset codes are capped at 5
-  attempts, but nothing limits login attempts per account or per IP. Planned: `@nestjs/throttler` on
-  `/auth/login`, `/auth/register`, `/auth/password/*` (the API-02 rate-limiting point), before any public deployment.
+  email is taken (usual trade-off; mitigated by rate limiting — API-11).
+- **Brute force — rate-limited since API-11** ([`RATE_LIMITING.md`](RATE_LIMITING.md)): `/auth/login`, `/auth/register` and `/auth/password/*` share
+  one budget per IP (default 10 per 15 minutes, then blocked 15 minutes), on top of Argon2id's ~20 ms per guess and the
+  5-attempt reset codes. Keyed by IP, never by email: no lock-out of a victim's account, and the 429 is the same whether
+  the account exists or not. Counters are per process (one instance).
 - **Transport:** HTTPS is required in production (bearer tokens); CORS unchanged (no cookies, so no CSRF surface);
   helmet headers unchanged.
 - **Token handling on the device:** store it in `expo-secure-store`, never in AsyncStorage; drop it on 401 and on logout.
@@ -224,14 +226,14 @@ password for a future social sign-in), `auth_sessions`, `password_reset_codes`; 
   HTTP (`test/auth.e2e.spec.ts`: responses, validation of every body, protected `/me`, idempotent logout, public health
   and docs, OpenAPI).
 - **PostgreSQL** (`pnpm test:db`, `test/database/auth.db-spec.ts`, on `roam_test` only): the whole flow over HTTP
-  (register → me → logout → token refused; login; expired session), hashes actually stored, duplicate emails in any
-  case and **concurrent registrations**, identical login failures, reset (code hashed, verify, reset, sessions revoked,
-  old password refused, no replay), attempt limit, expired and replaced codes, cascades — and no password or hash in
-  the logs of the run.
+  (register → me → logout → token refused; login; expired session, including expiries written by PostgreSQL itself
+  — 1 s, 1 min, 3 h ago — and the strict `expiresAt > now` boundary; the connection runs in UTC), hashes actually
+  stored, duplicate emails in any case and **concurrent registrations**, identical login failures, reset (code hashed,
+  verify, reset, sessions revoked, old password refused, no replay), attempt limit, expired (also by the database clock)
+  and replaced codes, cascades — and no password or hash in the logs of the run.
 
 ## Deferred
 
-- Rate limiting of the auth endpoints (see "Security").
 - An email provider for reset codes (and email verification at sign-up, not specified).
 - Google / Apple sign-in (the mobile buttons are visual only; `passwordHash` is nullable for it).
 - Sliding session renewal, "sign out everywhere" endpoint, listing devices; periodic cleanup of expired

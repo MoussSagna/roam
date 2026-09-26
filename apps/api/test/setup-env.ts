@@ -8,6 +8,18 @@ process.env.CORS_ORIGINS = 'http://localhost:8081';
 delete process.env.PORT;
 delete process.env.LOG_LEVEL;
 delete process.env.SWAGGER_ENABLED;
+// Tests never hold a real provider key (testDatabaseUrl() loads apps/api/.env into the environment): a suite that
+// needs one sets a fictional value itself. No test calls a provider.
+delete process.env.GOOGLE_PLACES_API_KEY;
+delete process.env.GEOAPIFY_API_KEY;
+delete process.env.TICKETMASTER_API_KEY;
+
+// Rate limiting stays on in the tests, with limits no suite reaches: every request of a test file comes from one IP
+// (127.0.0.1). test/rate-limit.e2e.spec.ts sets low limits to test the mechanism itself.
+process.env.RATE_LIMIT_ENABLED = 'true';
+for (const tier of ['IP', 'CLIENT', 'AUTH', 'MUTATION'])
+  process.env[`RATE_LIMIT_${tier}_LIMIT`] = '100000';
+delete process.env.TRUST_PROXY;
 
 // No keep-alive for the HTTP tests' requests (supertest uses Node's global agent, keep-alive by default since Node 19).
 // Supertest starts a server per request and closes it; a kept-alive socket outlives that server, and the worker process

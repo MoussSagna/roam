@@ -1,6 +1,5 @@
-import { PrismaPg } from '@prisma/adapter-pg';
-
 import { PrismaClient } from '../../generated/prisma/client.js';
+import { createPrismaAdapter } from '../prisma-adapter.js';
 import { buildCatalogPlan } from './catalog-plan.js';
 import { seedCatalog } from './catalog-seed.js';
 import { MOBILE_MOCK_CATALOG } from './mobile-mock-catalog.js';
@@ -19,7 +18,7 @@ async function main(): Promise<void> {
   const url = process.env.DATABASE_URL;
   if (!url) throw new Error('DATABASE_URL is not set (see apps/api/.env.example).');
 
-  const prisma = new PrismaClient({ adapter: new PrismaPg({ connectionString: url }) });
+  const prisma = new PrismaClient({ adapter: createPrismaAdapter(url) });
   try {
     const [{ name }] = await prisma.$queryRaw<
       [{ name: string }]

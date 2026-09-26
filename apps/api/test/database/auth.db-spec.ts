@@ -7,6 +7,8 @@ import { AppModule } from '../../src/app.module.js';
 import { configureApp } from '../../src/bootstrap/configure-app.js';
 import type { ErrorResponseBody } from '../../src/common/errors/api-error.js';
 import type { PrismaClient } from '../../src/generated/prisma/client.js';
+import { PrismaService } from '../../src/database/prisma.service.js';
+import { AuthSessionRepository } from '../../src/modules/auth/auth-session.repository.js';
 import { RESET_CODE_MAX_ATTEMPTS } from '../../src/modules/auth/auth.service.js';
 import { PasswordResetDelivery } from '../../src/modules/auth/password-reset-delivery.js';
 import { hashSessionToken } from '../../src/modules/auth/session-token.js';
@@ -146,6 +148,43 @@ describe('authentication on PostgreSQL', () => {
     expect(errorCode(response.body)).toBe('AUTH_SESSION_INVALID');
   });
 
+  // Expiries written by PostgreSQL itself (`now()`), not through Prisma: a Prisma write and a Prisma read shifted by
+  // the same time zone offset would cancel out and hide the bug (the test above could not see it).
+  it.each([
+    ['10 minutes ahead', 200, "+ interval '10 minutes'"],
+    ['1 second ago', 401, "- interval '1 second'"],
+    ['1 minute ago', 401, "- interval '1 minute'"],
+    ['3 hours ago', 401, "- interval '3 hours'"],
+  ])('a session expiring %s (database clock) → %i', async (_, status, offset) => {
+    const { session } = ((await register()).body as SignedIn).data;
+    await db.$executeRawUnsafe(`UPDATE auth_sessions SET "expiresAt" = now() ${offset}`);
+
+    const response = await http().get('/api/v1/auth/me').set(bearer(session.token)).expect(status);
+    if (status === 401) expect(errorCode(response.body)).toBe('AUTH_SESSION_INVALID');
+  });
+
+  it('a session is valid strictly before its expiry instant', async () => {
+    const { session } = ((await register()).body as SignedIn).data;
+    const expiresAt = new Date('2026-06-15T12:00:00.000Z');
+    await db.authSession.updateMany({ data: { expiresAt } });
+    const sessions = app.get(AuthSessionRepository);
+    const tokenHash = hashSessionToken(session.token);
+
+    expect(await sessions.findValid(tokenHash, new Date(expiresAt.getTime() - 1))).not.toBeNull();
+    expect(await sessions.findValid(tokenHash, expiresAt)).toBeNull();
+    expect(await sessions.findValid(tokenHash, new Date(expiresAt.getTime() + 1))).toBeNull();
+  });
+
+  it('the application compares instants in UTC, whatever the server time zone', async () => {
+    const prisma = app.get(PrismaService);
+    const sent = new Date();
+    const [row] = await prisma.$queryRaw<[{ timeZone: string; driftSeconds: number }]>`
+      SELECT current_setting('TimeZone') AS "timeZone",
+             extract(epoch FROM (${sent}::timestamptz - now()))::float8 AS "driftSeconds"`;
+    expect(row.timeZone).toBe('UTC');
+    expect(Math.abs(row.driftSeconds)).toBeLessThan(5);
+  });
+
   it('password reset: code → verify → new password; every session revoked; old password refused', async () => {
     const { session } = ((await register()).body as SignedIn).data;
 
@@ -210,6 +249,23 @@ describe('authentication on PostgreSQL', () => {
       .post('/api/v1/auth/password/verify-code')
       .send({ email: 'lea@example.com', code })
       .expect(400);
+  });
+
+  it.each([
+    ['10 minutes ahead', 204, "+ interval '10 minutes'"],
+    ['1 minute ago', 400, "- interval '1 minute'"],
+  ])('a reset code expiring %s (database clock) → %i', async (_, status, offset) => {
+    await register();
+    await http()
+      .post('/api/v1/auth/password/forgot')
+      .send({ email: 'lea@example.com' })
+      .expect(202);
+    await db.$executeRawUnsafe(`UPDATE password_reset_codes SET "expiresAt" = now() ${offset}`);
+
+    await http()
+      .post('/api/v1/auth/password/verify-code')
+      .send({ email: 'lea@example.com', code: delivery.sent[0].code })
+      .expect(status);
   });
 
   it('an expired code is refused; a new request replaces it', async () => {
