@@ -67,9 +67,14 @@ export function SearchFiltersSheet({
   useEffect(() => {
     if (!visible) return;
     let active = true;
-    repositories.search.search(queryText, draft).then((results) => {
-      if (active) setResultCount(results.length);
-    });
+    repositories.search
+      .search(queryText, draft)
+      .then((results) => {
+        if (active) setResultCount(results.length);
+      })
+      .catch(() => {
+        // The preview count keeps its last value; the search itself reports the error.
+      });
     return () => {
       active = false;
     };

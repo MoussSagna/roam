@@ -161,4 +161,5 @@ request line with status 429. Never the token, the `Authorization` header, the I
 - No per-account throttling of logins (lock-out risk); per-IP only.
 - No distinction of failed vs. successful auth attempts: every call to an auth route counts.
 - No edge protection (WAF, CDN rate limiting) — outside the application.
-- The mobile app does not handle 429 yet (read `Retry-After`, show a message) — with the mobile integration.
+- The mobile app reads the 429 and `Retry-After` into a typed error and shows a message, without retrying (DATA-8,
+  `apps/mobile/mobiledocs/MOBILE_API_INTEGRATION.md`).

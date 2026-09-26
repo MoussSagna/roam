@@ -11,6 +11,14 @@ const BUDGET_RANK: Record<BudgetRange, number> = {
   '50plus': 4,
 };
 
+/** Bracket rank for a price sort; an unknown price (API experience without one) always sorts last. */
+function compareBudget(a: Experience, b: Experience, direction: 1 | -1): number {
+  if (a.estimatedBudget === undefined || b.estimatedBudget === undefined) {
+    return Number(a.estimatedBudget === undefined) - Number(b.estimatedBudget === undefined);
+  }
+  return direction * (BUDGET_RANK[a.estimatedBudget] - BUDGET_RANK[b.estimatedBudget]);
+}
+
 /**
  * Entirely local/mocked result ordering (sprint 8 §4): a pure transform of whatever
  * `SearchRepository.search()` already returned, same "no backend logic" spirit as
@@ -29,12 +37,8 @@ export function sortResults(results: readonly Experience[], sort: SearchSortOpti
     case 'topRated':
       return [...results].sort((a, b) => (b.rating ?? 0) - (a.rating ?? 0));
     case 'priceAsc':
-      return [...results].sort(
-        (a, b) => BUDGET_RANK[a.estimatedBudget] - BUDGET_RANK[b.estimatedBudget],
-      );
+      return [...results].sort((a, b) => compareBudget(a, b, 1));
     case 'priceDesc':
-      return [...results].sort(
-        (a, b) => BUDGET_RANK[b.estimatedBudget] - BUDGET_RANK[a.estimatedBudget],
-      );
+      return [...results].sort((a, b) => compareBudget(a, b, -1));
   }
 }

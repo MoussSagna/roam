@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useState } from 'react';
 
-import { repositories } from '@/services';
+import i18n from '@/i18n';
+import { showToast } from '@/lib/toast';
+import { errorMessageKey, repositories } from '@/services';
 import type { Experience, SearchFilters, SearchSuggestion } from '@/types';
 
 /** Waits for a pause in typing before asking for suggestions — a mocked repository resolves
@@ -37,11 +39,17 @@ export function useSearch() {
 
     let active = true;
     const timeout = setTimeout(() => {
-      repositories.search.suggest(queryText).then((suggestions) => {
-        if (active) {
-          setState((current) => ({ ...current, suggestions }));
-        }
-      });
+      repositories.search
+        .suggest(queryText)
+        .then((suggestions) => {
+          if (active) {
+            setState((current) => ({ ...current, suggestions }));
+          }
+        })
+        .catch(() => {
+          // Suggestions are a typing aid: a failed request simply shows none.
+          if (active) setState((current) => ({ ...current, suggestions: [] }));
+        });
     }, SUGGESTION_DEBOUNCE_MS);
 
     return () => {
@@ -54,11 +62,19 @@ export function useSearch() {
     if (!hasSubmitted) return;
 
     let active = true;
-    repositories.search.search(queryText, filters).then((results) => {
-      if (active) {
-        setState({ suggestions: [], results, isLoading: false });
-      }
-    });
+    repositories.search
+      .search(queryText, filters)
+      .then((results) => {
+        if (active) {
+          setState({ suggestions: [], results, isLoading: false });
+        }
+      })
+      .catch((error: unknown) => {
+        // A failed search (API mode) ends loading and says why; it is not shown as "no result".
+        if (!active) return;
+        setState({ suggestions: [], results: [], isLoading: false });
+        showToast('error', { title: i18n.t(errorMessageKey(error)) });
+      });
 
     return () => {
       active = false;

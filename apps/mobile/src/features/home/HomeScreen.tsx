@@ -12,10 +12,11 @@ import Animated, {
 } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { Chip, SearchBar, Text } from '@/components/ui';
+import { Button, Chip, SearchBar, Text } from '@/components/ui';
 import { useTabBarScrollHandler } from '@/features/navigation/TabBarCollapseContext';
 import { TAB_BAR_CLEARANCE } from '@/features/navigation/tabBarConfig';
 import { useScrollDirection } from '@/hooks/useScrollDirection';
+import { errorMessageKey } from '@/services';
 import { useTheme } from '@/theme';
 import type { Experience, Mood } from '@/types';
 
@@ -27,6 +28,7 @@ import { SectionHeader } from './components/SectionHeader';
 import { HOME_MOODS } from './data/moods';
 import { NEARBY_CATEGORIES } from './data/nearbyCategories';
 import { getHeroHeight } from './lib/heroHeight';
+import { pickHeroExperiences, pickPopularExperiences } from './lib/pickFeatured';
 import { pickForYou } from './lib/pickForYou';
 import { useFavoriteExperienceIds } from './useFavoriteExperienceIds';
 import { useHomeExperiences } from './useHomeExperiences';
@@ -112,18 +114,12 @@ export function HomeScreen() {
     };
   });
 
-  const { experiences, isLoading } = useHomeExperiences();
+  const { experiences, isLoading, error, retry } = useHomeExperiences();
   const { favoriteIds, toggleFavorite } = useFavoriteExperienceIds(experiences);
   const [selectedMood, setSelectedMood] = useState<Mood>(DEFAULT_MOOD);
 
-  const heroExperiences = useMemo(
-    () => experiences.filter((experience) => experience.isHero),
-    [experiences],
-  );
-  const popularExperiences = useMemo(
-    () => experiences.filter((experience) => experience.isPopular),
-    [experiences],
-  );
+  const heroExperiences = useMemo(() => pickHeroExperiences(experiences), [experiences]);
+  const popularExperiences = useMemo(() => pickPopularExperiences(experiences), [experiences]);
   const forYouExperiences = useMemo(
     () => pickForYou(experiences, selectedMood),
     [experiences, selectedMood],
@@ -158,6 +154,17 @@ export function HomeScreen() {
         <Text variant="body" tone="secondary">
           {t('common.loading')}
         </Text>
+      </View>
+    );
+  }
+
+  if (error) {
+    return (
+      <View className="flex-1 items-center justify-center gap-4 bg-background px-6">
+        <Text variant="body" tone="secondary" className="text-center">
+          {t(errorMessageKey(error))}
+        </Text>
+        <Button label={t('common.retry')} onPress={retry} />
       </View>
     );
   }

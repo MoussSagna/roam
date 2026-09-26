@@ -3,7 +3,8 @@
 Accounts and sessions of the ROAM backend (task API-05): register, login, authenticated requests, logout, password
 reset. Built on the foundation ([`BACKEND_FOUNDATION.md`](BACKEND_FOUNDATION.md)), the data model
 ([`DATABASE_SCHEMA.md`](DATABASE_SCHEMA.md)) and the repositories ([`REPOSITORY_ARCHITECTURE.md`](REPOSITORY_ARCHITECTURE.md)).
-The mobile app still runs on its mocked session; this document is the contract that will replace it.
+Since DATA-8 the mobile app uses this contract in API mode (`apps/mobile/mobiledocs/MOBILE_API_INTEGRATION.md`); its
+mock mode keeps the simulated session.
 
 ## Starting point (audit)
 

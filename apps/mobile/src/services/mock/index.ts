@@ -1,13 +1,17 @@
 import type { Repositories } from '../repositories/types';
 
 import { createMockAuthRepository } from './auth';
+import { createMockFavoriteRepository } from './favorites';
 import { createMockJourneyRepository } from './journey';
 import { createMockJourneyFeedbackRepository } from './journeyFeedback';
 import { categories, collections, experiences, places } from './data';
 import { createMockSearchRepository } from './search';
 import { createMockUserRepository } from './user';
 
-/** In-memory implementation used until the backend exists. Returns copies, like a real API would. */
+/**
+ * Mock mode (`EXPO_PUBLIC_DATA_SOURCE=mock`, the default): the in-app pools, for offline development and
+ * the UI/component tests. Returns copies, like a real API would.
+ */
 export function createMockRepositories(): Repositories {
   return {
     categories: {
@@ -28,6 +32,7 @@ export function createMockRepositories(): Repositories {
     },
     auth: createMockAuthRepository(),
     users: createMockUserRepository(),
+    favorites: createMockFavoriteRepository(experiences),
     search: createMockSearchRepository(experiences, categories),
     journeys: createMockJourneyRepository(),
     journeyFeedback: createMockJourneyFeedbackRepository(),

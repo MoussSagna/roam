@@ -12,12 +12,13 @@ Implementation of the onboarding flow in the mobile app. The product intent of e
 | 1    | `/welcome`                                                          | Welcome               | Photo collage; no pagination dots (`PageDots` removed on purpose, do not re-add)                                                                                                                         |
 | 2–6  | `/onboarding/mood` (also `time`, `budget`, `location`, `interests`) | Questions (one pager) | Slides of `OnboardingPager` between a fixed "Passer" and a fixed footer (animated bars, "Suivant"), D-87/D-88; an answer is required to move on (button and swipe); answers held by the pager, not saved |
 | 7    | `/onboarding/profile-creation`                                      | Profile creation      | **Front-end simulation, about 10 s**, no button, moves on by itself (Moti)                                                                                                                               |
-| 8    | `/onboarding/ready`                                                 | "Prêt à explorer ?"   | Reached after the simulation; "Commencer" enters the app                                                                                                                                                 |
+| 8    | `/onboarding/ready`                                                 | "Prêt à explorer ?"   | Reached after the simulation; "Commencer" opens Register (D-93)                                                                                                                                          |
 | —    | `/home`                                                             | Home                  | End of the journey, now the first tab of the main navigation                                                                                                                                             |
 
 The order and the routes live in `features/onboarding/onboardingFlow.ts`; the questions are one horizontal `FlatList`
-(`OnboardingPager`, `PAGER_STEPS`) on `/onboarding/mood`; the other question routes redirect to it. "Passer" jumps to `ready`; "Commencer" and the
-profile creation use `router.replace`. Details: [`DECISIONS.md`](../DECISIONS.md) D-19 to D-28, D-87, D-88.
+(`OnboardingPager`, `PAGER_STEPS`) on `/onboarding/mood`; the other question routes redirect to it. "Passer" jumps to `ready`; the
+profile creation uses `router.replace`; "Commencer" pushes `/auth/register` (a real session needs an account, D-93 — it
+used to grant the mocked session). Details: [`DECISIONS.md`](../DECISIONS.md) D-19 to D-28, D-87, D-88, D-93.
 
 ## Question pager (D-87, D-88)
 

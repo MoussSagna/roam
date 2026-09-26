@@ -8,7 +8,7 @@ import { useExperience } from './useExperience';
 /** The main experience plus the "Suggestions similaires" it points to, resolved through the same
  * repository (`similarExperienceIds` -> `getById`, not a second list endpoint). */
 export function useExperienceDetail(id: string | undefined) {
-  const { experience, isLoading: isLoadingExperience } = useExperience(id);
+  const { experience, isLoading: isLoadingExperience, error } = useExperience(id);
   const [similarExperiences, setSimilarExperiences] = useState<Experience[]>([]);
   const [isLoadingSimilar, setIsLoadingSimilar] = useState(true);
 
@@ -17,14 +17,18 @@ export function useExperienceDetail(id: string | undefined) {
     if (isLoadingExperience) return;
     let active = true;
     const ids = experience?.similarExperienceIds ?? [];
-    void Promise.all(ids.map((similarId) => repositories.experiences.getById(similarId))).then(
-      (results) => {
-        if (active) {
-          setSimilarExperiences(results.filter((result): result is Experience => result !== null));
-          setIsLoadingSimilar(false);
-        }
-      },
-    );
+    Promise.all(ids.map((similarId) => repositories.experiences.getById(similarId)))
+      .then((results) => {
+        if (!active) return;
+        setSimilarExperiences(results.filter((result): result is Experience => result !== null));
+        setIsLoadingSimilar(false);
+      })
+      .catch(() => {
+        // Optional section: the experience itself still shows, without suggestions.
+        if (!active) return;
+        setSimilarExperiences([]);
+        setIsLoadingSimilar(false);
+      });
     return () => {
       active = false;
     };
@@ -33,6 +37,7 @@ export function useExperienceDetail(id: string | undefined) {
   return {
     experience,
     similarExperiences,
+    error,
     isLoading: isLoadingExperience || isLoadingSimilar,
   };
 }

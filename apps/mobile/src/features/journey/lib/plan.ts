@@ -98,6 +98,9 @@ export function buildPlan(
   let estimatedBudgetEur = 0;
 
   const steps = experiences.map((experience, order): JourneyStep => {
+    // An unknown duration or budget (possible for an API experience, DATA-8) adds nothing rather than a
+    // made-up amount; the journey migration will decide how to show it.
+    const visitMin = experience.estimatedDurationMin ?? 0;
     const leg = experience.coordinates
       ? estimateTravel(position, experience.coordinates)
       : { distanceM: 0, durationMin: 0, mode: 'walk' as const };
@@ -106,14 +109,14 @@ export function buildPlan(
       experienceId: experience.id,
       order,
       estimatedArrival: addMinutes(startTime, clock),
-      estimatedDurationMin: experience.estimatedDurationMin,
+      estimatedDurationMin: visitMin,
       travelDurationMin: leg.durationMin,
       travelDistanceM: leg.distanceM,
       travelMode: leg.mode,
     };
-    clock += experience.estimatedDurationMin;
+    clock += visitMin;
     totalDistanceM += leg.distanceM;
-    estimatedBudgetEur += BUDGET_EUR[experience.estimatedBudget];
+    estimatedBudgetEur += experience.estimatedBudget ? BUDGET_EUR[experience.estimatedBudget] : 0;
     if (experience.coordinates) position = experience.coordinates;
     return step;
   });

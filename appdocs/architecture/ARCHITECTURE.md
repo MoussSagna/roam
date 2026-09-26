@@ -175,7 +175,9 @@ journey feedback (API-09, `apps/api/apidocs/JOURNEY_FEEDBACK_API.md` — under `
 and the favorites (API-10, `apps/api/apidocs/FAVORITES_API.md` — `/favorites`), all behind a global rate limit
 (API-11, `apps/api/apidocs/RATE_LIMITING.md`)
 (`apps/api/apidocs/BACKEND_FOUNDATION.md`).
-The mobile app does not call it yet. No web app and no shared `packages/*` yet.
+The mobile app calls it since DATA-8 when built with `EXPO_PUBLIC_DATA_SOURCE=api` — authentication, the current user,
+the catalog and search; the other domains stay local for now (`apps/mobile/mobiledocs/MOBILE_API_INTEGRATION.md`). No
+web app and no shared `packages/*` yet.
 
 ```text
 roam/

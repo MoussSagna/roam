@@ -1,7 +1,5 @@
 import { useRouter, type Href } from 'expo-router';
 
-import { useAuth } from '@/auth';
-
 /**
  * Onboarding journey (design mockup, "Home Onboarding"):
  * Splash → welcome → mood → time → budget → location → interests → profile → ready → app.
@@ -46,8 +44,8 @@ export function nextStep(step: OnboardingStep): OnboardingStep | null {
   return ONBOARDING_STEPS[ONBOARDING_STEPS.indexOf(step) + 1] ?? null;
 }
 
-/** Where the journey ends: the app itself (the home screen is still a placeholder). */
-export const HOME_ROUTE = '/home';
+/** Where the journey ends: account creation, then the app (DATA-8). */
+export const REGISTER_ROUTE = '/auth/register';
 
 /**
  * "Suivant" goes to the next step, "Passer" jumps to the final "ready" screen, "Commencer" enters the app.
@@ -55,7 +53,6 @@ export const HOME_ROUTE = '/home';
  */
 export function useOnboardingNavigation(step: OnboardingStep) {
   const router = useRouter();
-  const { login } = useAuth();
 
   return {
     next: () => {
@@ -69,13 +66,13 @@ export function useOnboardingNavigation(step: OnboardingStep) {
     },
     skip: () => router.replace(ROUTES.ready as Href),
     /**
-     * Completing onboarding is this app's other "become a user" path, alongside Login/Register:
-     * it marks the mocked session active the same way, so the guarded `(tabs)` routes are reachable
-     * and Welcome/onboarding can't be reached again from the back button (sprint 3 §17).
+     * Completing onboarding leads to account creation (DATA-8): a real session needs credentials, so
+     * "Commencer" opens Register, which signs in and lands on Home — in API and mock mode alike. It used
+     * to grant the mocked session directly (sprint 3 §17), which only a simulated backend allowed.
+     * Pushed, not replaced: back returns to "Tout est prêt".
      */
     finish: async () => {
-      await login();
-      router.replace(HOME_ROUTE as Href);
+      router.push(REGISTER_ROUTE as Href);
     },
   };
 }

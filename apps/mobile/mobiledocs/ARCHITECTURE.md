@@ -3,9 +3,10 @@
 The shared, cross-application architecture (planned web and API, domains, provider boundary) is
 [`appdocs/architecture/ARCHITECTURE.md`](../../../appdocs/architecture/ARCHITECTURE.md). This document is the mobile app's own.
 
-Only the **mobile** application exists (the repository layout and what is not built yet are in
-[`appdocs/architecture/ARCHITECTURE.md`](../../../appdocs/architecture/ARCHITECTURE.md) → "Implementation status"). Mobile map: `react-native-maps` (sprint 7,
-[`DECISIONS.md`](DECISIONS.md) D-70) on mock data only — no Places/Directions API. Rationale for every choice: [`DECISIONS.md`](DECISIONS.md). Commands:
+The **mobile** application runs on its mock data or, since DATA-8, on the ROAM API
+([`MOBILE_API_INTEGRATION.md`](MOBILE_API_INTEGRATION.md)); the repository layout and what is not built yet are in
+[`appdocs/architecture/ARCHITECTURE.md`](../../../appdocs/architecture/ARCHITECTURE.md) → "Implementation status". Mobile map: `react-native-maps` (sprint 7,
+[`DECISIONS.md`](DECISIONS.md) D-70) on the experiences' own coordinates — no Places/Directions API. Rationale for every choice: [`DECISIONS.md`](DECISIONS.md). Commands:
 [`DEVELOPMENT.md`](DEVELOPMENT.md); conventions: [`CONVENTIONS.md`](CONVENTIONS.md).
 
 ## Mobile stack (installed)
@@ -19,6 +20,7 @@ Only the **mobile** application exists (the repository layout and what is not bu
 | Animation        | Moti on Reanimated + Worklets                                                                            | 0.30 on 4.5.1 / 0.10.1 |
 | i18n             | i18next + react-i18next                                                                                  | 26.4 / 17.0            |
 | Persistence      | `@react-native-async-storage/async-storage` (theme, language)                                            | 2.2.0                  |
+| Secure storage   | `expo-secure-store` — the API session token only (DATA-8, D-92)                                          | 57.0                   |
 | Fonts            | Plus Jakarta Sans + Inter (+ Newsreader, Mrs Saint Delafield for the mockups) via `@expo-google-fonts/*` | 0.4.x                  |
 | Icons            | `lucide-react-native` (one import per icon) + `react-native-svg`                                         | 1.47 / 15.15           |
 | Charts           | `react-native-gifted-charts` (donut chart only, sprint 5, [`DECISIONS.md`](DECISIONS.md) D-59)           | 1.4.78                 |
@@ -31,18 +33,21 @@ Only the **mobile** application exists (the repository layout and what is not bu
 | Lint / format    | ESLint 9 (`eslint-config-expo`) + Prettier                                                               | 9.39 / 3.9             |
 | Package manager  | pnpm workspaces                                                                                          | 12 (≥ 10 supported)    |
 
-## Data access (mock now, API later)
+## Data access (mock or API)
 
 ```text
-Screen → hook / service → Repository (interface) → mock implementation  (today)
-                                                 → API implementation   (later)
+Screen → hook / context → Repository (interface) → mock implementation   EXPO_PUBLIC_DATA_SOURCE=mock (default)
+                                                 → API implementation    EXPO_PUBLIC_DATA_SOURCE=api
+                                                     → adapters → ApiClient (the only fetch) → ROAM API /api/v1
 ```
 
-- Interfaces: `src/services/repositories/types.ts`. Mock: `src/services/mock/`.
-- `src/services/index.ts` exports `repositories`, the single place that picks the implementation.
+- Interfaces: `src/services/repositories/types.ts`. Mock: `src/services/mock/`. API: `src/services/api/` (client,
+  error model, secure session storage, DTOs, adapters, repositories).
+- `src/services/index.ts` exports `repositories`, the single place that picks the implementation, from
+  `src/config/dataSource.ts` — never per screen, never a fallback from one source to the other (D-91).
 - Screens and components import `repositories` (through a hook) — never a mock file, never `fetch`.
 - Add a repository interface when the feature that needs it is built.
-- The API implementation of the repositories comes with the backend (Phase C).
+- What is served by the API and what stays local, the error model, 401/429 handling: [`MOBILE_API_INTEGRATION.md`](MOBILE_API_INTEGRATION.md).
 
 ## Testing
 

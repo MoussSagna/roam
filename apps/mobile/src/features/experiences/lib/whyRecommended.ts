@@ -26,7 +26,7 @@ export function getWhyRecommended(experience: Experience): WhyReason[] {
   if (experience.moods.length > 0) {
     reasons.push('interests');
   }
-  if (IN_BUDGET.includes(experience.estimatedBudget)) {
+  if (experience.estimatedBudget && IN_BUDGET.includes(experience.estimatedBudget)) {
     reasons.push('budget');
   }
   if (parseDistanceMeters(experience.distanceLabel) <= NEARBY_METERS) {

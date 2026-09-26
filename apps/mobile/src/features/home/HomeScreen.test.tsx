@@ -2,6 +2,7 @@ import { act, fireEvent, screen, within } from '@testing-library/react-native';
 
 import { TabBarCollapseProvider } from '@/features/navigation/TabBarCollapseContext';
 import i18n from '@/i18n';
+import { ApiError, repositories } from '@/services';
 import { renderWithProviders } from '@/test/renderWithProviders';
 
 import { HomeScreen } from './HomeScreen';
@@ -208,5 +209,24 @@ describe('HomeScreen (sprint 5 — discovery)', () => {
     await fireEvent.scroll(homeScroll, { nativeEvent: { contentOffset: { y: 0 } } });
 
     expect(screen.getByRole('button', { name: 'Notifications' })).toBeOnTheScreen();
+  });
+
+  it('a failed load (API mode) shows why and retries — never an endless loading state', async () => {
+    const actualList = repositories.experiences.list;
+    const list = jest
+      .spyOn(repositories.experiences, 'list')
+      .mockRejectedValueOnce(new ApiError({ status: 0, code: 'NETWORK_ERROR', message: '' }))
+      .mockImplementation(actualList);
+
+    await renderHome();
+
+    expect(screen.getByText('Vérifie ta connexion puis réessaie.')).toBeOnTheScreen();
+    expect(screen.queryByText('Chargement…')).toBeNull();
+
+    await fireEvent.press(screen.getByRole('button', { name: 'Réessayer' }));
+
+    expect(list).toHaveBeenCalledTimes(2);
+    expect(screen.getByRole('header')).toHaveTextContent('Dîners avec vue');
+    list.mockRestore();
   });
 });

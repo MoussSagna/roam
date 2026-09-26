@@ -1,15 +1,16 @@
 import { useFonts } from 'expo-font';
 import { useEffect, useState } from 'react';
 
-import { getStoredSession } from '@/auth';
 import i18n, { getStoredLanguage } from '@/i18n';
+import { repositories } from '@/services';
 import { fontAssets, getStoredThemePreference, type ThemePreference } from '@/theme';
 
 type Bootstrap = {
   /** True once fonts and persisted preferences are loaded: safe to show the first screen. */
   ready: boolean;
   initialThemePreference: ThemePreference;
-  /** Restored mocked session: whether the splash should head to Home or Welcome. */
+  /** Restored session (`repositories.auth.restoreSession()`, API or mock): whether the splash should head
+   * to Home or Welcome. */
   initialIsLoggedIn: boolean;
 };
 
@@ -28,7 +29,7 @@ export function useBootstrap(): Bootstrap {
       const [storedTheme, storedLanguage, storedSession] = await Promise.all([
         getStoredThemePreference(),
         getStoredLanguage(),
-        getStoredSession(),
+        repositories.auth.restoreSession().catch(() => false),
       ]);
       if (storedLanguage) {
         await i18n.changeLanguage(storedLanguage);
