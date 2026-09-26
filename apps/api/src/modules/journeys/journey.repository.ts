@@ -142,16 +142,22 @@ export class JourneyRepository {
    * Replaces the steps of an ACTIVE journey and its plan, in one transaction: the conditional update locks
    * the journey row, so concurrent edits run one after the other and no half-replaced list is ever visible.
    * Any failure (unknown experience, duplicate experience) rolls everything back. `null` when the journey
-   * does not exist or is no longer ACTIVE.
+   * does not exist or is no longer ACTIVE — or, with `expectedCurrentStep`, no longer at that step (it progressed
+   * meanwhile).
    */
   replaceSteps(
     id: string,
-    change: { steps: JourneyStepInput[]; currentStep: number; plan: JourneyPlan },
+    change: {
+      steps: JourneyStepInput[];
+      currentStep: number;
+      plan: JourneyPlan;
+      expectedCurrentStep?: number;
+    },
   ): Promise<Journey | null> {
     return persist(() =>
       this.prisma.$transaction(async (tx) => {
         const { count } = await tx.journey.updateMany({
-          where: { id, status: 'ACTIVE' },
+          where: { id, status: 'ACTIVE', currentStep: change.expectedCurrentStep },
           data: { ...change.plan, currentStep: change.currentStep },
         });
         if (count === 0) return null;
@@ -166,20 +172,34 @@ export class JourneyRepository {
     );
   }
 
-  /** Moves the step in progress of an ACTIVE journey. `null` when it is not (or no longer) ACTIVE. */
-  updateProgress(id: string, currentStep: number): Promise<Journey | null> {
-    return this.updateActive(id, { currentStep });
+  /**
+   * Moves the step in progress of an ACTIVE journey. With `expectedCurrentStep`, only if the journey is still at that
+   * step (a concurrent progress or edit makes it `null`). `null` when it is not (or no longer) ACTIVE.
+   */
+  updateProgress(
+    id: string,
+    currentStep: number,
+    expectedCurrentStep?: number,
+  ): Promise<Journey | null> {
+    return this.updateActive(id, { currentStep }, expectedCurrentStep);
   }
 
-  /** ACTIVE → COMPLETED, once. `null` when the journey is not (or no longer) ACTIVE. */
-  complete(id: string, completedAt: Date): Promise<Journey | null> {
-    return this.updateActive(id, { status: 'COMPLETED', completedAt });
+  /**
+   * ACTIVE → COMPLETED, once. With `expectedCurrentStep`, only if the journey is still at that step. `null` when the
+   * journey is not (or no longer) ACTIVE.
+   */
+  complete(id: string, completedAt: Date, expectedCurrentStep?: number): Promise<Journey | null> {
+    return this.updateActive(id, { status: 'COMPLETED', completedAt }, expectedCurrentStep);
   }
 
-  private updateActive(id: string, data: Prisma.JourneyUpdateManyMutationInput) {
+  private updateActive(
+    id: string,
+    data: Prisma.JourneyUpdateManyMutationInput,
+    expectedCurrentStep?: number,
+  ) {
     return persist(async () => {
       const { count } = await this.prisma.journey.updateMany({
-        where: { id, status: 'ACTIVE' },
+        where: { id, status: 'ACTIVE', currentStep: expectedCurrentStep },
         data,
       });
       if (count === 0) return null;

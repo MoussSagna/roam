@@ -203,7 +203,10 @@ DTOs (`@ApiTags`, `@ApiOperation`, response decorators) when it is built.
 `pnpm --filter @roam/api test` — Vitest, **no PostgreSQL needed**:
 
 - `test/setup-env.ts` sets a deterministic environment (no `.env`; `DATABASE_URL` points at a closed port, so an
-  accidental connection fails fast);
+  accidental connection fails fast) and turns HTTP keep-alive off for the tests' requests (API-10): supertest starts a
+  server per request, and a kept-alive socket in Node's global agent — shared by the test files a worker process runs in
+  turn — could carry a later request to the previous file's application when the OS handed out the same port again (an
+  intermittent 401 instead of the expected answer);
 - unit tests next to the code: configuration validation and defaults, CORS, the error filter, the validation pipe,
   `PrismaService` lifecycle (its queries are mocked);
 - `test/app.e2e.spec.ts`: the whole `AppModule` with `configureApp`, `PrismaService` replaced by a mock, and a test-only

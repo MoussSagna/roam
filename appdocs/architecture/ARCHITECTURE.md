@@ -169,7 +169,10 @@ The **mobile** application is built (`apps/mobile`, see `apps/mobile/mobiledocs/
 health check and tests, its data model on PostgreSQL (API-03, `apps/api/apidocs/DATABASE_SCHEMA.md`) and its
 repositories (API-04, `apps/api/apidocs/REPOSITORY_ARCHITECTURE.md`), authentication (API-05) and the user's profile and
 preferences endpoints (API-06, `apps/api/apidocs/USER_PROFILE_AND_PREFERENCES.md`), the experience catalog and a first
-recommendation layer (API-07, `apps/api/apidocs/EXPERIENCE_CATALOG_API.md`); no journey endpoint yet
+recommendation layer (API-07, `apps/api/apidocs/EXPERIENCE_CATALOG_API.md`), the journey endpoints (API-08,
+`apps/api/apidocs/JOURNEY_API.md` — `/journeys`, the `/itineraries` example above predates the Journey name) and the
+journey feedback (API-09, `apps/api/apidocs/JOURNEY_FEEDBACK_API.md` — under `/journeys/:id/feedback`, not `/feedback`)
+and the favorites (API-10, `apps/api/apidocs/FAVORITES_API.md` — `/favorites`)
 (`apps/api/apidocs/BACKEND_FOUNDATION.md`).
 The mobile app does not call it yet. No web app and no shared `packages/*` yet.
 

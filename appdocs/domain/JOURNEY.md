@@ -7,7 +7,7 @@ steps, travel between them, total duration/budget/distance, edit, start the outi
 
 Source of truth for the rules below: the mobile types (`apps/mobile/src/types/journey.ts`) and store
 (`features/journey/journeyStore.ts`), and mobile [`DECISIONS.md`](../../apps/mobile/mobiledocs/DECISIONS.md) D-80 to D-86. Mobile screens and navigation:
-[`apps/mobile/mobiledocs/features/JOURNEY.md`](../../apps/mobile/mobiledocs/features/JOURNEY.md). The backend stores journeys (`Journey`, `JourneyStep`, API-03 — `apps/api/apidocs/DATABASE_SCHEMA.md`); no journey endpoint yet.
+[`apps/mobile/mobiledocs/features/JOURNEY.md`](../../apps/mobile/mobiledocs/features/JOURNEY.md). The backend stores journeys (`Journey`, `JourneyStep`, API-03 — `apps/api/apidocs/DATABASE_SCHEMA.md`) and serves them since API-08 with these rules, the server owning status, progress and plan ([`apps/api/apidocs/JOURNEY_API.md`](../../apps/api/apidocs/JOURNEY_API.md)); the mobile app still uses its local store.
 
 ## Model
 

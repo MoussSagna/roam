@@ -284,9 +284,98 @@ Mood, opening hours and preferences (API-07, unchanged), plus: budget brackets �
 collections/reviews/highlights, retired mocks — [`DATA_1_MIGRATION_REPORT.md`](DATA_1_MIGRATION_REPORT.md) → "Decisions
 still needed".
 
-## API-08 — next (to be defined)
+## API-08 — Journey API — **COMPLETED** (backend; mobile not wired)
 
-Likely candidates: journeys and journey feedback (the core loop, now that experiences are served), favorites, rate
-limiting, or the mobile integration (auth, profile, catalog — it needs an API → mobile `Experience` adapter). Open product decisions: above, plus
+Branch `api-08` (from `develop`, which holds API-02 → API-07 and DATA-1). Details: [`JOURNEY_API.md`](JOURNEY_API.md).
+
+Done:
+
+- `JourneysService` + `JourneysController` in the existing `journeys` module, on `JourneyRepository` and
+  `ExperienceRepository.findManyByIds` (no new repository, no new model, no Prisma change, no migration):
+  `GET /journeys/active` (`null` when none), `GET /journeys` (completed, most recent first, keyset pagination),
+  `GET /journeys/:id`, `POST /journeys` (the mobile draft → ACTIVE, started, step 0), `PATCH /journeys/:id` (replace the
+  steps), `POST /journeys/:id/progress` (next step only), `POST /journeys/:id/complete` (from the last step);
+- the server owns the owner, status, progress, timestamps and plan (the mobile `plan.ts` rules ported: legs, arrivals,
+  totals, bracket-based budget); server-controlled fields refused (400); another user's journey → 404;
+- experiences checked against the canonical catalog (unknown, inactive for a new step, without duration → 422);
+- one active journey per user, also under concurrency (partial unique index → 409); stale writes guarded by an optional
+  `expectedCurrentStep` on the repository's conditional updates;
+- measured: 9 SQL statements per request (session included) whatever the number of steps or journeys;
+- 4 new error codes: `JOURNEY_ALREADY_ACTIVE`, `JOURNEY_NOT_ACTIVE`, `JOURNEY_INVALID_STEP`,
+  `JOURNEY_EXPERIENCE_UNAVAILABLE`;
+- tests: 215 unit/HTTP tests (+35), 91 database tests (+7), run twice; the built API run through the whole flow on
+  `roam_test`.
+
+### Decisions taken
+
+- **No stored draft**: the brief's `DRAFT` state contradicts JOURNEY.md and the schema; the draft is the create body.
+- Paths `/api/v1/journeys…` (no document fixed them; ARCHITECTURE.md's `/itineraries` example predates the Journey name).
+- Progress moves to the next step only (repeating the current one is a no-op); completing is a separate call, allowed
+  from the last step only.
+- An inactive experience can stay in a journey that already has it, but cannot be added.
+- An experience without a known duration cannot be planned (422) rather than getting an invented duration.
+- A journey's budget: mobile bracket midpoints on the bracket read from the canonical price range; unknown price adds 0.
+
+## API-09 — Journey feedback API — **COMPLETED** (backend; mobile not wired)
+
+Branch `api-09` (from `develop`, which holds API-02 → API-08 and DATA-1). Details:
+[`JOURNEY_FEEDBACK_API.md`](JOURNEY_FEEDBACK_API.md).
+
+Done:
+
+- audit: the `JourneyFeedback` model (unique `journeyId`, CHECK 1–5, `varchar(300)` comment) and
+  `JourneyFeedbackRepository` already cover the contract — no Prisma change, no migration, no repository change;
+- `JourneyFeedbackService` + `JourneyFeedbackController` in the `journeys` module: `POST /journeys/:id/feedback`
+  (owner only, completed journeys only, 1–5 stars, comment trimmed / blank → null / ≤ 300) and
+  `GET /journeys/:id/feedback` (`null` when none); the API-08 ownership check shared (`findOwnedJourney`);
+- one per journey decided by the unique index (a repeat → 409 with the saved feedback); feedback racing the completion
+  is safe because COMPLETED is final;
+- measured: 5 SQL statements for POST and for GET (session included);
+- 2 new error codes: `JOURNEY_NOT_COMPLETED`, `JOURNEY_FEEDBACK_ALREADY_EXISTS`;
+- tests: 231 unit/HTTP tests (+16), 98 database tests (+7), run twice; the built API run through the flow on `roam_test`.
+
+### Decisions taken
+
+- No PATCH/DELETE (no document plans them; editing a feedback is an open product decision).
+- A repeated submission is 409 `JOURNEY_FEEDBACK_ALREADY_EXISTS` carrying the saved feedback (the mobile shows the recap).
+- "Passer" needs no endpoint (nothing is saved).
+- The author id is not returned.
+
+## API-10 — Favorites API — **COMPLETED** (backend; mobile not wired)
+
+Branch `api-10` (from `develop`, which holds API-02 → API-09 and DATA-1). Details: [`FAVORITES_API.md`](FAVORITES_API.md).
+
+Done:
+
+- **Test infrastructure first**: the intermittent HTTP test failure (a 401 instead of the expected answer, seen in
+  `catalog.e2e` and `journeys.e2e`, about 1 run in 15–30) came from supertest's per-request servers and Node's keep-alive
+  global agent shared across the test files of a worker; keep-alive is turned off in `test/setup-env.ts`. The 401 did not
+  come back in 80 full runs; a rarer timeout remains (see "Known issues");
+- audit: the `Favorite` model covers the contract — no Prisma change, no migration; `FavoriteRepository.add` fixed: under
+  concurrency its upsert (a read then an insert in Prisma) could fail on the unique key — it now returns the favorite
+  created meanwhile (5 concurrent adds: 5 × 201, one row; the API-04 test now races 5 adds);
+- `FavoritesService` + `FavoritesController` in the `favorites` module: `GET /favorites` (most recently saved first,
+  keyset pagination, each favorite with its experience), `POST /favorites` (idempotent, 201), `DELETE
+/favorites/:experienceId` (idempotent, 204); owner from the session only;
+- inactive experiences: kept in favorites (listed with `isActive: false`), not newly savable (422
+  `FAVORITE_EXPERIENCE_INACTIVE`); unknown → 404;
+- measured: GET 8 SQL statements whatever the number of favorites (1, 10, 14), POST 12, DELETE 3;
+- tests: 249 unit/HTTP tests (+18), 105 database tests (+7), run twice.
+
+### Decisions taken
+
+- No check endpoint: the app marks favorites from one set of ids (`GET /favorites`), not per experience.
+- POST answers 201 with the same favorite when it already exists; DELETE answers 204 either way.
+
+### Known issues
+
+- A rare timeout (a request or an Argon2 test exceeding 5 s) was still seen about once in 30–50 back-to-back full runs,
+  with and without the fix; its cause is not identified (CPU saturation during the loops is the likeliest). Not the
+  cross-application 401.
+
+## API-11 — next (to be defined)
+
+Likely candidates: rate limiting (required before any public deployment), or the mobile integration (auth, profile,
+catalog, journeys, feedback, favorites — it needs an API repository and an API → mobile adapter). Open product decisions: above, plus
 `appdocs/DOCUMENTATION_RESTRUCTURE_REPORT.md`, `DATABASE_SCHEMA.md` ("Consistency audit"), the preference shape
 (`USER_PROFILE_AND_PREFERENCES.md`).

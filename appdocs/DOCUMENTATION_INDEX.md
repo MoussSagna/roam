@@ -29,7 +29,7 @@ roam/
 
 The **mobile app** is a front-end prototype on mock data (onboarding, simulated authentication, Home, Discover, Search,
 maps, Experience detail, journeys, Profile/Settings). The **API** (NestJS + Prisma + PostgreSQL) serves authentication,
-profile/preferences, the experience catalog and recommendations, on a catalog migrated from the mobile mock data (DATA-1);
+profile/preferences, the experience catalog, recommendations, journeys, journey feedback and favorites, on a catalog migrated from the mobile mock data (DATA-1);
 no provider is connected and the mobile app does not call it yet. No web app. Details: [mobile README → Current state](../apps/mobile/mobiledocs/README.md#current-state-2026-09-25),
 [`ROADMAP.md`](ROADMAP.md).
 
@@ -59,6 +59,9 @@ no provider is connected and the mobile app does not call it yet. No web app. De
 | Builds, EAS Update, testers | [`mobiledocs/DEPLOYMENT.md`](../apps/mobile/mobiledocs/DEPLOYMENT.md) |
 | Database schema (Prisma models, constraints, deferred items) | [`apidocs/DATABASE_SCHEMA.md`](../apps/api/apidocs/DATABASE_SCHEMA.md) |
 | Backend experience catalog and recommendations (endpoints, filters, ranking, mobile gaps) | [`apidocs/EXPERIENCE_CATALOG_API.md`](../apps/api/apidocs/EXPERIENCE_CATALOG_API.md) |
+| Backend journeys (create, active, history, edit, progress, complete; ownership, planning) | [`apidocs/JOURNEY_API.md`](../apps/api/apidocs/JOURNEY_API.md) |
+| Backend favorites (save, list, remove experiences; idempotence, inactive experiences) | [`apidocs/FAVORITES_API.md`](../apps/api/apidocs/FAVORITES_API.md) |
+| Backend journey feedback (1–5 stars + comment, one per completed journey) | [`apidocs/JOURNEY_FEEDBACK_API.md`](../apps/api/apidocs/JOURNEY_FEEDBACK_API.md) |
 | How the mobile mock data became the backend catalog (DATA-1: mapping, provenance, what is not migrated) | [`apidocs/DATA_1_MIGRATION_REPORT.md`](../apps/api/apidocs/DATA_1_MIGRATION_REPORT.md) |
 | Backend user profile and preferences (endpoints, validation, mobile mapping) | [`apidocs/USER_PROFILE_AND_PREFERENCES.md`](../apps/api/apidocs/USER_PROFILE_AND_PREFERENCES.md) |
 | Backend authentication (register, login, sessions, password reset, mobile contract) | [`apidocs/AUTHENTICATION.md`](../apps/api/apidocs/AUTHENTICATION.md) |

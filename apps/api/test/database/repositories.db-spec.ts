@@ -435,11 +435,10 @@ describe('repositories on PostgreSQL', () => {
       const user = await newUser();
       const [x1, x2] = [await newExperience(), await newExperience()];
 
-      const [a, b] = await Promise.all([
-        favorites.add(user.id, x1.id),
-        favorites.add(user.id, x1.id),
-      ]);
-      expect(a.id).toBe(b.id);
+      const added = await Promise.all(
+        Array.from({ length: 5 }, () => favorites.add(user.id, x1.id)),
+      );
+      expect(new Set(added.map((favorite) => favorite.id)).size).toBe(1);
       expect(await db.favorite.count()).toBe(1);
 
       await favorites.add(user.id, x2.id);
