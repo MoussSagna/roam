@@ -68,9 +68,10 @@ Use mock data. The onboarding is complete on the front end (no backend, nothing 
 - [~] Experiences — catalog served (API-07: `GET /experiences`, `/experiences/:id`) on the 14 experiences migrated from
       the mobile mock data (DATA-1, `apps/api/apidocs/DATA_1_MIGRATION_REPORT.md`); the mobile app still reads its mocks
 - [~] Itineraries — journeys served (API-08: create, active, history, edit, progress, complete —
-      `apps/api/apidocs/JOURNEY_API.md`); mobile not wired; no feedback endpoint yet
+      `apps/api/apidocs/JOURNEY_API.md`); mobile not wired
 - [ ] Favorites
-- [ ] Feedback
+- [~] Feedback — journey feedback served (API-09: 1–5 stars + comment, one per completed journey,
+      `apps/api/apidocs/JOURNEY_FEEDBACK_API.md`); mobile not wired; per-experience feedback not built
 - [~] Auth — backend done (API-05: register, login, sessions, logout, password reset by code;
       `apps/api/apidocs/AUTHENTICATION.md`); mobile not wired yet, no email provider for reset codes, no rate limiting
 

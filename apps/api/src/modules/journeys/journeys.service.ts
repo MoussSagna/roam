@@ -167,13 +167,8 @@ export class JourneysService {
 
   // ─── Helpers ────────────────────────────────────────────────────────────────────────────────────
 
-  /** The user's own journey; anything else — unknown, or another user's — is "not found" (never disclosed). */
-  private async owned(me: User, id: string): Promise<Journey> {
-    const journey = await this.journeys.findById(id);
-    if (!journey || journey.userId !== me.id) {
-      throw new ApiException(HttpStatus.NOT_FOUND, ErrorCode.NotFound, 'Journey not found.');
-    }
-    return journey;
+  private owned(me: User, id: string): Promise<Journey> {
+    return findOwnedJourney(this.journeys, me, id);
   }
 
   /** A conditional write found nothing to change: the journey was completed or progressed meanwhile. */
@@ -237,6 +232,22 @@ export class JourneysService {
       }),
     }));
   }
+}
+
+/**
+ * The user's own journey; anything else — unknown, or another user's — is "not found" (never disclosed). Shared by the
+ * journey and journey feedback services.
+ */
+export async function findOwnedJourney(
+  journeys: JourneyRepository,
+  me: User,
+  id: string,
+): Promise<Journey> {
+  const journey = await journeys.findById(id);
+  if (!journey || journey.userId !== me.id) {
+    throw new ApiException(HttpStatus.NOT_FOUND, ErrorCode.NotFound, 'Journey not found.');
+  }
+  return journey;
 }
 
 function unique(ids: string[]): string[] {

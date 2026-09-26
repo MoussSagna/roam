@@ -10,7 +10,7 @@ the repositories are ready for the domain modules that come next.
 ```text
 Controller (HTTP, DTOs)          — later
    ↓
-Service (rules, transitions)     — AuthService (API-05), UsersService (API-06), ExperiencesService and RecommendationsService (API-07), JourneysService (API-08); feedback… later
+Service (rules, transitions)     — AuthService (API-05), UsersService (API-06), ExperiencesService and RecommendationsService (API-07), JourneysService (API-08), JourneyFeedbackService (API-09)
    ↓
 Repository (persistence)         — API-04: src/modules/<domain>/*.repository.ts
    ↓

@@ -1,3 +1,6 @@
+import { createRequire } from 'node:module';
+import { fileURLToPath } from 'node:url';
+
 import { PrismaPg } from '@prisma/adapter-pg';
 
 import { PrismaClient } from '../../src/generated/prisma/client.js';
@@ -21,6 +24,33 @@ export async function resetDatabase(prisma: PrismaClient): Promise<void> {
     SELECT tablename FROM pg_tables WHERE schemaname = 'public' AND tablename <> '_prisma_migrations'`;
   const list = tables.map(({ tablename }) => `"public"."${tablename}"`).join(', ');
   await prisma.$executeRawUnsafe(`TRUNCATE TABLE ${list} RESTART IDENTITY CASCADE`);
+}
+
+/** Counts the SQL statements the `pg` driver sends (the driver the Prisma adapter uses). */
+export function queryCounter() {
+  const pgModule = createRequire(fileURLToPath(import.meta.resolve('@prisma/adapter-pg')))(
+    'pg',
+  ) as {
+    Client: { prototype: { query: (...args: unknown[]) => unknown } };
+  };
+  const proto = pgModule.Client.prototype;
+  const original = proto.query;
+  let count = 0;
+  return {
+    async measure(run: () => Promise<unknown>): Promise<number> {
+      count = 0;
+      proto.query = function (this: unknown, ...args: unknown[]) {
+        count += 1;
+        return original.apply(this, args);
+      };
+      try {
+        await run();
+      } finally {
+        proto.query = original;
+      }
+      return count;
+    },
+  };
 }
 
 // ─── Minimal valid records (only the required fields) ─────────────────────────────────────────────

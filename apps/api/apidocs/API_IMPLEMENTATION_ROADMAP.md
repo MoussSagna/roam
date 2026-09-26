@@ -316,9 +316,34 @@ Done:
 - An experience without a known duration cannot be planned (422) rather than getting an invented duration.
 - A journey's budget: mobile bracket midpoints on the bracket read from the canonical price range; unknown price adds 0.
 
-## API-09 — next (to be defined)
+## API-09 — Journey feedback API — **COMPLETED** (backend; mobile not wired)
 
-Likely candidates: journey feedback (the model and repository exist: closes the core loop), favorites, rate limiting, or
-the mobile integration (auth, profile, catalog, journeys — it needs an API → mobile adapter). Open product decisions: above, plus
+Branch `api-09` (from `develop`, which holds API-02 → API-08 and DATA-1). Details:
+[`JOURNEY_FEEDBACK_API.md`](JOURNEY_FEEDBACK_API.md).
+
+Done:
+
+- audit: the `JourneyFeedback` model (unique `journeyId`, CHECK 1–5, `varchar(300)` comment) and
+  `JourneyFeedbackRepository` already cover the contract — no Prisma change, no migration, no repository change;
+- `JourneyFeedbackService` + `JourneyFeedbackController` in the `journeys` module: `POST /journeys/:id/feedback`
+  (owner only, completed journeys only, 1–5 stars, comment trimmed / blank → null / ≤ 300) and
+  `GET /journeys/:id/feedback` (`null` when none); the API-08 ownership check shared (`findOwnedJourney`);
+- one per journey decided by the unique index (a repeat → 409 with the saved feedback); feedback racing the completion
+  is safe because COMPLETED is final;
+- measured: 5 SQL statements for POST and for GET (session included);
+- 2 new error codes: `JOURNEY_NOT_COMPLETED`, `JOURNEY_FEEDBACK_ALREADY_EXISTS`;
+- tests: 231 unit/HTTP tests (+16), 98 database tests (+7), run twice; the built API run through the flow on `roam_test`.
+
+### Decisions taken
+
+- No PATCH/DELETE (no document plans them; editing a feedback is an open product decision).
+- A repeated submission is 409 `JOURNEY_FEEDBACK_ALREADY_EXISTS` carrying the saved feedback (the mobile shows the recap).
+- "Passer" needs no endpoint (nothing is saved).
+- The author id is not returned.
+
+## API-10 — next (to be defined)
+
+Likely candidates: favorites (repository ready), rate limiting (required before any public deployment), or the mobile
+integration (auth, profile, catalog, journeys, feedback — it needs an API repository and an API → mobile adapter). Open product decisions: above, plus
 `appdocs/DOCUMENTATION_RESTRUCTURE_REPORT.md`, `DATABASE_SCHEMA.md` ("Consistency audit"), the preference shape
 (`USER_PROFILE_AND_PREFERENCES.md`).

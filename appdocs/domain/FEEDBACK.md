@@ -16,7 +16,9 @@ From [`../product/MVP_SCOPE.md`](../product/MVP_SCOPE.md) §9 and [`../product/U
 
 - Given after a **completed journey**, at most **one per journey**: a **1–5 star** rating (required) and an optional
   comment (300 characters max). `JourneyFeedback` = `journeyId`, `userId`, `rating`, `comment | null`, `createdAt`.
-- Front end only: `JourneyFeedbackRepository` → mock (persisted on the device). Screen:
+- Mobile: `JourneyFeedbackRepository` → mock (persisted on the device), not wired to the backend yet. Backend: served
+  since API-09 with the same rules (completed journey of the owner, one per journey, comment trimmed, blank → null,
+  ≤ 300) — [`apps/api/apidocs/JOURNEY_FEEDBACK_API.md`](../../apps/api/apidocs/JOURNEY_FEEDBACK_API.md). Screen:
   [`apps/mobile/mobiledocs/features/JOURNEY.md`](../../apps/mobile/mobiledocs/features/JOURNEY.md) (`/journey/[id]/feedback`).
 
 ## Learning from feedback

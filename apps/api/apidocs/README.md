@@ -7,7 +7,7 @@ Documentation of the **API / backend**. Start from
 
 `apps/api` is a NestJS 12 + Prisma 7 application: technical base (API-02, [`BACKEND_FOUNDATION.md`](BACKEND_FOUNDATION.md)),
 database schema (API-03), repositories (API-04), authentication (API-05), profile and preferences (API-06), experience
-catalog and recommendations (API-07), a catalog migrated from the mobile mock data (DATA-1), and journeys (API-08) —
+catalog and recommendations (API-07), a catalog migrated from the mobile mock data (DATA-1), journeys (API-08) and their feedback (API-09) —
 [`API_IMPLEMENTATION_ROADMAP.md`](API_IMPLEMENTATION_ROADMAP.md). No provider is connected yet. The schema is migrated on a local PostgreSQL 18.6
 (`roam`) and tested on a dedicated test database (`roam_test`, `pnpm test:db`).
 
@@ -43,8 +43,9 @@ deployment.
 | [`AUTHENTICATION.md`](AUTHENTICATION.md)                                               | Authentication: strategy, endpoints, sessions, password reset, validation, errors, security, mobile contract, deferred                          |
 | [`USER_PROFILE_AND_PREFERENCES.md`](USER_PROFILE_AND_PREFERENCES.md)                   | The signed-in user's profile and preferences: endpoints, validation, isolation, mobile contract, open preference decision                       |
 | [`EXPERIENCE_CATALOG_API.md`](EXPERIENCE_CATALOG_API.md)                               | Experience catalog and recommendations: endpoints, pagination, filters, facts vs. ROAM context, ranking, relaxation, mobile gaps                |
+| [`JOURNEY_FEEDBACK_API.md`](JOURNEY_FEEDBACK_API.md)                                   | Journey feedback: rules, endpoints, rating/comment validation, one per journey, concurrency, errors                                             |
 | [`JOURNEY_API.md`](JOURNEY_API.md)                                                     | Journeys: lifecycle, endpoints, planning, validation, ownership, concurrency, errors, performance                                               |
-| [`API_IMPLEMENTATION_ROADMAP.md`](API_IMPLEMENTATION_ROADMAP.md)                       | API steps (API-01 → API-08 and DATA-1 done, next), deferred items, decisions                                                                    |
+| [`API_IMPLEMENTATION_ROADMAP.md`](API_IMPLEMENTATION_ROADMAP.md)                       | API steps (API-01 → API-09 and DATA-1 done, next), deferred items, decisions                                                                    |
 | [`DATA_1_MIGRATION_REPORT.md`](DATA_1_MIGRATION_REPORT.md)                             | DATA-1: mobile mock data → canonical catalog — sources, mapping, ids, idempotence, provenance, what is not migrated, verifications              |
 | [`DATA_FOUNDATION.md`](DATA_FOUNDATION.md)                                             | Objective, pipeline (sources → adapters → normalization → enrichment → database/cache → engine → app), initial sources, MVP scope (Paris)       |
 | [`PROVIDER_ARCHITECTURE.md`](PROVIDER_ARCHITECTURE.md)                                 | Layers from the mobile app to provider adapters, adapter responsibilities, failures, secrets                                                    |

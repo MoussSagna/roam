@@ -1,6 +1,3 @@
-import { createRequire } from 'node:module';
-import { fileURLToPath } from 'node:url';
-
 import type { INestApplication } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 import request from 'supertest';
@@ -14,7 +11,7 @@ import { seedCatalog } from '../../src/database/catalog-seed/catalog-seed.js';
 import { MOBILE_MOCK_CATALOG } from '../../src/database/catalog-seed/mobile-mock-catalog.js';
 import type { PrismaClient } from '../../src/generated/prisma/client.js';
 import { JourneyRepository } from '../../src/modules/journeys/journey.repository.js';
-import { createTestClient, resetDatabase } from './database.js';
+import { createTestClient, queryCounter, resetDatabase } from './database.js';
 
 type Auth = { Authorization: string };
 
@@ -43,33 +40,6 @@ type JourneyBody = {
 };
 const dataOf = <T>(body: unknown) => (body as { data: T }).data;
 const codeOf = (body: unknown) => (body as { error: { code: string } }).error.code;
-
-/** Counts the SQL statements the `pg` driver sends (the driver the Prisma adapter uses). */
-function queryCounter() {
-  const pgModule = createRequire(fileURLToPath(import.meta.resolve('@prisma/adapter-pg')))(
-    'pg',
-  ) as {
-    Client: { prototype: { query: (...args: unknown[]) => unknown } };
-  };
-  const proto = pgModule.Client.prototype;
-  const original = proto.query;
-  let count = 0;
-  return {
-    async measure(run: () => Promise<unknown>): Promise<number> {
-      count = 0;
-      proto.query = function (this: unknown, ...args: unknown[]) {
-        count += 1;
-        return original.apply(this, args);
-      };
-      try {
-        await run();
-      } finally {
-        proto.query = original;
-      }
-      return count;
-    },
-  };
-}
 
 /**
  * The journey API end to end on PostgreSQL (the test database only): the real application over HTTP, the DATA-1

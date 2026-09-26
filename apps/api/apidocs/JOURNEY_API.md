@@ -163,7 +163,7 @@ The mobile `Journey`, with each step's experience:
 - `experience` is the API-07 `ExperienceResponse` (facts at the top, ROAM context under `roam`; its places as
   `placeIds`) — enough for the hub, the active journey, the detail, the map (coordinates, order) and the edit screen.
 - Never returned: the owner id, internal timestamps (`updatedAt`), provenance, confidence, popularity.
-- `status` + `completedAt` tell the future feedback API (and the app) that a journey is over.
+- `status` + `completedAt` tell the app that a journey is over; its feedback is `GET /journeys/:id/feedback` (API-09).
 
 ## Planning
 
@@ -259,7 +259,7 @@ steps; the experiences of all steps are one `findManyByIds` — no query per ste
 
 ## Deferred
 
-- **Journey feedback endpoints** (`JourneyFeedback` model and repository exist; the next step).
+- ~~Journey feedback endpoints~~ — done in API-09: [`JOURNEY_FEEDBACK_API.md`](JOURNEY_FEEDBACK_API.md).
 - Editing title, context, start point or time (no documented edit for them); abandoning/deleting a journey (no
   documented action); a "restart" of a completed journey (not a documented transition).
 - Server-side suggestions for the builder (the app uses its own rules; API-07 `/recommendations` exists).
