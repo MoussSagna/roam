@@ -57,6 +57,7 @@ check, no domain endpoint) and no connected database; the mobile app does not ca
 | Integrating a new screen | [`mobiledocs/SCREEN_INTEGRATION_WORKFLOW.md`](../apps/mobile/mobiledocs/SCREEN_INTEGRATION_WORKFLOW.md) |
 | Builds, EAS Update, testers | [`mobiledocs/DEPLOYMENT.md`](../apps/mobile/mobiledocs/DEPLOYMENT.md) |
 | Database schema (Prisma models, constraints, deferred items) | [`apidocs/DATABASE_SCHEMA.md`](../apps/api/apidocs/DATABASE_SCHEMA.md) |
+| Backend experience catalog and recommendations (endpoints, filters, ranking, mobile gaps) | [`apidocs/EXPERIENCE_CATALOG_API.md`](../apps/api/apidocs/EXPERIENCE_CATALOG_API.md) |
 | Backend user profile and preferences (endpoints, validation, mobile mapping) | [`apidocs/USER_PROFILE_AND_PREFERENCES.md`](../apps/api/apidocs/USER_PROFILE_AND_PREFERENCES.md) |
 | Backend authentication (register, login, sessions, password reset, mobile contract) | [`apidocs/AUTHENTICATION.md`](../apps/api/apidocs/AUTHENTICATION.md) |
 | Backend data access (repositories, Prisma boundary, transactions, errors, pagination) | [`apidocs/REPOSITORY_ARCHITECTURE.md`](../apps/api/apidocs/REPOSITORY_ARCHITECTURE.md) |

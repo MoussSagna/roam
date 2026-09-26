@@ -65,7 +65,7 @@ Use mock data. The onboarding is complete on the front end (no backend, nothing 
 - [~] Preferences — MVP preferences stored and served (API-06: `/users/me/preferences`); which mobile screen writes
       them ("Mes préférences" vs. onboarding) is an open product decision
 - [ ] Places
-- [ ] Experiences
+- [~] Experiences — catalog served (API-07: `GET /experiences`, `/experiences/:id`); no catalog data until DATA-1
 - [ ] Itineraries
 - [ ] Favorites
 - [ ] Feedback
@@ -74,9 +74,9 @@ Use mock data. The onboarding is complete on the front end (no backend, nothing 
 
 ## Phase D — Recommendation engine
 
-- [ ] Candidate filtering
-- [ ] Deterministic scoring
-- [ ] Explainable recommendation reasons
+- [~] Candidate filtering — budget, distance, duration, company (API-07, `GET /recommendations`); no mood, no opening hours
+- [~] Deterministic scoring — proximity + rating (the mobile suggestion rule without mood); weighted score not calibrated
+- [x] Explainable recommendation reasons — reason codes of actually matched constraints, relaxation when nothing fits
 - [ ] Experience composition
 - [ ] Itinerary validation
 

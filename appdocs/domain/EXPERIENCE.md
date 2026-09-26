@@ -106,7 +106,9 @@ Each step should have:
 ## Current implementation
 
 **Backend (API-03):** the canonical model is the `Experience` table, with its places (`ExperiencePlace`), provenance
-(`ExternalSource`) and ROAM context (`RoamEnrichment`) as separate tables — `apps/api/apidocs/DATABASE_SCHEMA.md`. No endpoint yet.
+(`ExternalSource`) and ROAM context (`RoamEnrichment`) as separate tables — `apps/api/apidocs/DATABASE_SCHEMA.md`. Served by
+`GET /api/v1/experiences` and `/experiences/:id` since API-07 (facts at the top level, ROAM context under `roam` —
+`apps/api/apidocs/EXPERIENCE_CATALOG_API.md`).
 
 **Mobile (mock data):**
 

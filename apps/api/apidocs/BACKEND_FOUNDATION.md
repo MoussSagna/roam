@@ -48,6 +48,8 @@ src/
     ├── auth/                   register, login, me, logout, password reset; AuthGuard (API-05)
     ├── users/                  UserRepository (API-04); PATCH /users/me, /users/me/preferences (API-06)
     ├── catalog/                Experience/Place/Event/Category repositories (API-04)
+    ├── experiences/            GET /experiences, /experiences/:id (API-07)
+    ├── recommendations/        GET /recommendations (API-07)
     ├── journeys/               Journey and JourneyFeedback repositories (API-04)
     └── favorites/              FavoriteRepository (API-04)
 prisma/schema.prisma            the data model (API-03, DATABASE_SCHEMA.md)

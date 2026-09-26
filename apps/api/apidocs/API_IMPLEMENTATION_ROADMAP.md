@@ -203,11 +203,57 @@ limiting (still required before any public deployment), the mobile integration.
   two methods).
 - A write failing because the account was deleted after the session check answers `AUTH_SESSION_INVALID`.
 
-## API-07 — next (to be defined)
+## API-07 — Experience catalog & recommendations — **COMPLETED** (backend; no catalog data yet)
 
-Ready for it: an authenticated domain module end to end (controller → service → repository, `@CurrentUser()`, DTO
-mapping, HTTP and PostgreSQL tests). Likely candidates: journeys and journey feedback (the core loop the mobile app
-runs on mocks), favorites, DATA-1 (seed the catalog from the mobile mock data, needed by journeys and favorites), rate
-limiting of the auth endpoints, or the mobile integration of authentication and profile. Open product decisions:
-`appdocs/DOCUMENTATION_RESTRUCTURE_REPORT.md` ("Decisions needed"), `DATABASE_SCHEMA.md` ("Consistency audit"),
-the preference shape (`USER_PROFILE_AND_PREFERENCES.md`).
+Branch `api-07` (from `develop`, which holds API-02 → API-06). Details: [`EXPERIENCE_CATALOG_API.md`](EXPERIENCE_CATALOG_API.md).
+
+Done:
+
+- `GET /api/v1/experiences` (active, stable order, keyset pagination `{ items, nextCursor }` — now the public format;
+  filters `category`, `city`, `budget`, `q`) and `GET /api/v1/experiences/:id` (with ordered places; 404; inactive
+  still readable);
+- responses keep **provider facts at the top level and ROAM enrichment under `roam`**; provenance, rule confidence,
+  popularity, provider attributes stay internal; enum values in the apps' camelCase;
+- `GET /api/v1/recommendations`: the session user's context completed by their saved preferences → candidates (one
+  query, ≤ 200, SQL pre-filters: category, budget ceiling, bounding box) → hard filters (exact distance, duration,
+  company; unknown facts never exclude) → the mobile journey ranking without mood (proximity + rating, stable ties) →
+  matched reasons → one-constraint-at-a-time relaxation (`relaxed`);
+- `ExperienceRepository`: filters `maxPrice`, `text`, `area` and `findCandidates` (no new repository, no ranking in it);
+  `UsersService` exported for the recommendations;
+- signed-in only (global AuthGuard); no `userId` accepted anywhere;
+- no Prisma change, no migration, no provider, no new dependency;
+- measured: 5 SQL queries per list page or candidate set whatever its size, 9 for a detail (no N+1);
+- tests: 160 unit/HTTP tests (+31), 72 database tests (+8, run twice); build; the built API on `roam` (health,
+  Swagger, 401s, empty catalog) and on `roam_test` with a small SQL-seeded catalog (list, detail 200/404/400,
+  recommendations with and without relaxation), then emptied.
+
+Not done on purpose (see the document's "Deferred"): mood matching and opening hours (**product/data decisions**),
+preference matching, calibrated weights, search suggestions and accent-insensitive search, collections, events in
+responses, provider attribution, rate limiting (still required before any public deployment), catalog data (DATA-1),
+the mobile integration.
+
+### Decisions taken
+
+- Recommendations as `GET /api/v1/recommendations` with the context in the query (no document fixed the route).
+- Catalog endpoints signed-in only, like the mobile screens that use them.
+- The public pagination format is the repositories' `{ items, nextCursor }` inside `{ data }` (no second format).
+- Ranking reuses the rule already implemented by the mobile suggestions (minus mood) rather than the uncalibrated
+  conceptual weights; relaxation tries each constraint alone before all together.
+- Budget brackets compare the experience's lowest price (`priceMin`) with the bracket ceiling (0 / 10 / 25 / 50 €);
+  an unknown price never excludes; the catalog is assumed in euros (Paris MVP).
+
+### Decisions needed (product)
+
+1. **Mood ↔ experience**: which mood vocabulary, and how moods map to experiences (a field, or `atmosphere` /
+   `energyLevel`)? Mood is the heaviest documented scoring dimension and the Home entry point.
+2. **Opening hours**: a normalized hours model (needed for "closed at the relevant time", `openNow`, `when`).
+3. **Preferences ↔ catalog**: how `interests` / `activities` (or "Mes préférences" types/ambiance) relate to categories
+   or tags.
+
+## API-08 — next (to be defined)
+
+Likely candidates: DATA-1 (seed the canonical catalog from the mobile mock data — the endpoints have nothing to serve
+in development until then), journeys and journey feedback (the core loop, now that experiences are served),
+favorites, rate limiting, or the mobile integration (auth, profile, catalog). Open product decisions: above, plus
+`appdocs/DOCUMENTATION_RESTRUCTURE_REPORT.md`, `DATABASE_SCHEMA.md` ("Consistency audit"), the preference shape
+(`USER_PROFILE_AND_PREFERENCES.md`).
