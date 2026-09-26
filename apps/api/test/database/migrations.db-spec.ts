@@ -22,6 +22,7 @@ describe('migrations on PostgreSQL', () => {
     expect(rows).toEqual([
       { migration_name: '20260926000000_init', finished: true },
       { migration_name: '20260926002147_check_constraints', finished: true },
+      { migration_name: '20260926011137_authentication', finished: true },
     ]);
   });
 
@@ -55,6 +56,7 @@ describe('migrations on PostgreSQL', () => {
       SELECT tablename FROM pg_tables
       WHERE schemaname = 'public' AND tablename <> '_prisma_migrations' ORDER BY tablename`;
     expect(tables.map((row) => row.tablename)).toEqual([
+      'auth_sessions',
       'categories',
       'events',
       'experience_categories',
@@ -65,6 +67,7 @@ describe('migrations on PostgreSQL', () => {
       'journey_feedbacks',
       'journey_steps',
       'journeys',
+      'password_reset_codes',
       'place_categories',
       'places',
       'providers',
@@ -115,6 +118,8 @@ describe('migrations on PostgreSQL', () => {
     expect(rule.experience_places_placeId_fkey).toBe('r');
     expect(rule.external_sources_providerId_fkey).toBe('r');
     expect(rule.events_placeId_fkey).toBe('n');
-    expect(rules).toHaveLength(23);
+    expect(rule.auth_sessions_userId_fkey).toBe('c');
+    expect(rule.password_reset_codes_userId_fkey).toBe('c');
+    expect(rules).toHaveLength(25);
   });
 });

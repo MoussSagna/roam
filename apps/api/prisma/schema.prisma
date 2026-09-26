@@ -84,24 +84,61 @@ enum Company {
 
 // ─── Users ──────────────────────────────────────────────────────────────────────────────────────────
 
-/// A ROAM user (mobile `User`). Credentials and sessions belong to the authentication task (deferred).
+/// A ROAM user (mobile `User`). `email` is stored normalized (trimmed, lower case — AUTHENTICATION.md).
 model User {
-  id          String   @id @default(uuid(7)) @db.Uuid
-  email       String   @unique
-  displayName String
-  avatarUrl   String?
-  age         Int?
-  city        String?
-  bio         String?
-  createdAt   DateTime @default(now()) @db.Timestamptz(3)
-  updatedAt   DateTime @updatedAt @db.Timestamptz(3)
+  id           String   @id @default(uuid(7)) @db.Uuid
+  email        String   @unique
+  displayName  String
+  avatarUrl    String?
+  age          Int?
+  city         String?
+  bio          String?
+  /// Argon2id hash (PHC string) of the password; null for an account without a password (future social
+  /// sign-in). Never returned by the repositories' `User` type.
+  passwordHash String?
+  createdAt    DateTime @default(now()) @db.Timestamptz(3)
+  updatedAt    DateTime @updatedAt @db.Timestamptz(3)
 
-  preference UserPreference?
-  journeys   Journey[]
-  favorites  Favorite[]
-  feedbacks  JourneyFeedback[]
+  preference    UserPreference?
+  journeys      Journey[]
+  favorites     Favorite[]
+  feedbacks     JourneyFeedback[]
+  sessions      AuthSession[]
+  passwordReset PasswordResetCode?
 
   @@map("users")
+}
+
+/// A signed-in device (AUTHENTICATION.md): an opaque bearer token, stored as its SHA-256 hash only. Deleted on
+/// logout (revocation) and when the password is reset.
+model AuthSession {
+  id        String   @id @default(uuid(7)) @db.Uuid
+  userId    String   @db.Uuid
+  /// SHA-256 of the token, hex. The token itself is only ever known by the client.
+  tokenHash String   @unique @db.Char(64)
+  expiresAt DateTime @db.Timestamptz(3)
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  /// Revoking every session of a user (password reset).
+  @@index([userId])
+  @@map("auth_sessions")
+}
+
+/// The pending password reset of a user (mobile flow: email → 6-digit code → new password). One at a time: a
+/// new request replaces it; it is deleted once used. The code is stored hashed (Argon2id), never in clear.
+model PasswordResetCode {
+  userId    String   @id @db.Uuid
+  codeHash  String
+  expiresAt DateTime @db.Timestamptz(3)
+  /// Wrong codes tried; the code is dropped after the limit (brute-force guard on a 6-digit code).
+  attempts  Int      @default(0)
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("password_reset_codes")
 }
 
 /// The user's lasting preferences, as the MVP scope defines the onboarding (MVP_SCOPE.md §2,

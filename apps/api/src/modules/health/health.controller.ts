@@ -9,6 +9,7 @@ import {
 import { RawResponse } from '../../common/decorators/raw-response.decorator.js';
 import { ApiException, ErrorCode } from '../../common/errors/api-error.js';
 import { PrismaService } from '../../database/prisma.service.js';
+import { Public } from '../auth/auth.guard.js';
 
 export type HealthStatus = { status: 'ok' };
 
@@ -18,6 +19,7 @@ export type HealthStatus = { status: 'ok' };
  * whether PostgreSQL answers.
  */
 @ApiTags('health')
+@Public()
 @RawResponse()
 @Controller({ path: 'health', version: VERSION_NEUTRAL })
 export class HealthController {

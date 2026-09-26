@@ -44,7 +44,8 @@ src/
 │                               errors, pagination, JSON helpers (REPOSITORY_ARCHITECTURE.md)
 ├── generated/prisma/           Prisma client, generated — not committed
 └── modules/
-    ├── health/                 GET /health, GET /health/database
+    ├── health/                 GET /health, GET /health/database (public)
+    ├── auth/                   register, login, me, logout, password reset; AuthGuard (API-05)
     ├── users/                  UserRepository (API-04)
     ├── catalog/                Experience/Place/Event/Category repositories (API-04)
     ├── journeys/               Journey and JourneyFeedback repositories (API-04)
@@ -85,17 +86,17 @@ production) ends with one error line and exit code 1. Shutdown hooks close the d
 - `.env` is read in local development only (ignored when `NODE_ENV=test`); real environments inject variables.
   [`.env.example`](../.env.example) lists them with placeholders — copy it to `.env`, never commit `.env`.
 
-| Variable                | Required | Default                                    | Use                                                            |
-| ----------------------- | -------- | ------------------------------------------ | -------------------------------------------------------------- |
-| `NODE_ENV`              | no       | `development`                              | `development` \| `test` \| `production`                        |
-| `PORT`                  | no       | `3000`                                     | HTTP port                                                      |
-| `DATABASE_URL`          | **yes**  | —                                          | `postgresql://…` connection string                             |
-| `CORS_ORIGINS`          | no       | none                                       | Comma-separated browser origins                                |
-| `LOG_LEVEL`             | no       | `debug` (dev), `warn` (test), `log` (prod) | `error` \| `warn` \| `log` \| `debug` \| `verbose`             |
-| `SWAGGER_ENABLED`       | no       | on outside production                      | Swagger UI and document                                        |
-| `GOOGLE_PLACES_API_KEY` | no       | —                                          | Future Google Places adapter (not used yet)                    |
-| `TICKETMASTER_API_KEY`  | no       | —                                          | Future Ticketmaster adapter (not used yet)                     |
-| `AUTH_JWT_SECRET`       | no       | —                                          | Future authentication (not used yet); ≥ 32 characters when set |
+| Variable                | Required | Default                                    | Use                                                                        |
+| ----------------------- | -------- | ------------------------------------------ | -------------------------------------------------------------------------- |
+| `NODE_ENV`              | no       | `development`                              | `development` \| `test` \| `production`                                    |
+| `PORT`                  | no       | `3000`                                     | HTTP port                                                                  |
+| `DATABASE_URL`          | **yes**  | —                                          | `postgresql://…` connection string                                         |
+| `CORS_ORIGINS`          | no       | none                                       | Comma-separated browser origins                                            |
+| `LOG_LEVEL`             | no       | `debug` (dev), `warn` (test), `log` (prod) | `error` \| `warn` \| `log` \| `debug` \| `verbose`                         |
+| `SWAGGER_ENABLED`       | no       | on outside production                      | Swagger UI and document                                                    |
+| `GOOGLE_PLACES_API_KEY` | no       | —                                          | Future Google Places adapter (not used yet)                                |
+| `TICKETMASTER_API_KEY`  | no       | —                                          | Future Ticketmaster adapter (not used yet)                                 |
+| `AUTH_SESSION_TTL_DAYS` | no       | `30`                                       | Session lifetime in days, 1–365 ([`AUTHENTICATION.md`](AUTHENTICATION.md)) |
 
 Provider keys stay on the server (`appdocs/architecture/DATA_RULES.md`): never in the mobile app, never in Git.
 
@@ -177,8 +178,9 @@ tokens, API keys, `DATABASE_URL`.
   its domains are known). Never `*`. No credentials (cookies) for now.
 - `helmet` security headers; `X-Powered-By` removed. The Content-Security-Policy is disabled while Swagger UI is served
   (it needs inline scripts); the API itself only returns JSON.
-- Not in this step, on purpose: authentication and authorization (own task), rate limiting (to add with the first
-  public or provider-backed endpoints, `SYNC_CACHE_AND_COST_CONTROL.md`).
+- Authentication (API-05): a global guard requires a bearer session on every route not marked `@Public()` —
+  [`AUTHENTICATION.md`](AUTHENTICATION.md). Not yet: rate limiting (first on the auth endpoints, then the public or
+  provider-backed ones, `SYNC_CACHE_AND_COST_CONTROL.md`).
 
 ## Health check
 

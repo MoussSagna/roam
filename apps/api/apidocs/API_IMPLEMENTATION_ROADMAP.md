@@ -133,10 +133,49 @@ service needs one), catalog/user deletion flows.
   one" (mobile behavior).
 - Conditional writes (`WHERE status = 'ACTIVE'`) return `null` instead of throwing: the service decides the answer.
 
-## API-05 — next (to be defined)
+## API-05 — Authentication & user account — **COMPLETED** (backend; mobile not wired)
 
-Ready for it: the repositories and their domain types, persistence errors, pagination, the database test setup.
-Likely candidates: the first domain services and endpoints (journeys and feedback — the core loop the mobile app
-already runs on mocks — or experiences), DATA-1 (seed the catalog from the mobile mock data), or authentication (the
-users repository is ready: lookup by email, no credential stored yet). Open product decisions that affect the data:
+Branch `api-05` (from `develop`, which holds API-02 → API-04). Details: [`AUTHENTICATION.md`](AUTHENTICATION.md).
+
+Done:
+
+- audit: no authentication existed in the API (only an unused `AUTH_JWT_SECRET`, now removed); the mobile flow is fully
+  mocked — its screens define the contract;
+- email + password accounts through `UserRepository` (`create` with a hash, `findCredentialsByEmail`); emails
+  normalized (trim, lower case); passwords hashed with **Argon2id** (`@node-rs/argon2`, OWASP parameters);
+- **opaque bearer sessions** (256-bit random token, SHA-256 stored in `auth_sessions`, `AUTH_SESSION_TTL_DAYS`, default
+  30): real revocation on logout;
+- global `AuthGuard` — every route requires a session unless `@Public()` (health, register, login, logout, reset) —
+  and `@CurrentUser()`;
+- endpoints under `/api/v1/auth`: `register` (signs in), `login`, `me`, `logout` (idempotent), `password/forgot`,
+  `password/verify-code`, `password/reset` (6-digit code, 15 min, 5 attempts counted atomically; reset revokes every
+  session) — documented in Swagger with a bearer scheme and fictional examples;
+- no account enumeration by login or reset (same answer, dummy verification for unknown emails);
+- migration `20260926011137_authentication` (additive: `users.passwordHash`, `auth_sessions`,
+  `password_reset_codes`), applied to `roam` and `roam_test`;
+- tests: 108 unit tests (+28), 58 database tests (+11: the whole flow over HTTP on `roam_test`, concurrent
+  registrations, reset limits, no secret in logs); build; the built API started on `roam` (health, Swagger) and run
+  through register → me → login → logout → forgot on `roam_test`.
+
+Not done on purpose (see `AUTHENTICATION.md` → "Deferred"): rate limiting of the auth endpoints (**needed before any
+public deployment**), an email provider for reset codes (the reset works end to end in tests but a real user cannot
+receive a code yet), Google/Apple sign-in, sliding sessions and device management, account deletion, profile and
+preferences endpoints, the mobile integration.
+
+### Decisions taken
+
+- Opaque server-side sessions rather than JWT (one mechanism, immediate revocation, no signing secret); no auth
+  framework (Better Auth would impose its own tables, routes and error format).
+- Protected by default (global guard + `@Public()`), not opt-in per route.
+- Register opens a session (the mobile Register screen lands on Home); login failures and reset failures each share one
+  error code.
+- The reset code is never returned or logged in any environment, including development: delivery goes through
+  `PasswordResetDelivery`, unconfigured for now.
+
+## API-06 — next (to be defined)
+
+Ready for it: authenticated routes (`@CurrentUser()`), the repositories, persistence errors, pagination, the database
+test setup. Likely candidates: the first domain services and endpoints on top of the session (journeys and journey
+feedback, favorites, profile/preferences), DATA-1 (seed the catalog from the mobile mock data), rate limiting of the
+auth endpoints, or the mobile integration of authentication. Open product decisions that affect the data:
 `appdocs/DOCUMENTATION_RESTRUCTURE_REPORT.md` ("Decisions needed") and `DATABASE_SCHEMA.md` ("Consistency audit").

@@ -77,22 +77,27 @@ Aggregates, not tables: join tables and child rows go through their owner.
 | `journeys`              | `JourneyFeedbackRepository` | `JourneyFeedback`                                            | FEEDBACK.md: one feedback per completed journey                         |
 | `favorites`             | `FavoriteRepository`        | `Favorite` (user ↔ experience)                               | save / unsave / list (mobile D-57)                                      |
 
+Authentication (API-05, [`AUTHENTICATION.md`](AUTHENTICATION.md)) adds, in `src/modules/auth/`:
+`AuthSessionRepository` (`create`, `findValid` — session and user in one query —, `deleteByTokenHash`) and
+`PasswordResetRepository` (`save`, `takeAttempt` — atomic attempt count —, `complete` — one transaction: new password
+hash, every session revoked, code deleted). The `User` type never carries the password hash.
+
 No repository for: `ExperiencePlace`, `PlaceCategory`, `ExperienceCategory`, `JourneyStep` (children of their
 aggregate), `ExternalSource` and `Provider` (written with the record they describe; a provider is registered on first
 use by its adapter key), `RoamEnrichment` (read with its place/experience; its writes belong to DATA-5).
 
 ### Methods
 
-| Repository                  | Methods                                                                                                                 |
-| --------------------------- | ----------------------------------------------------------------------------------------------------------------------- |
-| `UserRepository`            | `findById`, `findByEmail`, `create`, `updateProfile`, `findPreference`, `savePreference` (upsert)                       |
-| `ExperienceRepository`      | `findById` (with places), `findManyByIds` (in the given order), `listActive(filter, page)`, `create`, `update`          |
-| `PlaceRepository`           | `findById`, `findBySource(providerKey, externalId)`, `create` (categories + source), `update`                           |
-| `EventRepository`           | `findById`, `findBySource`, `listUpcoming({ from, to }, page)`, `create`, `update`                                      |
-| `CategoryRepository`        | `list`                                                                                                                  |
-| `JourneyRepository`         | `findById`, `findActiveByUserId`, `listCompletedByUserId(page)`, `create`, `replaceSteps`, `updateProgress`, `complete` |
-| `JourneyFeedbackRepository` | `findByJourneyId`, `create`                                                                                             |
-| `FavoriteRepository`        | `add`, `remove`, `isFavorite`, `listByUserId(page)`                                                                     |
+| Repository                  | Methods                                                                                                                                                                    |
+| --------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `UserRepository`            | `findById`, `findByEmail`, `create` (optionally with a password hash), `findCredentialsByEmail` (login only), `updateProfile`, `findPreference`, `savePreference` (upsert) |
+| `ExperienceRepository`      | `findById` (with places), `findManyByIds` (in the given order), `listActive(filter, page)`, `create`, `update`                                                             |
+| `PlaceRepository`           | `findById`, `findBySource(providerKey, externalId)`, `create` (categories + source), `update`                                                                              |
+| `EventRepository`           | `findById`, `findBySource`, `listUpcoming({ from, to }, page)`, `create`, `update`                                                                                         |
+| `CategoryRepository`        | `list`                                                                                                                                                                     |
+| `JourneyRepository`         | `findById`, `findActiveByUserId`, `listCompletedByUserId(page)`, `create`, `replaceSteps`, `updateProgress`, `complete`                                                    |
+| `JourneyFeedbackRepository` | `findByJourneyId`, `create`                                                                                                                                                |
+| `FavoriteRepository`        | `add`, `remove`, `isFavorite`, `listByUserId(page)`                                                                                                                        |
 
 Only what a documented flow needs. Not added on purpose: deletes of catalog records (they are deactivated —
 DATABASE_SCHEMA.md), user deletion (no account deletion flow yet), provider upsert/refresh bookkeeping (DATA-6),

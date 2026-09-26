@@ -24,12 +24,12 @@ describe('validateEnvironment', () => {
       ...VALID,
       LOG_LEVEL: '',
       GOOGLE_PLACES_API_KEY: '',
-      AUTH_JWT_SECRET: '',
+      AUTH_SESSION_TTL_DAYS: '',
     });
 
     expect(env.LOG_LEVEL).toBeUndefined();
     expect(env.GOOGLE_PLACES_API_KEY).toBeUndefined();
-    expect(env.AUTH_JWT_SECRET).toBeUndefined();
+    expect(env.AUTH_SESSION_TTL_DAYS).toBe(30);
   });
 
   it('fails clearly when DATABASE_URL is missing', () => {
@@ -52,15 +52,18 @@ describe('validateEnvironment', () => {
   });
 
   it('never prints the values it rejects (secrets stay out of the logs)', () => {
-    const secret = 'too-short-secret';
+    const secret = 'not-a-number-s3cret';
     let message = '';
     try {
-      validateEnvironment({ DATABASE_URL: 'not-a-url-with-p4ssw0rd', AUTH_JWT_SECRET: secret });
+      validateEnvironment({
+        DATABASE_URL: 'not-a-url-with-p4ssw0rd',
+        AUTH_SESSION_TTL_DAYS: secret,
+      });
     } catch (error) {
       message = (error as Error).message;
     }
 
-    expect(message).toMatch(/AUTH_JWT_SECRET:/);
+    expect(message).toMatch(/AUTH_SESSION_TTL_DAYS:/);
     expect(message).not.toContain(secret);
     expect(message).not.toContain('p4ssw0rd');
   });

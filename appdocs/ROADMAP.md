@@ -68,7 +68,8 @@ Use mock data. The onboarding is complete on the front end (no backend, nothing 
 - [ ] Itineraries
 - [ ] Favorites
 - [ ] Feedback
-- [ ] Auth (real authentication, session/JWT: **after** all the front-end screens; the front-end auth screens are in Phase B)
+- [~] Auth — backend done (API-05: register, login, sessions, logout, password reset by code;
+      `apps/api/apidocs/AUTHENTICATION.md`); mobile not wired yet, no email provider for reset codes, no rate limiting
 
 ## Phase D — Recommendation engine
 

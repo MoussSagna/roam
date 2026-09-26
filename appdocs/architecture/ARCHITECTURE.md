@@ -103,8 +103,9 @@ Do not couple the recommendation domain to an AI provider.
 Use a standard secure authentication strategy compatible with the chosen web/mobile architecture.
 Do not build password cryptography manually.
 
-Prototype status: there is no authentication yet. The screens come first, front-end only and simulated;
-real authentication (backend, sessions/tokens) is done later, after all the front-end screens ([`DECISIONS.md`](../../apps/mobile/mobiledocs/DECISIONS.md) D-28).
+Status: the mobile screens are built and still simulated ([`DECISIONS.md`](../../apps/mobile/mobiledocs/DECISIONS.md) D-28). The backend
+authentication exists since API-05 — email + password (Argon2id), opaque bearer sessions stored hashed in PostgreSQL,
+password reset by code — and the mobile app is not wired to it yet ([`apps/api/apidocs/AUTHENTICATION.md`](../../apps/api/apidocs/AUTHENTICATION.md)).
 
 ## Data domains
 

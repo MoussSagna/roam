@@ -8,7 +8,6 @@ import {
   Matches,
   Max,
   Min,
-  MinLength,
   validateSync,
 } from 'class-validator';
 
@@ -77,12 +76,12 @@ export class EnvironmentVariables {
   @IsString()
   TICKETMASTER_API_KEY?: string;
 
-  // Future authentication (its own task). Optional until then; must be long enough when set.
-  @Transform(emptyToUndefined)
-  @IsOptional()
-  @IsString()
-  @MinLength(32)
-  AUTH_JWT_SECRET?: string;
+  /** Lifetime of a session (sign-in on a device), in days. Opaque sessions: no signing secret needed. */
+  @Transform(({ value }) => (value === undefined || value === '' ? 30 : Number(value)))
+  @IsInt()
+  @Min(1)
+  @Max(365)
+  AUTH_SESSION_TTL_DAYS = 30;
 }
 
 /**

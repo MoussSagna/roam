@@ -6,6 +6,7 @@ import { ResponseEnvelopeInterceptor } from './common/interceptors/response-enve
 import { createValidationPipe } from './common/pipes/validation.pipe.js';
 import { AppConfigModule } from './config/app-config.module.js';
 import { DatabaseModule } from './database/database.module.js';
+import { AuthModule } from './modules/auth/auth.module.js';
 import { CatalogModule } from './modules/catalog/catalog.module.js';
 import { FavoritesModule } from './modules/favorites/favorites.module.js';
 import { HealthModule } from './modules/health/health.module.js';
@@ -23,6 +24,7 @@ import { UsersModule } from './modules/users/users.module.js';
     AppConfigModule,
     DatabaseModule,
     HealthModule,
+    AuthModule,
     UsersModule,
     CatalogModule,
     JourneysModule,

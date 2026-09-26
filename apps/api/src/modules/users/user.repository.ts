@@ -8,7 +8,7 @@ import type {
 } from '../../generated/prisma/client.js';
 import type { BudgetRange, Company } from '../../generated/prisma/enums.js';
 
-/** A ROAM user (mobile `User`). No credentials: authentication is its own step. */
+/** A ROAM user (mobile `User`). Never carries credentials: the password hash has its own method. */
 export type User = {
   id: string;
   email: string;
@@ -41,7 +41,10 @@ export type UserPreference = {
 
 export type UserPreferenceChange = Partial<Omit<UserPreference, 'updatedAt'>>;
 
-const toUser = (row: UserRow): User => ({
+/** What sign-in needs, read in one query: the user and its password hash (null: no password set). */
+export type UserCredentials = { user: User; passwordHash: string | null };
+
+export const toUser = (row: UserRow): User => ({
   id: row.id,
   email: row.email,
   displayName: row.displayName,
@@ -84,9 +87,26 @@ export class UserRepository {
     });
   }
 
-  /** Throws `UniqueConstraintError` when the email is taken. */
-  create(user: NewUser): Promise<User> {
-    return persist(async () => toUser(await this.prisma.user.create({ data: user })));
+  /**
+   * Throws `UniqueConstraintError` when the email is taken. `passwordHash` is an Argon2id hash computed by the
+   * authentication service — never a password.
+   */
+  create(user: NewUser, credentials: { passwordHash?: string } = {}): Promise<User> {
+    return persist(async () =>
+      toUser(
+        await this.prisma.user.create({
+          data: { ...user, passwordHash: credentials.passwordHash ?? null },
+        }),
+      ),
+    );
+  }
+
+  /** For sign-in only: the user and its password hash. `null` when no user has this email. */
+  findCredentialsByEmail(email: string): Promise<UserCredentials | null> {
+    return persist(async () => {
+      const row = await this.prisma.user.findUnique({ where: { email } });
+      return row && { user: toUser(row), passwordHash: row.passwordHash };
+    });
   }
 
   /** Throws `RecordNotFoundError` when the user does not exist. */
