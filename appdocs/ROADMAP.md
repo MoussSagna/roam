@@ -59,7 +59,8 @@ Use mock data. The onboarding is complete on the front end (no backend, nothing 
 - [x] PostgreSQL — local PostgreSQL 18.6 (`roam`, `roam_test`), connection checked by `/health/database` (API-03)
 - [x] Prisma — `PrismaService`, the data model and its migrations, applied and tested on PostgreSQL (API-03)
 - [~] User model, preferences, places, experiences, journeys (itineraries), favorites, feedback — stored in PostgreSQL
-      (`apps/api/apidocs/DATABASE_SCHEMA.md`); no repository, no endpoint yet
+      (`apps/api/apidocs/DATABASE_SCHEMA.md`), with their repositories (API-04,
+      `apps/api/apidocs/REPOSITORY_ARCHITECTURE.md`); no service, no endpoint yet
 - [ ] User model
 - [ ] Preferences
 - [ ] Places

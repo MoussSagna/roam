@@ -98,11 +98,45 @@ local PostgreSQL); no CI runs it yet.
   the schema and never seen as drift.
 - Integration tests on a dedicated `_test` database, never on `roam`; `migrate deploy` (never reset) before the run.
 
-## API-04 — next (to be defined)
+## API-04 — Repository layer — **COMPLETED**
 
-Ready for it: the generated client and models on a migrated PostgreSQL, `PrismaService`, the constraint helpers,
-`ApiException`, the `src/modules/<domain>/` layout, `/api/v1` routing, DTO validation, OpenAPI, the e2e test pattern,
-the database test setup (`test/database/`). Likely candidates:
-DATA-1 (map the mobile mock data to the canonical models, provider interfaces — `DATA_IMPLEMENTATION_PLAN.md`) or the
-first domain module (repositories on top of the schema). Open product decisions that affect the data: `appdocs/DOCUMENTATION_RESTRUCTURE_REPORT.md` ("Decisions needed")
-and `DATABASE_SCHEMA.md` ("Consistency audit").
+Branch `api-04` (from `develop`; API steps now get their own `api-NN` branch). The roadmap left API-04 "to be
+defined"; its scope was set by the API-04 brief: the data access layer, no service, no endpoint.
+
+Done ([`REPOSITORY_ARCHITECTURE.md`](REPOSITORY_ARCHITECTURE.md)):
+
+- 8 repositories on the aggregates, in 4 modules imported by `AppModule`: `users` (`UserRepository`), `catalog`
+  (`ExperienceRepository`, `PlaceRepository`, `EventRepository`, `CategoryRepository`), `journeys`
+  (`JourneyRepository`, `JourneyFeedbackRepository`), `favorites` (`FavoriteRepository`); no repository for join
+  tables, steps, sources, providers or enrichment (handled through their owner, or deferred);
+- domain types separate from Prisma, one mapping function per shape; the Prisma boundary enforced by ESLint;
+- persistence errors (`src/database/persistence-errors.ts`) translated from Prisma 7's real error shapes; domain
+  translations `ActiveJourneyExistsError`, `JourneyFeedbackExistsError`; the global filter maps what is left to generic
+  404/409/422/400/503 — and an unreachable database during a request now answers **503** (it was a 500 with the `pg`
+  adapter's `P1001`);
+- keyset pagination (`src/database/pagination.ts`) for the unbounded lists;
+- transactions: nested writes (atomic), `replaceSteps` as an explicit transaction; concurrency arbitrated by
+  PostgreSQL (partial unique index, unique keys with `ON CONFLICT`, conditional updates);
+- tests: 80 unit tests (+27), 47 database tests (+18: every repository on `roam_test`, concurrent journey creations
+  and favorites, transaction rollback); `prisma validate` / `generate`, typecheck, lint.
+
+Not done on purpose: domain services and endpoints, authentication, provider adapters and sync bookkeeping (DATA-2 →
+DATA-6), enrichment writes (DATA-5), recommendation queries (DATA-7), a cross-repository unit of work (added when a
+service needs one), catalog/user deletion flows.
+
+### Decisions taken
+
+- Concrete repository classes as DI tokens, no interfaces (one implementation; mock the class in service tests).
+- Domain types instead of Prisma types, explicit mappers; generated enums reused as the vocabulary.
+- One `replaceSteps` write for every journey edit (the service replans the whole list anyway).
+- Idempotent favorites (`add` / `remove`); a repeated feedback is an error the service can turn into "return the saved
+  one" (mobile behavior).
+- Conditional writes (`WHERE status = 'ACTIVE'`) return `null` instead of throwing: the service decides the answer.
+
+## API-05 — next (to be defined)
+
+Ready for it: the repositories and their domain types, persistence errors, pagination, the database test setup.
+Likely candidates: the first domain services and endpoints (journeys and feedback — the core loop the mobile app
+already runs on mocks — or experiences), DATA-1 (seed the catalog from the mobile mock data), or authentication (the
+users repository is ready: lookup by email, no credential stored yet). Open product decisions that affect the data:
+`appdocs/DOCUMENTATION_RESTRUCTURE_REPORT.md` ("Decisions needed") and `DATABASE_SCHEMA.md` ("Consistency audit").

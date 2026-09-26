@@ -6,6 +6,14 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 
+import {
+  CheckConstraintError,
+  DatabaseUnavailableError,
+  ForeignKeyConstraintError,
+  InvalidCursorError,
+  RecordNotFoundError,
+  UniqueConstraintError,
+} from '../../database/persistence-errors.js';
 import { ApiException } from '../errors/api-error.js';
 import { AllExceptionsFilter } from './all-exceptions.filter.js';
 
@@ -99,5 +107,45 @@ describe('AllExceptionsFilter', () => {
     });
     expect(run(queryError).statusCode).toBe(500);
     expect(JSON.stringify(run(queryError).body)).not.toContain('email');
+  });
+
+  it('answers a persistence error no service handled with a generic status and message', () => {
+    const cases = [
+      [new RecordNotFoundError('User'), 404, 'NOT_FOUND'],
+      [new UniqueConstraintError('users_email_key'), 409, 'CONFLICT'],
+      [
+        new ForeignKeyConstraintError('referenced', 'journey_steps_experienceId_fkey'),
+        409,
+        'CONFLICT',
+      ],
+      [new CheckConstraintError('journey_feedbacks_rating_check'), 422, 'UNPROCESSABLE_ENTITY'],
+      [new InvalidCursorError(), 400, 'BAD_REQUEST'],
+      [new DatabaseUnavailableError(), 503, 'DATABASE_UNAVAILABLE'],
+    ] as const;
+
+    for (const [exception, status, code] of cases) {
+      const response = run(exception);
+      expect(response.statusCode).toBe(status);
+      expect((response.body as { error: { code: string } }).error.code).toBe(code);
+      // Constraint and model names are internal.
+      expect(JSON.stringify(response.body)).not.toMatch(/users_email_key|_fkey|_check|User/);
+    }
+  });
+
+  it('translates a raw Prisma error (safety net): unreachable database → 503, row data never sent', () => {
+    const unreachable = Object.assign(new Error("Can't reach database server at 10.0.0.5:5432"), {
+      name: 'PrismaClientKnownRequestError',
+      code: 'P1001',
+    });
+    const check = Object.assign(new Error('Failing row contains (lea@roam.test, …)'), {
+      name: 'PrismaClientKnownRequestError',
+      code: 'P2039',
+      meta: { driverAdapterError: { cause: { originalCode: '23514' } } },
+    });
+
+    expect(run(unreachable).statusCode).toBe(503);
+    expect(JSON.stringify(run(unreachable).body)).not.toContain('10.0.0.5');
+    expect(run(check).statusCode).toBe(422);
+    expect(JSON.stringify(run(check).body)).not.toContain('lea@roam.test');
   });
 });

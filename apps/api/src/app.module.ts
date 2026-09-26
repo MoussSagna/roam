@@ -6,7 +6,11 @@ import { ResponseEnvelopeInterceptor } from './common/interceptors/response-enve
 import { createValidationPipe } from './common/pipes/validation.pipe.js';
 import { AppConfigModule } from './config/app-config.module.js';
 import { DatabaseModule } from './database/database.module.js';
+import { CatalogModule } from './modules/catalog/catalog.module.js';
+import { FavoritesModule } from './modules/favorites/favorites.module.js';
 import { HealthModule } from './modules/health/health.module.js';
+import { JourneysModule } from './modules/journeys/journeys.module.js';
+import { UsersModule } from './modules/users/users.module.js';
 
 /**
  * Root module. Cross-cutting behavior is registered here as global providers, so it applies the same
@@ -15,7 +19,15 @@ import { HealthModule } from './modules/health/health.module.js';
  * here as they are built.
  */
 @Module({
-  imports: [AppConfigModule, DatabaseModule, HealthModule],
+  imports: [
+    AppConfigModule,
+    DatabaseModule,
+    HealthModule,
+    UsersModule,
+    CatalogModule,
+    JourneysModule,
+    FavoritesModule,
+  ],
   providers: [
     { provide: APP_PIPE, useFactory: createValidationPipe },
     { provide: APP_FILTER, useClass: AllExceptionsFilter },

@@ -165,8 +165,9 @@ Prioritize tests for:
 
 The **mobile** application is built (`apps/mobile`, see `apps/mobile/mobiledocs/`). `apps/api` is the backend
 **foundation** (API-02): a NestJS + Prisma application with configuration, database access layer, validation, errors,
-health check and tests, and its data model (API-03, `apps/api/apidocs/DATABASE_SCHEMA.md`), but no domain endpoint and no
-database connected yet (`apps/api/apidocs/BACKEND_FOUNDATION.md`).
+health check and tests, its data model on PostgreSQL (API-03, `apps/api/apidocs/DATABASE_SCHEMA.md`) and its
+repositories (API-04, `apps/api/apidocs/REPOSITORY_ARCHITECTURE.md`), but no domain service or endpoint yet
+(`apps/api/apidocs/BACKEND_FOUNDATION.md`).
 The mobile app does not call it yet. No web app and no shared `packages/*` yet.
 
 ```text

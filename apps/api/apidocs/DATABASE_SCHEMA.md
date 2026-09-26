@@ -258,4 +258,5 @@ database); files run one after the other.
 - `health.db-spec.ts`: the real application on the test database (startup connection, `/health` and
   `/health/database` → 200) and with an unreachable database (`/health/database` → 503, no password or host in the logs).
 
-Not covered yet: repositories (none exist — first domain module), the service-level rules (no service yet).
+Repositories are tested on PostgreSQL too (`repositories.db-spec.ts`, API-04 —
+[`REPOSITORY_ARCHITECTURE.md`](REPOSITORY_ARCHITECTURE.md)). Not covered yet: the service-level rules (no service yet).
