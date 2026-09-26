@@ -54,8 +54,12 @@ Use mock data. The onboarding is complete on the front end (no backend, nothing 
 
 ## Phase C — Backend foundation
 
-- [ ] PostgreSQL
-- [ ] Prisma
+- [~] API foundation — NestJS + Prisma app, configuration, validation, errors, health check, tests (API-02,
+      `apps/api/apidocs/API_IMPLEMENTATION_ROADMAP.md`)
+- [x] PostgreSQL — local PostgreSQL 18.6 (`roam`, `roam_test`), connection checked by `/health/database` (API-03)
+- [x] Prisma — `PrismaService`, the data model and its migrations, applied and tested on PostgreSQL (API-03)
+- [~] User model, preferences, places, experiences, journeys (itineraries), favorites, feedback — stored in PostgreSQL
+      (`apps/api/apidocs/DATABASE_SCHEMA.md`); no repository, no endpoint yet
 - [ ] User model
 - [ ] Preferences
 - [ ] Places

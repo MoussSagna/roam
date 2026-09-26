@@ -103,7 +103,12 @@ Each step should have:
 - estimated cost;
 - opening-hours validity.
 
-## Current implementation (mobile, mock data)
+## Current implementation
+
+**Backend (API-03):** the canonical model is the `Experience` table, with its places (`ExperiencePlace`), provenance
+(`ExternalSource`) and ROAM context (`RoamEnrichment`) as separate tables — `apps/api/apidocs/DATABASE_SCHEMA.md`. No endpoint yet.
+
+**Mobile (mock data):**
 
 The mobile `Experience` type (`apps/mobile/src/types/experience.ts`) predates this canonical model and is a mock-data
 shape: `id`, `title`, `description`, `moods`, `categoryIds`, ordered `placeIds`, `estimatedDurationMin`,

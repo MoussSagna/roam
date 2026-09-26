@@ -22,7 +22,8 @@ From [`../product/MVP_SCOPE.md`](../product/MVP_SCOPE.md) §9 and [`../product/U
 ## Learning from feedback
 
 Feedback can update preference signals, transparently and deterministically in the MVP ([`RECOMMENDATION.md`](RECOMMENDATION.md) →
-"Feedback learning"). Nothing uses feedback yet (no backend, no engine).
+"Feedback learning"). Nothing uses feedback yet (no engine). The backend schema stores journey feedback only (`JourneyFeedback`, API-03 —
+`apps/api/apidocs/DATABASE_SCHEMA.md`); per-experience feedback is deferred there.
 
 > Two feedback models coexist (per-experience ratings planned, per-journey stars built). Whether both are kept is an
 > open product decision — see [`../DOCUMENTATION_RESTRUCTURE_REPORT.md`](../DOCUMENTATION_RESTRUCTURE_REPORT.md).

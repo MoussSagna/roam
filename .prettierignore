@@ -7,3 +7,4 @@ apps/mobile/ios
 apps/mobile/android
 # Shared docs are maintained by hand (mobile DECISIONS.md D-14, D-90)
 appdocs/**/*.md
+apps/api/src/generated
