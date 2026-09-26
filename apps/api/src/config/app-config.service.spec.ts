@@ -47,6 +47,11 @@ describe('AppConfigService', () => {
     );
   });
 
+  it('exposes the Geoapify key only through providers (absent → undefined)', () => {
+    expect(configFor({}).providers.geoapifyApiKey).toBeUndefined();
+    expect(configFor({ GEOAPIFY_API_KEY: 'geoFAKE' }).providers.geoapifyApiKey).toBe('geoFAKE');
+  });
+
   it('explicit settings win over the environment defaults', () => {
     const config = configFor({
       NODE_ENV: 'production',

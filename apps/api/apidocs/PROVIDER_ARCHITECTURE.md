@@ -17,6 +17,7 @@ Canonical ROAM models
   ↓
 Provider adapters
   ├── Google Places
+  ├── Geoapify
   ├── Ticketmaster
   └── Open Data
 ```
@@ -41,6 +42,9 @@ Providers can timeout, rate-limit, return partial data or no results. Fail grace
 DATA-2: the contract (`PlaceProvider`, `NormalizedPlace`, typed `ProviderError`s) and the Google Places adapter in
 `apps/api/src/modules/providers/`, with `PlaceIngestionService` writing through the catalog repositories —
 [`GOOGLE_PLACES_PROVIDER.md`](GOOGLE_PLACES_PROVIDER.md).
+
+DATA-2.1: the Geoapify adapter, a second `PlaceProvider` on the same contract, errors and ingestion (usable on
+Geoapify's free plan) — [`GEOAPIFY_PROVIDER.md`](GEOAPIFY_PROVIDER.md).
 
 ## Secrets
 

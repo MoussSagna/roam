@@ -422,6 +422,14 @@ overwritten), `PlaceRepository.updateFromSource`. No endpoint, no sync, no Prism
 change, recommendations unchanged. Tests never hold a real key (the setup files remove provider keys). Known issue: the
 intermittent HTTP test failures of API-11 still occur, also on `develop` without DATA-2.
 
+## DATA-2.1 — Geoapify provider — **COMPLETED** (backend layer; not connected; real check passed)
+
+Branch `data-02-1-geoapify` (from `data-02-google-places`). Details: [`GEOAPIFY_PROVIDER.md`](GEOAPIFY_PROVIDER.md).
+A second `PlaceProvider` on the DATA-2 contract: Geoapify client (Places, Place Details, key in a header, 5 s timeout, no
+retry), DTO validation, mapper (OpenStreetMap identity, explicit category table, absent rating/price left null), adapter;
+`GEOAPIFY_API_KEY`. Reuses the DATA-2 errors, `PlaceIngestionService` and repositories unchanged; Google untouched. No
+endpoint, no sync, no Prisma change, no new dependency, no mobile change, recommendations unchanged.
+
 ## API-12 — next
 
 The mobile integration: replace the mock repositories with API repositories (auth, profile, catalog, recommendations,

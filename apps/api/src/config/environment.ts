@@ -72,7 +72,7 @@ export class EnvironmentVariables {
   SWAGGER_ENABLED?: boolean;
 
   // Providers (Data Foundation). Optional: the API starts without them; an adapter called without its key fails
-  // with ProviderConfigurationError before any request (GOOGLE_PLACES_PROVIDER.md).
+  // with ProviderConfigurationError before any request (GOOGLE_PLACES_PROVIDER.md, GEOAPIFY_PROVIDER.md).
   /** Google Places API (New) key — backend only, restricted to that API. Never logged. */
   @Transform(emptyToUndefined)
   @IsOptional()
@@ -81,6 +81,15 @@ export class EnvironmentVariables {
     message: 'GOOGLE_PLACES_API_KEY must be a single token (letters, digits, - or _)',
   })
   GOOGLE_PLACES_API_KEY?: string;
+
+  /** Geoapify Places API key (GEOAPIFY_PROVIDER.md) — backend only. Never logged. */
+  @Transform(emptyToUndefined)
+  @IsOptional()
+  @IsString()
+  @Matches(/^[\w-]+$/, {
+    message: 'GEOAPIFY_API_KEY must be a single token (letters, digits, - or _)',
+  })
+  GEOAPIFY_API_KEY?: string;
 
   // Future provider (DATA-3). Optional until its adapter exists.
   @Transform(emptyToUndefined)
