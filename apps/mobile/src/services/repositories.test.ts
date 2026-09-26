@@ -100,6 +100,33 @@ describe('mock favorite repository', () => {
   });
 });
 
+describe('mock recommendation repository (API-12)', () => {
+  it('is the pool Home computed before: pickForYou on the mood, four by default, no reasons', async () => {
+    const { pickForYou } = jest.requireActual<typeof import('@/features/home/lib/pickForYou')>(
+      '@/features/home/lib/pickForYou',
+    );
+    const pool = await repositories.experiences.list();
+
+    const result = await repositories.recommendations.recommend({ mood: 'festive' });
+
+    expect(result.relaxed).toEqual([]);
+    expect(result.items.map((item) => item.experience.id)).toEqual(
+      pickForYou(pool, 'festive').map((experience) => experience.id),
+    );
+    expect(result.items).toHaveLength(4);
+    expect(result.items.every((item) => item.reasons.length === 0)).toBe(true);
+  });
+
+  it('honours the limit and returns copies', async () => {
+    const first = await repositories.recommendations.recommend({ mood: 'calm', limit: 2 });
+    expect(first.items).toHaveLength(2);
+
+    first.items[0].experience.title = 'mutated';
+    const again = await repositories.recommendations.recommend({ mood: 'calm', limit: 2 });
+    expect(again.items[0].experience.title).not.toBe('mutated');
+  });
+});
+
 describe('createRepositories (the single source switch)', () => {
   it('mock: the in-app pools; api: every API domain on the API, never the mocks', async () => {
     const { createRepositories } = jest.requireActual<typeof import('./index')>('./index');
@@ -115,6 +142,9 @@ describe('createRepositories (the single source switch)', () => {
       // A failed API call is an error — not the mock data.
       await expect(api.experiences.list()).rejects.toMatchObject({ code: 'NETWORK_ERROR' });
       await expect(api.search.search('jazz')).rejects.toMatchObject({ code: 'NETWORK_ERROR' });
+      await expect(api.recommendations.recommend({})).rejects.toMatchObject({
+        code: 'NETWORK_ERROR',
+      });
       expect(fetchSpy).toHaveBeenCalled();
       expect(String(fetchSpy.mock.calls[0][0])).toMatch(/^http:\/\/api\.test\/api\/v1\//);
     } finally {

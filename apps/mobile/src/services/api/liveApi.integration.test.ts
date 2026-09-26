@@ -136,6 +136,28 @@ describeLive('mobile API layer ↔ local ROAM API', () => {
     ).resolves.toBeNull();
   });
 
+  it('recommendations (API-12): the real catalog, ranked by the API around a Paris position', async () => {
+    const catalogIds = new Set((await repositories.experiences.list()).map((item) => item.id));
+
+    const result = await repositories.recommendations.recommend({
+      location: { latitude: 48.8566, longitude: 2.3522 },
+      maxDistanceKm: 10,
+      limit: 4,
+    });
+
+    expect(result.items.length).toBeGreaterThan(0);
+    expect(result.items.length).toBeLessThanOrEqual(4);
+    for (const item of result.items) {
+      expect(catalogIds.has(item.experience.id)).toBe(true);
+      expect(item.experience.moods).toEqual([]);
+      if (item.distanceM !== undefined) expect(item.distanceM).toBeGreaterThanOrEqual(0);
+    }
+    // Without any context the API still answers (preferences or nothing): never an error.
+    await expect(repositories.recommendations.recommend({ limit: 4 })).resolves.toMatchObject({
+      items: expect.any(Array),
+    });
+  });
+
   it('search and favorites read the same catalog', async () => {
     const [first] = await repositories.experiences.list();
     const results = await repositories.search.search(first.title.slice(0, 6));

@@ -81,3 +81,15 @@ export type FavoriteDto = {
   createdAt: string;
   experience: ExperienceDto;
 };
+
+/** `GET /recommendations` (EXPERIENCE_CATALOG_API.md → "Recommendations"). */
+export type RecommendationsDto = {
+  items: {
+    experience: ExperienceDto;
+    /** Straight line, when known. */
+    distanceM: number | null;
+    reasons: ('nearby' | 'budget' | 'duration' | 'company')[];
+  }[];
+  /** The constraints dropped to find alternatives; empty for a perfect match. */
+  relaxed: ('budget' | 'distance' | 'duration' | 'company')[];
+};

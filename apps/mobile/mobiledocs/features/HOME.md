@@ -10,7 +10,7 @@ existing `ExperienceRepository`/`CategoryRepository` (`useHomeExperiences`), not
 | Selon ton humeur                    | `Chip` (icon slot) + `features/home/data/moods.ts`                     | 5 mood chips, single choice, drives "Des idées pour toi"                                                                               |
 | Les expériences les plus populaires | `features/home/components/ExperienceCard.tsx`                          | The `isPopular` experiences (API mode: most reviewed, D-96)                                                                            |
 | Lieux proches de toi                | `features/home/components/NearbyCard.tsx` + `data/nearbyCategories.ts` | 5 static category shortcuts (no geolocation)                                                                                           |
-| Des idées pour toi                  | `ExperienceCard` (reused) + `features/home/lib/pickForYou.ts`          | Deterministic 4-rule pick, unit-tested                                                                                                 |
+| Des idées pour toi                  | `ExperienceCard` (reused) + `useForYouRecommendations`                 | `RecommendationRepository` (API-12, D-99): `GET /recommendations` in API mode, `pickForYou` in mock mode                               |
 
 `ExperienceCard` is shared by "Les expériences les plus populaires" and "Des idées pour toi" (same card
 shape) rather than duplicated per section. Favorites are local state (`useFavoriteExperienceIds`), no
@@ -30,6 +30,10 @@ the notification bell moved out of `HeroCarousel` into a new floating `HomeHeade
 
 The pool comes from `repositories.experiences.list()` — the API catalog in API mode
 ([`../MOBILE_API_INTEGRATION.md`](../MOBILE_API_INTEGRATION.md)). The API serves no hero/popular flag, so
-`lib/pickFeatured.ts` falls back to the best-rated / most-reviewed experiences when none is flagged (D-96). A failed load
-shows an error state (message + "Réessayer") instead of an endless loading screen. API experiences have no image yet: the
-cards' existing no-photo state is used.
+`lib/pickFeatured.ts` falls back to the best-rated / most-reviewed experiences when none is flagged (D-96). A failed
+load shows an error state (message + "Réessayer") instead of an endless loading screen. While it loads, Home is not
+replaced by a wait (API-12, D-100): the mood chips and nearby tiles show at once, `HeroSkeleton` and
+`ExperienceCarouselLoading` (a spinner, then skeleton cards after 300 ms) stand where the hero and the popular cards
+will be, and "Des idées pour toi" loads the same way on its own. The four horizontal sections are `HorizontalCarousel`s
+(`FlatList`, full-bleed past the page's `px-6`): cards snap on `CARD_WIDTH + 16`, tiles on `NEARBY_CARD_WIDTH + 18`,
+mood chips without snap. API experiences have no image yet: the cards' existing no-photo state is used.

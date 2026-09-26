@@ -5,6 +5,7 @@ import { createMockFavoriteRepository } from './favorites';
 import { createMockJourneyRepository } from './journey';
 import { createMockJourneyFeedbackRepository } from './journeyFeedback';
 import { categories, collections, experiences, places } from './data';
+import { createMockRecommendationRepository } from './recommendations';
 import { createMockSearchRepository } from './search';
 import { createMockUserRepository } from './user';
 
@@ -34,6 +35,7 @@ export function createMockRepositories(): Repositories {
     users: createMockUserRepository(),
     favorites: createMockFavoriteRepository(experiences),
     search: createMockSearchRepository(experiences, categories),
+    recommendations: createMockRecommendationRepository(experiences),
     journeys: createMockJourneyRepository(),
     journeyFeedback: createMockJourneyFeedbackRepository(),
   };

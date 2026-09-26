@@ -163,6 +163,7 @@
       "nearby": "Lieux proches de toi",
       "forYou": "Des idées pour toi"
     },
+    "forYouEmpty": "Pas d'idée pour le moment. Reviens un peu plus tard.",
     "moods": {
       "calm": "Calme",
       "food": "Food",

@@ -421,6 +421,98 @@ describe('ApiFavoriteRepository (prepared for API-10)', () => {
   });
 });
 
+describe('ApiRecommendationRepository (API-12)', () => {
+  const answer = {
+    context: {
+      location: null,
+      maxDistanceKm: null,
+      budget: null,
+      availableMinutes: null,
+      company: null,
+      category: null,
+      fromPreferences: [],
+    },
+    items: [
+      { experience: experienceDto(1), distanceM: 850, reasons: ['nearby', 'budget'] },
+      { experience: experienceDto(2), distanceM: null, reasons: [] },
+    ],
+    relaxed: ['distance'],
+  };
+
+  it('sends the whole context in the API vocabulary: category id → slug, the mood left out', async () => {
+    const { repositories, requests } = setup(() => ok(answer));
+
+    await repositories.recommendations.recommend({
+      location: { latitude: 48.8566, longitude: 2.3522 },
+      maxDistanceKm: 5,
+      budget: '10to25',
+      availableMinutes: 120,
+      company: 'friends',
+      categoryId: 'cat-culture',
+      mood: 'calm',
+      limit: 4,
+    });
+
+    expect(requests).toHaveLength(1);
+    expect(requests[0].method).toBe('GET');
+    expect(requests[0].headers.Authorization).toBe(`Bearer ${TOKEN}`);
+    const url = new URL(requests[0].url);
+    expect(url.pathname).toBe('/api/v1/recommendations');
+    expect(Object.fromEntries(url.searchParams)).toEqual({
+      latitude: '48.8566',
+      longitude: '2.3522',
+      maxDistanceKm: '5',
+      budget: '10to25',
+      availableMinutes: '120',
+      company: 'friends',
+      category: 'culture',
+      limit: '4',
+    });
+  });
+
+  it('leaves out what is unknown, and a distance without a location', async () => {
+    const { repositories, requests } = setup(() => ok(answer));
+
+    await repositories.recommendations.recommend({ maxDistanceKm: 5, limit: 4 });
+
+    expect(path(requests[0])).toBe('/recommendations?limit=4');
+  });
+
+  it('maps each item to the app model: experience, distance when known, reasons, relaxed', async () => {
+    const { repositories } = setup(() => ok(answer));
+
+    const result = await repositories.recommendations.recommend({});
+
+    expect(result.relaxed).toEqual(['distance']);
+    expect(result.items).toHaveLength(2);
+    expect(result.items[0]).toMatchObject({
+      experience: { id: uuid(1), title: 'Experience 1', categoryIds: ['cat-bar'], moods: [] },
+      distanceM: 850,
+      reasons: ['nearby', 'budget'],
+    });
+    expect(result.items[1]).not.toHaveProperty('distanceM');
+    expect(result.items[1].reasons).toEqual([]);
+  });
+
+  it('an empty answer is an empty list, not an error', async () => {
+    const { repositories } = setup(() => ok({ ...answer, items: [], relaxed: [] }));
+
+    await expect(repositories.recommendations.recommend({})).resolves.toEqual({
+      items: [],
+      relaxed: [],
+    });
+  });
+
+  it('API errors reach the caller as they are — never mock data', async () => {
+    const { repositories } = setup(() =>
+      apiError(400, 'VALIDATION_FAILED', 'maxDistanceKm needs latitude and longitude'),
+    );
+
+    const error = await repositories.recommendations.recommend({}).catch((reason) => reason);
+    expect(isApiError(error) && error.code).toBe('VALIDATION_FAILED');
+  });
+});
+
 describe('createApiRepositories: domains still local in API mode', () => {
   it('serves categories, collections, places, journeys and journey feedback without a request', async () => {
     const { repositories, requests } = setup(() => apiError(500, 'INTERNAL_SERVER_ERROR'));

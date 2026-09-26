@@ -134,6 +134,7 @@ export const repositories = createRepositories(readDataSourceConfig()); // mock 
 | `experiences`                 | **API** (`GET /experiences`, `/experiences/:id`)       | DATA-8 priority 2                                                   |
 | `search`                      | **API** (`GET /experiences?q=&category=&budget=`)      | must read the same catalog, or a result opens an unknown id         |
 | `favorites`                   | **API** (`/favorites`), prepared, not used by a screen | D-95                                                                |
+| `recommendations`             | **API** (`GET /recommendations`)                       | Home "Des idées pour toi" (API-12, D-99)                            |
 | `categories`                  | local vocabulary                                       | no endpoint; its slugs are the catalog's (DATA-1 identity mapping)  |
 | `collections`                 | local (mock editorial content)                         | no `Collection` model in the API                                    |
 | `places`                      | local                                                  | no place endpoint; no screen reads it (places come with the detail) |
@@ -219,11 +220,24 @@ Same fields as the app's `User`; `null` → absent; `stats` not served.
 
 ## Recommendations
 
-**Not migrated** (DATA-8 priority 3, left for its own step). The app has no recommendation repository: Home's "Pour
-toi" (`pickForYou`) and the journey suggestions (`features/journey/lib/suggest.ts`) rank locally, with a mood term the API
-does not have. Wiring `GET /recommendations` means a new repository contract, the user's position in Home, and replacing
-two ranking functions — a refactor outside this sprint. `suggest.ts` stays; in API mode its mood term simply matches
-nothing.
+**Home "Des idées pour toi" reads `GET /recommendations` (API-12, D-99).** `RecommendationRepository.recommend(context)`
+(`services/api/repositories/recommendations.ts`) sends the context in the API vocabulary — budget and company are the
+same values, the category id becomes its slug, unknown values are left out — and `mapRecommendationsDto`
+(`services/api/adapters/recommendation.ts`) returns `{ items: [{ experience, distanceM?, reasons }], relaxed }`: the
+experience through the catalog mapping, nothing ranked again in the app.
+
+- **Context Home really has** (`features/home/useForYouRecommendations.ts`): the position **only if the location
+  permission is already granted** (Home never prompts), the selected mood (mock only: the API has no mood model), `limit`
+  4 (the section's size). Budget, time and company are not known on Home: nothing is invented, the API takes budget,
+  company and distance from the saved preferences.
+- **One request per context**: the position is read first, then one request; again only when the mood or the position
+  changes, or on "Réessayer". The previous ideas stay shown while a new mood loads. In API mode a mood change still asks
+  again although the API ignores the mood (no cache, D-91).
+- **States in the section** (the rest of Home stays usable): "Chargement…", the `errorMessageKey` message + "Réessayer",
+  or "Pas d'idée pour le moment." when the list is empty. A failure never shows the mock pool.
+- **Mock mode**: `createMockRecommendationRepository` is `pickForYou` unchanged — same four ideas, same mood rule.
+- **Not migrated**: the journey suggestions (`features/journey/lib/suggest.ts`) and Discover "Près de toi" still rank
+  locally; the reasons (`nearby`, `budget`…) are not shown yet — no screen has a place for them.
 
 ## Favorites (prepared)
 
@@ -281,7 +295,8 @@ Then the app: `EXPO_PUBLIC_DATA_SOURCE=api EXPO_PUBLIC_API_URL=… pnpm mobile:s
 - **Not checked on a simulator or a device** in DATA-8 (no Xcode/Android SDK on the build machine): the iOS and Android
   bundles build in API mode (`expo export`), and the whole API layer ran against the real local API, but the screens
   were not seen with API data. To do before relying on it: Login, Home, Experience, Discover, Profile in API mode.
-- Recommendations, preferences, profile editing, favorites UI, journeys, feedback, password reset: not migrated.
+- Preferences, profile editing, favorites UI, journeys, feedback, password reset: not migrated. Recommendations: Home only
+  (API-12); journey suggestions and Discover still local.
 - Labels formatted at load time keep the language of that moment until the next load.
 - `api` mode with a local journey saved in `mock` mode: its experiences do not resolve.
 - Search: accent-sensitive (`q`), no distance filter, API budget semantics (ceiling, unknown price kept).
@@ -291,5 +306,6 @@ Then the app: `EXPO_PUBLIC_DATA_SOURCE=api EXPO_PUBLIC_API_URL=… pnpm mobile:s
 1. Validate DATA-8 on a device (API mode).
 2. Favorites UI on `FavoriteRepository` (one shared favorite-id set for Home, Discover, Search, detail, "Mes favoris").
 3. Journey (API-08) then journey feedback (API-09).
-4. Recommendations (`GET /recommendations`) once the app has a position/context source for Home.
+4. Recommendations beyond Home: journey suggestions (their context exists in the creation flow) and Discover "Près de
+   toi".
 5. Preferences, after the product decision on their shape; profile editing with its screen.

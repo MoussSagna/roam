@@ -3099,3 +3099,34 @@ applies that SDK 58 wiring at every prebuild:
 The plugin throws on an `AppDelegate` it does not recognize rather than leave a half-migrated app that would start React
 Native twice. Remove it when the project moves to a template that adopts scenes itself (SDK 58). Test:
 `plugins/__tests__/withIOSSceneLifecycle.test.js`.
+
+## API-12 — recommendations API on Home (2026-09-26)
+
+### D-99 — "Des idées pour toi" through a `RecommendationRepository`; Home sends only the context it really has
+
+Home's "Des idées pour toi" now asks `RecommendationRepository.recommend(context)`: `GET /recommendations` in API mode
+(ranked, filtered and explained by the API — the app ranks nothing again), `pickForYou` unchanged in mock mode. The
+context is what Home knows, nothing invented: the position only when the location permission is **already** granted
+(Home is not the place to ask — onboarding and the journey start explain why before prompting), the mood (mock only:
+no mood model in the API), 4 ideas. Budget, time and company are unknown on Home, so they are not sent and the API
+completes them from the saved preferences. The request waits for the position read (one request, not one without then
+one with a position) and is repeated only when the context changes or on "Réessayer"; a mood change still asks the API
+again, which ignores it — accepted rather than a cache (D-91). Loading, error + retry and empty live inside the section,
+so a failed recommendation never hides the rest of Home and never falls back to the mock pool. Rejected: prompting for
+the location on Home; a default budget or company; moving `pickForYou` into the API repository; journey suggestions
+and Discover "Près de toi" in the same step (their own contexts and screens).
+
+### D-100 — One loading system (spinner → skeletons), a progressive Home, its horizontal lists on `HorizontalCarousel`
+
+No loading component existed (a `Button` spinner, texts "Chargement…"). `LoadingSpinner` and `Skeleton` join
+`components/ui/`, both on theme tokens (`textSecondary`, `border`) so light and dark need no second color; the skeleton
+pulse is a slow Moti opacity loop, static under reduce motion (`useReduceMotion`), and hidden from screen readers — the
+loading state is announced once. A wait starts discreet (spinner) and becomes skeletons after 300 ms
+(`useDelayedFlag`), so a fast answer never flashes a skeleton. Skeletons copy the real component from its own exported
+dimensions (`CARD_WIDTH`, `CARD_IMAGE_HEIGHT`, `getHeroHeight`), and a carousel of skeletons is the same
+`HorizontalCarousel` as the real one, so nothing moves when the content arrives. Home no longer waits full-screen: only
+a failed experience load replaces the page. Its four horizontal `ScrollView`s became `HorizontalCarousel`s (D-67's
+`FlatList` pattern, already used by Discover): full-bleed past `px-6`, snap on the card's exported width plus the same
+gaps as before (cards 16, tiles 18, `NEARBY_CARD_WIDTH` newly exported); the mood chips, of varying widths, bleed
+without snap (`snapEnabled={false}`, `itemWidth` now optional there). Rejected: a skeleton library, a shimmer gradient
+(a new dependency for little gain), a generic grey rectangle per section, snapping chips on an average width.

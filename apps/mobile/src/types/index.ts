@@ -9,3 +9,4 @@ export type * from './place';
 export type * from './search';
 export type * from './user';
 export type * from './journey';
+export type * from './recommendation';

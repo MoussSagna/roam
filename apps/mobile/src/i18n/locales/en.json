@@ -163,6 +163,7 @@
       "nearby": "Places near you",
       "forYou": "Picked for you"
     },
+    "forYouEmpty": "No ideas right now. Check back a little later.",
     "moods": {
       "calm": "Calm",
       "food": "Food",

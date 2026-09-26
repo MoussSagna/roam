@@ -6,6 +6,8 @@ import type {
   JourneyFeedback,
   JourneyFeedbackInput,
   Place,
+  RecommendationContext,
+  Recommendations,
   SearchFilters,
   SearchSuggestion,
   User,
@@ -94,6 +96,14 @@ export interface FavoriteRepository {
   remove(experienceId: string): Promise<void>;
 }
 
+/**
+ * Recommendations for the user's situation (Home "Des idées pour toi"). API: `GET /recommendations`, ranked and
+ * explained server-side; mock: the deterministic pool the app had before (`features/home/lib/pickForYou.ts`).
+ */
+export interface RecommendationRepository {
+  recommend(context: RecommendationContext): Promise<Recommendations>;
+}
+
 export interface SearchRepository {
   /** Short, capped list of query-text and experience suggestions for a partial query (sprint 6 §5). */
   suggest(query: string): Promise<SearchSuggestion[]>;
@@ -141,6 +151,7 @@ export type Repositories = {
   users: UserRepository;
   favorites: FavoriteRepository;
   search: SearchRepository;
+  recommendations: RecommendationRepository;
   journeys: JourneyRepository;
   journeyFeedback: JourneyFeedbackRepository;
 };

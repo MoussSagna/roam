@@ -13,6 +13,7 @@ import {
 } from './repositories/auth';
 import { createApiExperienceRepository } from './repositories/experiences';
 import { createApiFavoriteRepository } from './repositories/favorites';
+import { createApiRecommendationRepository } from './repositories/recommendations';
 import { createApiSearchRepository } from './repositories/search';
 import { createSecureSessionStorage, type SessionStorage } from './sessionStorage';
 
@@ -56,6 +57,7 @@ export function createApiRepositories({
     users: createApiUserRepository(client),
     experiences: createApiExperienceRepository(client, mappingContext),
     search: createApiSearchRepository(client, mappingContext),
+    recommendations: createApiRecommendationRepository(client, mappingContext),
     favorites: createApiFavoriteRepository(client),
 
     // Still local in API mode (DATA-8 scope, `mobiledocs/MOBILE_API_INTEGRATION.md` → "Domains still local"):
