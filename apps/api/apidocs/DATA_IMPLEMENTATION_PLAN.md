@@ -28,9 +28,13 @@ Done: the event contract, Discovery API v2 Event Search and Event Details, typed
 explicit segment table, absolute instants), idempotent upsert by provider id — [`TICKETMASTER_PROVIDER.md`](TICKETMASTER_PROVIDER.md).
 Real check passed. Not connected to an endpoint, a sync or the recommendations.
 
-## DATA-4 — Open Data
+## DATA-4 — Open Data — **done** (study; no adapter)
 
 Select a small number of relevant French datasets. Document publisher, update frequency, schema, license/usage conditions, fields and normalization.
+Done: DATAtourisme (places first, events after a date decision), Basilic (cultural venues, filtered) and Data ES (sports
+places, filtered, later) selected and documented — licences and attribution (per-record producer and date for
+DATAtourisme, per-image rights), freshness, identity, quality, overlap, mapping to `Place`/`Event`, the contract gaps
+and the work left to DATA-6 — [`OPEN_DATA_SOURCES.md`](OPEN_DATA_SOURCES.md). No code, no import, no Prisma change.
 
 ## DATA-5 — Enrichment — **places done** (run as the sprint named "DATA-3 — ROAM enrichment")
 
