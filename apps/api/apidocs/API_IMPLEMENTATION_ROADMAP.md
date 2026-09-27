@@ -450,6 +450,15 @@ DTO validation (absolute instants only), mapper (venue as a place, segment table
 overwritten); `EventRepository.updateFromSource`. No endpoint, no sync, no Prisma change, no new dependency, no mobile
 change, recommendations unchanged.
 
+## DATA-4 (plan) — Open data sources — **COMPLETED** (study; no code)
+
+The plan's DATA-4 (the Ticketmaster sprint above was also named DATA-4; it is the plan's DATA-3). Details:
+[`OPEN_DATA_SOURCES.md`](OPEN_DATA_SOURCES.md). DATAtourisme, Basilic and Data ES studied against their official
+documentation and live sources: licences (Licence Ouverte 2.0; DATAtourisme per-record attribution and per-image
+rights), freshness, identity, quality, overlap with Google/Geoapify/Ticketmaster, mapping to `Place`/`Event`. Found for
+DATA-6: `NormalizedPlace` lacks description/photos/hours; `Event` has no own location and no date-only marker. No
+adapter, no import, no Prisma change, no mobile change; `DATATOURISME_API_KEY` reserved in `.env.example`.
+
 ## API-12 — next
 
 The mobile integration: replace the mock repositories with API repositories (auth, profile, catalog, recommendations,
