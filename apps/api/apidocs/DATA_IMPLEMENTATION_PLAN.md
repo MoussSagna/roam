@@ -21,15 +21,22 @@ A `PlaceProvider` on the DATA-2 contract, usable without Google billing (free pl
 OpenStreetMap identity, explicit category table, same errors and ingestion — [`GEOAPIFY_PROVIDER.md`](GEOAPIFY_PROVIDER.md).
 Real check passed. Not connected to an endpoint, a sync or the recommendations.
 
-## DATA-3 — Ticketmaster
+## DATA-3 — Ticketmaster — **done** (run as the sprint named "DATA-4 — Ticketmaster"; not connected yet)
 
 Implement event search/details where needed, normalization, pricing when available and graceful missing-price handling.
+Done: the event contract, Discovery API v2 Event Search and Event Details, typed errors, normalization (venue as a place,
+explicit segment table, absolute instants), idempotent upsert by provider id — [`TICKETMASTER_PROVIDER.md`](TICKETMASTER_PROVIDER.md).
+Real check passed. Not connected to an endpoint, a sync or the recommendations.
 
-## DATA-4 — Open Data
+## DATA-4 — Open Data — **done** (study; no adapter)
 
 Select a small number of relevant French datasets. Document publisher, update frequency, schema, license/usage conditions, fields and normalization.
+Done: DATAtourisme (places first, events after a date decision), Basilic (cultural venues, filtered) and Data ES (sports
+places, filtered, later) selected and documented — licences and attribution (per-record producer and date for
+DATAtourisme, per-image rights), freshness, identity, quality, overlap, mapping to `Place`/`Event`, the contract gaps
+and the work left to DATA-6 — [`OPEN_DATA_SOURCES.md`](OPEN_DATA_SOURCES.md). No code, no import, no Prisma change.
 
-## DATA-5 — Enrichment
+## DATA-5 — Enrichment — **places done** (run as the sprint named "DATA-3 — ROAM enrichment")
 
 Implement deterministic first-pass enrichment:
 
@@ -40,9 +47,19 @@ Implement deterministic first-pass enrichment:
 - best moments
 - ROAM tags
 
-## DATA-6 — Persistence & synchronization
+Done for places: category rules (definitional atmosphere, derived typical duration; energy, audience, moments and
+tags left `UNKNOWN`/empty for lack of evidence), curated data never overwritten, idempotent writes, a computed quality
+check — [`ROAM_ENRICHMENT.md`](ROAM_ENRICHMENT.md). Not done: experience enrichment, mood, attribute-based rules. Not
+connected to a sync or the recommendations. Ticketmaster (listed as DATA-3 above) was done afterwards.
+
+## DATA-6 — Persistence & synchronization — **done** (not connected to recommendations or endpoints)
 
 Implement database models, upsert, deduplication, cache, sync, TTL strategy and observability.
+Done: transactional upserts with advisory locks, cross-provider place deduplication (RNB + name, name + proximity),
+ownership rules, per-source attribution and image rights, date-only events, freshness/TTL per provider, a generic sync
+orchestrator (lease, pacing, retries, partial failures, resume, run journal), DATAtourisme, Basilic and Data ES
+providers, `pnpm sync` — [`DATA_PERSISTENCE_AND_SYNC.md`](DATA_PERSISTENCE_AND_SYNC.md). Real check passed except Google
+(key restrictions, DATA-2). Not scheduled, no endpoint; a `sport` category is a product decision (DATA-7).
 
 ## DATA-7 — Recommendations
 

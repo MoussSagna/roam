@@ -1,8 +1,8 @@
 import { Logger } from '@nestjs/common';
 
-import { UniqueConstraintError } from '../../database/persistence-errors.js';
+import { DatabaseUnavailableError } from '../../database/persistence-errors.js';
 import type { CategoryRepository } from '../catalog/category.repository.js';
-import type { PlaceRepository } from '../catalog/place.repository.js';
+import type { PlaceRepository, PlaceUpsert } from '../catalog/place.repository.js';
 import { PlaceIngestionService } from './place-ingestion.service.js';
 import type { NormalizedPlace, PlaceProvider } from './provider.types.js';
 
@@ -16,7 +16,7 @@ const normalized = (overrides: Partial<NormalizedPlace> = {}): NormalizedPlace =
     externalUrl: 'https://maps.google.com/?cid=1',
     providerCategories: ['cafe', 'unknown_type'],
   },
-  name: 'Café',
+  name: 'Café de la Paix',
   address: '1 Rue Test',
   city: 'Paris',
   latitude: 48.86,
@@ -30,133 +30,148 @@ const normalized = (overrides: Partial<NormalizedPlace> = {}): NormalizedPlace =
 });
 
 function setup() {
-  const places = { findBySource: vi.fn(), create: vi.fn(), updateFromSource: vi.fn() };
+  const places = {
+    upsertFromSource: vi.fn((input: PlaceUpsert) =>
+      Promise.resolve({ place: { id: 'p1', name: input.facts.name }, outcome: 'created' as const }),
+    ),
+  };
   const categories = { list: vi.fn().mockResolvedValue([{ id: 'c1', slug: 'cafe' }]) };
-  const clock = { now: () => NOW };
   const service = new PlaceIngestionService(
     places as unknown as PlaceRepository,
     categories as unknown as CategoryRepository,
-    clock,
+    { now: () => NOW },
   );
-  return { places, categories, service };
+  const lastInput = () => places.upsertFromSource.mock.calls.at(-1)![0];
+  return { places, categories, service, lastInput };
 }
 
-const expectedSource = {
-  provider: PROVIDER,
-  externalId: 'ChIJ-1',
-  externalUrl: 'https://maps.google.com/?cid=1',
-  providerCategories: ['cafe', 'unknown_type'],
-  fetchedAt: NOW,
-};
-
-const expectedFacts = {
-  name: 'Café',
-  address: '1 Rue Test',
-  city: 'Paris',
-  latitude: 48.86,
-  longitude: 2.36,
-  priceLevel: 'LOW',
-  rating: 4.2,
-  reviewCount: 10,
-  isActive: true,
-};
-
-describe('PlaceIngestionService (repositories mocked)', () => {
-  beforeEach(() => vi.spyOn(Logger.prototype, 'log').mockImplementation(() => undefined));
+describe('PlaceIngestionService (repository mocked)', () => {
+  beforeEach(() => {
+    vi.spyOn(Logger.prototype, 'log').mockImplementation(() => undefined);
+  });
   afterEach(() => vi.restoreAllMocks());
 
-  it('unknown provider record → created with its provenance and the existing categories only', async () => {
-    const { service, places } = setup();
-    places.findBySource.mockResolvedValue(null);
-    places.create.mockResolvedValue({ id: 'p1' });
+  it('passes the primary facts, the fill-only facts, known categories only and the provenance', async () => {
+    const { service, lastInput } = setup();
+    await service.upsert(
+      PROVIDER,
+      normalized({
+        description: 'Un café',
+        website: 'https://cafe.test/',
+        rnbId: 'ABCD1234EFGH',
+        attribution: 'Producteur',
+        providerUpdatedAt: new Date('2026-09-01T00:00:00Z'),
+        images: [
+          {
+            url: 'https://img/1.jpg',
+            license: 'CC BY',
+            credit: '© X',
+            rightsStartDate: null,
+            rightsEndDate: null,
+          },
+        ],
+      }),
+    );
 
-    await expect(service.upsert(PROVIDER, normalized())).resolves.toEqual({
-      place: { id: 'p1' },
-      outcome: 'created',
+    const input = lastInput();
+    expect(input.facts).toEqual({
+      name: 'Café de la Paix',
+      address: '1 Rue Test',
+      city: 'Paris',
+      latitude: 48.86,
+      longitude: 2.36,
+      priceLevel: 'LOW',
+      rating: 4.2,
+      reviewCount: 10,
     });
-    expect(places.findBySource).toHaveBeenCalledWith('google_places', 'ChIJ-1');
-    expect(places.create).toHaveBeenCalledWith({
-      ...expectedFacts,
-      categorySlugs: ['cafe'],
-      source: expectedSource,
+    expect(input.fill).toMatchObject({
+      description: 'Un café',
+      website: 'https://cafe.test/',
+      rnbId: 'ABCD1234EFGH',
     });
+    // `nature` is not in the catalog: never written (a missing slug would fail the whole write).
+    expect(input.categorySlugs).toEqual(['cafe']);
+    expect(input.source).toMatchObject({
+      provider: PROVIDER,
+      externalId: 'ChIJ-1',
+      fetchedAt: NOW,
+      attribution: 'Producteur',
+      providerUpdatedAt: new Date('2026-09-01T00:00:00Z'),
+      obsoleteAt: null,
+    });
+    expect(input.source.images).toHaveLength(1);
+    // Locks: the normalized name (concurrent imports of the same place from two providers are serialized).
+    expect(input.match?.lockNames).toEqual(['cafe paix']);
   });
 
-  it('known provider record → updated in place: provider facts and provenance only', async () => {
-    const { service, places } = setup();
-    places.findBySource.mockResolvedValue({ id: 'p1' });
-    places.updateFromSource.mockResolvedValue({ id: 'p1' });
+  it('a closed place marks its own record obsolete (the repository deactivates the place when all are)', async () => {
+    const { service, lastInput } = setup();
+    await service.upsert(PROVIDER, normalized({ isActive: false }));
+    expect(lastInput().source.obsoleteAt).toEqual(NOW);
+  });
 
-    await expect(service.upsert(PROVIDER, normalized())).resolves.toEqual({
-      place: { id: 'p1' },
-      outcome: 'updated',
+  it('deduplication decision: same provider or the curated DATA-1 catalog are never merge targets', async () => {
+    const { service, lastInput } = setup();
+    await service.upsert(PROVIDER, normalized());
+    const decide = lastInput().match!.decide;
+    const candidate = {
+      id: 'x',
+      name: 'Café de la Paix',
+      latitude: 48.86,
+      longitude: 2.36,
+      rnbId: null,
+    };
+    expect(decide([{ ...candidate, providerKeys: ['geoapify'] }])).toEqual({
+      placeId: 'x',
+      rule: 'proximity',
     });
-    expect(places.create).not.toHaveBeenCalled();
-    expect(places.updateFromSource).toHaveBeenCalledWith('p1', expectedFacts, expectedSource);
-    const change = places.updateFromSource.mock.calls[0][1] as Record<string, unknown>;
-    for (const roamOwned of [
-      'enrichment',
-      'categorySlugs',
-      'description',
-      'photos',
-      'openingHours',
-      'attributes',
-    ])
-      expect(change).not.toHaveProperty(roamOwned);
+    expect(decide([{ ...candidate, providerKeys: ['google_places'] }]).placeId).toBeNull();
+    expect(decide([{ ...candidate, providerKeys: ['mobile_mock_migration'] }]).placeId).toBeNull();
   });
 
-  it('a concurrent import that created the record first → update instead of failing', async () => {
+  it('importNearby: one provider call, one upsert per place, a report by outcome', async () => {
     const { service, places } = setup();
-    places.findBySource.mockResolvedValueOnce(null).mockResolvedValueOnce({ id: 'p9' });
-    places.create.mockRejectedValue(new UniqueConstraintError());
-    places.updateFromSource.mockResolvedValue({ id: 'p9' });
-
-    await expect(service.upsert(PROVIDER, normalized())).resolves.toMatchObject({
-      outcome: 'updated',
-    });
-    expect(places.updateFromSource).toHaveBeenCalledWith('p9', expectedFacts, expectedSource);
-  });
-
-  it('other write errors are not swallowed', async () => {
-    const { service, places } = setup();
-    places.findBySource.mockResolvedValue(null);
-    places.create.mockRejectedValue(new Error('boom'));
-    await expect(service.upsert(PROVIDER, normalized())).rejects.toThrow('boom');
-  });
-
-  it('importNearby: one provider call, one upsert per place, a report', async () => {
-    const { service, places, categories } = setup();
-    const searchNearby = vi
-      .fn()
-      .mockResolvedValue([
-        normalized(),
-        normalized({ source: { ...normalized().source, externalId: 'ChIJ-2' } }),
-      ]);
-    const provider: PlaceProvider = { identity: PROVIDER, searchNearby, getPlace: vi.fn() };
-    places.findBySource.mockResolvedValueOnce(null).mockResolvedValueOnce({ id: 'p2' });
-    places.create.mockResolvedValue({ id: 'p1' });
-    places.updateFromSource.mockResolvedValue({ id: 'p2' });
+    places.upsertFromSource
+      .mockResolvedValueOnce({ place: { id: 'a' }, outcome: 'created' } as never)
+      .mockResolvedValueOnce({ place: { id: 'b' }, outcome: 'matched' } as never)
+      .mockResolvedValueOnce({ place: { id: 'c' }, outcome: 'unchanged' } as never);
+    const provider = {
+      identity: PROVIDER,
+      searchNearby: vi
+        .fn()
+        .mockResolvedValue([
+          normalized(),
+          normalized({ source: { ...normalized().source, externalId: '2' } }),
+          normalized({ source: { ...normalized().source, externalId: '3' } }),
+        ]),
+      getPlace: vi.fn(),
+    } as unknown as PlaceProvider;
 
     const report = await service.importNearby(provider, {
-      latitude: 48.85,
-      longitude: 2.35,
+      latitude: 48.86,
+      longitude: 2.36,
       radiusMeters: 500,
     });
+    expect(report).toMatchObject({ created: 1, matched: 1, updated: 0, unchanged: 1 });
+    expect(report.places.map(({ id }) => id)).toEqual(['a', 'b', 'c']);
+  });
 
-    expect(searchNearby).toHaveBeenCalledTimes(1);
-    expect(categories.list).toHaveBeenCalledTimes(1);
-    expect(report).toEqual({ created: 1, updated: 1, places: [{ id: 'p1' }, { id: 'p2' }] });
+  it('persistence errors are not swallowed', async () => {
+    const { service, places } = setup();
+    places.upsertFromSource.mockRejectedValue(new DatabaseUnavailableError());
+    await expect(service.upsert(PROVIDER, normalized())).rejects.toBeInstanceOf(
+      DatabaseUnavailableError,
+    );
   });
 
   it('importPlace: null when the provider does not know the id, nothing written', async () => {
     const { service, places } = setup();
-    const provider: PlaceProvider = {
+    const provider = {
       identity: PROVIDER,
       searchNearby: vi.fn(),
       getPlace: vi.fn().mockResolvedValue(null),
-    };
-
-    await expect(service.importPlace(provider, 'ChIJ-gone')).resolves.toBeNull();
-    expect(places.findBySource).not.toHaveBeenCalled();
+    } as unknown as PlaceProvider;
+    await expect(service.importPlace(provider, 'unknown')).resolves.toBeNull();
+    expect(places.upsertFromSource).not.toHaveBeenCalled();
   });
 });

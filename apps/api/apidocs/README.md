@@ -9,8 +9,10 @@ Documentation of the **API / backend**. Start from
 database schema (API-03), repositories (API-04), authentication (API-05), profile and preferences (API-06), experience
 catalog and recommendations (API-07), a catalog migrated from the mobile mock data (DATA-1), journeys (API-08), their feedback (API-09) favorites (API-10) and rate limiting (API-11) —
 [`API_IMPLEMENTATION_ROADMAP.md`](API_IMPLEMENTATION_ROADMAP.md). The first provider adapter, Google Places (DATA-2,
-[`GOOGLE_PLACES_PROVIDER.md`](GOOGLE_PLACES_PROVIDER.md)), and the second, Geoapify (DATA-2.1,
-[`GEOAPIFY_PROVIDER.md`](GEOAPIFY_PROVIDER.md)), exist but are not connected to any endpoint or sync yet. The schema is migrated on a local PostgreSQL 18.6
+[`GOOGLE_PLACES_PROVIDER.md`](GOOGLE_PLACES_PROVIDER.md)), the second, Geoapify (DATA-2.1,
+[`GEOAPIFY_PROVIDER.md`](GEOAPIFY_PROVIDER.md)), and the event provider Ticketmaster (DATA-4,
+[`TICKETMASTER_PROVIDER.md`](TICKETMASTER_PROVIDER.md)) exist but are not connected to any endpoint or sync yet; the ROAM enrichment of places (DATA-3,
+[`ROAM_ENRICHMENT.md`](ROAM_ENRICHMENT.md)) is internal to the data pipeline. The schema is migrated on a local PostgreSQL 18.6
 (`roam`) and tested on a dedicated test database (`roam_test`, `pnpm test:db`).
 
 The Data Foundation documents below are the target design of the data layer (how external data — Google Places,
@@ -53,6 +55,10 @@ deployment.
 | [`DATA_1_MIGRATION_REPORT.md`](DATA_1_MIGRATION_REPORT.md)                             | DATA-1: mobile mock data → canonical catalog — sources, mapping, ids, idempotence, provenance, what is not migrated, verifications              |
 | [`GOOGLE_PLACES_PROVIDER.md`](GOOGLE_PLACES_PROVIDER.md)                               | DATA-2: provider contract, Google client/adapter, field mask, errors, mapping, identity, ownership, tests, real check                           |
 | [`GEOAPIFY_PROVIDER.md`](GEOAPIFY_PROVIDER.md)                                         | DATA-2.1: Geoapify client/adapter on the DATA-2 contract, OpenStreetMap identity, categories, limits, free plan, tests, real check              |
+| [`TICKETMASTER_PROVIDER.md`](TICKETMASTER_PROVIDER.md)                                 | DATA-4: event contract, Ticketmaster client/adapter, venues as places, dates/timezones, errors, mapping, identity, tests, real check            |
+| [`ROAM_ENRICHMENT.md`](ROAM_ENRICHMENT.md)                                             | DATA-3: place enrichment rules, provenance, curated priority, idempotence, quality, deduplication, tests                                        |
+| [`DATA_PERSISTENCE_AND_SYNC.md`](DATA_PERSISTENCE_AND_SYNC.md)                         | DATA-6: identity, deduplication, RNB, ownership, attribution, image rights, event dates, freshness/TTL, sync, retries, rate limits, privacy     |
+| [`OPEN_DATA_SOURCES.md`](OPEN_DATA_SOURCES.md)                                         | DATA-4 (study): DATAtourisme, Basilic, Data ES — licences, attribution, freshness, identity, quality, overlap, mapping, DATA-6 work             |
 | [`DATA_FOUNDATION.md`](DATA_FOUNDATION.md)                                             | Objective, pipeline (sources → adapters → normalization → enrichment → database/cache → engine → app), initial sources, MVP scope (Paris)       |
 | [`PROVIDER_ARCHITECTURE.md`](PROVIDER_ARCHITECTURE.md)                                 | Layers from the mobile app to provider adapters, adapter responsibilities, failures, secrets                                                    |
 | [`NORMALIZATION_AND_ENRICHMENT.md`](NORMALIZATION_AND_ENRICHMENT.md)                   | Pipeline, pricing normalization, enrichment enums, confidence, rule-based first version                                                         |

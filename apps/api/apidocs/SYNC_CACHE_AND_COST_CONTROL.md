@@ -1,5 +1,8 @@
 # ROAM — Sync, Cache & Cost Control
 
+> Target design. Implemented by DATA-6: [`DATA_PERSISTENCE_AND_SYNC.md`](DATA_PERSISTENCE_AND_SYNC.md) (PostgreSQL as the
+> cache, TTLs per provider, `sync_runs`, pacing, observability).
+
 ## Goal
 
 Control provider usage, reduce latency and avoid repeated identical requests.

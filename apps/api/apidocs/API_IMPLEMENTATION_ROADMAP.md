@@ -430,6 +430,49 @@ retry), DTO validation, mapper (OpenStreetMap identity, explicit category table,
 `GEOAPIFY_API_KEY`. Reuses the DATA-2 errors, `PlaceIngestionService` and repositories unchanged; Google untouched. No
 endpoint, no sync, no Prisma change, no new dependency, no mobile change, recommendations unchanged.
 
+## DATA-3 — ROAM enrichment & quality — **COMPLETED** (places; internal; not connected)
+
+Branch `data-03-roam-enrichment` (from `develop`). Details: [`ROAM_ENRICHMENT.md`](ROAM_ENRICHMENT.md). The plan's
+enrichment step (DATA_IMPLEMENTATION_PLAN.md "DATA-5"), for places: pure category rules (definitional atmosphere, derived
+typical duration, nothing inferred for energy/audience/moments/tags/mood), `RoamEnrichmentService` (curated and feedback
+enrichments never overwritten, conditional rewrite, idempotent, concurrency-safe), `RoamEnrichmentRepository`, computed
+place quality. Provider-agnostic. No endpoint, no Prisma change, no new dependency, no mobile change, recommendations
+unchanged. Known issue: the intermittent HTTP failures of the database suites (auth, favorites) still occur, also on
+`develop`.
+
+## DATA-4 — Ticketmaster event provider — **COMPLETED** (backend layer; not connected; real check passed)
+
+Branch `data-04-ticketmaster` (from `data-03-roam-enrichment`, i.e. `develop` + DATA-3). Details:
+[`TICKETMASTER_PROVIDER.md`](TICKETMASTER_PROVIDER.md). The event contract (`EventProvider`, `NormalizedEvent`) added to
+the provider types; Ticketmaster Discovery client (Event Search, Event Details, 5 s timeout, no retry, key never logged),
+DTO validation (absolute instants only), mapper (venue as a place, segment table), adapter; `EventIngestionService`
+(venue through `PlaceIngestionService`, idempotent upsert by provider id, ROAM category and experience link never
+overwritten); `EventRepository.updateFromSource`. No endpoint, no sync, no Prisma change, no new dependency, no mobile
+change, recommendations unchanged.
+
+## DATA-4 (plan) — Open data sources — **COMPLETED** (study; no code)
+
+The plan's DATA-4 (the Ticketmaster sprint above was also named DATA-4; it is the plan's DATA-3). Details:
+[`OPEN_DATA_SOURCES.md`](OPEN_DATA_SOURCES.md). DATAtourisme, Basilic and Data ES studied against their official
+documentation and live sources: licences (Licence Ouverte 2.0; DATAtourisme per-record attribution and per-image
+rights), freshness, identity, quality, overlap with Google/Geoapify/Ticketmaster, mapping to `Place`/`Event`. Found for
+DATA-6: `NormalizedPlace` lacks description/photos/hours; `Event` has no own location and no date-only marker. No
+adapter, no import, no Prisma change, no mobile change; `DATATOURISME_API_KEY` reserved in `.env.example`.
+
+## DATA-6 — Persistence & synchronization — **COMPLETED** (not connected; real check passed except Google)
+
+Branch `data-06-persistence-sync` (from `develop`, which holds DATA-1 → DATA-5 and the DATA-4 study). Details:
+[`DATA_PERSISTENCE_AND_SYNC.md`](DATA_PERSISTENCE_AND_SYNC.md). One additive migration (`places.website/rnbId`, event local
+dates/times and location, `startDate` nullable with CHECKs, `external_sources.attribution/images/obsoleteAt`,
+`sync_runs`); transactional upserts with advisory locks and cross-provider place deduplication; ownership (primary
+source facts, fill-only fields, ROAM data never written); a generic `SyncService` (lease per provider, per-request
+pacing, retries for transient errors only, partial failures, resume, run journal) and named jobs (`pnpm sync`);
+DATAtourisme, Basilic and Data ES providers; `DATATOURISME_API_KEY`. No endpoint, no scheduler, no Redis, no new
+dependency, no mobile change, recommendations unchanged. Behaviour changes: a refresh with identical facts is now
+`unchanged` (was `updated`); a same-name place within 30 m from another provider is now merged (was kept apart until
+DATA-6). Known issues: the Google key is still refused (DATA-2); the intermittent HTTP failures of the database suites
+(API-11) still occur.
+
 ## API-12 — next
 
 The mobile integration: replace the mock repositories with API repositories (auth, profile, catalog, recommendations,

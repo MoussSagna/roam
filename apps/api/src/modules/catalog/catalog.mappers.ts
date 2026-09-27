@@ -1,7 +1,16 @@
-import { decimalOutput, jsonOutput } from '../../database/json.js';
+import { decimalOutput, jsonInput, jsonOutput, type JsonValue } from '../../database/json.js';
+import { fromDbDate } from '../../database/local-date.js';
 import type { Prisma } from '../../generated/prisma/client.js';
 import type { SourceEntityType } from '../../generated/prisma/enums.js';
-import type { Enrichment, Event, Experience, Place, SourceInput } from './catalog.types.js';
+import type {
+  Enrichment,
+  Event,
+  Experience,
+  Place,
+  Source,
+  SourceImage,
+  SourceInput,
+} from './catalog.types.js';
 
 /** Prisma ↔ domain for the catalog repositories (the only place that knows both shapes). */
 
@@ -34,7 +43,9 @@ type ExperienceDetailRow = Prisma.ExperienceGetPayload<{
 }>;
 type EventRow = Prisma.EventGetPayload<{ include: typeof EVENT_INCLUDE }>;
 
-function toEnrichment(row: Prisma.RoamEnrichmentGetPayload<object> | null): Enrichment | null {
+export function toEnrichment(
+  row: Prisma.RoamEnrichmentGetPayload<object> | null,
+): Enrichment | null {
   if (!row) return null;
   return {
     atmosphere: row.atmosphere,
@@ -64,6 +75,8 @@ export function toPlace(row: PlaceRow): Place {
     rating: row.rating,
     reviewCount: row.reviewCount,
     attributes: jsonOutput(row.attributes),
+    website: row.website,
+    rnbId: row.rnbId,
     isActive: row.isActive,
     categorySlugs: row.categories.map(({ category }) => category.slug),
     enrichment: toEnrichment(row.enrichment),
@@ -117,6 +130,14 @@ export function toEvent(row: EventRow): Event {
     startDate: row.startDate,
     endDate: row.endDate,
     timezone: row.timezone,
+    localStartDate: fromDbDate(row.localStartDate),
+    localStartTime: row.localStartTime,
+    localEndDate: fromDbDate(row.localEndDate),
+    localEndTime: row.localEndTime,
+    address: row.address,
+    city: row.city,
+    latitude: row.latitude,
+    longitude: row.longitude,
     images: row.images,
     priceMin: decimalOutput(row.priceMin),
     priceMax: decimalOutput(row.priceMax),
@@ -146,11 +167,41 @@ export function sourceCreate(source: SourceInput, entityType: SourceEntityType) 
     confidence: source.confidence ?? null,
     fetchedAt: source.fetchedAt,
     providerUpdatedAt: source.providerUpdatedAt ?? null,
+    attribution: source.attribution ?? null,
+    images: jsonInput(imagesJson(source.images)),
+    obsoleteAt: source.obsoleteAt ?? null,
     provider: {
       connectOrCreate: {
         where: { key: source.provider.key },
         create: { key: source.provider.key, name: source.provider.name },
       },
     },
+  };
+}
+
+/** Images for the `ExternalSource.images` JSON column (`undefined` → unchanged, empty → NULL). */
+export function imagesJson(images: SourceImage[] | undefined): JsonValue | undefined {
+  if (images === undefined) return undefined;
+  return images.length ? images.map((image) => ({ ...image })) : null;
+}
+
+export const SOURCE_INCLUDE = { provider: { select: { key: true, name: true } } } as const;
+
+type SourceRow = Prisma.ExternalSourceGetPayload<{ include: typeof SOURCE_INCLUDE }>;
+
+export function toSource(row: SourceRow): Source {
+  const images = jsonOutput(row.images);
+  return {
+    providerKey: row.provider.key,
+    providerName: row.provider.name,
+    externalId: row.externalId,
+    externalUrl: row.externalUrl,
+    providerCategories: row.providerCategories,
+    fetchedAt: row.fetchedAt,
+    providerUpdatedAt: row.providerUpdatedAt,
+    attribution: row.attribution,
+    images: Array.isArray(images) ? (images as unknown as SourceImage[]) : [],
+    obsoleteAt: row.obsoleteAt,
+    createdAt: row.createdAt,
   };
 }
