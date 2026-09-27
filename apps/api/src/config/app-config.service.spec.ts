@@ -52,6 +52,13 @@ describe('AppConfigService', () => {
     expect(configFor({ GEOAPIFY_API_KEY: 'geoFAKE' }).providers.geoapifyApiKey).toBe('geoFAKE');
   });
 
+  it('exposes the Ticketmaster key only through providers (absent → undefined)', () => {
+    expect(configFor({}).providers.ticketmasterApiKey).toBeUndefined();
+    expect(configFor({ TICKETMASTER_API_KEY: 'tmFAKE' }).providers.ticketmasterApiKey).toBe(
+      'tmFAKE',
+    );
+  });
+
   it('explicit settings win over the environment defaults', () => {
     const config = configFor({
       NODE_ENV: 'production',

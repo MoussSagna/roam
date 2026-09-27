@@ -31,6 +31,12 @@ A second place source ([`GEOAPIFY_PROVIDER.md`](GEOAPIFY_PROVIDER.md)), OpenStre
 categories (normalized by an explicit table). No rating, reviews or price: they stay `null`/`UNKNOWN`. Opening hours,
 website and facilities exist but are not read yet. Nothing ROAM-owned comes from it.
 
+## Ticketmaster (DATA-4)
+
+The event source ([`TICKETMASTER_PROVIDER.md`](TICKETMASTER_PROVIDER.md)): title, description, start/end instants,
+timezone, images, price range when given (often absent), booking URL, cancellation, classification (only Arts & Theatre
+maps to a ROAM category), venue (stored as a place). Nothing ROAM-owned comes from it.
+
 ## Internal source: mobile mock migration (DATA-1)
 
 Until the providers are connected, the catalog holds the mobile mock data, migrated once by DATA-1

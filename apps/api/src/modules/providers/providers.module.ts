@@ -2,15 +2,18 @@ import { Module } from '@nestjs/common';
 
 import { Clock } from '../../common/clock.js';
 import { CatalogModule } from '../catalog/catalog.module.js';
+import { EventIngestionService } from './event-ingestion.service.js';
 import { GeoapifyAdapter } from './geoapify/geoapify.adapter.js';
 import { GeoapifyClient } from './geoapify/geoapify.client.js';
 import { GooglePlacesAdapter } from './google-places/google-places.adapter.js';
 import { GooglePlacesClient } from './google-places/google-places.client.js';
 import { PlaceIngestionService } from './place-ingestion.service.js';
+import { TicketmasterAdapter } from './ticketmaster/ticketmaster.adapter.js';
+import { TicketmasterClient } from './ticketmaster/ticketmaster.client.js';
 
 /**
- * Provider adapters and the ingestion of their data into the catalog (PROVIDER_ARCHITECTURE.md,
- * GOOGLE_PLACES_PROVIDER.md, GEOAPIFY_PROVIDER.md). No controller: nothing here is reachable over HTTP, and nothing
+ * Provider adapters and the ingestion of their data into the catalog: places (PROVIDER_ARCHITECTURE.md,
+ * GOOGLE_PLACES_PROVIDER.md, GEOAPIFY_PROVIDER.md), and of events (TICKETMASTER_PROVIDER.md). No controller: nothing here is reachable over HTTP, and nothing
  * calls a provider at startup. Sync scheduling, cache/TTL and the recommendation engine come later (DATA-6, DATA-7).
  */
 @Module({
@@ -22,7 +25,16 @@ import { PlaceIngestionService } from './place-ingestion.service.js';
     GeoapifyClient,
     GeoapifyAdapter,
     PlaceIngestionService,
+    TicketmasterClient,
+    TicketmasterAdapter,
+    EventIngestionService,
   ],
-  exports: [GooglePlacesAdapter, GeoapifyAdapter, PlaceIngestionService],
+  exports: [
+    GooglePlacesAdapter,
+    GeoapifyAdapter,
+    PlaceIngestionService,
+    TicketmasterAdapter,
+    EventIngestionService,
+  ],
 })
 export class ProvidersModule {}

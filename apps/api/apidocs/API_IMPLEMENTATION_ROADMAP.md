@@ -440,6 +440,16 @@ place quality. Provider-agnostic. No endpoint, no Prisma change, no new dependen
 unchanged. Known issue: the intermittent HTTP failures of the database suites (auth, favorites) still occur, also on
 `develop`.
 
+## DATA-4 — Ticketmaster event provider — **COMPLETED** (backend layer; not connected; real check passed)
+
+Branch `data-04-ticketmaster` (from `data-03-roam-enrichment`, i.e. `develop` + DATA-3). Details:
+[`TICKETMASTER_PROVIDER.md`](TICKETMASTER_PROVIDER.md). The event contract (`EventProvider`, `NormalizedEvent`) added to
+the provider types; Ticketmaster Discovery client (Event Search, Event Details, 5 s timeout, no retry, key never logged),
+DTO validation (absolute instants only), mapper (venue as a place, segment table), adapter; `EventIngestionService`
+(venue through `PlaceIngestionService`, idempotent upsert by provider id, ROAM category and experience link never
+overwritten); `EventRepository.updateFromSource`. No endpoint, no sync, no Prisma change, no new dependency, no mobile
+change, recommendations unchanged.
+
 ## API-12 — next
 
 The mobile integration: replace the mock repositories with API repositories (auth, profile, catalog, recommendations,

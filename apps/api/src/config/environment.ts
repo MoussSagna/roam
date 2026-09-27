@@ -72,7 +72,8 @@ export class EnvironmentVariables {
   SWAGGER_ENABLED?: boolean;
 
   // Providers (Data Foundation). Optional: the API starts without them; an adapter called without its key fails
-  // with ProviderConfigurationError before any request (GOOGLE_PLACES_PROVIDER.md, GEOAPIFY_PROVIDER.md).
+  // with ProviderConfigurationError before any request (GOOGLE_PLACES_PROVIDER.md, GEOAPIFY_PROVIDER.md,
+  // TICKETMASTER_PROVIDER.md).
   /** Google Places API (New) key — backend only, restricted to that API. Never logged. */
   @Transform(emptyToUndefined)
   @IsOptional()
@@ -91,10 +92,13 @@ export class EnvironmentVariables {
   })
   GEOAPIFY_API_KEY?: string;
 
-  // Future provider (DATA-3). Optional until its adapter exists.
+  /** Ticketmaster Discovery API key (TICKETMASTER_PROVIDER.md) — backend only. Never logged. */
   @Transform(emptyToUndefined)
   @IsOptional()
   @IsString()
+  @Matches(/^[\w-]+$/, {
+    message: 'TICKETMASTER_API_KEY must be a single token (letters, digits, - or _)',
+  })
   TICKETMASTER_API_KEY?: string;
 
   /** Lifetime of a session (sign-in on a device), in days. Opaque sessions: no signing secret needed. */

@@ -51,7 +51,7 @@ src/
     ├── experiences/            GET /experiences, /experiences/:id (API-07)
     ├── recommendations/        GET /recommendations (API-07)
     ├── journeys/               Journey and JourneyFeedback repositories (API-04)
-    ├── providers/              provider contract, Google Places (DATA-2) and Geoapify (DATA-2.1) adapters, PlaceIngestionService
+    ├── providers/              provider contracts, Google Places (DATA-2), Geoapify (DATA-2.1), Ticketmaster (DATA-4) adapters, Place/EventIngestionService
     ├── enrichment/             ROAM enrichment rules, RoamEnrichmentService, place quality (DATA-3)
     └── favorites/              FavoriteRepository (API-04)
 prisma/schema.prisma            the data model (API-03, DATABASE_SCHEMA.md)
@@ -90,17 +90,18 @@ production) ends with one error line and exit code 1. Shutdown hooks close the d
 - `.env` is read in local development only (ignored when `NODE_ENV=test`); real environments inject variables.
   [`.env.example`](../.env.example) lists them with placeholders — copy it to `.env`, never commit `.env`.
 
-| Variable                | Required | Default                                    | Use                                                                        |
-| ----------------------- | -------- | ------------------------------------------ | -------------------------------------------------------------------------- |
-| `NODE_ENV`              | no       | `development`                              | `development` \| `test` \| `production`                                    |
-| `PORT`                  | no       | `3000`                                     | HTTP port                                                                  |
-| `DATABASE_URL`          | **yes**  | —                                          | `postgresql://…` connection string                                         |
-| `CORS_ORIGINS`          | no       | none                                       | Comma-separated browser origins                                            |
-| `LOG_LEVEL`             | no       | `debug` (dev), `warn` (test), `log` (prod) | `error` \| `warn` \| `log` \| `debug` \| `verbose`                         |
-| `SWAGGER_ENABLED`       | no       | on outside production                      | Swagger UI and document                                                    |
-| `GOOGLE_PLACES_API_KEY` | no       | —                                          | Future Google Places adapter (not used yet)                                |
-| `TICKETMASTER_API_KEY`  | no       | —                                          | Future Ticketmaster adapter (not used yet)                                 |
-| `AUTH_SESSION_TTL_DAYS` | no       | `30`                                       | Session lifetime in days, 1–365 ([`AUTHENTICATION.md`](AUTHENTICATION.md)) |
+| Variable                | Required | Default                                    | Use                                                                                     |
+| ----------------------- | -------- | ------------------------------------------ | --------------------------------------------------------------------------------------- |
+| `NODE_ENV`              | no       | `development`                              | `development` \| `test` \| `production`                                                 |
+| `PORT`                  | no       | `3000`                                     | HTTP port                                                                               |
+| `DATABASE_URL`          | **yes**  | —                                          | `postgresql://…` connection string                                                      |
+| `CORS_ORIGINS`          | no       | none                                       | Comma-separated browser origins                                                         |
+| `LOG_LEVEL`             | no       | `debug` (dev), `warn` (test), `log` (prod) | `error` \| `warn` \| `log` \| `debug` \| `verbose`                                      |
+| `SWAGGER_ENABLED`       | no       | on outside production                      | Swagger UI and document                                                                 |
+| `GOOGLE_PLACES_API_KEY` | no       | —                                          | Google Places API (New) key ([`GOOGLE_PLACES_PROVIDER.md`](GOOGLE_PLACES_PROVIDER.md))  |
+| `GEOAPIFY_API_KEY`      | no       | —                                          | Geoapify Places API key ([`GEOAPIFY_PROVIDER.md`](GEOAPIFY_PROVIDER.md))                |
+| `TICKETMASTER_API_KEY`  | no       | —                                          | Ticketmaster Discovery API key ([`TICKETMASTER_PROVIDER.md`](TICKETMASTER_PROVIDER.md)) |
+| `AUTH_SESSION_TTL_DAYS` | no       | `30`                                       | Session lifetime in days, 1–365 ([`AUTHENTICATION.md`](AUTHENTICATION.md))              |
 
 Provider keys stay on the server (`appdocs/architecture/DATA_RULES.md`): never in the mobile app, never in Git.
 
