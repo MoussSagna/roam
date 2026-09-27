@@ -46,6 +46,9 @@ DATA-2: the contract (`PlaceProvider`, `NormalizedPlace`, typed `ProviderError`s
 DATA-2.1: the Geoapify adapter, a second `PlaceProvider` on the same contract, errors and ingestion (usable on
 Geoapify's free plan) — [`GEOAPIFY_PROVIDER.md`](GEOAPIFY_PROVIDER.md).
 
+DATA-4: the event contract (`EventProvider`, `NormalizedEvent`) next to the place one, the Ticketmaster adapter and
+`EventIngestionService` (venues go through `PlaceIngestionService`) — [`TICKETMASTER_PROVIDER.md`](TICKETMASTER_PROVIDER.md).
+
 ## Secrets
 
 API keys belong on the backend/server environment. Never put provider keys in React Native source or Git.

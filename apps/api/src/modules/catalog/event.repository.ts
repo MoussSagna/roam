@@ -1,10 +1,10 @@
 import { Injectable } from '@nestjs/common';
 
 import { pageArgs, type Page, type PageRequest, toPage } from '../../database/pagination.js';
-import { persist } from '../../database/persistence-errors.js';
+import { persist, RecordNotFoundError } from '../../database/persistence-errors.js';
 import { PrismaService } from '../../database/prisma.service.js';
 import { EVENT_INCLUDE, sourceCreate, toEvent } from './catalog.mappers.js';
-import type { Event, EventChange, NewEvent } from './catalog.types.js';
+import type { Event, EventChange, NewEvent, SourceInput } from './catalog.types.js';
 
 /** `undefined` → unchanged, `null` → unlinked, an id → linked. */
 function relation(id: string | null | undefined) {
@@ -91,5 +91,52 @@ export class EventRepository {
         }),
       ),
     );
+  }
+
+  /**
+   * A provider refresh (DATA-4): updates the provider facts, the venue link when given, and that provider record's
+   * provenance (`fetchedAt`, URL, classification) in one write (atomic). Never touches the category, the experience
+   * link or other sources. Throws `RecordNotFoundError` when the event does not exist.
+   */
+  updateFromSource(
+    id: string,
+    change: Omit<EventChange, 'experienceId'>,
+    source: SourceInput,
+  ): Promise<Event> {
+    const { placeId, ...fields } = change;
+    return persist(async () => {
+      // Nested writes filter on scalars only: resolve the provider (an immutable row) first.
+      const provider = await this.prisma.provider.findUnique({
+        where: { key: source.provider.key },
+        select: { id: true },
+      });
+      if (!provider) throw new RecordNotFoundError('Provider');
+      return toEvent(
+        await this.prisma.event.update({
+          where: { id },
+          data: {
+            ...fields,
+            place: relation(placeId),
+            sources: {
+              updateMany: {
+                where: {
+                  entityType: 'EVENT',
+                  externalId: source.externalId,
+                  providerId: provider.id,
+                },
+                data: {
+                  externalUrl: source.externalUrl ?? null,
+                  providerCategories: source.providerCategories ?? [],
+                  confidence: source.confidence ?? null,
+                  fetchedAt: source.fetchedAt,
+                  providerUpdatedAt: source.providerUpdatedAt ?? null,
+                },
+              },
+            },
+          },
+          include: EVENT_INCLUDE,
+        }),
+      );
+    });
   }
 }

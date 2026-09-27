@@ -21,15 +21,18 @@ A `PlaceProvider` on the DATA-2 contract, usable without Google billing (free pl
 OpenStreetMap identity, explicit category table, same errors and ingestion — [`GEOAPIFY_PROVIDER.md`](GEOAPIFY_PROVIDER.md).
 Real check passed. Not connected to an endpoint, a sync or the recommendations.
 
-## DATA-3 — Ticketmaster
+## DATA-3 — Ticketmaster — **done** (run as the sprint named "DATA-4 — Ticketmaster"; not connected yet)
 
 Implement event search/details where needed, normalization, pricing when available and graceful missing-price handling.
+Done: the event contract, Discovery API v2 Event Search and Event Details, typed errors, normalization (venue as a place,
+explicit segment table, absolute instants), idempotent upsert by provider id — [`TICKETMASTER_PROVIDER.md`](TICKETMASTER_PROVIDER.md).
+Real check passed. Not connected to an endpoint, a sync or the recommendations.
 
 ## DATA-4 — Open Data
 
 Select a small number of relevant French datasets. Document publisher, update frequency, schema, license/usage conditions, fields and normalization.
 
-## DATA-5 — Enrichment
+## DATA-5 — Enrichment — **places done** (run as the sprint named "DATA-3 — ROAM enrichment")
 
 Implement deterministic first-pass enrichment:
 
@@ -39,6 +42,11 @@ Implement deterministic first-pass enrichment:
 - duration
 - best moments
 - ROAM tags
+
+Done for places: category rules (definitional atmosphere, derived typical duration; energy, audience, moments and
+tags left `UNKNOWN`/empty for lack of evidence), curated data never overwritten, idempotent writes, a computed quality
+check — [`ROAM_ENRICHMENT.md`](ROAM_ENRICHMENT.md). Not done: experience enrichment, mood, attribute-based rules. Not
+connected to a sync or the recommendations. Ticketmaster (listed as DATA-3 above) was done afterwards.
 
 ## DATA-6 — Persistence & synchronization
 

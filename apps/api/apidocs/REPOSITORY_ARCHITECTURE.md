@@ -84,7 +84,7 @@ hash, every session revoked, code deleted). The `User` type never carries the pa
 
 No repository for: `ExperiencePlace`, `PlaceCategory`, `ExperienceCategory`, `JourneyStep` (children of their
 aggregate), `ExternalSource` and `Provider` (written with the record they describe; a provider is registered on first
-use by its adapter key), `RoamEnrichment` (read with its place/experience; its writes belong to DATA-5).
+use by its adapter key), `RoamEnrichment` (read with its place/experience; a place's enrichment is written by `RoamEnrichmentRepository`, below).
 
 The DATA-1 catalog migration (`src/database/catalog-seed/`) is a database-layer tool, like the migrations: it writes
 with Prisma directly (inside `src/database/`, where the Prisma boundary allows it), in one transaction, and is run by
@@ -97,15 +97,16 @@ with Prisma directly (inside `src/database/`, where the Prisma boundary allows i
 | `UserRepository`            | `findById`, `findByEmail`, `create` (optionally with a password hash), `findCredentialsByEmail` (login only), `updateProfile`, `findPreference`, `savePreference` (upsert)                                                     |
 | `ExperienceRepository`      | `findById` (with places), `findManyByIds` (in the given order), `listActive(filter, page)` — filters `city`, `categorySlug`, `maxPrice`, `text`, `area` (API-07) —, `findCandidates(filter, max)` (API-07), `create`, `update` |
 | `PlaceRepository`           | `findById`, `findBySource(providerKey, externalId)`, `create` (categories + source), `update`, `updateFromSource` (facts + provenance refresh, DATA-2)                                                                         |
-| `EventRepository`           | `findById`, `findBySource`, `listUpcoming({ from, to }, page)`, `create`, `update`                                                                                                                                             |
+| `EventRepository`           | `findById`, `findBySource`, `listUpcoming({ from, to }, page)`, `create`, `update`, `updateFromSource` (facts + venue + provenance refresh, DATA-4)                                                                            |
 | `CategoryRepository`        | `list`                                                                                                                                                                                                                         |
+| `RoamEnrichmentRepository`  | `findByPlaceId`, `createForPlace`, `replaceRulesEnrichmentOfPlace` (only while `source = ROAM_RULES`, one statement — DATA-3, ROAM_ENRICHMENT.md)                                                                              |
 | `JourneyRepository`         | `findById`, `findActiveByUserId`, `listCompletedByUserId(page)`, `create`, `replaceSteps`, `updateProgress`, `complete` — the last three optionally conditioned on `expectedCurrentStep` (API-08)                              |
 | `JourneyFeedbackRepository` | `findByJourneyId`, `create`                                                                                                                                                                                                    |
 | `FavoriteRepository`        | `add`, `remove`, `isFavorite`, `listByUserId(page)`                                                                                                                                                                            |
 
 Only what a documented flow needs. Not added on purpose: deletes of catalog records (they are deactivated —
 DATABASE_SCHEMA.md), user deletion (no account deletion flow yet), sync bookkeeping (TTLs, deactivation of records no longer found — DATA-6; the per-record refresh `updateFromSource` came with DATA-2),
-enrichment writes (DATA-5), recommendation queries (DATA-7).
+experience enrichment writes, recommendation queries (DATA-7).
 
 **Journey edits.** The mobile store edits a journey in several ways (add, remove, move a step, reorder — then replans
 arrivals and totals). Every edit replans the whole list, so the repository offers one write for all of them:

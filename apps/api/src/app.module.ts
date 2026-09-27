@@ -9,6 +9,7 @@ import { AppConfigModule } from './config/app-config.module.js';
 import { DatabaseModule } from './database/database.module.js';
 import { AuthModule } from './modules/auth/auth.module.js';
 import { CatalogModule } from './modules/catalog/catalog.module.js';
+import { EnrichmentModule } from './modules/enrichment/enrichment.module.js';
 import { ExperiencesModule } from './modules/experiences/experiences.module.js';
 import { FavoritesModule } from './modules/favorites/favorites.module.js';
 import { HealthModule } from './modules/health/health.module.js';
@@ -38,6 +39,7 @@ import { UsersModule } from './modules/users/users.module.js';
     ExperiencesModule,
     RecommendationsModule,
     ProvidersModule,
+    EnrichmentModule,
   ],
   providers: [
     { provide: APP_PIPE, useFactory: createValidationPipe },

@@ -67,7 +67,7 @@ export class AppConfigService {
   }
 
   /** Provider credentials (Data Foundation): Google Places (DATA-2), Geoapify (DATA-2.1),
-   * Ticketmaster (later). Never log these values. */
+   * Ticketmaster (DATA-4). Never log these values. */
   get providers() {
     return {
       googlePlacesApiKey: this.get('GOOGLE_PLACES_API_KEY'),
