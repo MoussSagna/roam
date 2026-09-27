@@ -29,7 +29,7 @@ Implement event search/details where needed, normalization, pricing when availab
 
 Select a small number of relevant French datasets. Document publisher, update frequency, schema, license/usage conditions, fields and normalization.
 
-## DATA-5 — Enrichment
+## DATA-5 — Enrichment — **places done** (run as the sprint named "DATA-3 — ROAM enrichment")
 
 Implement deterministic first-pass enrichment:
 
@@ -39,6 +39,11 @@ Implement deterministic first-pass enrichment:
 - duration
 - best moments
 - ROAM tags
+
+Done for places: category rules (definitional atmosphere, derived typical duration; energy, audience, moments and
+tags left `UNKNOWN`/empty for lack of evidence), curated data never overwritten, idempotent writes, a computed quality
+check — [`ROAM_ENRICHMENT.md`](ROAM_ENRICHMENT.md). Not done: experience enrichment, mood, attribute-based rules. Not
+connected to a sync or the recommendations. Ticketmaster (listed as DATA-3 above) is not started.
 
 ## DATA-6 — Persistence & synchronization
 

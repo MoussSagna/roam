@@ -34,7 +34,9 @@ type ExperienceDetailRow = Prisma.ExperienceGetPayload<{
 }>;
 type EventRow = Prisma.EventGetPayload<{ include: typeof EVENT_INCLUDE }>;
 
-function toEnrichment(row: Prisma.RoamEnrichmentGetPayload<object> | null): Enrichment | null {
+export function toEnrichment(
+  row: Prisma.RoamEnrichmentGetPayload<object> | null,
+): Enrichment | null {
   if (!row) return null;
   return {
     atmosphere: row.atmosphere,

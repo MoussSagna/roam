@@ -430,6 +430,16 @@ retry), DTO validation, mapper (OpenStreetMap identity, explicit category table,
 `GEOAPIFY_API_KEY`. Reuses the DATA-2 errors, `PlaceIngestionService` and repositories unchanged; Google untouched. No
 endpoint, no sync, no Prisma change, no new dependency, no mobile change, recommendations unchanged.
 
+## DATA-3 — ROAM enrichment & quality — **COMPLETED** (places; internal; not connected)
+
+Branch `data-03-roam-enrichment` (from `develop`). Details: [`ROAM_ENRICHMENT.md`](ROAM_ENRICHMENT.md). The plan's
+enrichment step (DATA_IMPLEMENTATION_PLAN.md "DATA-5"), for places: pure category rules (definitional atmosphere, derived
+typical duration, nothing inferred for energy/audience/moments/tags/mood), `RoamEnrichmentService` (curated and feedback
+enrichments never overwritten, conditional rewrite, idempotent, concurrency-safe), `RoamEnrichmentRepository`, computed
+place quality. Provider-agnostic. No endpoint, no Prisma change, no new dependency, no mobile change, recommendations
+unchanged. Known issue: the intermittent HTTP failures of the database suites (auth, favorites) still occur, also on
+`develop`.
+
 ## API-12 — next
 
 The mobile integration: replace the mock repositories with API repositories (auth, profile, catalog, recommendations,

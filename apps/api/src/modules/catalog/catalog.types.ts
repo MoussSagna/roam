@@ -12,7 +12,7 @@ import type {
  * and accept — never a Prisma type. Categories are referred to by their stable slug.
  */
 
-/** ROAM-owned context of a place or an experience (read-only here: enrichment is written by DATA-5). */
+/** ROAM-owned context of a place or an experience (a place's is written by `RoamEnrichmentRepository`, DATA-3). */
 export type Enrichment = {
   atmosphere: string[];
   energyLevel: EnergyLevel;
