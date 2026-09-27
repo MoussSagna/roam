@@ -3,6 +3,7 @@ import { Module } from '@nestjs/common';
 import { CategoryRepository } from './category.repository.js';
 import { EventRepository } from './event.repository.js';
 import { ExperienceRepository } from './experience.repository.js';
+import { ExternalSourceRepository } from './external-source.repository.js';
 import { PlaceRepository } from './place.repository.js';
 import { RoamEnrichmentRepository } from './roam-enrichment.repository.js';
 
@@ -18,6 +19,7 @@ import { RoamEnrichmentRepository } from './roam-enrichment.repository.js';
     EventRepository,
     CategoryRepository,
     RoamEnrichmentRepository,
+    ExternalSourceRepository,
   ],
   exports: [
     ExperienceRepository,
@@ -25,6 +27,7 @@ import { RoamEnrichmentRepository } from './roam-enrichment.repository.js';
     EventRepository,
     CategoryRepository,
     RoamEnrichmentRepository,
+    ExternalSourceRepository,
   ],
 })
 export class CatalogModule {}

@@ -28,7 +28,8 @@ async function bootstrap(): Promise<void> {
     `CORS origins: ${config.cors.origins.length ? config.cors.origins.join(', ') : 'none (browsers blocked)'}; ` +
       `providers configured: Google Places ${config.providers.googlePlacesApiKey ? 'yes' : 'no'}, ` +
       `Geoapify ${config.providers.geoapifyApiKey ? 'yes' : 'no'}, ` +
-      `Ticketmaster ${config.providers.ticketmasterApiKey ? 'yes' : 'no'}`,
+      `Ticketmaster ${config.providers.ticketmasterApiKey ? 'yes' : 'no'}, ` +
+      `DATAtourisme ${config.providers.datatourismeApiKey ? 'yes' : 'no'}`,
   );
 }
 

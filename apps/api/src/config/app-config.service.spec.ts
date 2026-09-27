@@ -59,6 +59,13 @@ describe('AppConfigService', () => {
     );
   });
 
+  it('exposes the DATAtourisme key only through providers (absent → undefined)', () => {
+    expect(configFor({}).providers.datatourismeApiKey).toBeUndefined();
+    expect(configFor({ DATATOURISME_API_KEY: 'dtFAKE' }).providers.datatourismeApiKey).toBe(
+      'dtFAKE',
+    );
+  });
+
   it('explicit settings win over the environment defaults', () => {
     const config = configFor({
       NODE_ENV: 'production',

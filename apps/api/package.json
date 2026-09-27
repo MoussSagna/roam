@@ -12,6 +12,7 @@
     "prisma:migrate:deploy": "prisma migrate deploy",
     "prisma:migrate:status": "prisma migrate status",
     "db:seed": "pnpm build && prisma db seed",
+    "sync": "pnpm build && node dist/modules/sync/cli.js",
     "build": "pnpm prisma:generate && nest build",
     "start": "nest start",
     "start:dev": "nest start --watch",

@@ -193,6 +193,11 @@ model Place {
   reviewCount  Int?
   /// Selected provider attributes (e.g. outdoor seating, live music), provider-specific.
   attributes   Json?
+  /// The place's own website, as given by a provider (DATA-6). Not the provider's page (`ExternalSource.externalUrl`).
+  website      String?
+  /// Référentiel National des Bâtiments id of the building the place is in (DATA-6). A deduplication signal, not an
+  /// identity: one building can hold several places (DATA_PERSISTENCE_AND_SYNC.md "RNB").
+  rnbId        String?
   /// False when a sync no longer finds the place; rows are deactivated, not deleted (history, journeys).
   isActive     Boolean    @default(true)
   createdAt    DateTime   @default(now()) @db.Timestamptz(3)
@@ -207,6 +212,8 @@ model Place {
   /// City pages and bounding-box lookups (no PostGIS: plain latitude/longitude, see DATABASE_SCHEMA.md).
   @@index([city])
   @@index([latitude, longitude])
+  /// Deduplication candidates by building (DATA-6).
+  @@index([rnbId])
   @@map("places")
 }
 
@@ -305,10 +312,24 @@ model Event {
   categoryId   String?    @db.Uuid
   title        String
   description  String?
-  startDate    DateTime   @db.Timestamptz(3)
+  /// Absolute start instant, only when the source gives a time and its zone (DATA-6: never an invented time). A
+  /// date-only event has none; at least one of `startDate` / `localStartDate` is set (CHECK constraint).
+  startDate    DateTime?  @db.Timestamptz(3)
   endDate      DateTime?  @db.Timestamptz(3)
   /// IANA timezone of the event when the source gives it (EVENT.md "Timing").
   timezone     String?
+  /// Calendar dates and wall-clock times in the event's local time, as the source gives them (DATA-6): a date with no
+  /// time, or a local time whose zone is unknown, is stored here and never turned into an instant.
+  localStartDate DateTime?  @db.Date
+  /// "HH:MM", local.
+  localStartTime String?
+  localEndDate   DateTime?  @db.Date
+  localEndTime   String?
+  /// The event's own location when the source gives one without a venue record (DATA-6, e.g. DATAtourisme).
+  address      String?
+  city         String?
+  latitude     Float?
+  longitude    Float?
   images       String[]
   priceMin     Decimal?   @db.Decimal(10, 2)
   priceMax     Decimal?   @db.Decimal(10, 2)
@@ -326,6 +347,7 @@ model Event {
 
   /// "What's on between these dates" and sync refreshes.
   @@index([startDate])
+  @@index([localStartDate])
   @@index([experienceId])
   @@index([placeId])
   @@index([categoryId])
@@ -371,6 +393,14 @@ model ExternalSource {
   fetchedAt          DateTime         @db.Timestamptz(3)
   /// Last update time declared by the provider, when known.
   providerUpdatedAt  DateTime?        @db.Timestamptz(3)
+  /// Who must be credited for this record, e.g. the DATAtourisme producer (`hasBeenCreatedBy`) — shown with
+  /// `providerUpdatedAt` ("Source : …, mis à jour le …"). Per source: several providers can describe one place (DATA-6).
+  attribution        String?
+  /// This record's images with their rights: [{ url, license, credit, rightsStartDate, rightsEndDate }]
+  /// (DATA_PERSISTENCE_AND_SYNC.md "Images and licensing"). Never used without checking the rights.
+  images             Json?
+  /// When the provider explicitly declared the record obsolete or closed (never inferred from an absence).
+  obsoleteAt         DateTime?        @db.Timestamptz(3)
   placeId            String?          @db.Uuid
   eventId            String?          @db.Uuid
   experienceId       String?          @db.Uuid
@@ -576,4 +606,42 @@ model JourneyFeedback {
 
   @@index([userId])
   @@map("journey_feedbacks")
+}
+
+// ─── Synchronization (DATA-6) ──────────────────────────────────────────────────────────────────────
+
+enum SyncRunStatus {
+  RUNNING
+  SUCCEEDED
+  /// Finished, but some items failed or the run stopped early (quota): resumable from `cursor`.
+  PARTIAL
+  FAILED
+}
+
+/// One synchronization run of a provider job (DATA_PERSISTENCE_AND_SYNC.md "Synchronization"): counters, aggregated
+/// error reasons and the resume cursor. At most one RUNNING run per provider (partial unique index): two syncs of one
+/// provider never overlap, whatever the process. `leaseUntil` lets a crashed run be taken over.
+model SyncRun {
+  id          String        @id @default(uuid(7)) @db.Uuid
+  /// Stable job key, e.g. "datatourisme:places:paris".
+  jobKey      String
+  providerKey String
+  status      SyncRunStatus @default(RUNNING)
+  startedAt   DateTime      @db.Timestamptz(3)
+  finishedAt  DateTime?     @db.Timestamptz(3)
+  leaseUntil  DateTime      @db.Timestamptz(3)
+  /// Where to resume (provider-specific: page, offset, row) — never a URL holding a key.
+  cursor      Json?
+  fetched     Int           @default(0)
+  created     Int           @default(0)
+  updated     Int           @default(0)
+  unchanged   Int           @default(0)
+  skipped     Int           @default(0)
+  failed      Int           @default(0)
+  /// Aggregated reasons: { "<reason>": count } — error classes and skip reasons, never payloads or secrets.
+  errors      Json?
+
+  @@unique([providerKey], where: { status: "RUNNING" }, map: "sync_runs_one_running_per_provider")
+  @@index([jobKey, status, finishedAt])
+  @@map("sync_runs")
 }

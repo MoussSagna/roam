@@ -15,6 +15,8 @@ const place = (overrides: Partial<Place> = {}): Place => ({
   rating: 4.2,
   reviewCount: 12,
   attributes: null,
+  website: null,
+  rnbId: null,
   isActive: true,
   categorySlugs: ['cafe'],
   enrichment: null,

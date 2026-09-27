@@ -459,6 +459,20 @@ rights), freshness, identity, quality, overlap with Google/Geoapify/Ticketmaster
 DATA-6: `NormalizedPlace` lacks description/photos/hours; `Event` has no own location and no date-only marker. No
 adapter, no import, no Prisma change, no mobile change; `DATATOURISME_API_KEY` reserved in `.env.example`.
 
+## DATA-6 — Persistence & synchronization — **COMPLETED** (not connected; real check passed except Google)
+
+Branch `data-06-persistence-sync` (from `develop`, which holds DATA-1 → DATA-5 and the DATA-4 study). Details:
+[`DATA_PERSISTENCE_AND_SYNC.md`](DATA_PERSISTENCE_AND_SYNC.md). One additive migration (`places.website/rnbId`, event local
+dates/times and location, `startDate` nullable with CHECKs, `external_sources.attribution/images/obsoleteAt`,
+`sync_runs`); transactional upserts with advisory locks and cross-provider place deduplication; ownership (primary
+source facts, fill-only fields, ROAM data never written); a generic `SyncService` (lease per provider, per-request
+pacing, retries for transient errors only, partial failures, resume, run journal) and named jobs (`pnpm sync`);
+DATAtourisme, Basilic and Data ES providers; `DATATOURISME_API_KEY`. No endpoint, no scheduler, no Redis, no new
+dependency, no mobile change, recommendations unchanged. Behaviour changes: a refresh with identical facts is now
+`unchanged` (was `updated`); a same-name place within 30 m from another provider is now merged (was kept apart until
+DATA-6). Known issues: the Google key is still refused (DATA-2); the intermittent HTTP failures of the database suites
+(API-11) still occur.
+
 ## API-12 — next
 
 The mobile integration: replace the mock repositories with API repositories (auth, profile, catalog, recommendations,

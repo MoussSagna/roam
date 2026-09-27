@@ -54,6 +54,14 @@ describe('catalog mappers', () => {
       startDate: new Date('2026-10-10T19:30:00Z'),
       endDate: null,
       timezone: null,
+      localStartDate: new Date('2026-10-10T00:00:00Z'),
+      localStartTime: '21:30',
+      localEndDate: null,
+      localEndTime: null,
+      address: null,
+      city: null,
+      latitude: null,
+      longitude: null,
       images: [],
       priceMin: null,
       priceMax: null,
@@ -64,6 +72,12 @@ describe('catalog mappers', () => {
       ...dates,
     };
     expect(toEvent({ ...base, category: null }).categorySlug).toBeNull();
+    // A `date` column is read as its UTC calendar day, whatever the process time zone.
+    expect(toEvent({ ...base, category: null })).toMatchObject({
+      localStartDate: '2026-10-10',
+      localStartTime: '21:30',
+      localEndDate: null,
+    });
     expect(toEvent({ ...base, category: { slug: 'music' } })).not.toHaveProperty('categoryId');
   });
 

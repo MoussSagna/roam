@@ -45,6 +45,13 @@ dates (local, often without time), images only under per-image rights; Basilic g
 type/labels; Data ES gives name, address, GPS, sports type/activities, free access and accessibility. None gives ratings
 or reviews, and nothing ROAM-owned comes from them (they can be evidence for ROAM rules).
 
+## Persistence (DATA-6)
+
+Each provider record keeps its own attribution, update date, images with rights and obsolescence
+(`ExternalSource`); several providers can describe one place. The primary source owns the core facts; the others only
+fill what is missing; ROAM enrichment and curated data are never overwritten —
+[`DATA_PERSISTENCE_AND_SYNC.md`](DATA_PERSISTENCE_AND_SYNC.md).
+
 ## Internal source: mobile mock migration (DATA-1)
 
 Until the providers are connected, the catalog holds the mobile mock data, migrated once by DATA-1

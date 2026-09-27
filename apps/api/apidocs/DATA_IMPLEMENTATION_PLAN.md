@@ -52,9 +52,14 @@ tags left `UNKNOWN`/empty for lack of evidence), curated data never overwritten,
 check — [`ROAM_ENRICHMENT.md`](ROAM_ENRICHMENT.md). Not done: experience enrichment, mood, attribute-based rules. Not
 connected to a sync or the recommendations. Ticketmaster (listed as DATA-3 above) was done afterwards.
 
-## DATA-6 — Persistence & synchronization
+## DATA-6 — Persistence & synchronization — **done** (not connected to recommendations or endpoints)
 
 Implement database models, upsert, deduplication, cache, sync, TTL strategy and observability.
+Done: transactional upserts with advisory locks, cross-provider place deduplication (RNB + name, name + proximity),
+ownership rules, per-source attribution and image rights, date-only events, freshness/TTL per provider, a generic sync
+orchestrator (lease, pacing, retries, partial failures, resume, run journal), DATAtourisme, Basilic and Data ES
+providers, `pnpm sync` — [`DATA_PERSISTENCE_AND_SYNC.md`](DATA_PERSISTENCE_AND_SYNC.md). Real check passed except Google
+(key restrictions, DATA-2). Not scheduled, no endpoint; a `sport` category is a product decision (DATA-7).
 
 ## DATA-7 — Recommendations
 

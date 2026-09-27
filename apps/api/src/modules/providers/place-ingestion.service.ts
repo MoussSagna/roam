@@ -1,10 +1,15 @@
 import { Injectable, Logger } from '@nestjs/common';
 
 import { Clock } from '../../common/clock.js';
-import { UniqueConstraintError } from '../../database/persistence-errors.js';
-import type { Place, PlaceChange, SourceInput } from '../catalog/catalog.types.js';
+import { MIGRATION_PROVIDER } from '../../database/catalog-seed/catalog-seed.js';
+import type { Place, SourceInput } from '../catalog/catalog.types.js';
 import { CategoryRepository } from '../catalog/category.repository.js';
-import { PlaceRepository } from '../catalog/place.repository.js';
+import {
+  PlaceRepository,
+  type PlaceFacts,
+  type PlaceUpsertOutcome,
+} from '../catalog/place.repository.js';
+import { matchPlace, normalizePlaceName, RNB_MAX_DISTANCE_M } from './place-matching.js';
 import type {
   NearbyPlaceQuery,
   NormalizedPlace,
@@ -12,21 +17,34 @@ import type {
   ProviderIdentity,
 } from './provider.types.js';
 
-export type IngestionOutcome = 'created' | 'updated';
-export type IngestedPlace = { place: Place; outcome: IngestionOutcome };
-export type IngestionReport = { created: number; updated: number; places: Place[] };
+export type IngestionOutcome = PlaceUpsertOutcome;
+export type IngestedPlace = { place: Place; outcome: IngestionOutcome; rule?: string };
+export type IngestionReport = {
+  created: number;
+  matched: number;
+  updated: number;
+  unchanged: number;
+  places: Place[];
+};
+
+/**
+ * Places no provider record may be merged into: the curated DATA-1 catalog (its facts are ROAM's, not a provider's).
+ */
+const PROTECTED_PROVIDERS: ReadonlySet<string> = new Set([MIGRATION_PROVIDER.key]);
 
 /**
  * Provider places → the catalog (adapter → normalization → repositories). Provider-agnostic: it receives a
  * `PlaceProvider` and only sees normalized places.
  *
  * - **Identity**: a place is its provider record, `(provider key, external id)` in `ExternalSource` — never its
- *   name or address. The first import creates the place with its provenance; every later one updates that place.
- * - **Ownership**: an update writes provider facts and refreshes the provenance only. The ROAM enrichment
- *   (atmosphere, energy, audience, moments, duration, tags), the categories, the description, photos, hours and
- *   attributes are never overwritten by a refresh.
- * - **Cost**: every call here is one provider request. The cache/TTL decision ("is this record fresh enough?",
- *   from `ExternalSource.fetchedAt`) belongs in front of these methods (DATA-6), not in the adapter.
+ *   name or address. The first import creates the place (or, DATA-6, attaches the record to the same place brought by
+ *   another provider — place-matching.ts); every later one refreshes that place.
+ * - **Ownership** (DATA-6): the place's primary source (the one that created it) owns its core facts; any source fills
+ *   description, website, hours, attributes and RNB id only where the place has none. The ROAM enrichment, the
+ *   categories of an existing place and other providers' sources are never written.
+ * - **Obsolete**: a provider saying the place is closed marks its own record obsolete; the place is deactivated only
+ *   when all its records are (never deleted).
+ * - **Cost**: every call here is one provider request; freshness and TTLs are the sync's (src/modules/sync).
  */
 @Injectable()
 export class PlaceIngestionService {
@@ -41,7 +59,13 @@ export class PlaceIngestionService {
   /** Searches the provider around a point and upserts every place found. */
   async importNearby(provider: PlaceProvider, query: NearbyPlaceQuery): Promise<IngestionReport> {
     const found = await provider.searchNearby(query);
-    const report: IngestionReport = { created: 0, updated: 0, places: [] };
+    const report: IngestionReport = {
+      created: 0,
+      matched: 0,
+      updated: 0,
+      unchanged: 0,
+      places: [],
+    };
     const known = await this.knownCategories();
     for (const normalized of found) {
       const { place, outcome } = await this.upsert(provider.identity, normalized, known);
@@ -49,7 +73,8 @@ export class PlaceIngestionService {
       report.places.push(place);
     }
     this.logger.log(
-      `${provider.identity.key} importNearby: ${found.length} found, ${report.created} created, ${report.updated} updated`,
+      `${provider.identity.key} importNearby: ${found.length} found, ${report.created} created, ` +
+        `${report.matched} matched, ${report.updated} updated, ${report.unchanged} unchanged`,
     );
     return report;
   }
@@ -61,20 +86,25 @@ export class PlaceIngestionService {
     return this.upsert(provider.identity, normalized, await this.knownCategories());
   }
 
-  /** Creates or updates the place of this provider record (idempotent). */
+  /** Creates, matches or refreshes the place of this provider record (idempotent, concurrency-safe). */
   async upsert(
     provider: ProviderIdentity,
     normalized: NormalizedPlace,
     knownCategories?: ReadonlySet<string>,
   ): Promise<IngestedPlace> {
+    const now = this.clock.now();
     const source: SourceInput = {
       provider: { key: provider.key, name: provider.name },
       externalId: normalized.source.externalId,
       externalUrl: normalized.source.externalUrl,
       providerCategories: normalized.source.providerCategories,
-      fetchedAt: this.clock.now(),
+      fetchedAt: now,
+      providerUpdatedAt: normalized.providerUpdatedAt ?? null,
+      attribution: normalized.attribution ?? null,
+      images: normalized.images,
+      obsoleteAt: normalized.isActive ? null : now,
     };
-    const facts: PlaceChange = {
+    const facts: PlaceFacts = {
       name: normalized.name,
       address: normalized.address,
       city: normalized.city,
@@ -83,36 +113,39 @@ export class PlaceIngestionService {
       priceLevel: normalized.priceLevel,
       rating: normalized.rating,
       reviewCount: normalized.reviewCount,
-      isActive: normalized.isActive,
     };
-
-    const existing = await this.places.findBySource(provider.key, source.externalId);
-    if (existing) return this.refresh(existing.id, facts, source);
-
     const known = knownCategories ?? (await this.knownCategories());
-    try {
-      const place = await this.places.create({
-        ...facts,
-        name: normalized.name,
-        latitude: normalized.latitude,
-        longitude: normalized.longitude,
-        // Only categories the catalog has: a missing slug would fail the whole write.
-        categorySlugs: normalized.categorySlugs.filter((slug) => known.has(slug)),
-        source,
-      });
-      return { place, outcome: 'created' };
-    } catch (error) {
-      // A concurrent import created the same provider record first: update it instead.
-      if (!(error instanceof UniqueConstraintError)) throw error;
-      const raced = await this.places.findBySource(provider.key, source.externalId);
-      if (!raced) throw error;
-      return this.refresh(raced.id, facts, source);
-    }
-  }
+    const name = normalizePlaceName(normalized.name);
 
-  private async refresh(id: string, facts: PlaceChange, source: SourceInput) {
-    const place = await this.places.updateFromSource(id, facts, source);
-    return { place, outcome: 'updated' as const };
+    return this.places.upsertFromSource({
+      facts,
+      fill: {
+        description: normalized.description,
+        website: normalized.website,
+        openingHours: normalized.openingHours,
+        attributes: normalized.attributes,
+        rnbId: normalized.rnbId,
+      },
+      // Only categories the catalog has: a missing slug would fail the whole write.
+      categorySlugs: normalized.categorySlugs.filter((slug) => known.has(slug)),
+      source,
+      match: {
+        radiusMeters: RNB_MAX_DISTANCE_M,
+        lockNames: name ? [name] : [],
+        decide: (candidates) =>
+          matchPlace(
+            {
+              providerKey: provider.key,
+              name: normalized.name,
+              latitude: normalized.latitude,
+              longitude: normalized.longitude,
+              rnbId: normalized.rnbId ?? null,
+            },
+            candidates,
+            PROTECTED_PROVIDERS,
+          ),
+      },
+    });
   }
 
   private async knownCategories(): Promise<ReadonlySet<string>> {

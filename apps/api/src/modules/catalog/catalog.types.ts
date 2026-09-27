@@ -39,6 +39,10 @@ export type Place = {
   rating: number | null;
   reviewCount: number | null;
   attributes: JsonValue | null;
+  /** The place's own website (DATA-6). */
+  website: string | null;
+  /** RNB building id (DATA-6): a deduplication signal, never an identity. */
+  rnbId: string | null;
   isActive: boolean;
   categorySlugs: string[];
   enrichment: Enrichment | null;
@@ -85,9 +89,20 @@ export type Event = {
   categorySlug: string | null;
   title: string;
   description: string | null;
-  startDate: Date;
+  /** Absolute start instant — only when the source gives a time and its zone; `null` for a date-only event. */
+  startDate: Date | null;
   endDate: Date | null;
   timezone: string | null;
+  /** Local calendar dates ("YYYY-MM-DD") and wall-clock times ("HH:MM"), as the source gives them (DATA-6). */
+  localStartDate: string | null;
+  localStartTime: string | null;
+  localEndDate: string | null;
+  localEndTime: string | null;
+  /** The event's own location when it has no venue place (DATA-6). */
+  address: string | null;
+  city: string | null;
+  latitude: number | null;
+  longitude: number | null;
   images: string[];
   priceMin: number | null;
   priceMax: number | null;
@@ -111,6 +126,41 @@ export type SourceInput = {
   confidence?: number | null;
   fetchedAt: Date;
   providerUpdatedAt?: Date | null;
+  /** Who to credit for this record (e.g. the DATAtourisme producer) — DATA-6. */
+  attribution?: string | null;
+  /** This record's images with their rights — DATA-6. `undefined` leaves them unchanged. */
+  images?: SourceImage[];
+  /** Set when the provider explicitly declares the record obsolete or closed; `null` when it is live. */
+  obsoleteAt?: Date | null;
+};
+
+/**
+ * An image as a provider gives it, with its rights (DATA_PERSISTENCE_AND_SYNC.md "Images and licensing"). The provider
+ * and external id are those of the `ExternalSource` holding it. `license` null = unknown: not usable commercially by
+ * default (`imageUsage`).
+ */
+export type SourceImage = {
+  url: string;
+  license: string | null;
+  credit: string | null;
+  /** "YYYY-MM-DD", inclusive. */
+  rightsStartDate: string | null;
+  rightsEndDate: string | null;
+};
+
+/** The provenance of a catalog record, as stored (one per provider record). */
+export type Source = {
+  providerKey: string;
+  providerName: string;
+  externalId: string;
+  externalUrl: string | null;
+  providerCategories: string[];
+  fetchedAt: Date;
+  providerUpdatedAt: Date | null;
+  attribution: string | null;
+  images: SourceImage[];
+  obsoleteAt: Date | null;
+  createdAt: Date;
 };
 
 type Writable<T, Required extends keyof T> = Pick<T, Required> &

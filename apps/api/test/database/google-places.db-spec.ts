@@ -171,7 +171,8 @@ describe('Google Places ingestion on PostgreSQL', () => {
     const again = await ingestion.importPlace(adapter, `${PREFIX}A`);
 
     expect(result?.outcome).toBe('updated');
-    expect(again?.outcome).toBe('updated');
+    // DATA-6: the same facts again → nothing but the freshness moved.
+    expect(again?.outcome).toBe('unchanged');
     expect(result?.place.id).toBe(before.placeId);
     const rows = await db.externalSource.findMany({ where: { externalId: `${PREFIX}A` } });
     expect(rows).toHaveLength(1);

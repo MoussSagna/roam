@@ -202,12 +202,15 @@ describe('Ticketmaster ingestion on PostgreSQL', () => {
 
   it('dates: stored as the exact instant; PostgreSQL and Prisma read back 22:30 Paris time, no shift', async () => {
     const [source] = await eventSource('1');
-    expect(source.event?.startDate.toISOString()).toBe('2026-10-03T20:30:00.000Z');
+    expect(source.event?.startDate?.toISOString()).toBe('2026-10-03T20:30:00.000Z');
     const [row] = await db.$queryRaw<{ paris: string; utc: string }[]>`
       SELECT to_char("startDate" AT TIME ZONE 'Europe/Paris', 'YYYY-MM-DD HH24:MI') AS paris,
              to_char("startDate" AT TIME ZONE 'UTC', 'YYYY-MM-DD HH24:MI') AS utc
       FROM events WHERE id = ${source.eventId}::uuid`;
     expect(row).toEqual({ paris: '2026-10-03 22:30', utc: '2026-10-03 20:30' });
+    // DATA-6: the local date and time are derived from the instant in its zone, and read back as stored.
+    expect(source.event).toMatchObject({ localStartTime: '22:30', timezone: 'Europe/Paris' });
+    expect(source.event?.localStartDate?.toISOString().slice(0, 10)).toBe('2026-10-03');
   });
 
   it('a second import of the same Ticketmaster id updates the same event: no duplicate (idempotent)', async () => {
@@ -216,7 +219,8 @@ describe('Ticketmaster ingestion on PostgreSQL', () => {
 
     const report = await ingestion.importNearby(adapter, QUERY);
 
-    expect(report).toMatchObject({ created: 0, updated: 2 });
+    // DATA-6: identical events → `unchanged` (only `fetchedAt` moved).
+    expect(report).toMatchObject({ created: 0, updated: 0, unchanged: 2 });
     const rows = await eventSource('1');
     expect(rows).toHaveLength(1);
     expect(rows[0].id).toBe(before.id);

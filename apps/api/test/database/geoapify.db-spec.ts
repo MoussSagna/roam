@@ -180,7 +180,8 @@ describe('Geoapify ingestion on PostgreSQL', () => {
     });
 
     expect(result?.outcome).toBe('updated');
-    expect(nearby).toMatchObject({ created: 0, updated: 1 });
+    // DATA-6: the same facts again → `unchanged` (only `fetchedAt` moved).
+    expect(nearby).toMatchObject({ created: 0, matched: 0, updated: 0, unchanged: 1 });
     expect(result?.place.id).toBe(before.placeId);
     const rows = await db.externalSource.findMany({ where: { externalId: `${PREFIX}1` } });
     expect(rows).toHaveLength(1);

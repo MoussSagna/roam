@@ -16,6 +16,8 @@ const place = {
   rating: null,
   reviewCount: null,
   attributes: { wifi: true },
+  website: null,
+  rnbId: null,
   isActive: true,
   categorySlugs: ['cafe'],
   enrichment: null,

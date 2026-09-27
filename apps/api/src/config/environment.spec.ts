@@ -120,6 +120,25 @@ describe('validateEnvironment', () => {
     expect(message).not.toContain(malformed);
   });
 
+  it('DATAtourisme key: optional, a single token when set, never printed', () => {
+    expect(
+      validateEnvironment({ ...VALID, DATATOURISME_API_KEY: '' }).DATATOURISME_API_KEY,
+    ).toBeUndefined();
+    expect(
+      validateEnvironment({ ...VALID, DATATOURISME_API_KEY: 'dtFAKE0123abcd' })
+        .DATATOURISME_API_KEY,
+    ).toBe('dtFAKE0123abcd');
+    const malformed = 'dtFAKE key&api_key=x';
+    let message = '';
+    try {
+      validateEnvironment({ ...VALID, DATATOURISME_API_KEY: malformed });
+    } catch (error) {
+      message = (error as Error).message;
+    }
+    expect(message).toMatch(/DATATOURISME_API_KEY must be a single token/);
+    expect(message).not.toContain(malformed);
+  });
+
   it('fails clearly when DATABASE_URL is missing', () => {
     expect(() => validateEnvironment({})).toThrow(/Invalid API configuration:\n\s+- DATABASE_URL:/);
   });
