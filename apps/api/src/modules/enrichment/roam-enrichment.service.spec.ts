@@ -25,6 +25,8 @@ const place = (overrides: Partial<Place> = {}): Place => ({
   rating: null,
   reviewCount: null,
   attributes: null,
+  website: null,
+  rnbId: null,
   isActive: true,
   categorySlugs: ['park'],
   enrichment: null,

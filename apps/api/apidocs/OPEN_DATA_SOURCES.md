@@ -389,6 +389,9 @@ an end date; keep unknowns `null`/`UNKNOWN`.
 
 ## 9. DATA-6 recommendations
 
+> Implemented by DATA-6 — [`DATA_PERSISTENCE_AND_SYNC.md`](DATA_PERSISTENCE_AND_SYNC.md) (with the differences it
+> documents: text fields in `data-es`, the `crs` pagination token of DATAtourisme).
+
 Order: **DATAtourisme places first** (richest, API, Paris covered), then Basilic cultural venues, then Data ES
 (after a product decision on a sport category), DATAtourisme events last (after the date decision).
 

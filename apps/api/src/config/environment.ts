@@ -101,6 +101,15 @@ export class EnvironmentVariables {
   })
   TICKETMASTER_API_KEY?: string;
 
+  /** DATAtourisme API key (DATA_PERSISTENCE_AND_SYNC.md) — backend only, sent in a header. Never logged. */
+  @Transform(emptyToUndefined)
+  @IsOptional()
+  @IsString()
+  @Matches(/^[\w-]+$/, {
+    message: 'DATATOURISME_API_KEY must be a single token (letters, digits, - or _)',
+  })
+  DATATOURISME_API_KEY?: string;
+
   /** Lifetime of a session (sign-in on a device), in days. Opaque sessions: no signing secret needed. */
   @Transform(({ value }) => (value === undefined || value === '' ? 30 : Number(value)))
   @IsInt()

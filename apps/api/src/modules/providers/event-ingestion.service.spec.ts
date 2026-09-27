@@ -1,9 +1,9 @@
 import { Logger } from '@nestjs/common';
 
-import { UniqueConstraintError } from '../../database/persistence-errors.js';
+import { DatabaseUnavailableError } from '../../database/persistence-errors.js';
 import type { CategoryRepository } from '../catalog/category.repository.js';
-import type { EventRepository } from '../catalog/event.repository.js';
-import { EventIngestionService } from './event-ingestion.service.js';
+import type { EventRepository, EventUpsert } from '../catalog/event.repository.js';
+import { EventIngestionService, InvalidProviderRecordError } from './event-ingestion.service.js';
 import type { PlaceIngestionService } from './place-ingestion.service.js';
 import type { EventProvider, NormalizedEvent, NormalizedPlace } from './provider.types.js';
 
@@ -54,7 +54,14 @@ const normalized = (overrides: Partial<NormalizedEvent> = {}): NormalizedEvent =
 });
 
 function setup() {
-  const events = { findBySource: vi.fn(), create: vi.fn(), updateFromSource: vi.fn() };
+  const events = {
+    upsertFromSource: vi.fn((input: EventUpsert) =>
+      Promise.resolve({
+        event: { id: 'e1', title: input.facts.title },
+        outcome: 'created' as const,
+      }),
+    ),
+  };
   const categories = { list: vi.fn().mockResolvedValue([{ id: 'c1', slug: 'culture' }]) };
   const placeIngestion = {
     upsert: vi.fn().mockResolvedValue({ place: { id: 'place-1' }, outcome: 'created' }),
@@ -65,153 +72,144 @@ function setup() {
     placeIngestion as unknown as PlaceIngestionService,
     { now: () => NOW },
   );
-  return { events, categories, placeIngestion, service };
+  const lastInput = () => events.upsertFromSource.mock.calls.at(-1)![0];
+  return { events, categories, placeIngestion, service, lastInput };
 }
 
-const expectedSource = {
-  provider: PROVIDER,
-  externalId: 'Zk1',
-  externalUrl: 'https://tm/1',
-  providerCategories: ['segment:Arts & Theatre'],
-  fetchedAt: NOW,
-};
-
-describe('EventIngestionService (repositories mocked)', () => {
+describe('EventIngestionService (repository mocked)', () => {
   beforeEach(() => {
     vi.spyOn(Logger.prototype, 'log').mockImplementation(() => undefined);
   });
 
   afterEach(() => vi.restoreAllMocks());
 
-  it('first import: upserts the venue through PlaceIngestionService, creates the event linked to it', async () => {
-    const { service, events, placeIngestion } = setup();
-    events.findBySource.mockResolvedValue(null);
-    events.create.mockResolvedValue({ id: 'e1' });
+  it('Ticketmaster instant: venue through PlaceIngestionService, local date/time derived in the event zone', async () => {
+    const { service, placeIngestion, lastInput } = setup();
+    await service.upsert(PROVIDER, normalized());
 
-    await expect(service.upsert(PROVIDER, normalized())).resolves.toEqual({
-      event: { id: 'e1' },
-      outcome: 'created',
-    });
     expect(placeIngestion.upsert).toHaveBeenCalledWith(PROVIDER, VENUE, expect.any(Set));
-    expect(events.findBySource).toHaveBeenCalledWith('ticketmaster', 'Zk1');
-    expect(events.create).toHaveBeenCalledWith(
-      expect.objectContaining({
-        title: 'Spectacle',
-        startDate: new Date('2026-10-03T18:00:00Z'),
-        placeId: 'place-1',
-        categorySlug: 'culture',
-        source: expectedSource,
+    const input = lastInput();
+    expect(input.placeId).toBe('place-1');
+    expect(input.categorySlug).toBe('culture');
+    // 18:00Z on 3 Oct = 20:00 in Paris (summer time).
+    expect(input.facts).toMatchObject({
+      startDate: new Date('2026-10-03T18:00:00Z'),
+      timezone: 'Europe/Paris',
+      localStartDate: '2026-10-03',
+      localStartTime: '20:00',
+      address: null,
+      latitude: null,
+    });
+    expect(input.source).toMatchObject({
+      provider: PROVIDER,
+      externalId: 'Zk1',
+      fetchedAt: NOW,
+      obsoleteAt: null,
+    });
+  });
+
+  it('date-only event: no instant, no invented time; its own location; images with rights on the source', async () => {
+    const { service, placeIngestion, lastInput } = setup();
+    const image = {
+      url: 'https://img/a.jpg',
+      license: 'CC BY',
+      credit: '© A',
+      rightsStartDate: null,
+      rightsEndDate: null,
+    };
+    await service.upsert(
+      PROVIDER,
+      normalized({
+        startDate: null,
+        localStartDate: '2026-11-04',
+        localEndDate: '2026-11-05',
+        venue: null,
+        location: {
+          address: '1 rue X, 75001 Paris',
+          city: 'Paris',
+          latitude: 48.86,
+          longitude: 2.34,
+        },
+        sourceImages: [image],
       }),
     );
+    expect(placeIngestion.upsert).not.toHaveBeenCalled();
+    const input = lastInput();
+    expect(input.placeId).toBeUndefined();
+    expect(input.facts).toMatchObject({
+      startDate: null,
+      localStartDate: '2026-11-04',
+      localStartTime: null,
+      localEndDate: '2026-11-05',
+      address: '1 rue X, 75001 Paris',
+      latitude: 48.86,
+    });
+    expect(input.source.images).toEqual([image]);
   });
 
-  it('a category the catalog does not have is not written; an event without venue has no place', async () => {
-    const { service, events, placeIngestion } = setup();
-    events.findBySource.mockResolvedValue(null);
-    events.create.mockResolvedValue({ id: 'e1' });
+  it('a category the catalog does not have is not written', async () => {
+    const { service, lastInput } = setup();
+    await service.upsert(PROVIDER, normalized({ categorySlug: 'music' }));
+    expect(lastInput().categorySlug).toBeNull();
+  });
 
-    await service.upsert(PROVIDER, normalized({ categorySlug: 'nature', venue: null }));
+  it('a cancelled event: its record is obsolete and the event inactive (deactivated, never deleted)', async () => {
+    const { service, lastInput } = setup();
+    await service.upsert(PROVIDER, normalized({ isActive: false }));
+    expect(lastInput().facts.isActive).toBe(false);
+    expect(lastInput().source.obsoleteAt).toEqual(NOW);
+  });
 
-    expect(placeIngestion.upsert).not.toHaveBeenCalled();
-    expect(events.create).toHaveBeenCalledWith(
-      expect.objectContaining({ categorySlug: null, placeId: null }),
+  it('timing that cannot be stored without inventing (no start, end before start) → InvalidProviderRecordError', async () => {
+    const { service, events } = setup();
+    await expect(
+      service.upsert(PROVIDER, normalized({ startDate: null, venue: null })),
+    ).rejects.toBeInstanceOf(InvalidProviderRecordError);
+    await expect(
+      service.upsert(
+        PROVIDER,
+        normalized({ endDate: new Date('2026-10-03T17:00:00Z'), venue: null }),
+      ),
+    ).rejects.toBeInstanceOf(InvalidProviderRecordError);
+    expect(events.upsertFromSource).not.toHaveBeenCalled();
+  });
+
+  it('persistence errors pass through', async () => {
+    const { service, events } = setup();
+    events.upsertFromSource.mockRejectedValue(new DatabaseUnavailableError());
+    await expect(service.upsert(PROVIDER, normalized())).rejects.toBeInstanceOf(
+      DatabaseUnavailableError,
     );
   });
 
-  it('known record: provider facts and provenance refreshed; never the category or the experience', async () => {
+  it('importNearby: every event upserted, invalid ones skipped, counts reported; provider errors propagate', async () => {
     const { service, events } = setup();
-    events.findBySource.mockResolvedValue({ id: 'e1' });
-    events.updateFromSource.mockResolvedValue({ id: 'e1' });
-
-    const result = await service.upsert(PROVIDER, normalized({ title: 'Nouveau titre' }));
-
-    expect(result.outcome).toBe('updated');
-    const [id, change, source] = events.updateFromSource.mock.calls[0] as [
-      string,
-      Record<string, unknown>,
-      unknown,
-    ];
-    expect(id).toBe('e1');
-    expect(change).toMatchObject({ title: 'Nouveau titre', placeId: 'place-1' });
-    expect(change).not.toHaveProperty('categorySlug');
-    expect(change).not.toHaveProperty('experienceId');
-    expect(source).toEqual(expectedSource);
-    expect(events.create).not.toHaveBeenCalled();
-  });
-
-  it('refresh without a locatable venue keeps the existing venue link', async () => {
-    const { service, events } = setup();
-    events.findBySource.mockResolvedValue({ id: 'e1' });
-    events.updateFromSource.mockResolvedValue({ id: 'e1' });
-
-    await service.upsert(PROVIDER, normalized({ venue: null }));
-
-    expect(
-      (events.updateFromSource.mock.calls[0] as [string, { placeId?: string }])[1].placeId,
-    ).toBe(undefined);
-  });
-
-  it('race: a concurrent import created the record first → update it', async () => {
-    const { service, events } = setup();
-    events.findBySource.mockResolvedValueOnce(null).mockResolvedValueOnce({ id: 'e1' });
-    events.create.mockRejectedValue(new UniqueConstraintError());
-    events.updateFromSource.mockResolvedValue({ id: 'e1' });
-
-    await expect(service.upsert(PROVIDER, normalized())).resolves.toMatchObject({
-      outcome: 'updated',
-    });
-  });
-
-  it('other persistence errors pass through', async () => {
-    const { service, events } = setup();
-    events.findBySource.mockResolvedValue(null);
-    const failure = new Error('boom');
-    events.create.mockRejectedValue(failure);
-    await expect(service.upsert(PROVIDER, normalized())).rejects.toBe(failure);
-  });
-
-  it('importNearby: every event upserted, counts reported; provider errors propagate', async () => {
-    const { service, events } = setup();
-    events.findBySource.mockResolvedValueOnce(null).mockResolvedValueOnce({ id: 'e2' });
-    events.create.mockResolvedValue({ id: 'e1' });
-    events.updateFromSource.mockResolvedValue({ id: 'e2' });
-    const provider: EventProvider = {
+    events.upsertFromSource
+      .mockResolvedValueOnce({ event: { id: 'a' }, outcome: 'created' } as never)
+      .mockResolvedValueOnce({ event: { id: 'b' }, outcome: 'unchanged' } as never);
+    const provider = {
       identity: PROVIDER,
       searchNearby: vi
         .fn()
-        .mockResolvedValue([
-          normalized(),
-          normalized({ source: { ...normalized().source, externalId: 'Zk2' } }),
-        ]),
+        .mockResolvedValueOnce([normalized(), normalized(), normalized({ startDate: null })])
+        .mockRejectedValueOnce(new Error('boom')),
       getEvent: vi.fn(),
-    };
+    } as unknown as EventProvider;
+    const query = { latitude: 48.86, longitude: 2.35, radiusMeters: 1000 };
 
-    const report = await service.importNearby(provider, {
-      latitude: 48.85,
-      longitude: 2.35,
-      radiusMeters: 1000,
-    });
-
-    expect(report).toMatchObject({ created: 1, updated: 1 });
-    expect(report.events).toHaveLength(2);
-
-    const failing: EventProvider = {
-      ...provider,
-      searchNearby: vi.fn().mockRejectedValue(new Error('provider down')),
-    };
-    await expect(
-      service.importNearby(failing, { latitude: 48.85, longitude: 2.35, radiusMeters: 1000 }),
-    ).rejects.toThrow('provider down');
+    const report = await service.importNearby(provider, query);
+    expect(report).toMatchObject({ created: 1, updated: 0, unchanged: 1, skipped: 1 });
+    await expect(service.importNearby(provider, query)).rejects.toThrow('boom');
   });
 
   it('importEvent: unknown to the provider → null, nothing written', async () => {
     const { service, events } = setup();
-    const provider: EventProvider = {
+    const provider = {
       identity: PROVIDER,
       searchNearby: vi.fn(),
       getEvent: vi.fn().mockResolvedValue(null),
-    };
-    await expect(service.importEvent(provider, 'gone')).resolves.toBeNull();
-    expect(events.create).not.toHaveBeenCalled();
+    } as unknown as EventProvider;
+    await expect(service.importEvent(provider, 'x')).resolves.toBeNull();
+    expect(events.upsertFromSource).not.toHaveBeenCalled();
   });
 });

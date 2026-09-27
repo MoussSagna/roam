@@ -23,6 +23,7 @@ describe('migrations on PostgreSQL', () => {
       { migration_name: '20260926000000_init', finished: true },
       { migration_name: '20260926002147_check_constraints', finished: true },
       { migration_name: '20260926011137_authentication', finished: true },
+      { migration_name: '20260927144513_data_persistence_sync', finished: true },
     ]);
   });
 
@@ -72,6 +73,7 @@ describe('migrations on PostgreSQL', () => {
       'places',
       'providers',
       'roam_enrichments',
+      'sync_runs',
       'user_preferences',
       'users',
     ]);
@@ -84,7 +86,7 @@ describe('migrations on PostgreSQL', () => {
       WHERE t.typnamespace = 'public'::regnamespace GROUP BY t.typname`;
     const byName = Object.fromEntries(enums.map(({ name, labels }) => [name, labels]));
 
-    expect(Object.keys(byName)).toHaveLength(14);
+    expect(Object.keys(byName)).toHaveLength(15);
     expect(byName.JourneyStatus).toEqual(['ACTIVE', 'COMPLETED']);
     expect(byName.PriceLevel).toEqual(['FREE', 'LOW', 'MEDIUM', 'HIGH', 'VERY_HIGH', 'UNKNOWN']);
     expect(byName.SourceEntityType).toEqual(['PLACE', 'EVENT', 'EXPERIENCE']);
@@ -95,6 +97,8 @@ describe('migrations on PostgreSQL', () => {
       SELECT conname FROM pg_constraint
       WHERE contype = 'c' AND connamespace = 'public'::regnamespace ORDER BY conname`;
     expect(checks.map((row) => row.conname)).toEqual([
+      'events_local_times_check',
+      'events_start_known_check',
       'external_sources_single_target_check',
       'journey_feedbacks_rating_check',
       'roam_enrichments_single_target_check',
@@ -103,6 +107,13 @@ describe('migrations on PostgreSQL', () => {
     const [index] = await prisma.$queryRaw<{ indexdef: string }[]>`
       SELECT indexdef FROM pg_indexes WHERE indexname = 'journeys_one_active_per_user'`;
     expect(index.indexdef).toMatch(/CREATE UNIQUE INDEX .* \("userId"\) WHERE \(status = 'ACTIVE'/);
+
+    // DATA-6: at most one RUNNING sync per provider, whatever the process.
+    const [sync] = await prisma.$queryRaw<{ indexdef: string }[]>`
+      SELECT indexdef FROM pg_indexes WHERE indexname = 'sync_runs_one_running_per_provider'`;
+    expect(sync.indexdef).toMatch(
+      /CREATE UNIQUE INDEX .* \("providerKey"\) WHERE \(status = 'RUNNING'/,
+    );
   });
 
   it('use the documented delete rules for the main relations', async () => {

@@ -37,6 +37,7 @@ describe('ROAM data model (API-03)', () => {
         'PlaceCategory',
         'Provider',
         'RoamEnrichment',
+        'SyncRun',
         'User',
         'UserPreference',
       ].sort(),
@@ -116,6 +117,13 @@ describe('ROAM data model (API-03)', () => {
       'EXPERIENCE',
     ]);
     expect(Object.values(Enums.TravelMode)).toEqual(['WALK', 'METRO']);
+    // DATA-6 (DATA_PERSISTENCE_AND_SYNC.md "Synchronization")
+    expect(Object.values(Enums.SyncRunStatus)).toEqual([
+      'RUNNING',
+      'SUCCEEDED',
+      'PARTIAL',
+      'FAILED',
+    ]);
   });
 
   it('a draft journey is never saved: no DRAFT status in the database', () => {
@@ -145,11 +153,12 @@ describe('ROAM data model (API-03)', () => {
     .map((entry) => entry.name)
     .sort();
 
-  it('commits the migrations in order: init, CHECK constraints, authentication', () => {
+  it('commits the migrations in order: init, CHECK constraints, authentication, DATA-6 sync', () => {
     expect(migrations).toEqual([
       '20260926000000_init',
       '20260926002147_check_constraints',
       '20260926011137_authentication',
+      '20260927144513_data_persistence_sync',
     ]);
 
     const checks = readFileSync(join(migrationsDir, migrations[1], 'migration.sql'), 'utf8');
@@ -160,6 +169,12 @@ describe('ROAM data model (API-03)', () => {
     ]) {
       expect(checks).toContain(`ADD CONSTRAINT "${name}" CHECK`);
     }
+
+    // DATA-6: additive only — no table or column dropped, the event CHECKs written by hand.
+    const sync = readFileSync(join(migrationsDir, migrations[3], 'migration.sql'), 'utf8');
+    expect(sync).not.toMatch(/DROP (TABLE|COLUMN)/);
+    for (const name of ['events_start_known_check', 'events_local_times_check'])
+      expect(sync).toContain(`ADD CONSTRAINT "${name}"`);
   });
 
   it('every table of the schema is created by a committed migration', () => {
@@ -176,7 +191,7 @@ describe('ROAM data model (API-03)', () => {
       .map((match) => match[1])
       .sort();
 
-    expect(tables).toHaveLength(18);
+    expect(tables).toHaveLength(19);
     expect(created).toEqual(tables);
   });
 

@@ -16,6 +16,7 @@ import { HealthModule } from './modules/health/health.module.js';
 import { JourneysModule } from './modules/journeys/journeys.module.js';
 import { ProvidersModule } from './modules/providers/providers.module.js';
 import { RecommendationsModule } from './modules/recommendations/recommendations.module.js';
+import { SyncModule } from './modules/sync/sync.module.js';
 import { UsersModule } from './modules/users/users.module.js';
 
 /**
@@ -40,6 +41,7 @@ import { UsersModule } from './modules/users/users.module.js';
     RecommendationsModule,
     ProvidersModule,
     EnrichmentModule,
+    SyncModule,
   ],
   providers: [
     { provide: APP_PIPE, useFactory: createValidationPipe },

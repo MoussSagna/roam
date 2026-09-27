@@ -152,13 +152,13 @@ describe('mapTicketmasterEventToRoamEvent', () => {
 
   it('dates: absolute instants; Paris local time 22:30 in summer (UTC+2) is 20:30Z, in winter (UTC+1) 21:30Z', () => {
     const summer = mapTicketmasterEventToRoamEvent(parsed());
-    expect(summer.startDate.toISOString()).toBe('2026-09-26T20:30:00.000Z');
+    expect(summer.startDate!.toISOString()).toBe('2026-09-26T20:30:00.000Z');
     expect(
       new Intl.DateTimeFormat('fr-FR', {
         timeZone: summer.timezone!,
         hour: '2-digit',
         minute: '2-digit',
-      }).format(summer.startDate),
+      }).format(summer.startDate!),
     ).toBe('22:30');
 
     const winter = mapTicketmasterEventToRoamEvent(
@@ -171,7 +171,7 @@ describe('mapTicketmasterEventToRoamEvent', () => {
         timeZone: 'Europe/Paris',
         hour: '2-digit',
         minute: '2-digit',
-      }).format(winter.startDate),
+      }).format(winter.startDate!),
     ).toBe('22:30');
   });
 
@@ -179,7 +179,7 @@ describe('mapTicketmasterEventToRoamEvent', () => {
     const offset = mapTicketmasterEventToRoamEvent(
       parsed({ dates: { start: { dateTime: '2026-09-26T22:30:00+02:00' } } }),
     );
-    expect(offset.startDate.toISOString()).toBe('2026-09-26T20:30:00.000Z');
+    expect(offset.startDate!.toISOString()).toBe('2026-09-26T20:30:00.000Z');
 
     const backwards = mapTicketmasterEventToRoamEvent(
       parsed({

@@ -2,6 +2,14 @@ import { Module } from '@nestjs/common';
 
 import { Clock } from '../../common/clock.js';
 import { CatalogModule } from '../catalog/catalog.module.js';
+import { BasilicClient } from './basilic/basilic.client.js';
+import { DataEsAdapter } from './data-es/data-es.adapter.js';
+import { DataEsClient } from './data-es/data-es.client.js';
+import {
+  DatatourismeEventAdapter,
+  DatatourismePlaceAdapter,
+} from './datatourisme/datatourisme.adapter.js';
+import { DatatourismeClient } from './datatourisme/datatourisme.client.js';
 import { EventIngestionService } from './event-ingestion.service.js';
 import { GeoapifyAdapter } from './geoapify/geoapify.adapter.js';
 import { GeoapifyClient } from './geoapify/geoapify.client.js';
@@ -13,8 +21,9 @@ import { TicketmasterClient } from './ticketmaster/ticketmaster.client.js';
 
 /**
  * Provider adapters and the ingestion of their data into the catalog: places (PROVIDER_ARCHITECTURE.md,
- * GOOGLE_PLACES_PROVIDER.md, GEOAPIFY_PROVIDER.md), and of events (TICKETMASTER_PROVIDER.md). No controller: nothing here is reachable over HTTP, and nothing
- * calls a provider at startup. Sync scheduling, cache/TTL and the recommendation engine come later (DATA-6, DATA-7).
+ * GOOGLE_PLACES_PROVIDER.md, GEOAPIFY_PROVIDER.md), events (TICKETMASTER_PROVIDER.md) and the open data sources
+ * DATAtourisme, Basilic, Data ES (DATA_PERSISTENCE_AND_SYNC.md). No controller: nothing here is reachable over HTTP,
+ * and nothing calls a provider at startup. Synchronization is the SyncModule's (DATA-6); recommendations are DATA-7.
  */
 @Module({
   imports: [CatalogModule],
@@ -28,6 +37,12 @@ import { TicketmasterClient } from './ticketmaster/ticketmaster.client.js';
     TicketmasterClient,
     TicketmasterAdapter,
     EventIngestionService,
+    DatatourismeClient,
+    DatatourismePlaceAdapter,
+    DatatourismeEventAdapter,
+    BasilicClient,
+    DataEsClient,
+    DataEsAdapter,
   ],
   exports: [
     GooglePlacesAdapter,
@@ -35,6 +50,12 @@ import { TicketmasterClient } from './ticketmaster/ticketmaster.client.js';
     PlaceIngestionService,
     TicketmasterAdapter,
     EventIngestionService,
+    DatatourismeClient,
+    DatatourismePlaceAdapter,
+    DatatourismeEventAdapter,
+    BasilicClient,
+    DataEsClient,
+    DataEsAdapter,
   ],
 })
 export class ProvidersModule {}

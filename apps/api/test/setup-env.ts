@@ -13,6 +13,7 @@ delete process.env.SWAGGER_ENABLED;
 delete process.env.GOOGLE_PLACES_API_KEY;
 delete process.env.GEOAPIFY_API_KEY;
 delete process.env.TICKETMASTER_API_KEY;
+delete process.env.DATATOURISME_API_KEY;
 
 // Rate limiting stays on in the tests, with limits no suite reaches: every request of a test file comes from one IP
 // (127.0.0.1). test/rate-limit.e2e.spec.ts sets low limits to test the mechanism itself.

@@ -169,7 +169,11 @@ describe('ROAM enrichment on PostgreSQL', () => {
   });
 
   it('pipeline, Geoapify-like place: the same rules, missing provider facts stay null', async () => {
-    const placeId = await ingest(GEOAPIFY, normalized(GEOAPIFY.key, `node/${MARK}1`));
+    // Another place than the Google one (DATA-6 would merge a same-name place at the same point).
+    const placeId = await ingest(
+      GEOAPIFY,
+      normalized(GEOAPIFY.key, `node/${MARK}1`, { name: 'Square Geoapify', latitude: 48.858 }),
+    );
 
     const result = await enrichment.enrichPlace(placeId);
 
@@ -185,19 +189,20 @@ describe('ROAM enrichment on PostgreSQL', () => {
     expect(place?.enrichment).toMatchObject({ atmosphere: ['OUTDOOR'], estimatedDurationMin: 60 });
   });
 
-  it('several providers: the same physical place stays two places (no cross-provider merge), enriched identically', async () => {
-    const rows = await db.externalSource.findMany({
-      where: { externalId: { in: [`${MARK}google-1`, `node/${MARK}1`] } },
-      include: { place: { include: { enrichment: true } } },
-    });
+  it('several providers, one physical place (DATA-6): one place, two sources, its enrichment kept', async () => {
+    const [google] = await db.externalSource.findMany({ where: { externalId: `${MARK}google-1` } });
+    const before = await enrichmentRow(google.placeId!);
 
+    const result = await ingestion.upsert(
+      GEOAPIFY,
+      normalized(GEOAPIFY.key, `node/${MARK}same-place`),
+    );
+
+    expect(result).toMatchObject({ outcome: 'matched', rule: 'proximity' });
+    expect(result.place.id).toBe(google.placeId);
+    const rows = await db.externalSource.findMany({ where: { placeId: google.placeId } });
     expect(rows).toHaveLength(2);
-    expect(new Set(rows.map((row) => row.placeId)).size).toBe(2);
-    const [a, b] = rows.map(({ place }) => {
-      const { atmosphere, estimatedDurationMin, source, confidence } = place!.enrichment!;
-      return { atmosphere, estimatedDurationMin, source, confidence };
-    });
-    expect(a).toEqual(b);
+    expect(await enrichmentRow(google.placeId!)).toEqual(before);
   });
 
   it('second enrichment: nothing written (idempotent); an outdated rules enrichment is updated in place', async () => {

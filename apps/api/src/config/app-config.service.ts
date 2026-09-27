@@ -67,12 +67,13 @@ export class AppConfigService {
   }
 
   /** Provider credentials (Data Foundation): Google Places (DATA-2), Geoapify (DATA-2.1),
-   * Ticketmaster (DATA-4). Never log these values. */
+   * Ticketmaster (DATA-4), DATAtourisme (DATA-6). Basilic and Data ES need none. Never log these values. */
   get providers() {
     return {
       googlePlacesApiKey: this.get('GOOGLE_PLACES_API_KEY'),
       geoapifyApiKey: this.get('GEOAPIFY_API_KEY'),
       ticketmasterApiKey: this.get('TICKETMASTER_API_KEY'),
+      datatourismeApiKey: this.get('DATATOURISME_API_KEY'),
     };
   }
 
